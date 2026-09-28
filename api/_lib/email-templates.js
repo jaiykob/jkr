@@ -25,7 +25,7 @@
  *      marketing on a booking confirmation and costs inbox placement on the
  *      transactional ones that must arrive.
  *   3. Lead with the specific fact — the day, the amount, the thing that
- *      happened — not a category label. "We're scooping Tuesday" beats
+ *      happened — not a category label. "We're hauling Tuesday" beats
  *      "Reminder: Brand Name visits".
  * Keep them under ~45 characters so nothing truncates on a phone.
  */
@@ -86,7 +86,7 @@ function layout({ preheader = '', heading, bodyHtml, marketing = false, unsubscr
   const docTitle = escapeHtml(title || heading || BRAND.name);
   const footerLegal = marketing
     ? `<p style="margin:8px 0;color:${BRAND.muted};font-size:12px;line-height:1.6;">
-         You're getting this because you contacted ${BRAND.name} about dog waste removal in east Multnomah County.<br/>
+         You're getting this because you contacted ${BRAND.name} about junk removal.<br/>
          ${escapeHtml(BRAND.address())}<br/>
          ${unsubscribeUrl ? `<a href="${escapeHtml(unsubscribeUrl)}" style="color:${BRAND.muted};text-decoration:underline;">Unsubscribe</a>` : 'Reply STOP to opt out.'}
        </p>`
@@ -167,12 +167,12 @@ function bookingConfirmation(ctx = {}) {
   const bodyHtml = `
     <p style="margin:0 0 12px;">Thanks for choosing Brand Name Your service is confirmed — here are the details:</p>
     <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
-    <p style="margin:12px 0;">On your first visit we'll do a full-yard reset, double-bag everything, and haul it off-site. We always re-latch the gate on the way out.</p>
+    <p style="margin:12px 0;">On the day we'll text you an arrival window. We do all the lifting and loading, and haul everything away. TODO: say where it goes (donation, recycling, dump).</p>
     <p style="margin:12px 0;">Questions? Just reply to this email or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: pickupDay ? `You're booked — ${pickupDay}` : "You're booked — service confirmed",
     html: layout({ preheader: 'Your pickup is all set — here are the details.', heading, bodyHtml }),
-    text: `You're booked${name ? ', ' + name : ''}!\n\nPlan: ${plan || ''}\nFrequency: ${frequency || ''}\nPickup day: ${pickupDay || ''}\nAddress: ${address || ''}\nCharged: ${amount || ''}\n\nWe'll reset the yard, double-bag, haul off-site, and always re-latch the gate.\nQuestions? Reply here or call ${BRAND.phone}.\n— Brand Name`,
+    text: `You're booked${name ? ', ' + name : ''}!\n\nPlan: ${plan || ''}\nFrequency: ${frequency || ''}\nDay: ${pickupDay || ''}\nAddress: ${address || ''}\nCharged: ${amount || ''}\n\nWe'll text you an arrival window, then do all the lifting and hauling.\nQuestions? Reply here or call ${BRAND.phone}.\n— Brand Name`,
   };
 }
 
@@ -182,7 +182,7 @@ function paymentFailed(ctx = {}) {
   const heading = 'A quick heads-up about your payment';
   const bodyHtml = `
     <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we couldn't process your most recent payment${amount ? ` of <strong>${escapeHtml(amount)}</strong>` : ''}.</p>
-    <p style="margin:12px 0;">No action is needed on the yard — we just need a working card on file to keep your service going. It only takes a sec:</p>
+    <p style="margin:12px 0;">Your booking is safe. We just need a working card on file to keep your service going. It only takes a sec:</p>
     ${button('Update payment method', updateUrl)}
     <p style="margin:12px 0;">If you think this is a mistake or want to sort it out by phone, reply here or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
@@ -194,32 +194,25 @@ function paymentFailed(ctx = {}) {
 
 // 3. Service-complete — fires when a visit is marked done (visit-tracking trigger).
 //
-// The gate line is deliberately conditional on gatePhotoUrl: this email asserts a
-// specific fact about one visit, so it only makes the claim when there's a photo
-// backing it. No gate photo (or a property with no gate) → the claim is dropped,
-// never asserted unproven. The generic "we always re-latch" policy promise in
-// bookingConfirmed is unaffected.
+// The "cleared" line is conditional on afterPhotoUrl: this email only claims
+// what a photo backs up. Same rule Scoops Co. used for its gate photo.
 function serviceComplete(ctx = {}) {
-  const { name, visitDate, nextVisitDate, photoUrl, gatePhotoUrl, address } = ctx;
-  const heading = 'All scooped — your yard is clean 🌿';
+  const { name, visitDate, nextVisitDate, photoUrl, beforePhotoUrl, address } = ctx;
+  const heading = 'All done, your space is clear';
   const photo = (url, alt, caption) => url
     ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" width="100%" style="display:block;border:0;border-radius:12px;margin:12px 0 4px;max-width:496px;"/>
        ${caption ? `<p style="margin:0 0 12px;font-size:13px;color:${BRAND.muted};">${escapeHtml(caption)}</p>` : ''}`
     : '';
-  const gateClaim = gatePhotoUrl ? ", and the gate's latched" : '';
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we just finished${visitDate ? ` your ${escapeHtml(visitDate)} visit` : ' your visit'}${address ? ` at ${escapeHtml(address)}` : ''}. Everything's double-bagged and hauled off-site${gateClaim}.</p>
-    ${photo(photoUrl, 'Your freshly cleaned yard')}
-    ${photo(gatePhotoUrl, 'Your gate, latched on the way out', 'Your gate, latched on the way out.')}
-    ${nextVisitDate ? `<p style="margin:12px 0;">Your next visit is scheduled for <strong>${escapeHtml(nextVisitDate)}</strong>.</p>` : ''}
-    <p style="margin:12px 0;">See anything we missed? Reply to this email — we'll make it right.</p>`;
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we just finished${visitDate ? ` your ${escapeHtml(visitDate)} job` : ' your job'}${address ? ` at ${escapeHtml(address)}` : ''}. Everything is loaded and on its way out.</p>
+    ${photo(beforePhotoUrl, 'Before we started', 'Before.')}
+    ${photo(photoUrl, 'The space after we cleared it', 'After.')}
+    ${nextVisitDate ? `<p style="margin:12px 0;">Your next pickup is scheduled for <strong>${escapeHtml(nextVisitDate)}</strong>.</p>` : ''}
+    <p style="margin:12px 0;">See anything we missed? Reply to this email and we will make it right.</p>`;
   return {
-    subject: nextVisitDate ? `Yard's clean — back ${nextVisitDate}` : "All done — your yard is clean",
-    html: layout({
-      preheader: `Service complete — double-bagged, hauled off${gatePhotoUrl ? ', gate latched' : ''}.`,
-      heading, bodyHtml,
-    }),
-    text: `Hi${name ? ' ' + name : ''}, we finished${visitDate ? ` your ${visitDate} visit` : ' your visit'}. Double-bagged, hauled off-site${gatePhotoUrl ? ', gate latched' : ''}.${nextVisitDate ? `\nNext visit: ${nextVisitDate}.` : ''}\nMissed something? Just reply.\n— Brand Name`,
+    subject: nextVisitDate ? `All done, back ${nextVisitDate}` : 'All done, your space is clear',
+    html: layout({ preheader: 'Job complete. Everything is loaded and hauled away.', heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}, we finished${visitDate ? ` your ${visitDate} job` : ' your job'}. Everything is loaded and hauled away.${nextVisitDate ? `\nNext pickup: ${nextVisitDate}.` : ''}\nMissed something? Just reply.\n(Brand Name)`,
   };
 }
 
@@ -230,14 +223,14 @@ function reviewRequest(ctx = {}) {
   const { name, reviewUrl, unsubscribeUrl } = ctx;
   const heading = 'How are we doing?';
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, it's been a few visits now — we hope the yard's staying spotless.</p>
-    <p style="margin:12px 0;">If you've got 30 seconds, a quick Google review helps other local dog owners find us more than anything else we could do. It would mean a lot.</p>
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, thanks again for choosing us for your haul.</p>
+    <p style="margin:12px 0;">If you've got 30 seconds, a quick Google review helps other local people find us more than anything else we could do. It would mean a lot.</p>
     ${button('Leave a review', reviewUrl)}
     <p style="margin:12px 0;">And if anything's been less than perfect, reply here first — we'd rather fix it than read about it. 🙂</p>`;
   return {
     subject: 'How did we do?',
     html: layout({ preheader: 'A 30-second Google review helps more than anything.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
-    text: `Hi${name ? ' ' + name : ''}, a few visits in — hope the yard's spotless!\nA quick Google review helps other local dog owners find us: ${reviewUrl || BRAND.site}\nAnything less than perfect? Reply here first.\n— Brand Name`,
+    text: `Hi${name ? ' ' + name : ''}, thanks for choosing us!\nA quick Google review helps other local people find us: ${reviewUrl || BRAND.site}\nAnything less than perfect? Reply here first.\n— Brand Name`,
   };
 }
 
@@ -247,41 +240,39 @@ function leadRecapture(ctx = {}) {
   const heading = 'Still thinking it over?';
   const bodyHtml = `
     <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, you grabbed a quote${quotedPrice ? ` (${escapeHtml(quotedPrice)})` : ''} from Brand Name but didn't finish booking — totally understand, life's busy.</p>
-    <p style="margin:12px 0;">When you're ready, your spot's still here. We're insured, contract-free, and we double-bag and haul everything off-site so nothing sits in your bin.</p>
+    <p style="margin:12px 0;">When you're ready, your spot's still here. We do all the lifting and hauling, and the price you saw is the price you pay. TODO: only true claims.</p>
     ${button('Pick up where you left off', quoteUrl)}
     <p style="margin:12px 0;">Have a question first? Reply to this email or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: quotedPrice ? `Your ${quotedPrice} quote is still good` : 'Your quote is still good',
     html: layout({ preheader: 'Pick up where you left off — your spot is still here.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
-    text: `Hi${name ? ' ' + name : ''}, you grabbed a quote${quotedPrice ? ` (${quotedPrice})` : ''} but didn't finish booking.\nWhen you're ready: ${quoteUrl || BRAND.site}\nInsured, no contracts, hauled off-site. Questions? ${BRAND.phone}.\n— Brand Name`,
+    text: `Hi${name ? ' ' + name : ''}, you grabbed a quote${quotedPrice ? ` (${quotedPrice})` : ''} but didn't finish booking.\nWhen you're ready: ${quoteUrl || BRAND.site}\nQuestions? ${BRAND.phone}.\n— Brand Name`,
   };
 }
 
 // 6. Visit reminder — "we're coming tomorrow" (email placeholder until SMS/A2P).
 function visitReminder(ctx = {}) {
   const { name, visitDate, pickupDay, unsubscribeUrl } = ctx;
-  const heading = 'We\'re coming by soon 🚪';
+  const heading = 'We\'re coming by soon';
   const when = visitDate || pickupDay || 'your next scheduled day';
   const bodyHtml = `
     <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, just a reminder that Brand Name is scheduled to visit on <strong>${escapeHtml(when)}</strong>.</p>
-    <p style="margin:12px 0;">To help us get in and out: please <strong>unlock the gate</strong> and bring pets inside if you can. We'll re-latch everything on our way out.</p>
+    <p style="margin:12px 0;">To help us get in and out: please make sure the items are reachable and there is room for the truck to park. We'll text you an arrival window.</p>
     <p style="margin:12px 0;">Need to reschedule or skip this one? Reply here or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
-    // The gate ask lives in the preheader, not the subject — `when` can be a
-    // full date and the pair together truncates on a phone.
-    subject: `We're scooping ${when}`,
-    html: layout({ preheader: 'Please unlock the gate and bring pets inside.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
-    text: `Hi${name ? ' ' + name : ''}, reminder: Brand Name visits ${when}.\nPlease unlock the gate and bring pets inside — we'll re-latch on the way out.\nReschedule/skip? Reply or call ${BRAND.phone}.\n— Brand Name`,
+    subject: `We're hauling ${when}`,
+    html: layout({ preheader: 'Please make sure the items are reachable.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
+    text: `Hi${name ? ' ' + name : ''}, reminder: Brand Name visits ${when}.\nPlease make sure the items are reachable and there is room to park.\nReschedule/skip? Reply or call ${BRAND.phone}.\n— Brand Name`,
   };
 }
 
 // 7. Win-back — reactivate a churned customer.
 function winBack(ctx = {}) {
   const { name, reactivateUrl, offer, unsubscribeUrl } = ctx;
-  const heading = 'We\'d love to have you back 🐾';
+  const heading = 'We\'d love to have you back';
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, it's been a while since your last Brand Name visit and we miss keeping your yard clean.</p>
-    <p style="margin:12px 0;">Picking back up is easy — same crew, same off-site haul-away, no contracts.${offer ? ` <strong>${escapeHtml(offer)}</strong>` : ''}</p>
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, it's been a while since your last Brand Name visit and we would be glad to help again.</p>
+    <p style="margin:12px 0;">Picking back up is easy — same crew, same upfront pricing.${offer ? ` <strong>${escapeHtml(offer)}</strong>` : ''}</p>
     ${button('Restart my service', reactivateUrl)}
     <p style="margin:12px 0;">Or just reply and tell us what day works — we'll handle the rest.</p>`;
   return {

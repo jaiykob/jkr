@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Brand Name Admin</title>
+  <!-- Self-hosted fonts (fonts/). The Google Fonts stylesheet was render-blocking:
+       the browser had to fetch Google's CSS before it learned which fonts to get. -->
+  <style>
+    @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/dm-sans.woff2) format('woff2'); }
+    @font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400 600; font-display: swap; src: url(/fonts/playfair.woff2) format('woff2'); }
+    @font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400 500; font-display: swap; src: url(/fonts/playfair-italic.woff2) format('woff2'); }
+  </style>
+  <style>
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --rg:#04402A; --fg:#2D5A1E; --tan:#C8A96E; --dtan:#7A5C2E;
+      --page:#F4F6F4; --card:#FFFFFF; --surf:#F0EBE1; --line:#E7E9E6;
+      --tx:#1d2b22; --txm:#5a6b61; --txd:#9aa7a0;
+      --bdr:rgba(4,64,42,.10);
+      --ok:#2e9e63; --warn:#c79324; --bad:#c0392b; --info:#2f7d8a;
+      --sb:#0b3a28;        /* sidebar bg accent */
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--page); color:var(--tx); line-height:1.5; }
+    a { color:inherit; }
+
+    /* ── TOP BAR ─────────────────────────────────────────── */
+    .topbar { position:fixed; top:0; left:0; right:0; height:56px; z-index:30;
+      background:var(--rg); color:var(--tan); display:flex; align-items:center;
+      justify-content:space-between; padding:0 18px; }
+    .topbar .brand { display:flex; align-items:center; gap:10px; }
+    .topbar .brand img { height:28px; width:auto; }
+    .topbar .wordmark { font-family:'Playfair Display',serif; font-weight:500; font-size:1.15rem; letter-spacing:.02em; color:var(--tan); }
+    .topbar .ver { font-size:.65rem; color:rgba(247,243,237,.75); margin-left:6px; }
+    .topbar .right { display:flex; align-items:center; gap:14px; }
+    .topbar .right .who { font-size:.8rem; color:rgba(247,243,237,.7); }
+    .hamb { display:none; background:none; border:none; color:var(--tan); font-size:1.3rem; cursor:pointer; }
+    .top-btn { background:transparent; border:1px solid rgba(247,243,237,.25); color:rgba(247,243,237,.85);
+      font:inherit; font-size:.75rem; font-weight:700; padding:7px 12px; border-radius:8px; cursor:pointer; }
+    .top-btn:hover { border-color:var(--tan); color:var(--tan); }
+
+    /* ── LAYOUT ──────────────────────────────────────────── */
+    .shell { display:flex; padding-top:56px; min-height:100vh; }
+    .sidebar { width:236px; flex-shrink:0; background:var(--card); border-right:1px solid var(--line);
+      position:fixed; top:56px; bottom:0; left:0; overflow-y:auto; padding:14px 0; }
+    .main { flex:1; margin-left:236px; padding:26px 30px 80px; min-width:0; }
+
+    .nav-group { margin-bottom:2px; }
+    .nav-item { display:flex; align-items:center; gap:11px; padding:10px 20px; font-size:.86rem;
+      font-weight:600; color:var(--txm); cursor:pointer; border-left:3px solid transparent; user-select:none; }
+    .nav-item:hover { background:#f6f3ec; color:var(--rg); }
+    .nav-item.active { background:#eef4ef; color:var(--rg); border-left-color:var(--rg); }
+    .nav-item .ico { width:17px; height:17px; flex-shrink:0; opacity:.85; }
+    .nav-item .caret { margin-left:auto; font-size:.7rem; color:var(--txd); transition:transform .18s; }
+    .nav-group.open > .nav-item.parent .caret { transform:rotate(90deg); }
+    .nav-sub { display:none; padding:2px 0 6px; }
+    .nav-group.open .nav-sub { display:block; }
+    .nav-sub .nav-item { padding:8px 20px 8px 48px; font-size:.82rem; font-weight:500; }
+
+    /* ── PAGE ────────────────────────────────────────────── */
+    .page-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; flex-wrap:wrap; }
+    .page-title { font-family:'Playfair Display',serif; font-weight:500; font-size:1.7rem; color:var(--rg); }
+    .page-sub { font-size:.85rem; color:var(--txm); margin-top:2px; }
+
+    .toolbar { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    .search { flex:1; min-width:200px; position:relative; }
+    .search input { width:100%; padding:11px 14px 11px 38px; background:var(--card); border:1px solid var(--line);
+      border-radius:10px; font:inherit; font-size:.9rem; color:var(--tx); }
+    .search input:focus { outline:none; border-color:var(--tan); }
+    .search svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--txd); }
+    .btn-create { display:inline-flex; align-items:center; gap:7px; background:var(--rg); color:var(--tan);
+      border:none; border-radius:10px; font:inherit; font-size:.82rem; font-weight:700; padding:11px 16px; cursor:pointer; }
+    .btn-create:hover { background:#063a26; }
+
+    /* ── TABLE ───────────────────────────────────────────── */
+    .panel { background:var(--card); border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    thead th { text-align:left; font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+      color:var(--dtan); padding:14px 18px; border-bottom:1px solid var(--line); white-space:nowrap; }
+    tbody td { padding:14px 18px; font-size:.9rem; border-bottom:1px solid var(--line); color:var(--tx); }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover { background:#fbfaf6; }
+    .dot { display:inline-flex; align-items:center; gap:7px; font-size:.82rem; font-weight:600; }
+    .dot::before { content:''; width:9px; height:9px; border-radius:50%; background:var(--txd); }
+    .dot.ok::before { background:var(--ok); } .dot.warn::before { background:var(--warn); }
+    .dot.bad::before { background:var(--bad); } .dot.info::before { background:var(--info); }
+    .link { color:var(--info); font-weight:700; font-size:.82rem; cursor:pointer; }
+    .link:hover { text-decoration:underline; }
+    .tbl-empty { padding:46px 18px; text-align:center; color:var(--txm); font-size:.92rem; }
+    .tbl-foot { display:flex; align-items:center; justify-content:flex-end; gap:14px; padding:12px 18px;
+      font-size:.78rem; color:var(--txm); border-top:1px solid var(--line); }
+
+    /* ── STATS (Home) ────────────────────────────────────── */
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:24px; }
+    .stat { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
+    .stat .n { font-family:'Playfair Display',serif; font-size:2rem; color:var(--rg); line-height:1; }
+    .stat .l { font-size:.72rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--dtan); margin-top:8px; }
+    .stat .s:before { content:''; }
+    .mrr { background:linear-gradient(135deg,#04402A,#0a5638); color:#fff; border:none; }
+    .mrr .n { color:#fff; } .mrr .l { color:var(--tan); }
+
+    .note { background:#fff8e8; border:1px solid var(--bdrt,rgba(200,169,110,.42)); border-radius:12px;
+      padding:13px 16px; font-size:.85rem; color:var(--dtan); margin-bottom:18px; }
+    .note code { background:rgba(4,64,42,.06); padding:1px 5px; border-radius:4px; font-size:.85em; }
+
+    /* ── DETAIL MODAL ────────────────────────────────────── */
+    .modal { position:fixed; inset:0; z-index:40; display:none; }
+    .modal.show { display:block; }
+    .modal-bg { position:absolute; inset:0; background:rgba(10,30,20,.45); }
+    .modal-panel { position:absolute; top:0; right:0; bottom:0; width:min(480px,100%); background:var(--page);
+      box-shadow:-12px 0 40px rgba(0,0,0,.2); overflow-y:auto; padding:24px 26px 60px; }
+    .modal-panel h3 { font-family:'Playfair Display',serif; font-weight:500; color:var(--rg); font-size:1.35rem; margin-bottom:4px; }
+    .modal-close { position:absolute; top:18px; right:20px; background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--txm); }
+    .vacts { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+    .vacts button { font-size:.72rem; padding:4px 9px; border:1px solid #cdd8cf; border-radius:6px; background:#fff; cursor:pointer; color:var(--rg); line-height:1.2; }
+    .vacts button:hover { background:#f0f5f0; }
+    .vacts .vb-go { background:var(--rg); border-color:var(--rg); color:#fff; }
+    .vacts .vb-go:hover { filter:brightness(1.08); }
+    .kv { display:grid; grid-template-columns:140px 1fr; gap:9px 14px; margin-top:16px; }
+    .kv dt { font-size:.72rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--dtan); }
+    .kv dd { font-size:.9rem; color:var(--tx); word-break:break-word; }
+    .kv dd.empty { color:var(--txd); }
+    .det-hd { font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--dtan); margin:22px 0 8px; }
+    .mini { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:11px 13px; margin-bottom:8px; font-size:.86rem; }
+    .mini .mt { font-weight:600; color:var(--rg); }
+
+    /* ── LOGIN ───────────────────────────────────────────── */
+    .login { position:fixed; inset:0; background:var(--rg); display:flex; align-items:center; justify-content:center; padding:24px; z-index:60; }
+    .login.hide { display:none; }
+    .login-card { background:var(--card); border-radius:18px; padding:40px 34px; width:100%; max-width:380px; text-align:center; box-shadow:0 18px 50px rgba(0,0,0,.3); }
+    .login-card .wordmark { font-family:'Playfair Display',serif; color:var(--rg); font-size:1.6rem; margin-bottom:4px; }
+    .login-card p { color:var(--txm); font-size:.85rem; margin-bottom:22px; }
+    .login-card input { width:100%; padding:14px; background:var(--surf); border:1.5px solid transparent;
+      border-radius:10px; font:inherit; font-size:.95rem; color:var(--rg); margin-bottom:14px; }
+    .login-card input:focus { outline:none; border-color:var(--tan); background:#fdf8f0; }
+    .login-card button { width:100%; padding:14px; background:var(--rg); color:var(--tan); border:none;
+      border-radius:10px; font:inherit; font-weight:700; cursor:pointer; }
+    .login-err { color:var(--bad); font-size:.82rem; min-height:18px; margin-top:10px; }
+
+    .loading { padding:60px; text-align:center; color:var(--txm); }
+    .scrim { display:none; }
+
+    @media (max-width:880px) {
+      .hamb { display:block; }
+      .sidebar { transform:translateX(-100%); transition:transform .22s; z-index:25; }
+      .sidebar.open { transform:translateX(0); }
+      .main { margin-left:0; padding:20px 16px 70px; }
+      .scrim.show { display:block; position:fixed; inset:56px 0 0 0; background:rgba(0,0,0,.35); z-index:24; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <div class="login-card">
+    <div class="wordmark">Brand Name Admin</div>
+    <p>Enter your admin token to continue.</p>
+    <input type="password" id="token-in" placeholder="Admin token" autocomplete="current-password" />
+    <button id="login-btn">Unlock</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="brand">
+    <button class="hamb" id="hamb">☰</button>
+    <!-- The page's only h1. Lives in the topbar rather than the login card
+         because the card is removed once you authenticate, which would leave
+         the dashboard with no heading at all. The global `* { margin:0 }`
+         reset means the tag swap is visually identical to the old span. -->
+    <h1 class="wordmark">Brand Name</h1>
+    <span class="ver">CRM</span>
+  </div>
+  <div class="right">
+    <span class="who" id="who"></span>
+    <button class="top-btn" id="refresh-btn">Refresh</button>
+    <button class="top-btn" id="logout-btn">Lock</button>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="nav-group">
+      <div class="nav-item active" data-view="home">🏠 <span>Home</span></div>
+    </div>
+    <div class="nav-group open" id="grp-clients">
+      <div class="nav-item parent" data-toggle="grp-clients">👥 <span>Clients</span><span class="caret">▶</span></div>
+      <div class="nav-sub">
+        <div class="nav-item" data-view="residential">All Clients</div>
+        <div class="nav-item" data-view="changes">Change Requests</div>
+      </div>
+    </div>
+    <div class="nav-group" id="grp-sched">
+      <div class="nav-item parent" data-toggle="grp-sched">🗓️ <span>Scheduler</span><span class="caret">▶</span></div>
+      <div class="nav-sub">
+        <div class="nav-item" data-view="schedule">Schedule</div>
+        <div class="nav-item" data-view="unassigned">Unassigned</div>
+        <div class="nav-item" data-view="route">Route Manager</div>
+      </div>
+    </div>
+    <div class="nav-group" id="grp-billing">
+      <div class="nav-item parent" data-toggle="grp-billing">💳 <span>Billing</span><span class="caret">▶</span></div>
+      <div class="nav-sub">
+        <div class="nav-item" data-view="subscriptions">Bookings</div>
+        <div class="nav-item" data-view="payments">Payments</div>
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-item" data-view="reports">📊 <span>Reports</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-item" data-view="settings">⚙️ <span>Settings</span></div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="loading" id="loading">Loading…</div>
+    <div id="view"></div>
+  </main>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-bg" id="modal-bg"></div>
+  <div class="modal-panel" id="modal-panel"></div>
+</div>
+
+<script>
+  const TOKEN_KEY = 'jkr_admin_token';
+  const $ = id => document.getElementById(id);
+  let DATA = { customers: [], leads: [], spineReady:false };
+  let currentView = 'home';
+  let _openRef = null;   // {type,id} of the open detail modal, so actions can re-render it
+
+  // ── helpers ───────────────────────────────────────────────
+  const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const money = c => c==null?'N/A':'$'+(Number(c)/100).toFixed(2).replace(/\.00$/,'');
+  const dateS = s => { if(!s) return 'N/A'; const d=new Date(s); return isNaN(d)?esc(s):d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); };
+  const dtS = s => { if(!s) return 'N/A'; const d=new Date(s); return isNaN(d)?esc(s):d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); };
+  const fullName = o => [o.first_name,o.last_name].filter(Boolean).join(' ') || '(no name)';
+
+  function statusDot(label, kind) { return `<span class="dot ${kind||''}">${esc(label)}</span>`; }
+  function subStatusKind(s){ s=String(s||'').toLowerCase();
+    if(s==='active') return 'ok'; if(['incomplete','one_time','paused'].includes(s)) return 'warn';
+    if(['past_due','canceled'].includes(s)) return 'bad'; return ''; }
+  function visitKind(s){ s=String(s||'').toLowerCase();
+    if(s==='completed') return 'ok'; if(['scheduled','en_route','in_progress'].includes(s)) return 'warn';
+    if(['skipped','canceled'].includes(s)) return 'bad'; return ''; }
+
+  function kvRow(label,val,isMoney){
+    const empty = val==null||val===''||(Array.isArray(val)&&!val.length);
+    let d; if(empty) d='N/A'; else if(isMoney) d=money(val); else if(Array.isArray(val)) d=esc(val.join(', '));
+    else if(typeof val==='object') d=esc(JSON.stringify(val)); else d=esc(val);
+    return `<dt>${esc(label)}</dt><dd class="${empty?'empty':''}">${d}</dd>`;
+  }
+
+  // ── derive datasets ───────────────────────────────────────
+  // Clients = paying customers (Active) + quote leads (Lead).
+  function residentialRows(){
+    const fromCust = DATA.customers.map(c=>{
+      const sub=(c.subscriptions||[]).find(s=>String(s.status).toLowerCase()==='active')||(c.subscriptions||[])[0];
+      return { _type:'customer', _ref:c, status: sub?sub.status:'customer',
+        name:fullName(c), email:c.email, phone:c.phone, plan:sub?(sub.plan||sub.frequency):'N/A', created:c.created_at };
+    });
+    const fromLeads = DATA.leads.filter(l=>String(l.service).toLowerCase()!=='commercial').map(l=>({
+      _type:'lead', _ref:l, status:'lead', name:fullName(l), email:l.email, phone:l.phone,
+      plan:l.frequency||l.quoted_price||'N/A', created:l.created_at }));
+    return [...fromCust, ...fromLeads].sort((a,b)=>new Date(b.created||0)-new Date(a.created||0));
+  }
+  function allVisits(){ const out=[]; DATA.customers.forEach(c=>(c.visits||[]).forEach(v=>out.push({...v, _cust:c})));
+    return out.sort((a,b)=>new Date(a.scheduled_date||0)-new Date(b.scheduled_date||0)); }
+  function allSubs(){ const out=[]; DATA.customers.forEach(c=>(c.subscriptions||[]).forEach(s=>out.push({...s, _cust:c}))); return out; }
+
+  // MRR estimate from active recurring subs (exclude one_time)
+  function mrrCents(){
+    let m=0; allSubs().forEach(s=>{ if(String(s.status).toLowerCase()!=='active') return;
+      const plan=String(s.plan||'').toLowerCase(); const p=Number(s.price_cents)||0;
+      if(plan==='quarterly') m += Math.round(p/3); else if(plan==='one_time') {} else m += p; });
+    return m;
+  }
+  function activeRecurringCount(){ return allSubs().filter(s=>String(s.status).toLowerCase()==='active' && String(s.plan).toLowerCase()!=='one_time').length; }
+
+  // ── table builder ─────────────────────────────────────────
+  function tableHTML(cols, rowsHTML, count){
+    return `<div class="panel"><table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead>
+      <tbody>${rowsHTML || `<tr><td colspan="${cols.length}"><div class="tbl-empty">No data yet.</div></td></tr>`}</tbody></table>
+      <div class="tbl-foot">${count!=null?count+' record'+(count===1?'':'s'):''}</div></div>`;
+  }
+  function searchBar(ph){ return `<div class="toolbar"><div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" placeholder="${esc(ph||'Search…')}" oninput="applySearch()"/></div>
+      <button class="btn-create" onclick="alert('Not built yet: bookings come in through the website for now.')">＋ Create New</button></div>`; }
+  let _filter='';
+  window.applySearch=function(){ _filter=($('q')?$('q').value:'').toLowerCase(); renderView(currentView, true); };
+
+  // ── views ─────────────────────────────────────────────────
+  const views = {
+    home(){
+      const recurring = activeRecurringCount();
+      const stats = [
+        ['mrr','MRR (est.)', money(mrrCents())],
+        ['','Recurring clients', recurring],
+        ['','Total customers', DATA.customers.length],
+        ['','Quote leads', DATA.leads.filter(l=>String(l.service).toLowerCase()!=='commercial').length],
+        ['','Jobs today', allVisits().filter(v=>String(v.scheduled_date)===new Date().toISOString().slice(0,10)).length],
+      ];
+      const recent = residentialRows().slice(0,6).map(r=>`<tr>
+        <td>${statusDot(r.status, r.status==='lead'?'info':subStatusKind(r.status))}</td>
+        <td>${esc(r.name)}</td><td>${esc(r.phone||r.email||'N/A')}</td><td>${esc(r.plan)}</td>
+        <td><span class="link" onclick='openDetail(${JSON.stringify(r._type)}, ${JSON.stringify(idOf(r._ref))})'>View</span></td></tr>`).join('');
+      return `<div class="page-head"><div><div class="page-title">Home</div>
+        <div class="page-sub">Your book of business at a glance.</div></div></div>
+        ${DATA.spineReady?'':spineNote()}
+        <div class="stats">${stats.map(s=>`<div class="stat ${s[0]}"><div class="n">${s[2]}</div><div class="l">${s[1]}</div></div>`).join('')}</div>
+        <div class="page-sub" style="margin:6px 2px 10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--dtan)">Recent clients &amp; leads</div>
+        ${tableHTML(['Status','Name','Contact','Plan',''], recent, null)}`;
+    },
+    residential(filtered){
+      let rows = residentialRows();
+      if(_filter) rows = rows.filter(r=>(r.name+' '+(r.email||'')+' '+(r.phone||'')).toLowerCase().includes(_filter));
+      const body = rows.map(r=>`<tr>
+        <td>${statusDot(r.status==='lead'?'Lead':r.status, r.status==='lead'?'info':subStatusKind(r.status))}</td>
+        <td>${esc(r.name)}</td><td>${esc(r.email||'N/A')}</td><td>${esc(r.phone||'N/A')}</td>
+        <td>${esc(r.plan)}</td><td>${dateS(r.created)}</td>
+        <td><span class="link" onclick='openDetail(${JSON.stringify(r._type)}, ${JSON.stringify(idOf(r._ref))})'>View</span></td></tr>`).join('');
+      return `<div class="page-head"><div><div class="page-title">Clients</div>
+        <div class="page-sub">Paying customers and quote-stage leads.</div></div></div>
+        ${DATA.spineReady?'':spineNote()}${searchBar('Search name, email, phone…')}
+        ${tableHTML(['Status','Name','Email','Phone','Plan','Created',''], body, rows.length)}`;
+    },
+    changes(){ return stub('Change Requests','Customer-requested changes (new day, cancel) will land here once there is a customer login.'); },
+    schedule(){
+      const rows = allVisits().map(v=>`<tr>
+        <td>${dateS(v.scheduled_date)}</td><td>${esc(fullName(v._cust))}</td>
+        <td>${esc([v._cust.address,v._cust.zip].filter(Boolean).join(', ')||'N/A')}</td>
+        <td>${statusDot(v.status, visitKind(v.status))}</td>
+        <td>${v.route_seq!=null?'#'+esc(v.route_seq):'N/A'}</td></tr>`).join('');
+      return `<div class="page-head"><div><div class="page-title">Schedule</div>
+        <div class="page-sub">Upcoming and past jobs.</div></div></div>
+        ${DATA.spineReady?'':spineNote()}
+        ${tableHTML(['Date','Client','Address','Status','Route #'], rows, allVisits().length)}`;
+    },
+    unassigned(){ return stub('Unassigned','Jobs not yet given a route order.'); },
+    route(){ return stub('Route Manager','Daily routes by location. Not built yet.'); },
+    subscriptions(){
+      const rows = allSubs().map(s=>`<tr>
+        <td>${esc(fullName(s._cust))}</td><td>${esc(s.plan||'N/A')}</td><td>${esc(s.frequency||'N/A')}</td>
+        <td>${esc(s.load_size||'N/A')}</td><td>${esc(s.pickup_day||'N/A')}</td><td>${money(s.price_cents)}</td>
+        <td>${statusDot(s.status, subStatusKind(s.status))}</td></tr>`).join('');
+      return `<div class="page-head"><div><div class="page-title">Bookings</div>
+        <div class="page-sub">One-time hauls and recurring pickups. Card actions are managed in Stripe.</div></div></div>
+        ${DATA.spineReady?'':spineNote()}
+        ${tableHTML(['Client','Plan','Frequency','Load','Day','Price','Status'], rows, allSubs().length)}`;
+    },
+    payments(){ return stub('Payments','Charges & payouts. Reads from Stripe via webhook once payment events are wired into the spine (Phase A3).'); },
+    reports(){ return stub('Reports','Revenue, churn, conversion, and route efficiency. Built on top of the spine tables.'); },
+    settings(){
+      return `<div class="page-head"><div><div class="page-title">Settings</div>
+        <div class="page-sub">Connection status.</div></div></div>
+        <div class="panel" style="padding:6px 4px"><table><tbody>
+        <tr><td>Booking spine (Supabase)</td><td>${DATA.spineReady?statusDot('Connected','ok'):statusDot('Schema not applied','warn')}</td></tr>
+        <tr><td>Customer records</td><td>${DATA.customers.length} loaded</td></tr>
+        <tr><td>Leads table</td><td>${DATA.leads.length} loaded</td></tr>
+        <tr><td>Data generated</td><td>${dtS(DATA.generatedAt)}</td></tr>
+        </tbody></table></div>
+        ${DATA.spineReady?'':`<div class="note" style="margin-top:16px">Apply <code>db/schema.sql</code> in Supabase to fill Clients, Scheduler and Billing.</div>`}`;
+    },
+  };
+  function stub(title,msg){ return `<div class="page-head"><div><div class="page-title">${esc(title)}</div></div></div>
+    <div class="panel"><div class="tbl-empty">${esc(msg)}</div></div>`; }
+  function spineNote(){ return `<div class="note">⚠️ Booking spine not applied yet: <code>customers</code>/<code>visits</code> tables not found. Showing leads only. Apply <code>db/schema.sql</code> in Supabase to capture full client records.</div>`; }
+
+  // ── detail modal ──────────────────────────────────────────
+  function idOf(o){ return o.id || o.stripe_customer_id || (o.email||'')+'|'+(o.created_at||''); }
+  function findRef(type,id){
+    const pool = type==='customer'?DATA.customers:DATA.leads;
+    return pool.find(o=>idOf(o)===id);
+  }
+  window.openDetail=function(type,id){
+    const o=findRef(type,id); if(!o) return;
+    _openRef={type,id};
+    let html=`<button class="modal-close" onclick="closeDetail()">×</button>`;
+    if(type==='customer'){
+      html+=`<h3>${esc(fullName(o))}</h3><div class="page-sub">Customer</div><dl class="kv">
+        ${kvRow('Email',o.email)}${kvRow('Phone',o.phone)}
+        ${kvRow('Address',[o.address,o.city,o.zip].filter(Boolean).join(', '))}
+        ${kvRow('Access notes',o.access_notes)}
+        ${kvRow('Stripe customer',o.stripe_customer_id)}${kvRow('Created',dtS(o.created_at))}</dl>`;
+      const subs=o.subscriptions||[], vis=o.visits||[];
+      html+=`<div class="det-hd">Bookings (${subs.length})</div>`+(subs.length?subs.map(s=>`<div class="mini"><span class="mt">${esc(s.plan||'plan')}</span> · ${esc(s.load_size||'')} · ${esc(s.frequency||'')} · ${esc(s.pickup_day||'')} · ${money(s.price_cents)} · ${esc(s.status||'')}</div>`).join(''):'<div class="mini">None</div>');
+      const sortedVis=vis.slice().sort((a,b)=>String(b.scheduled_date||'').localeCompare(String(a.scheduled_date||'')));
+      html+=`<div class="det-hd">Jobs (${vis.length})</div>`+(vis.length?sortedVis.slice(0,12).map(visitRow).join(''):'<div class="mini">None scheduled</div>');
+    } else {
+      const known=['service','first_name','last_name','phone','email','zip','address','frequency','quoted_price','notes','utm','source_url','user_agent','created_at'];
+      html+=`<h3>${esc(fullName(o))}</h3><div class="page-sub">${esc(o.service||'lead')}</div><dl class="kv">
+        ${kvRow('Service',o.service)}${kvRow('Phone',o.phone)}${kvRow('Email',o.email)}
+        ${kvRow('ZIP',o.zip)}${kvRow('Address',o.address)}
+        ${kvRow('Frequency',o.frequency)}${kvRow('Quoted price',o.quoted_price)}
+        ${kvRow('Notes',o.notes)}${kvRow('UTM',o.utm)}${kvRow('Source',o.source_url)}${kvRow('Created',dtS(o.created_at))}
+        ${Object.keys(o).filter(k=>!known.includes(k)&&k!=='id').map(k=>kvRow(k,o[k])).join('')}</dl>`;
+    }
+    $('modal-panel').innerHTML=html; $('modal').classList.add('show');
+  };
+  window.closeDetail=function(){ $('modal').classList.remove('show'); _openRef=null; };
+  $('modal-bg').addEventListener('click', closeDetail);
+
+  // ── visit rows + field actions ────────────────────────────
+  function photoKinds(v){ return new Set((v.visit_photos||[]).map(p=>p.kind)); }
+  function visitRow(v){
+    const done = v.status==='completed' || v.status==='canceled';
+    const has  = photoKinds(v);
+    const meta = `${statusDot(v.status||'',visitKind(v.status))}${v.completed_at?' · done '+dtS(v.completed_at):''}`;
+    const started = v.status==='in_progress';
+    let acts='';
+    if(!done){
+      // Before and after photos. The "after" one goes in the job-done email.
+      const shot=(kind,label)=>`<button onclick="uploadPhoto('${v.id}','${kind}')">${has.has(kind)?'✅':'📷'} ${label}</button>`;
+      // Start → stop flow: a scheduled visit shows "Start job" (records started_at);
+      // once in progress the primary button becomes "Mark done" (fires the email).
+      const primary = started
+        ? `<button class="vb-go" onclick="visitAction('${v.id}','complete',${has.has('after')})">✓ Mark done</button>`
+        : `<button class="vb-go" onclick="visitAction('${v.id}','start')">▶ Start job</button>`;
+      acts=`<div class="vacts">
+        ${primary}
+        ${shot('before','Before photo')}
+        ${shot('after','After photo')}
+        <button onclick="visitAction('${v.id}','skip')">Skip</button>
+      </div>`;
+    }
+    return `<div class="mini"><span class="mt">${dateS(v.scheduled_date)}</span> · ${meta}${acts}</div>`;
+  }
+  function apiToken(){ return sessionStorage.getItem(TOKEN_KEY); }
+  async function adminPost(path,body){
+    const res=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':apiToken()},body:JSON.stringify(body)});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||('HTTP '+res.status));
+    return data;
+  }
+  async function refreshAndReopen(){ await load(); if(_openRef) openDetail(_openRef.type,_openRef.id); }
+  window.visitAction=async function(visitId,action,hasAfter){
+    if(action==='skip' && !confirm('Skip this job? Nothing changes in Stripe; it just won’t be done.')) return;
+    if(action==='complete'){
+      const msg = hasAfter
+        ? 'Mark this job done? Sends the customer the “all done” email with your photos and queues the next pickup if they are on a recurring plan.'
+        : 'No after photo on this job.\n\nMark it done anyway? The email will go out without a photo.';
+      if(!confirm(msg)) return;
+    }
+    try{ await adminPost('/api/visit-update',{action,visitId}); await refreshAndReopen(); }
+    catch(e){ alert('Action failed: '+e.message); }
+  };
+  window.uploadPhoto=function(visitId,kind){
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+    inp.onchange=async()=>{ const file=inp.files&&inp.files[0]; if(!file) return;
+      try{
+        const blob=await compressImage(file);
+        const sign=await adminPost('/api/visit-photo',{action:'sign-upload',visitId,kind});
+        const put=await fetch(sign.uploadUrl,{method:'PUT',headers:{'Content-Type':'image/jpeg'},body:blob});
+        if(!put.ok) throw new Error('upload failed ('+put.status+')');
+        await adminPost('/api/visit-photo',{action:'confirm',visitId,kind,path:sign.path});
+        await refreshAndReopen();
+      }catch(e){ alert('Photo upload failed: '+e.message); }
+    };
+    inp.click();
+  };
+  // Downscale + JPEG-compress in the browser so phone photos stay small.
+  function compressImage(file){
+    return new Promise((resolve,reject)=>{
+      const img=new Image(); const url=URL.createObjectURL(file);
+      img.onload=()=>{ URL.revokeObjectURL(url);
+        const max=1600; let w=img.naturalWidth, h=img.naturalHeight;
+        if(w>max||h>max){ const r=Math.min(max/w,max/h); w=Math.round(w*r); h=Math.round(h*r); }
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        c.toBlob(b=>b?resolve(b):reject(new Error('compress failed')),'image/jpeg',0.82);
+      };
+      img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('could not read image')); };
+      img.src=url;
+    });
+  }
+
+  // ── router / render ───────────────────────────────────────
+  function renderView(name, keepFilter){
+    currentView=name;
+    if(!keepFilter) _filter='';
+    $('view').innerHTML = (views[name]||views.home)();
+    document.querySelectorAll('.nav-item[data-view]').forEach(n=>n.classList.toggle('active', n.dataset.view===name));
+  }
+
+  // ── data load ─────────────────────────────────────────────
+  async function load(){
+    const token=sessionStorage.getItem(TOKEN_KEY); if(!token) return showLogin();
+    $('loading').style.display='block'; $('view').innerHTML='';
+    try{
+      const res=await fetch('/api/admin-data',{headers:{'x-admin-token':token}});
+      if(res.status===401){ sessionStorage.removeItem(TOKEN_KEY); return showLogin('Invalid token.'); }
+      if(!res.ok){ const e=await res.json().catch(()=>({})); throw new Error(e.error||('HTTP '+res.status)); }
+      DATA=await res.json();
+      $('who').textContent = (DATA.customers.length+DATA.leads.length)+' records';
+      $('loading').style.display='none';
+      renderView(currentView);
+    }catch(err){
+      $('loading').style.display='none';
+      $('view').innerHTML=`<div class="note">Couldn't load data: ${esc(err.message)}.<br>Set <code>SUPABASE_SERVICE_ROLE_KEY</code> and <code>ADMIN_DASHBOARD_TOKEN</code> in Vercel, then Refresh.</div>`;
+    }
+  }
+
+  // ── login / events ────────────────────────────────────────
+  function showLogin(err){ $('loading').style.display='none'; $('login').classList.remove('hide'); $('login-err').textContent=err||''; $('token-in').focus(); }
+  function doLogin(){ const t=$('token-in').value.trim(); if(!t) return; sessionStorage.setItem(TOKEN_KEY,t); $('login').classList.add('hide'); $('token-in').value=''; load(); }
+  $('login-btn').addEventListener('click',doLogin);
+  $('token-in').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  $('refresh-btn').addEventListener('click',load);
+  $('logout-btn').addEventListener('click',()=>{sessionStorage.removeItem(TOKEN_KEY);showLogin();});
+
+  // nav: group toggles + view switches
+  document.querySelectorAll('[data-toggle]').forEach(el=>el.addEventListener('click',()=>$(el.dataset.toggle).classList.toggle('open')));
+  document.querySelectorAll('.nav-item[data-view]').forEach(el=>el.addEventListener('click',()=>{
+    renderView(el.dataset.view); $('sidebar').classList.remove('open'); $('scrim').classList.remove('show'); window.scrollTo({top:0});
+  }));
+  // mobile drawer
+  $('hamb').addEventListener('click',()=>{$('sidebar').classList.toggle('open');$('scrim').classList.toggle('show');});
+  $('scrim').addEventListener('click',()=>{$('sidebar').classList.remove('open');$('scrim').classList.remove('show');});
+
+  // boot
+  if(sessionStorage.getItem(TOKEN_KEY)){ $('login').classList.add('hide'); load(); } else showLogin();
+</script>
+</body>
+</html>

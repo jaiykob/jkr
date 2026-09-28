@@ -112,7 +112,7 @@ create table if not exists public.visits (
   -- field timestamps (mark-done flow)
   started_at        timestamptz,           -- set when 'before' photo is taken
   completed_at      timestamptz,           -- set when 'after' photo is taken + sanitized
-  client_notified_at timestamptz,          -- when the "yard secured" photo went out
+  client_notified_at timestamptz,          -- when the "all done" email went out
   reminder_sent_at  timestamptz,           -- day-before visitReminder email (dedupe)
   operator_notes    text,
   created_at        timestamptz not null default now(),

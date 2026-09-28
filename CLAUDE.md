@@ -57,14 +57,34 @@ Only live mode (`sk_live`) is gated. Emergency brake: flip #1 to `false`.
 - Founding-member offer (server half). The checkout math is still there,
   dormant (`foundingOffer` stays null).
 - Gresham/Portland shared-ZIP street lookup (`service-address.js`).
-- $0 free-booking path, admin dashboard, visit photos, Spanish build,
+- $0 free-booking path, commercial intake form, Spanish build,
   generated header/footer, city pages, blog, sitemap.
+
+## Admin dashboard: 
+Copied from Scoops Co.'s : clients and leads, schedule, bookings,
+and job actions (start, before and after photos, mark done, skip). Marking a
+job done emails the customer the "all done" note with the photos and queues
+the next recurring pickup. APIs: , ,
+.
+
+- **Auth is the  env var**, sent in the
+   header only. Never add a  URL form (it leaks into
+  history, Referer and logs; Unknown command: "test"
+
+
+Did you mean this?
+  npm test # Test a package
+To see a list of supported npm commands, run:
+  npm help checks it is refused).
+- The file name keeps it out of sight; the token is what keeps it locked.
+- Photos need a PRIVATE Supabase storage bucket named .
 
 ## Setup before launch
 
 Env vars: `STRIPE_SECRET_KEY`, `STRIPE_PRODUCT_ID`, `STRIPE_WEBHOOK_SECRET`,
 `BOOKINGS_OPEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
-`EMAIL_FROM`, `OPS_WEBHOOK_URL` (Discord), `SITE_ORIGIN`, `CRON_SECRET`.
+`EMAIL_FROM`, `OPS_WEBHOOK_URL` (Discord), `SITE_ORIGIN`, `CRON_SECRET`,
+`ADMIN_DASHBOARD_TOKEN` (a long random string).
 Apply `db/schema.sql` in Supabase (it includes the `leads` table). Put the
 publishable key in `schedule-junk.html` and the anon key in `js/leads.js`.
 The Stripe webhook URL must use the host that does NOT redirect.
