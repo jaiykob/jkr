@@ -1,0 +1,11 @@
+{
+  "name": "junk-removal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Junk removal site skeleton, built from the Scoops Co. stack",
+  "engines": { "node": ">=18.0.0" },
+  "scripts": {
+    "test": "node scripts/check-meta.mjs"
+  }
+}

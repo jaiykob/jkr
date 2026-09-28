@@ -1,0 +1,44 @@
+# ── Secrets ───────────────────────────────────────────────────────────────
+# The repo had NO .gitignore until 2026-07-13. Every key below is one
+# `git add -A` away from being public forever. Do not remove these lines.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets.json
+service-account*.json
+
+# Vercel pulls prod env vars into this directory with `vercel env pull`
+.vercel
+
+# ── Dependencies / build ──────────────────────────────────────────────────
+node_modules/
+.next/
+dist/
+build/
+
+# ── Logs ──────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# ── OS / editor cruft ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+.vscode/
+
+# ── Local Claude Code state (may contain pasted tokens in allowlisted cmds) ─
+.claude/settings.local.json
+
+# Local-only launch prober tokens (never commit)
+.launch-status.local.json
+.env*
+
+# ── Claude Code skill scaffolding (installed locally, not project source) ──
+.agents/
+.claude/skills/
+skills-lock.json
