@@ -230,7 +230,7 @@
 </main>
 
 <script>
-  // Populate the booking summary from sessionStorage (set by schedule-junk.html before redirect).
+  // Populate the booking summary from sessionStorage (set by checkout.html before redirect).
   (function renderSummary() {
     let raw;
     try { raw = sessionStorage.getItem('bookingSummary'); } catch (e) { return; }
@@ -238,7 +238,7 @@
     let s;
     try { s = JSON.parse(raw); } catch (e) { return; }
 
-    // Two decimals, always — same rule as fmt() in schedule-junk.html. Prices
+    // Two decimals, always — same rule as fmt() in checkout.html. Prices
     // carry cents as of 2026-08-13, and toFixed(0) here printed "Charged Today
     // $24" against a $24.13 charge on the FINAL confirmation screen. The
     // checkout page was fixed at the reprice; this copy was missed until
@@ -252,7 +252,7 @@
       { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
     ));
     const rows = [];
-    // `cadence` is resolved by schedule-junk.html, which knows the frequency.
+    // `cadence` is resolved by checkout.html, which knows the frequency.
     // Fall back to the bare weekday for a summary saved before that field
     // existed — never re-guess the cadence, which is how this row spent its
     // life telling weekly customers they were on every-other-week service.

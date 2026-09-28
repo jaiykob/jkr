@@ -8,10 +8,10 @@
     <meta property="og:title" content="Get Your Junk Removal Price | Brand Name" />
     <meta property="og:description" content="Choose how much you need hauled and see your exact junk removal price in about a minute. No card and no phone call needed to get a quote." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://www.example.com/onboarding/junk.html" />
+    <meta property="og:url" content="https://www.example.com/book/quote.html" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="Brand Name" />
-    <link rel="canonical" href="https://www.example.com/onboarding/junk.html" />
+    <link rel="canonical" href="https://www.example.com/book/quote.html" />
     <!-- Prices here are GENERATED from pricing.config.mjs by `npm run build:pricing`
          and verified by `npm run check:pricing`. Never hand-edit inside the
          markers — and never add a second offer list outside them, which is how
@@ -21,9 +21,9 @@
 {
   "@context": "https://schema.org",
   "@type": "Service",
-  "@id": "https://www.example.com/onboarding/junk.html#service",
+  "@id": "https://www.example.com/book/quote.html#service",
   "serviceType": "Junk removal",
-  "url": "https://www.example.com/onboarding/junk.html",
+  "url": "https://www.example.com/book/quote.html",
   "provider": {
     "@type": "LocalBusiness",
     "@id": "https://www.example.com/#business",
@@ -121,7 +121,7 @@
       "@type": "BreadcrumbList",
       "itemListElement": [
         { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.example.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Get a quote", "item": "https://www.example.com/onboarding/junk.html" }
+        { "@type": "ListItem", "position": 2, "name": "Get a quote", "item": "https://www.example.com/book/quote.html" }
       ]
     }
     </script>
@@ -457,7 +457,7 @@
 
     // ── PRICE MATRIX — GENERATED. Edit the table in pricing.config.mjs, then
     // run `npm run build:pricing`. A hand-edit here that misses the server copy
-    // in api/create-subscription.js makes every checkout 400 on "Quote is out
+    // in api/create-booking.js makes every checkout 400 on "Quote is out
     // of date", because the server re-prices the booking and compares.
     // rows: load sizes, smallest first · cols: FREQ_LABELS
     // INTEGER CENTS, per visit.
@@ -480,7 +480,7 @@
 (function () {
     'use strict';
 
-    // Same key checkout reads (schedule-junk.html). Name, phone, email and the
+    // Same key checkout reads (checkout.html). Name, phone, email and the
     // address travel here, never in a URL: a URL with someone's phone number in
     // it ends up in history, Referer headers and analytics.
     const CONTACT_KEY = 'quoteContact';
@@ -708,7 +708,7 @@
         });
         // Give the lead insert a beat to leave before the page unloads; the
         // client buffers to localStorage if it doesn't make it.
-        setTimeout(() => { location.href = `schedule-junk.html?${p}`; }, 250);
+        setTimeout(() => { location.href = `checkout.html?${p}`; }, 250);
     });
 
     // ── RESTORE — from a homepage link (?load=&freq=), from "Edit" on the quote

@@ -5,9 +5,9 @@
  * Same job as Scoops Co.'s scripts/build-pricing.mjs. Targets, each delimited
  * by BUILD: markers in its own file:
  *
- *   api/create-subscription.js     server-prices, server-zips   (authoritative)
- *   onboarding/junk.html           quote-jsonld, quote-zips, quote-prices
- *   onboarding/schedule-junk.html  checkout-billing, checkout-zips
+ *   api/create-booking.js     server-prices, server-zips   (authoritative)
+ *   book/quote.html           quote-jsonld, quote-zips, quote-prices
+ *   book/checkout.html  checkout-billing, checkout-zips
  *   index.html                     home-prices
  */
 import fs from 'node:fs';
@@ -73,9 +73,9 @@ const all = PRICES.flat();
 const jsonld = {
   '@context': 'https://schema.org',
   '@type': 'Service',
-  '@id': 'https://www.example.com/onboarding/junk.html#service',
+  '@id': 'https://www.example.com/book/quote.html#service',
   serviceType: 'Junk removal',
-  url: 'https://www.example.com/onboarding/junk.html',
+  url: 'https://www.example.com/book/quote.html',
   provider: { '@type': 'LocalBusiness', '@id': 'https://www.example.com/#business', name: 'Brand Name' },
   areaServed: SERVICE_AREA.map((a) => ({ '@type': 'City', name: a.city })),
   offers: {
@@ -127,16 +127,16 @@ function splice(src, name, body, comment, file) {
 }
 
 const TARGETS = [
-  { file: 'api/create-subscription.js', blocks: [
+  { file: 'api/create-booking.js', blocks: [
     { name: 'server-prices', body: serverPrices, comment: true },
     { name: 'server-zips',   body: serverZips,   comment: true },
   ] },
-  { file: 'onboarding/junk.html', blocks: [
+  { file: 'book/quote.html', blocks: [
     { name: 'quote-jsonld', body: quoteJsonld, comment: false },
     { name: 'quote-zips',   body: quoteZips,   comment: true },
     { name: 'quote-prices', body: quotePrices, comment: true },
   ] },
-  { file: 'onboarding/schedule-junk.html', blocks: [
+  { file: 'book/checkout.html', blocks: [
     { name: 'checkout-billing', body: checkoutBilling, comment: true },
     { name: 'checkout-zips',    body: checkoutZips,    comment: true },
   ] },

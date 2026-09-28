@@ -1,5 +1,5 @@
 /**
- * Vercel Serverless Function — create-subscription
+ * Vercel Serverless Function — create-booking
  * Carried over from Scoops Co. (2026-09-27), same structure.
  *
  * Takes a quote from the junk flow and creates one of:
@@ -23,7 +23,7 @@ const { DAILY_CAP } = require('./_lib/schedule');
 
 // ── Server-side pricing. GENERATED — edit pricing.config.mjs, run `npm run build:pricing`.
 // The server recomputes every booking from this matrix and rejects a quote that
-// doesn't match it, so a hand-edit here that misses onboarding/junk.html 400s
+// doesn't match it, so a hand-edit here that misses book/quote.html 400s
 // every checkout. rows: load sizes, smallest first · cols: see PLAN_KEYS.
 // INTEGER CENTS, per visit, which is also what lands on the card each period.
 /* BUILD:server-prices */
@@ -52,7 +52,7 @@ const COUPONS = {};
 // Quarterly billing = 13 weeks of service charged up front, 10% off, billed
 // every 3 months whatever the plan's own cadence is. Priced off the plan's
 // WEEKLY-EQUIVALENT rate, not off its period price. Mirrored in
-// onboarding/schedule-junk.html and pricing.config.mjs: keep the three in step.
+// book/checkout.html and pricing.config.mjs: keep the three in step.
 const WEEKS_PER_QUARTER = 13;
 const QUARTERLY_INTERVAL = { interval: 'month', interval_count: 3 };
 
@@ -107,7 +107,7 @@ module.exports = async (req, res) => {
   // Three gates must all be open to take a live booking, same as Scoops Co.:
   //   1. BOOKINGS_OPEN_SERVER below (in code, deploys from `main`)
   //   2. BOOKINGS_OPEN=true in Vercel env vars
-  //   3. BOOKINGS_OPEN_CLIENT in onboarding/schedule-junk.html (UI only)
+  //   3. BOOKINGS_OPEN_CLIENT in book/checkout.html (UI only)
   // Only LIVE mode (sk_live) is gated, so test-mode runs keep working.
   // EMERGENCY BRAKE: flip this to false and merge. It stands alone.
   const BOOKINGS_OPEN_SERVER = false;   // CLOSED until launch
@@ -188,7 +188,7 @@ module.exports = async (req, res) => {
       if (counts && (counts[pickupWeekday] || 0) >= DAILY_CAP) {
         return res.status(409).json({ error: `${pickupWeekday}s are fully booked. Please choose another day.` });
       }
-    } catch (e) { console.warn('[create-subscription] capacity check skipped:', e.message); }
+    } catch (e) { console.warn('[create-booking] capacity check skipped:', e.message); }
   }
 
   // Set after the client's metadata is spread, so a page can't overwrite them.

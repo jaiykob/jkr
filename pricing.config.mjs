@@ -12,9 +12,9 @@
  * regenerates, in place, everything between BUILD: markers in:
  *
  *   index.html                      the crawlable price list
- *   onboarding/junk.html            the estimator's PRICES matrix, ZIP gate, JSON-LD offers
- *   onboarding/schedule-junk.html   the checkout billing table and ZIP gate
- *   api/create-subscription.js      the server PRICES matrix and ZIP gate (authoritative)
+ *   book/quote.html            the estimator's PRICES matrix, ZIP gate, JSON-LD offers
+ *   book/checkout.html   the checkout billing table and ZIP gate
+ *   api/create-booking.js      the server PRICES matrix and ZIP gate (authoritative)
  *
  * WHY THIS MATTERS: the server recomputes each booking's price from its own
  * matrix and rejects any quote that doesn't match ("Quote is out of date").

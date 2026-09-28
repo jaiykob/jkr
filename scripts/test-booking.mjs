@@ -1,4 +1,4 @@
-// Exercises api/create-subscription.js against a fake Stripe: validation,
+// Exercises api/create-booking.js against a fake Stripe: validation,
 // the server-side price cross-check, the ZIP gate, the live-mode booking gate,
 // and both paths (one-time PaymentIntent, recurring subscription). No network.
 import { createRequire } from 'node:module';
@@ -26,7 +26,7 @@ const load = Module._load;
 Module._load = function (req, ...rest) { return req === 'stripe' ? FakeStripe : load.call(this, req, ...rest); };
 // No Supabase configured: db calls must fail open.
 delete process.env.SUPABASE_URL;
-const handler = require(path.join(ROOT, 'api/create-subscription.js'));
+const handler = require(path.join(ROOT, 'api/create-booking.js'));
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL: ' + m); } };
