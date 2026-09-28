@@ -112,7 +112,7 @@ const checkoutZips = [
 
 /* ── homepage ─────────────────────────────────────────────────────────── */
 const homePrices = LOAD_OPTIONS.map((o, r) =>
-  `      <div class="card"><h3>${o.label}</h3><p class="pc-price">${fmt(PRICES[r][ONE_TIME_COL])}</p><p>${o.note}</p></div>`,
+  `      <div class="card"><h3>${o.label}</h3><p class="pc-price">${fmt(PRICES[r][ONE_TIME_COL])}</p></div>`,
 ).join('\n');
 
 /* ── splice ───────────────────────────────────────────────────────────── */

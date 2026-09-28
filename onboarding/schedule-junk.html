@@ -246,23 +246,14 @@
 
   <!-- PRE-LAUNCH NOTICE (shown until we open; hidden automatically when bookings open) -->
   <div id="prelaunch-banner" style="display:none;margin:0 0 22px;padding:18px 22px;background:#fff7e8;border:1.5px solid #e8c97a;border-radius:12px;text-align:center;">
-    <p style="margin:0 0 6px;font-weight:700;color:#04402A;font-size:15px;">Your spot is reserved.</p>
-    <!-- "soon" is the date-free default. If js/maintenance-banner.js names a
-         reopen date, the script below swaps this text for it — this literal is
-         never the place to write a date. -->
-    <p style="margin:0;color:#4A4A3C;font-size:13px;line-height:1.5;">We open for online booking <strong id="reopen-date">soon</strong>, and your details are saved. No card needed now. We'll text you to set a time.</p>
+    <p style="margin:0;font-weight:700;color:#04402A;font-size:15px;">Online booking opens soon.</p>
   </div>
 
   <!-- STEP 1 — YOUR INSTANT QUOTE -->
   <section class="step-panel active" id="step-quote" aria-labelledby="q-title">
-    <h1 class="q-title" id="q-title" tabindex="-1">Thanks for choosing Brand Name<span id="hi-name"></span></h1>
-    <div class="intro">
-      <p>Here's your instant quote. No waiting, no surprises.</p>
-      <p>If the price works for you, pick a day and click <strong>Continue to payment</strong>.</p>
-      <p>Before the job we'll reach out to confirm the details and an arrival window.</p>
-    </div>
+    <h1 class="q-title" id="q-title" tabindex="-1">Your Quote<span id="hi-name" hidden></span></h1>
 
-    <div class="qhead"><h2>Your instant quote</h2><span class="pill">Summary</span></div>
+    
 
     <div class="card sum-card">
       <div class="sum-top">
@@ -278,7 +269,7 @@
         <span class="a-icon"><svg aria-hidden="true"><use href="#i-tag"/></svg></span>
         <span class="a-meta">
           <span class="a-name">Quarterly billing</span>
-          <span class="a-desc" id="quarterly-desc">Pay every 3 months and save 10% on every visit. Still no contract.</span>
+          <span class="a-desc" id="quarterly-desc">10% off</span>
         </span>
         <span class="switch"><input type="checkbox" role="switch" id="quarterly" aria-describedby="quarterly-desc"><span aria-hidden="true" id="quarterly-state">Off</span></span>
       </label>
@@ -292,9 +283,8 @@
     </div>
 
     <div class="card day-card-wrap">
-      <h2 id="h-day">Preferred day</h2>
-      <p class="day-sub" id="day-sub">We haul Monday through Friday. Pick a day and we'll keep coming back on it automatically.</p>
-      <div class="day-grid" role="group" aria-labelledby="h-day" aria-describedby="day-sub">
+      <h2 id="h-day">Day</h2>
+      <div class="day-grid" role="group" aria-labelledby="h-day">
         <button type="button" class="day-card" data-day="Monday" aria-pressed="false"><div class="day-name">Monday</div><div class="day-note">Open</div></button>
         <button type="button" class="day-card" data-day="Tuesday" aria-pressed="false"><div class="day-name">Tuesday</div><div class="day-note">Open</div></button>
         <button type="button" class="day-card" data-day="Wednesday" aria-pressed="false"><div class="day-name">Wednesday</div><div class="day-note">Open</div></button>
@@ -305,36 +295,30 @@
     </div>
 
     <button type="button" class="btn-primary" id="day-next">Continue to payment</button>
-    <p class="privacy"><svg aria-hidden="true"><use href="#i-lock"/></svg>Secure checkout powered by Stripe. Nothing is charged until you confirm on the next screen.</p>
     <a class="edit-link" href="junk.html?edit=plan">← Change load or plan</a>
   </section>
 
   <!-- STEP 2 — PAYMENT -->
   <section class="step-panel" id="step-confirm" aria-labelledby="pay-title">
     <h1 class="pay-title" id="pay-title" tabindex="-1">Payment</h1>
-    <p class="pay-sub">Check it over, choose how you'd like to pay, and you're on the route.</p>
     <div class="card" style="margin-top:18px;">
       <div class="confirm-rows" id="confirm-rows"></div>
-    </div>
-    <div class="confirm-notice">
-      Your first payment (shown above) is charged today to reserve your spot. Cancel anytime; recurring billing then continues on the same cycle.
-      <br><br><strong>What happens next:</strong> we'll text or call you from (000) 000-0000 within one business day to confirm the job.
     </div>
 
     <div class="consent-block">
       <label class="consent-row">
         <input type="checkbox" id="consent-terms" />
-        <span>I agree to the <a href="../terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="../privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+        <span>Terms. TODO: link the terms.</span>
       </label>
       <label class="consent-row">
         <input type="checkbox" id="consent-liability" />
-        <span>I confirm the items are reachable on the day, and nothing in the load is hazardous (paint, chemicals, fuel, asbestos). TODO: match the terms.</span>
+        <span>Load confirmation. TODO</span>
       </label>
       <!-- Must stay visible on this page: A2P 10DLC reviewers load the checkout
            to verify this opt-in. Optional, never a condition of booking. -->
       <label class="consent-row">
         <input type="checkbox" id="consent-sms" />
-        <span>(Optional) I consent to receive transactional SMS from Brand Name at the phone number above (booking confirmations, day-before reminders, "job done" texts). Up to ~6 msgs/month. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. Not required to book.</span>
+        <span>(Optional) Text messages. TODO: carrier-required wording before SMS goes live.</span>
       </label>
     </div>
 
@@ -368,8 +352,8 @@
   <!-- SUCCESS -->
   <div class="success-card" id="success-card" role="status">
     <div class="success-icon" aria-hidden="true">✓</div>
-    <h2 class="success-title">You're on the <em>route.</em></h2>
-    <p class="success-msg" id="success-msg">We'll text you before your first visit. After that, we'll be back on schedule, no reminders needed.</p>
+    <h2 class="success-title">Booked</h2>
+    <p class="success-msg" id="success-msg"></p>
     <div class="success-summary" id="success-summary"></div>
     <a href="../index.html" class="btn-primary" style="max-width:260px;margin:0 auto;text-decoration:none;">Back to Home</a>
   </div>
@@ -377,7 +361,7 @@
 </main>
 
 <footer>
-  © Brand Name · <a href="../faq.html">FAQ</a> · <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a> · <a href="tel:+10000000000">(000) 000-0000</a>
+  © Brand Name · <a href="tel:+10000000000">(000) 000-0000</a>
 </footer>
 <script type="module">
   // Module: deferred until the document and Stripe.js (deferred) are ready.
@@ -824,7 +808,6 @@
       ['Load', loadLabel],
       ...(custItems ? [['Items', custItems]] : []),
       ['Billing', isOneTime ? 'Single charge' : quarterly ? 'Quarterly (save 10%)' : 'Per visit'],
-      ['Included', 'Loading, hauling and dump fees'],
     ];
     document.getElementById('sum-rows').innerHTML = rows
       .map(([k, v]) => `<div><dt>${k}</dt><dd>${escText(v)}</dd></div>`).join('');
@@ -841,8 +824,7 @@
     document.getElementById('hi-name').textContent = first ? `${first}!` : '!';
     // A one-time haul is a single visit on the day they pick, not a standing slot.
     if (isOneTime) {
-      document.getElementById('h-day').textContent = 'Preferred day';
-      document.getElementById('day-sub').textContent = 'We haul Monday through Friday. Pick the day that suits you and we\'ll confirm the arrival window.';
+      document.getElementById('h-day').textContent = 'Day';
     }
   }
   renderQuote();
@@ -1170,14 +1152,6 @@
         }));
       } catch (e) { /* storage is best-effort */ }
 
-      // Same cadence vocabulary as everywhere else on the page, keyed off the
-      // generated table rather than column literals.
-      const cadenceMsg = FREQ_WEEKS[fi] === 1 ? `every ${selectedDay}`
-                       : FREQ_WEEKS[fi] === 2 ? `every other ${selectedDay}`
-                       : `one ${selectedDay} a month`;
-      document.getElementById('success-msg').textContent = isOneTime
-        ? `We'll text you to confirm the arrival window on ${selectedDay}. One and done, no subscription.`
-        : `We'll text you before your first visit. After that, we'll see you ${cadenceMsg}, no reminders needed.`;
       // Values include free-text form input (address, name). Self-XSS at worst
       // — it's the customer's own typing on their own screen — but escaped so a
       // stray `<` in an address can't break the markup. Mirrors thanks.html.
@@ -1227,8 +1201,8 @@
       // The card field is directly above this button now, so the message points
       // at it rather than sending anyone back two steps.
       bookErr.textContent = walletAvailable
-        ? 'Finish entering your card above, or tap Apple Pay / Google Pay instead.'
-        : 'Please finish entering your card details above.';
+        ? 'Card incomplete.'
+        : 'Card incomplete.';
       return;
     }
     bookErr.textContent = '';

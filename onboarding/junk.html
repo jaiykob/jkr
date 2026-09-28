@@ -341,10 +341,9 @@
       <!-- STEP 1 — LOAD SIZE -->
       <section class="step is-active" data-step="0" aria-labelledby="h-load">
         <div class="head">
-          <h2 id="h-load" tabindex="-1">How much do you need hauled?</h2>
+          <h2 id="h-load" tabindex="-1">Load Size</h2>
           <span class="pill">Step 1 of 3</span>
         </div>
-        <p class="sub">Pick how much of a truck it would fill.</p>
         <fieldset>
           <legend class="sr-only">Load size</legend>
           <div class="selected" aria-hidden="true"><span>Selected</span><output id="out-load">—</output></div>
@@ -356,16 +355,15 @@
         <!-- The price table stops at a full truck on purpose: bigger jobs are
              quoted by hand. Say so here instead of letting them build a quote
              the server will refuse. -->
-        <p class="note" id="more-note" hidden>For more than a full truck we quote by hand, so the price fits the job. Call or text <a href="tel:+10000000000">(000) 000-0000</a> and you'll have a number the same day.</p>
+        <p class="note" id="more-note" hidden>Call for a price: <a href="tel:+10000000000">(000) 000-0000</a></p>
       </section>
 
       <!-- STEP 2 — ONE-TIME OR RECURRING -->
       <section class="step" data-step="1" aria-labelledby="h-freq">
         <div class="head">
-          <h2 id="h-freq" tabindex="-1">Is this a one-time job?</h2>
+          <h2 id="h-freq" tabindex="-1">How Often</h2>
           <span class="pill">Step 2 of 3</span>
         </div>
-        <p class="sub">Most jobs are a single haul. Landlords and businesses can book a standing pickup.</p>
         <fieldset>
           <legend class="sr-only">One-time or recurring</legend>
           <div class="selected" aria-hidden="true"><span>Selected</span><output id="out-freq">—</output></div>
@@ -373,12 +371,12 @@
                FREQ_LABELS at load, so a change to the columns can't leave a
                tile quoting the wrong one. TODO: one tile per column. -->
           <div class="grid two" id="freq-grid">
-            <label class="tile"><input type="radio" name="freq" value="0"><span class="badge">Most popular</span><span class="check"><svg><use href="#i-check"/></svg></span>
+            <label class="tile"><input type="radio" name="freq" value="0"><span class="check"><svg><use href="#i-check"/></svg></span>
               <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#i-truck"/></svg>
-              <span class="t-label" data-freq-label>One-time haul</span><span class="t-note">Charged once</span></label>
+              <span class="t-label" data-freq-label>One-time haul</span></label>
             <label class="tile"><input type="radio" name="freq" value="1"><span class="check"><svg><use href="#i-check"/></svg></span>
               <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#i-cal"/><circle cx="16" cy="20" r="2.2" fill="currentColor"/></svg>
-              <span class="t-label" data-freq-label>Monthly pickup</span><span class="t-note">Same day every month</span></label>
+              <span class="t-label" data-freq-label>Monthly pickup</span></label>
           </div>
         </fieldset>
       </section>
@@ -386,28 +384,27 @@
       <!-- STEP 3 — CONTACT -->
       <section class="step" data-step="2" aria-labelledby="h-contact">
         <div class="head">
-          <h2 id="h-contact" tabindex="-1">Contact information</h2>
+          <h2 id="h-contact" tabindex="-1">Contact</h2>
           <span class="pill">Step 3 of 3</span>
         </div>
-        <p class="sub">Start with your ZIP so we can confirm we serve it. Your quote is on the next screen.</p>
         <div class="fields">
           <!-- ZIP first: a yes or no on coverage before anyone types their name. -->
           <div class="field zip-field">
             <label for="f-zip">Service ZIP code</label>
             <input id="f-zip" name="zip" type="text" autocomplete="postal-code" inputmode="numeric" maxlength="5" placeholder="00000" aria-describedby="e-zip h-zip">
-            <p class="hint" id="h-zip" aria-live="polite">We'll tell you right away if we serve it.</p>
+            <p class="hint" id="h-zip" aria-live="polite"></p>
             <p class="error" id="e-zip"></p>
           </div>
           <!-- Out of area is a real visitor with a real job: offer the waitlist
                instead of a dead end. Same leads table, marked in notes. -->
           <div class="waitlist" id="waitlist" hidden>
-            <p>We're not there yet. TODO: list the cities you serve. Want a heads-up when we expand?</p>
+            <p>Outside our area.</p>
             <div class="wl-row">
               <label class="sr-only" for="wl-email">Email for the waitlist</label>
               <input id="wl-email" type="email" autocomplete="email" placeholder="you@example.com">
               <button type="button" id="wl-btn">Notify me</button>
             </div>
-            <p class="wl-ok" id="wl-ok" hidden>You're on the list. We'll email you when we reach your area.</p>
+            <p class="wl-ok" id="wl-ok" hidden>Added.</p>
           </div>
           <div class="field">
             <label for="f-name">Full name</label>
@@ -434,9 +431,8 @@
             <input id="f-items" name="items" type="text" maxlength="500" placeholder="A couch, two mattresses, some boxes">
           </div>
         </div>
-        <div class="inlinebar"><span>Need to update your selections?</span><button type="button" id="edit-btn">Edit</button></div>
+        <div class="inlinebar"><span>Selections</span><button type="button" id="edit-btn">Edit</button></div>
         <button type="submit" class="btn btn-primary btn-block" id="view-quote">View quote</button>
-        <p class="privacy"><svg aria-hidden="true"><use href="#i-lock"/></svg>No payment on this step. Secure checkout powered by Stripe.</p>
       </section>
 
       <div class="nav" id="nav">
@@ -445,14 +441,6 @@
       </div>
       <p class="error" id="e-step" role="alert" style="text-align:center;margin-top:10px;color:var(--err);font-weight:600;"></p>
     </form>
-
-    <!-- TODO: only claims that are true. -->
-    <ul class="trust">
-      <li><svg aria-hidden="true"><use href="#i-check"/></svg>Price before we come</li>
-      <li><svg aria-hidden="true"><use href="#i-check"/></svg>We do the lifting</li>
-      <li><svg aria-hidden="true"><use href="#i-check"/></svg>Dump fees included</li>
-      <li><svg aria-hidden="true"><use href="#i-check"/></svg>Local</li>
-    </ul>
   </div>
 </main>
 
@@ -509,7 +497,7 @@
     const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     $('load-grid').innerHTML = LOAD_LABELS.concat('More than a truck').map((label, i) => `
             <label class="tile"><input type="radio" name="load" value="${i}"><span class="check"><svg><use href="#i-check"/></svg></span>
-              <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#${i === MORE ? 'i-truck' : 'i-box'}"/></svg><span class="t-label">${esc(label)}</span><span class="t-note">${esc(i === MORE ? 'Quoted by hand' : LOAD_NOTES[i])}</span></label>`).join('');
+              <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#${i === MORE ? 'i-truck' : 'i-box'}"/></svg><span class="t-label">${esc(label)}</span></label>`).join('');
 
     const steps = Array.from(document.querySelectorAll('[data-step]'));
     const heads = steps.map(s => s.querySelector('h2'));
