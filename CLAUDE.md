@@ -60,7 +60,7 @@ Only live mode (`sk_live`) is gated. Emergency brake: flip #1 to `false`.
 - $0 free-booking path, commercial intake form, Spanish build,
   generated header/footer, city pages, blog, sitemap.
 
-## Admin dashboard: `jkr.html`
+## Admin dashboard: `jkr/index.html` (served at `/jkr/`)
 
 Copied from Scoops Co.'s `admin.html`: clients and leads, schedule, bookings,
 and job actions (start, before and after photos, mark done, skip). Marking a

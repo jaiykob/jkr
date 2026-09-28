@@ -49,7 +49,20 @@
       ]
     },
     {
-      "source": "/jkr.html",
+      "source": "/jkr",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/jkr/:path*",
       "headers": [
         {
           "key": "Cache-Control",
