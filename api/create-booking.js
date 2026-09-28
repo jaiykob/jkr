@@ -65,7 +65,7 @@ function quarterCents(perPeriodCents, col) {
 // The authoritative service-area gate. GENERATED from SERVICE_AREA in
 // pricing.config.mjs.
 /* BUILD:server-zips */
-const VALID_ZIPS = new Set(['97030','97080','97060','97024']);
+const VALID_ZIPS = new Set(['97030','97080','97060','97086','97024','97009','97089']);
 /* /BUILD:server-zips */
 
 /**
