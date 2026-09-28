@@ -60,24 +60,19 @@ Only live mode (`sk_live`) is gated. Emergency brake: flip #1 to `false`.
 - $0 free-booking path, commercial intake form, Spanish build,
   generated header/footer, city pages, blog, sitemap.
 
-## Admin dashboard: 
-Copied from Scoops Co.'s : clients and leads, schedule, bookings,
+## Admin dashboard: `jkr.html`
+
+Copied from Scoops Co.'s `admin.html`: clients and leads, schedule, bookings,
 and job actions (start, before and after photos, mark done, skip). Marking a
 job done emails the customer the "all done" note with the photos and queues
-the next recurring pickup. APIs: , ,
-.
+the next recurring pickup. APIs: `/api/admin-data`, `/api/visit-update`,
+`/api/visit-photo`. Every Discord booking alert links to it.
 
-- **Auth is the  env var**, sent in the
-   header only. Never add a  URL form (it leaks into
-  history, Referer and logs; Unknown command: "test"
-
-
-Did you mean this?
-  npm test # Test a package
-To see a list of supported npm commands, run:
-  npm help checks it is refused).
+- **Auth is the `ADMIN_DASHBOARD_TOKEN` env var**, sent in the
+  `x-admin-token` header only. Never add a `?token=` URL form (it leaks into
+  history, Referer and logs; `npm test` checks it is refused).
 - The file name keeps it out of sight; the token is what keeps it locked.
-- Photos need a PRIVATE Supabase storage bucket named .
+- Photos need a PRIVATE Supabase storage bucket named `visit-photos`.
 
 ## Setup before launch
 
