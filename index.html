@@ -44,11 +44,11 @@
     <li><a href="#how-it-works">How it works</a></li>
     <li><a href="#pricing">Pricing</a></li>
     <li><a href="#faq">Questions</a></li>
-    <li class="cta-item"><a class="nav-cta-mobile" href="onboarding/quote.html">Get a price</a></li>
+    <li class="cta-item"><a class="nav-cta-mobile" href="onboarding/junk.html">Get a price</a></li>
   </ul>
   <div class="nav-right">
     <a class="nav-phone" href="tel:+10000000000"><span class="nav-phone-num">(000) 000-0000</span></a>
-    <a class="nav-cta" href="onboarding/quote.html">Get a price</a>
+    <a class="nav-cta" href="onboarding/junk.html">Get a price</a>
   </div>
 </nav>
 
@@ -63,7 +63,7 @@
       <div class="rule"></div>
       <p class="lede">We haul away furniture, appliances, yard debris and whole garage cleanouts. Tell us what you have and how much of a truck it fills, and you get a price before anyone shows up.</p>
       <div class="actions">
-        <a class="btn-primary" href="onboarding/quote.html">Get my price →</a>
+        <a class="btn-primary" href="onboarding/junk.html">Get my price →</a>
         <a class="btn-quiet" href="#pricing">See prices</a>
       </div>
       <p class="reassure">No card needed · Takes about 60 seconds</p>
@@ -115,8 +115,17 @@
       <div class="rule"></div>
       <p class="section-sub">You pay for how much of the truck your junk fills. Loading, hauling and dump fees are included.</p>
     </div>
-    <!-- Filled from /api/price, which reads pricing.config.mjs. Never type prices here. -->
-    <div class="grid grid-3" id="priceList" aria-live="polite"></div>
+    <!-- GENERATED from pricing.config.mjs by `npm run build:pricing`, so the
+         prices are in the HTML where Google can read them. Never type prices here. -->
+    <div class="grid grid-3">
+      <!-- BUILD:home-prices -->
+      <div class="card"><h3>Single item</h3><p class="pc-price">$99.00</p><p>A couch, a mattress, an appliance</p></div>
+      <div class="card"><h3>1/4 truck</h3><p class="pc-price">$199.00</p><p>A few pieces or a room corner</p></div>
+      <div class="card"><h3>1/2 truck</h3><p class="pc-price">$349.00</p><p>A small room or a garage corner</p></div>
+      <div class="card"><h3>3/4 truck</h3><p class="pc-price">$479.00</p><p>A full room or a small garage</p></div>
+      <div class="card"><h3>Full truck</h3><p class="pc-price">$599.00</p><p>A garage, basement or estate</p></div>
+      <!-- /BUILD:home-prices -->
+    </div>
   </div>
 </section>
 
@@ -143,11 +152,11 @@
       <h2>Ready to <em>clear it out?</em></h2>
       <p>A price in about a minute. No card needed.</p>
     </div>
-    <a class="btn-tan" href="onboarding/quote.html">Get my price →</a>
+    <a class="btn-tan" href="onboarding/junk.html">Get my price →</a>
   </aside>
 </section>
 
-<a class="sticky-cta" id="stickyCta" href="onboarding/quote.html">Get my price<span class="sticky-cta-sub">No card needed · 60 seconds</span></a>
+<a class="sticky-cta" id="stickyCta" href="onboarding/junk.html">Get my price<span class="sticky-cta-sub">No card needed · 60 seconds</span></a>
 </main>
 
 <footer>
@@ -157,14 +166,5 @@
     <a href="tel:+10000000000">(000) 000-0000</a>
   </div>
 </footer>
-
-<script>
-  fetch('/api/price').then(function (r) { return r.json(); }).then(function (d) {
-    var fmt = function (c) { return '$' + (c / 100).toFixed(2); };
-    document.getElementById('priceList').innerHTML = d.loads.map(function (l) {
-      return '<div class="card"><h3>' + l.label + '</h3><p class="pc-price">' + fmt(l.cents) + '</p><p>' + l.hint + '</p></div>';
-    }).join('');
-  }).catch(function () {});
-</script>
 </body>
 </html>

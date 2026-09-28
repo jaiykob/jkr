@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Your Junk Removal Price | Brand Name</title>
+    <meta name="description" content="Choose how much you need hauled and see your exact junk removal price in about a minute. No card and no phone call needed to get a quote." />
+    <meta property="og:title" content="Get Your Junk Removal Price | Brand Name" />
+    <meta property="og:description" content="Choose how much you need hauled and see your exact junk removal price in about a minute. No card and no phone call needed to get a quote." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://www.example.com/onboarding/junk.html" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="Brand Name" />
+    <link rel="canonical" href="https://www.example.com/onboarding/junk.html" />
+    <!-- Prices here are GENERATED from pricing.config.mjs by `npm run build:pricing`
+         and verified by `npm run check:pricing`. Never hand-edit inside the
+         markers — and never add a second offer list outside them, which is how
+         this page spent three days quoting the pre-2026-08-13 monthly rates. -->
+    <!-- BUILD:quote-jsonld -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "@id": "https://www.example.com/onboarding/junk.html#service",
+  "serviceType": "Junk removal",
+  "url": "https://www.example.com/onboarding/junk.html",
+  "provider": {
+    "@type": "LocalBusiness",
+    "@id": "https://www.example.com/#business",
+    "name": "Brand Name"
+  },
+  "areaServed": [
+    {
+      "@type": "City",
+      "name": "Gresham"
+    },
+    {
+      "@type": "City",
+      "name": "Troutdale"
+    },
+    {
+      "@type": "City",
+      "name": "Fairview"
+    }
+  ],
+  "offers": {
+    "@type": "AggregateOffer",
+    "priceCurrency": "USD",
+    "lowPrice": "89.00",
+    "highPrice": "599.00",
+    "offerCount": "10",
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Single item, one-time haul",
+        "priceCurrency": "USD",
+        "price": "99.00"
+      },
+      {
+        "@type": "Offer",
+        "name": "Single item, monthly pickup",
+        "priceCurrency": "USD",
+        "price": "89.00"
+      },
+      {
+        "@type": "Offer",
+        "name": "1/4 truck, one-time haul",
+        "priceCurrency": "USD",
+        "price": "199.00"
+      },
+      {
+        "@type": "Offer",
+        "name": "1/4 truck, monthly pickup",
+        "priceCurrency": "USD",
+        "price": "179.00"
+      },
+      {
+        "@type": "Offer",
+        "name": "1/2 truck, one-time haul",
+        "priceCurrency": "USD",
+        "price": "349.00"
+      },
+      {
+        "@type": "Offer",
+        "name": "1/2 truck, monthly pickup",
+        "priceCurrency": "USD",
+        "price": "319.00"
+      },
+      {
+        "@type": "Offer",
+        "name": "3/4 truck, one-time haul",
+        "priceCurrency": "USD",
+        "price": "479.00"
+      },
+      {
+        "@type": "Offer",
+        "name": "3/4 truck, monthly pickup",
+        "priceCurrency": "USD",
+        "price": "439.00"
+      },
+      {
+        "@type": "Offer",
+        "name": "Full truck, one-time haul",
+        "priceCurrency": "USD",
+        "price": "599.00"
+      },
+      {
+        "@type": "Offer",
+        "name": "Full truck, monthly pickup",
+        "priceCurrency": "USD",
+        "price": "549.00"
+      }
+    ]
+  }
+}
+</script>
+    <!-- /BUILD:quote-jsonld -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.example.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Get a quote", "item": "https://www.example.com/onboarding/junk.html" }
+      ]
+    }
+    </script>
+    <!-- Fonts are self-hosted and declared inline (no preload: measured
+         2026-09-23, preloading made LCP worse by crowding out the CSS). -->
+    <style>
+      /* fonts/fonts.css, inlined: three rules are cheaper than a blocking request. */
+      @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/dm-sans.woff2) format('woff2'); }
+      @font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400 600; font-display: swap; src: url(/fonts/playfair.woff2) format('woff2'); }
+      @font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400 500; font-display: swap; src: url(/fonts/playfair-italic.woff2) format('woff2'); }
+    </style>
+    <style>
+        /* ── Instant quote — structure cloned from Happy Poop Scoop's estimator
+           (2026-09-23): dogs → frequency → add-ons → contact → quote page.
+           One question per screen, big tap targets, price revealed on the
+           quote page once we know where to send it. Palette is the Brand Name
+           brand with every text colour at WCAG AA or better (see tokens). */
+        *, *::before, *::after { box-sizing: border-box; }
+        :root {
+            --ink:     #04402A;   /* forest — 11.8:1 on white */
+            --ink-2:   #1F3A2E;
+            --muted:   #4A6B5D;   /* 5.9:1 on white, 5.35:1 on cream */
+            --accent:  #7A5C2E;   /* tan for TEXT — 6.2:1 on white */
+            --tan:     #C8A96E;   /* tan for FILLS only — never text on light */
+            --tan-50:  #F6EEDD;
+            --page:    #FFFFFF;
+            --soft:    #F7F3ED;
+            --line:    #DDD5C6;
+            --line-2:  #C9BEA9;
+            --focus:   #0B6BCB;
+            --err:     #B42318;   /* 6.5:1 on white */
+            --ok:      #146C43;
+            --radius:  14px;
+            --shadow:  0 10px 30px -12px rgba(4,64,42,.22);
+        }
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        body {
+            margin: 0; background: var(--page); color: var(--ink-2);
+            font: 400 16px/1.55 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+            min-height: 100svh; display: flex; flex-direction: column;
+        }
+        a { color: var(--ink); }
+        .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+        .skip { position: absolute; left: 12px; top: -60px; background: var(--ink); color: #fff; padding: 10px 14px; border-radius: 8px; z-index: 10; font-weight: 600; }
+        .skip:focus { top: 12px; }
+        :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+        /* Header — logo only, centred, like the estimator it mirrors. */
+        /* Header: the site's own forest bar, logo only. A white bar like the
+           estimator this mirrors was tried (2026-09-23) and lost: the mark is
+           cream-on-forest, and a recoloured one read as a different company. */
+        .q-header { background: var(--ink); }
+        .brand { color: #F3E7CF; }
+        .q-header-inner { max-width: 1100px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; }
+        .brand img { width: 52px; height: auto; }
+        .brand span { font: 500 26px/1 'Playfair Display', Georgia, serif; letter-spacing: -.01em; }
+        .lang { position: absolute; right: 16px; font-size: 13px; font-weight: 600; color: #E3CC9C; text-decoration: underline; text-underline-offset: 3px; }
+
+        main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 56px 16px 48px; }
+        .shell { width: 100%; max-width: 588px; }
+
+        /* Step head: title left, "Step 1 of 3" pill right. */
+        .step { display: none; }
+        .step.is-active { display: block; animation: fade .25s ease; }
+        @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .step.is-active { animation: none; } * { transition: none !important; } }
+        .head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+        .head h2 { margin: 0; font-size: clamp(1.3rem, 1.1rem + 1vw, 1.5rem); line-height: 1.25; font-weight: 700; color: var(--ink); letter-spacing: -.015em; }
+        .head h2:focus { outline: none; }
+        .pill { flex: none; display: inline-flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 999px; background: #E3EFE9; color: var(--ink); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+        .sub { margin: 8px 0 0; color: var(--muted); font-size: .98rem; }
+
+        /* "Selected" readout — tells a screen-reader user and a sighted one the
+           same thing: what's chosen right now. */
+        .selected { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 22px 0 6px; font-weight: 600; color: var(--ink); font-size: .98rem; }
+        .selected output { font-variant-numeric: tabular-nums; font-weight: 700; background: var(--soft); border-radius: 8px; padding: 3px 12px; min-width: 36px; text-align: center; }
+
+        /* Tiles — real radio inputs, so arrow keys, form semantics and screen
+           readers work with no ARIA bolted on. */
+        fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+        .grid { display: grid; gap: 14px; margin-top: 14px; grid-template-columns: repeat(3, 1fr); }
+        .grid.two { grid-template-columns: repeat(2, 1fr); }
+        .tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; min-height: 124px; padding: 16px 10px; border: 1.5px solid var(--line); border-radius: var(--radius); background: #fff; cursor: pointer; text-align: center; transition: border-color .15s, box-shadow .15s, background .15s; }
+        .tile:hover { border-color: var(--line-2); box-shadow: var(--shadow); }
+        .tile input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+        .tile svg { width: 56px; height: 56px; color: var(--ink); }
+        .tile .t-label { font-weight: 700; color: var(--ink); font-size: 1rem; line-height: 1.2; }
+        .tile .t-note { font-size: .82rem; color: var(--muted); line-height: 1.3; }
+        .tile .badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+        .tile:has(input:checked) { border-color: var(--ink); background: linear-gradient(180deg, #F3F8F5, #fff); box-shadow: 0 0 0 1px var(--ink), var(--shadow); }
+        .tile:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+        .tile .check { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; display: none; align-items: center; justify-content: center; }
+        .tile .check svg { width: 14px; height: 14px; color: #fff; }
+        .tile:has(input:checked) .check { display: flex; }
+
+        .note { margin: 14px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--tan-50); color: var(--ink-2); font-size: .92rem; }
+        .note[hidden] { display: none; }
+
+
+        /* Contact step */
+        .fields { display: grid; gap: 16px; margin-top: 22px; }
+        .zip-field input { max-width: 220px; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+        .field label { display: block; font-weight: 600; color: var(--ink); margin-bottom: 6px; font-size: .98rem; }
+        .field .opt { font-weight: 400; color: var(--muted); }
+        .field input { width: 100%; height: 50px; padding: 0 14px; font: inherit; font-size: 16px; color: var(--ink-2); background: #fff; border: 1.5px solid var(--line-2); border-radius: 10px; transition: border-color .15s, box-shadow .15s; }
+        .field input::placeholder { color: #6F7F77; }
+        .field input:hover { border-color: #9FB0A7; }
+        .field input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(4,64,42,.18); }
+        .field input[aria-invalid="true"] { border-color: var(--err); box-shadow: 0 0 0 3px rgba(180,35,24,.12); }
+        .field .hint { margin: 6px 0 0; font-size: .86rem; color: var(--muted); }
+        .field .hint.ok { color: var(--ok); font-weight: 600; }
+        .field .error { margin: 6px 0 0; font-size: .86rem; color: var(--err); font-weight: 600; }
+        .field .error:empty { display: none; }
+
+        .waitlist { margin-top: 10px; padding: 14px; border: 1px dashed var(--line-2); border-radius: 10px; background: var(--soft); }
+        .waitlist[hidden] { display: none; }
+        .waitlist p { margin: 0 0 10px; font-size: .92rem; }
+        .waitlist .wl-row { display: flex; gap: 8px; }
+        .waitlist input { flex: 1; min-width: 0; height: 44px; padding: 0 12px; font: inherit; font-size: 16px; border: 1.5px solid var(--line-2); border-radius: 8px; }
+        .waitlist button { height: 44px; padding: 0 16px; border: 0; border-radius: 8px; background: var(--ink); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+        .waitlist .wl-ok { color: var(--ok); font-weight: 600; margin: 8px 0 0; }
+
+        .inlinebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 18px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--soft); color: var(--muted); font-size: .95rem; }
+        .inlinebar button { height: 38px; padding: 0 14px; border: 1px solid var(--line-2); border-radius: 8px; background: #fff; color: var(--ink); font: inherit; font-weight: 700; cursor: pointer; }
+
+        /* Back / Next pair */
+        .nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 32px; }
+        .btn { height: 54px; border-radius: 12px; font: inherit; font-weight: 700; font-size: 1rem; cursor: pointer; border: 1px solid transparent; transition: background .15s, box-shadow .15s, opacity .15s; }
+        .btn-ghost { background: var(--soft); color: var(--ink); border-color: var(--line); }
+        .btn-primary { background: var(--ink); color: #fff; box-shadow: 0 6px 16px -8px rgba(4,64,42,.6); }
+        .btn-primary:hover { background: #06553A; }
+        .btn[disabled] { cursor: not-allowed; opacity: .45; box-shadow: none; }
+        /* Unfinished-but-clickable: looks inactive, still explains itself on tap. */
+        .btn[aria-disabled="true"] { opacity: .55; }
+        .btn-block { width: 100%; margin-top: 24px; }
+        .btn.is-loading { opacity: .7; pointer-events: none; }
+        .privacy { margin: 10px 4px 0; font-size: .84rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+        .privacy svg { width: 14px; height: 14px; flex: none; }
+
+        .trust { max-width: 588px; margin: 36px auto 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; font-size: .86rem; color: var(--muted); list-style: none; padding: 0; }
+        .trust li { display: inline-flex; align-items: center; gap: 6px; }
+        .trust svg { width: 15px; height: 15px; color: var(--ok); }
+        footer { text-align: center; padding: 18px 16px 28px; font-size: .84rem; color: var(--muted); }
+        footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+        @media (max-width: 560px) {
+            main { padding-top: 28px; }
+            .brand img { width: 44px; }
+            .brand span { font-size: 22px; }
+            .grid, .grid.two { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .tile { min-height: 116px; }
+            
+            .lang { position: static; margin-left: auto; }
+            .q-header-inner { justify-content: space-between; }
+        }
+        /* 2026-09-23 mobile rules (same system as css/site.css): running text
+           at 16px, every link at least 48px tall. CSS only; no script touched. */
+        body .sub, body .trust { font-size: 1rem; }
+        body .brand, body .lang { min-height: 48px; display: inline-flex; align-items: center; }
+        body footer a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px; padding: 0 4px; }
+    </style>
+
+    <script src="../js/leads.js" defer></script>
+
+    <!-- GA4, measurement ID G-XXXXXXXXXX. Inline here; pages without an inline snippet load /js/analytics.js. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){ dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+    </script>
+  <!-- Vercel Web Analytics: first-party, cookieless page views -->
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the quote</a>
+
+<!-- Icon sprite. TODO: draw real load icons (Scoops Co. drew one dog face
+     repeated per dog). A box stands in for now. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-box" viewBox="0 0 32 32">
+      <path d="M5 10.5 16 5l11 5.5v11L16 27 5 21.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M5 10.5 16 16l11-5.5M16 16v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-truck" viewBox="0 0 32 32">
+      <path d="M3 8h16v14H3zM19 13h6l4 5v4H19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="9" cy="24" r="2.5" fill="#fff" stroke="currentColor" stroke-width="2"/><circle cx="24" cy="24" r="2.5" fill="#fff" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+    <symbol id="i-cal" viewBox="0 0 32 32">
+      <rect x="4" y="6.5" width="24" height="21.5" rx="3.5" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M4 12.5h24M10.5 3.5v5M21.5 3.5v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  </defs>
+</svg>
+
+<header class="q-header">
+  <div class="q-header-inner">
+    <a class="brand" href="../index.html"><span>Brand Name</span><span class="sr-only">, back to the home page</span></a>
+  </div>
+</header>
+
+<main id="main">
+  <div class="shell">
+    <h1 class="sr-only">Instant quote for junk removal</h1>
+    <!-- Announces each step change to screen readers; focus also moves to the
+         new step's heading. -->
+    <p class="sr-only" aria-live="polite" id="live"></p>
+
+    <form id="quote" novalidate>
+
+      <!-- STEP 1 — LOAD SIZE -->
+      <section class="step is-active" data-step="0" aria-labelledby="h-load">
+        <div class="head">
+          <h2 id="h-load" tabindex="-1">How much do you need hauled?</h2>
+          <span class="pill">Step 1 of 3</span>
+        </div>
+        <p class="sub">Pick how much of a truck it would fill.</p>
+        <fieldset>
+          <legend class="sr-only">Load size</legend>
+          <div class="selected" aria-hidden="true"><span>Selected</span><output id="out-load">—</output></div>
+          <!-- Tiles are built from the generated LOAD_LABELS (one per PRICES
+               row), plus a last "More than a truck" tile that is quoted by
+               hand, so a new row in pricing.config.mjs shows up by itself. -->
+          <div class="grid two" id="load-grid"></div>
+        </fieldset>
+        <!-- The price table stops at a full truck on purpose: bigger jobs are
+             quoted by hand. Say so here instead of letting them build a quote
+             the server will refuse. -->
+        <p class="note" id="more-note" hidden>For more than a full truck we quote by hand, so the price fits the job. Call or text <a href="tel:+10000000000">(000) 000-0000</a> and you'll have a number the same day.</p>
+      </section>
+
+      <!-- STEP 2 — ONE-TIME OR RECURRING -->
+      <section class="step" data-step="1" aria-labelledby="h-freq">
+        <div class="head">
+          <h2 id="h-freq" tabindex="-1">Is this a one-time job?</h2>
+          <span class="pill">Step 2 of 3</span>
+        </div>
+        <p class="sub">Most jobs are a single haul. Landlords and businesses can book a standing pickup.</p>
+        <fieldset>
+          <legend class="sr-only">One-time or recurring</legend>
+          <div class="selected" aria-hidden="true"><span>Selected</span><output id="out-freq">—</output></div>
+          <!-- Values are PRICES column indexes. Labels are re-read from
+               FREQ_LABELS at load, so a change to the columns can't leave a
+               tile quoting the wrong one. TODO: one tile per column. -->
+          <div class="grid two" id="freq-grid">
+            <label class="tile"><input type="radio" name="freq" value="0"><span class="badge">Most popular</span><span class="check"><svg><use href="#i-check"/></svg></span>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#i-truck"/></svg>
+              <span class="t-label" data-freq-label>One-time haul</span><span class="t-note">Charged once</span></label>
+            <label class="tile"><input type="radio" name="freq" value="1"><span class="check"><svg><use href="#i-check"/></svg></span>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#i-cal"/><circle cx="16" cy="20" r="2.2" fill="currentColor"/></svg>
+              <span class="t-label" data-freq-label>Monthly pickup</span><span class="t-note">Same day every month</span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <!-- STEP 3 — CONTACT -->
+      <section class="step" data-step="2" aria-labelledby="h-contact">
+        <div class="head">
+          <h2 id="h-contact" tabindex="-1">Contact information</h2>
+          <span class="pill">Step 3 of 3</span>
+        </div>
+        <p class="sub">Start with your ZIP so we can confirm we serve it. Your quote is on the next screen.</p>
+        <div class="fields">
+          <!-- ZIP first: a yes or no on coverage before anyone types their name. -->
+          <div class="field zip-field">
+            <label for="f-zip">Service ZIP code</label>
+            <input id="f-zip" name="zip" type="text" autocomplete="postal-code" inputmode="numeric" maxlength="5" placeholder="00000" aria-describedby="e-zip h-zip">
+            <p class="hint" id="h-zip" aria-live="polite">We'll tell you right away if we serve it.</p>
+            <p class="error" id="e-zip"></p>
+          </div>
+          <!-- Out of area is a real visitor with a real job: offer the waitlist
+               instead of a dead end. Same leads table, marked in notes. -->
+          <div class="waitlist" id="waitlist" hidden>
+            <p>We're not there yet. TODO: list the cities you serve. Want a heads-up when we expand?</p>
+            <div class="wl-row">
+              <label class="sr-only" for="wl-email">Email for the waitlist</label>
+              <input id="wl-email" type="email" autocomplete="email" placeholder="you@example.com">
+              <button type="button" id="wl-btn">Notify me</button>
+            </div>
+            <p class="wl-ok" id="wl-ok" hidden>You're on the list. We'll email you when we reach your area.</p>
+          </div>
+          <div class="field">
+            <label for="f-name">Full name</label>
+            <input id="f-name" name="name" type="text" autocomplete="name" placeholder="Jane Smith" aria-describedby="e-name">
+            <p class="error" id="e-name"></p>
+          </div>
+          <div class="field">
+            <label for="f-email">Email</label>
+            <input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="e-email">
+            <p class="error" id="e-email"></p>
+          </div>
+          <div class="field">
+            <label for="f-phone">Phone</label>
+            <input id="f-phone" name="phone" type="tel" autocomplete="tel-national" inputmode="tel" placeholder="(000) 000-0000" aria-describedby="e-phone">
+            <p class="error" id="e-phone"></p>
+          </div>
+          <div class="field">
+            <label for="f-addr">Street address</label>
+            <input id="f-addr" name="address" type="text" autocomplete="address-line1" placeholder="123 Oak Lane" aria-describedby="e-addr">
+            <p class="error" id="e-addr"></p>
+          </div>
+          <div class="field">
+            <label for="f-items">What are we hauling? <span class="opt">(optional)</span></label>
+            <input id="f-items" name="items" type="text" maxlength="500" placeholder="A couch, two mattresses, some boxes">
+          </div>
+        </div>
+        <div class="inlinebar"><span>Need to update your selections?</span><button type="button" id="edit-btn">Edit</button></div>
+        <button type="submit" class="btn btn-primary btn-block" id="view-quote">View quote</button>
+        <p class="privacy"><svg aria-hidden="true"><use href="#i-lock"/></svg>No payment on this step. Secure checkout powered by Stripe.</p>
+      </section>
+
+      <div class="nav" id="nav">
+        <button type="button" class="btn btn-ghost" id="prev" disabled>Back</button>
+        <button type="button" class="btn btn-primary" id="next" aria-disabled="true">Next</button>
+      </div>
+      <p class="error" id="e-step" role="alert" style="text-align:center;margin-top:10px;color:var(--err);font-weight:600;"></p>
+    </form>
+
+    <!-- TODO: only claims that are true. -->
+    <ul class="trust">
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg>Price before we come</li>
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg>We do the lifting</li>
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg>Dump fees included</li>
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg>Local</li>
+    </ul>
+  </div>
+</main>
+
+<footer>
+  © Brand Name · <a href="tel:+10000000000">(000) 000-0000</a>
+</footer>
+
+<script>
+    // ── VALID ZIPs — GENERATED from SERVICE_AREA in pricing.config.mjs.
+    // Edit there, then run `npm run build:pricing`. Hand-edits get overwritten.
+    /* BUILD:quote-zips */
+    const VALID_ZIPS = new Set(['97030','97080','97060','97024']);
+    /* /BUILD:quote-zips */
+
+    // ── PRICE MATRIX — GENERATED. Edit the table in pricing.config.mjs, then
+    // run `npm run build:pricing`. A hand-edit here that misses the server copy
+    // in api/create-subscription.js makes every checkout 400 on "Quote is out
+    // of date", because the server re-prices the booking and compares.
+    // rows: load sizes, smallest first · cols: FREQ_LABELS
+    // INTEGER CENTS, per visit.
+    /* BUILD:quote-prices */
+    const PRICES = [
+      /* Single item  */ [  9900,  8900],
+      /* 1/4 truck    */ [ 19900, 17900],
+      /* 1/2 truck    */ [ 34900, 31900],
+      /* 3/4 truck    */ [ 47900, 43900],
+      /* Full truck   */ [ 59900, 54900],
+    ];
+    const LOAD_LABELS  = ["Single item","1/4 truck","1/2 truck","3/4 truck","Full truck"];
+    const LOAD_NOTES   = ["A couch, a mattress, an appliance","A few pieces or a room corner","A small room or a garage corner","A full room or a small garage","A garage, basement or estate"];
+    const FREQ_LABELS  = ["One-time haul","Monthly pickup"];
+    const FREQ_UNITS   = [" flat","\u002Fvisit"];
+    const FREQ_EVERY   = ["charged once","every month"];
+    const ONE_TIME_COL = 0;
+    /* /BUILD:quote-prices */
+
+(function () {
+    'use strict';
+
+    // Same key checkout reads (schedule-junk.html). Name, phone, email and the
+    // address travel here, never in a URL: a URL with someone's phone number in
+    // it ends up in history, Referer headers and analytics.
+    const CONTACT_KEY = 'quoteContact';
+    // The plan half of the form, so "Edit" on the quote page (or the browser's
+    // back button) lands on a form that remembers what they picked.
+    const PLAN_KEY = 'quotePlan';
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const MORE = PRICES.length;   // the "More than a truck" tile: quoted by hand
+
+    const form  = document.getElementById('quote');
+    const $ = id => document.getElementById(id);
+
+    // Load tiles, one per generated row, then the hand-quoted one.
+    const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    $('load-grid').innerHTML = LOAD_LABELS.concat('More than a truck').map((label, i) => `
+            <label class="tile"><input type="radio" name="load" value="${i}"><span class="check"><svg><use href="#i-check"/></svg></span>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><use href="#${i === MORE ? 'i-truck' : 'i-box'}"/></svg><span class="t-label">${esc(label)}</span><span class="t-note">${esc(i === MORE ? 'Quoted by hand' : LOAD_NOTES[i])}</span></label>`).join('');
+
+    const steps = Array.from(document.querySelectorAll('[data-step]'));
+    const heads = steps.map(s => s.querySelector('h2'));
+    const prev  = $('prev');
+    const next  = $('next');
+    const nav   = $('nav');
+    const live  = $('live');
+    const stepErr = $('e-step');
+
+    function track(name, params) {
+        try { if (typeof gtag === 'function') gtag('event', name, params || {}); }
+        catch (e) { /* analytics must never break the form */ }
+    }
+    function read(key) { try { return JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (e) { return null; } }
+    function write(key, v) { try { sessionStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+
+    // Tile labels come from the generated table, so they always name the
+    // column the price is read from.
+    document.querySelectorAll('#freq-grid input').forEach(inp => {
+        const lbl = FREQ_LABELS[+inp.value];
+        const el = inp.closest('.tile').querySelector('[data-freq-label]');
+        if (lbl && el) el.textContent = lbl;
+        if (!lbl) inp.closest('.tile').remove();   // column no longer exists
+    });
+
+    // ── STATE. `load` is a PRICES row index; MORE means "quote by hand".
+    const state = { load: null, fi: null };
+    const loadVal = () => { const r = form.querySelector('input[name=load]:checked'); return r ? +r.value : null; };
+    const freqVal = () => { const r = form.querySelector('input[name=freq]:checked'); return r ? +r.value : null; };
+
+    function sync() {
+        state.load = loadVal();
+        state.fi = freqVal();
+        $('out-load').textContent = state.load == null ? '—' : state.load >= MORE ? 'More than a truck' : LOAD_LABELS[state.load];
+        $('out-freq').textContent = state.fi == null ? '—' : FREQ_LABELS[state.fi];
+        $('more-note').hidden = !(state.load >= MORE);
+        write(PLAN_KEY, state);
+        gate();
+    }
+
+    // ── STEP NAV
+    let current = 0;
+    function met(i) {
+        if (i === 0) return state.load != null && state.load < MORE;
+        if (i === 1) return state.fi != null;
+        return true;
+    }
+    function gate() {
+        next.setAttribute('aria-disabled', met(current) ? 'false' : 'true');
+        if (met(current)) stepErr.textContent = '';
+    }
+    function show(i, opts) {
+        opts = opts || {};
+        current = Math.max(0, Math.min(steps.length - 1, i));
+        steps.forEach((s, k) => s.classList.toggle('is-active', k === current));
+        nav.style.display = current < steps.length - 1 ? '' : 'none';
+        prev.disabled = current === 0;
+        next.textContent = current === steps.length - 2 ? 'Review' : 'Next';
+        stepErr.textContent = '';
+        gate();
+        if (opts.push !== false) {
+            try { history.pushState({ step: current }, ''); } catch (e) { /* no history API */ }
+        }
+        if (opts.focus !== false) {
+            heads[current].focus({ preventScroll: true });
+            if (heads[current].getBoundingClientRect().top < 0) window.scrollTo({ top: 0, behavior: 'smooth' });
+            live.textContent = `Step ${current + 1} of ${steps.length}: ${heads[current].textContent}`;
+        }
+        track('quote_step', { step: current + 1 });
+    }
+    next.addEventListener('click', () => {
+        if (!met(current)) {
+            stepErr.textContent = current === 0
+                ? (state.load >= MORE ? 'Jobs bigger than a truck are quoted by hand. Call or text us for a price.' : 'Pick a load size to continue.')
+                : 'Pick one-time or recurring to continue.';
+            return;
+        }
+        show(current + 1);
+    });
+    prev.addEventListener('click', () => show(current - 1));
+    $('edit-btn').addEventListener('click', () => show(0));
+    // The phone's back button walks back through the steps instead of leaving.
+    window.addEventListener('popstate', e => {
+        const s = e.state && Number.isInteger(e.state.step) ? e.state.step : 0;
+        show(s, { push: false });
+    });
+
+    form.addEventListener('change', e => {
+        if (e.target.name === 'load' || e.target.name === 'freq') sync();
+    });
+
+    // ── CONTACT VALIDATION — errors appear next to the field that caused them,
+    // are announced, and clear as soon as the field is fixed.
+    const fields = {
+        zip:   { el: $('f-zip'),   err: $('e-zip'),   check: v => !/^\d{5}$/.test(v.trim()) ? 'Enter a 5-digit ZIP.' : VALID_ZIPS.has(v.trim()) ? '' : 'Not in our area yet.' },
+        name:  { el: $('f-name'),  err: $('e-name'),  check: v => v.trim().length >= 2 ? '' : 'Enter your name.' },
+        email: { el: $('f-email'), err: $('e-email'), check: v => EMAIL_RE.test(v.trim()) ? '' : 'Enter an email like you@example.com.' },
+        phone: { el: $('f-phone'), err: $('e-phone'), check: v => v.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '').length === 10 ? '' : 'Enter a 10-digit phone number.' },
+        addr:  { el: $('f-addr'),  err: $('e-addr'),  check: v => v.trim().length >= 4 ? '' : 'Enter the street address for the job.' },
+    };
+    function validate(key) {
+        const f = fields[key];
+        const msg = f.check(f.el.value);
+        f.err.textContent = msg;
+        f.el.setAttribute('aria-invalid', msg ? 'true' : 'false');
+        return !msg;
+    }
+    Object.keys(fields).forEach(key => {
+        const f = fields[key];
+        f.el.addEventListener('blur', () => { if (f.el.value.trim()) validate(key); });
+        f.el.addEventListener('input', () => { if (f.el.getAttribute('aria-invalid') === 'true') validate(key); });
+    });
+
+    // Live ZIP answer: the moment five digits are in, say whether we serve it.
+    const zipHint = $('h-zip');
+    const ZIP_HINT = zipHint.textContent;
+    $('f-zip').addEventListener('input', e => {
+        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 5);
+        const v = e.target.value;
+        $('waitlist').hidden = true;
+        if (v.length < 5) { zipHint.textContent = ZIP_HINT; zipHint.className = 'hint'; return; }
+        if (VALID_ZIPS.has(v)) {
+            zipHint.textContent = '✓ We serve this ZIP';
+            zipHint.className = 'hint ok';
+            fields.zip.err.textContent = ''; fields.zip.el.setAttribute('aria-invalid', 'false');
+            track('zip_check', { zip: v, in_area: true });
+        } else {
+            zipHint.textContent = ''; zipHint.className = 'hint';
+            validate('zip');
+            $('waitlist').hidden = false;
+            const em = $('f-email').value.trim();
+            if (em && !$('wl-email').value) $('wl-email').value = em;
+            track('zip_check', { zip: v, in_area: false });
+        }
+    });
+
+    // Out-of-area waitlist. Same `leads` table, marked in `notes`.
+    $('wl-btn').addEventListener('click', () => {
+        const email = $('wl-email').value.trim();
+        if (!EMAIL_RE.test(email)) { $('wl-email').setAttribute('aria-invalid', 'true'); $('wl-email').focus(); return; }
+        const zip = $('f-zip').value.trim();
+        track('waitlist_join', { zip });
+        if (window.SiteLeads) {
+            window.SiteLeads.capture({
+                service: 'junk', email, zip,
+                first_name: $('f-name').value.trim() || null,
+                notes: `OUT-OF-AREA WAITLIST: asked to be notified when we serve ${zip || 'their ZIP'}`,
+            });
+        }
+        $('wl-ok').hidden = false;
+        $('wl-btn').disabled = true;
+    });
+
+    // ── VIEW QUOTE
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        if (!met(0) || !met(1)) { show(!met(0) ? 0 : 1); return; }
+        const bad = Object.keys(fields).filter(k => !validate(k));
+        if (bad.length) {
+            fields[bad[0]].el.focus();
+            track('quote_validation_error', { missing: bad.join(',') });
+            return;
+        }
+
+        const btn = $('view-quote');
+        if (btn.classList.contains('is-loading')) return;
+        btn.classList.add('is-loading');
+        btn.textContent = 'Building your quote…';
+
+        const name  = $('f-name').value.trim().replace(/\s+/g, ' ');
+        const email = $('f-email').value.trim();
+        const phone = $('f-phone').value.trim();
+        const addr  = $('f-addr').value.trim();
+        const zip   = $('f-zip').value.trim();
+        const items = $('f-items').value.trim().slice(0, 500);
+        const cents = PRICES[state.load][state.fi];
+
+        write(CONTACT_KEY, { name, phone, email, addr, zip, items });
+
+        // Every quote is a lead, whether or not they pay. This is the moment
+        // the price is revealed, so it is the moment worth recording.
+        if (window.SiteLeads) {
+            window.SiteLeads.capture({
+                service: 'junk',
+                first_name: name,
+                phone, email, zip,
+                frequency: FREQ_LABELS[state.fi],
+                quoted_price: cents / 100,   // leads.quoted_price is dollars, not cents
+                notes: `Load: ${LOAD_LABELS[state.load]} | Address: ${addr}${items ? ` | Items: ${items}` : ''}`,
+            });
+        }
+        track('quote_submit', {
+            load: LOAD_LABELS[state.load], frequency: FREQ_LABELS[state.fi],
+            value: cents / 100, currency: 'USD',
+        });
+
+        // The quote rides in the URL: it's the plan, not the person, and the
+        // server recomputes the price from load + fi regardless. Price is the
+        // per-visit figure BEFORE any quarterly discount, in integer cents.
+        const p = new URLSearchParams({
+            freq:  FREQ_LABELS[state.fi],
+            fi:    String(state.fi),
+            load:  String(state.load),
+            cents: String(cents),
+            coupon: INCOMING_COUPON,
+            quarterly: CARRIED_QUARTERLY ? '1' : '0',
+            zip,
+        });
+        // Give the lead insert a beat to leave before the page unloads; the
+        // client buffers to localStorage if it doesn't make it.
+        setTimeout(() => { location.href = `schedule-junk.html?${p}`; }, 250);
+    });
+
+    // ── RESTORE — from a homepage link (?load=&freq=), from "Edit" on the quote
+    // page (?edit=plan|contact), or from this tab's earlier visit.
+    const q = new URLSearchParams(location.search);
+    const INCOMING_COUPON = (q.get('coupon') || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 20);
+    const CARRIED_QUARTERLY = q.get('quarterly') === '1';
+    const saved = read(PLAN_KEY) || {};
+    const contact = read(CONTACT_KEY) || {};
+    const ql = parseInt(q.get('load'), 10), qf = parseInt(q.get('freq'), 10);
+    const load = Number.isFinite(ql) ? Math.min(MORE - 1, Math.max(0, ql)) : saved.load;
+    const fi   = Number.isFinite(qf) ? Math.min(PRICES[0].length - 1, Math.max(0, qf)) : saved.fi;
+    if (load != null) { const r = form.querySelector(`input[name=load][value="${load}"]`); if (r) r.checked = true; }
+    if (fi != null) { const r = form.querySelector(`input[name=freq][value="${fi}"]`); if (r) r.checked = true; }
+    const zipParam = /^\d{5}$/.test(q.get('zip') || '') ? q.get('zip') : '';
+    $('f-name').value  = contact.name  || '';
+    $('f-email').value = contact.email || '';
+    $('f-phone').value = contact.phone || '';
+    $('f-addr').value  = contact.addr  || '';
+    $('f-items').value = contact.items || '';
+    $('f-zip').value   = zipParam || contact.zip || '';
+    if ($('f-zip').value.length === 5) $('f-zip').dispatchEvent(new Event('input'));
+    sync();
+
+    const edit = q.get('edit');
+    const CONTACT_STEP = steps.length - 1;
+    let start = 0;
+    if (edit === 'contact') start = CONTACT_STEP;
+    try { history.replaceState({ step: start }, ''); } catch (e) { /* ignore */ }
+    show(start, { push: false, focus: start !== 0 });
+})();
+</script>
+</body>
+</html>

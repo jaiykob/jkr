@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Instant Quote | Brand Name</title>
+  <meta name="robots" content="noindex" />
+  <!-- Self-hosted fonts, declared inline; no preload (it slowed LCP, measured 2026-09-23). -->
+  <style>
+    /* fonts/fonts.css, inlined: three rules are cheaper than a blocking request. */
+    @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/dm-sans.woff2) format('woff2'); }
+    @font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400 600; font-display: swap; src: url(/fonts/playfair.woff2) format('woff2'); }
+    @font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400 500; font-display: swap; src: url(/fonts/playfair-italic.woff2) format('woff2'); }
+  </style>
+  <!-- Deferred: it was render-blocking in the <head> and held first paint of
+       the quote (mobile LCP 6.5s). The checkout script below is a module, and
+       modules run after deferred scripts, so window.Stripe exists when it runs. -->
+  <script src="https://js.stripe.com/v3/" defer></script>
+  <!-- Stripe live publishable key. Safe to expose; secret key lives in Vercel as STRIPE_SECRET_KEY. -->
+  <script>window.STRIPE_PUBLISHABLE_KEY = 'pk_test_REPLACE_ME';</script>
+  <style>
+    /* ── Your instant quote — the page after the 3-step estimator
+       (onboarding/junk.html). Layout mirrors Happy Poop Scoop's quote page:
+       thank-you + intro, a summary card with the total, the contact details
+       they gave, then one button to payment. We add the one thing their flow
+       leaves to a phone call: the customer picks their route day here, because
+       capacity and the first-visit date are scheduled from it.
+       Every text colour is WCAG AA on its background (see tokens). */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --rg:    #04402A;     /* forest — brand, 11.8:1 on white */
+      --ink:   #04402A;
+      --ink-2: #1F3A2E;
+      --muted: #4A6B5D;     /* 5.9:1 on white */
+      --accent:#7A5C2E;     /* tan for text, 6.2:1 on white */
+      --tan:   #C8A96E;     /* fills only */
+      --tan-50:#F6EEDD;
+      --card:  #FFFFFF;
+      --soft:  #F7F3ED;
+      --surf:  #F3EFE7;
+      --bdr:   #DDD5C6;
+      --bdr-2: #C9BEA9;
+      --focus: #0B6BCB;
+      --err:   #B42318;
+      --ok:    #146C43;
+      --tx:    #04402A;
+      --radius:14px;
+      --shadow:0 10px 30px -14px rgba(4,64,42,.25);
+    }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body { font: 400 16px/1.55 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: #fff; color: var(--ink-2); min-height: 100svh; display: flex; flex-direction: column; }
+    a { color: var(--ink); }
+    :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+    .skip { position: absolute; left: 12px; top: -60px; background: var(--ink); color: #fff; padding: 10px 14px; border-radius: 8px; z-index: 10; font-weight: 600; }
+    .skip:focus { top: 12px; }
+
+    /* Header — same forest bar as the estimator. */
+    .q-header { background: var(--ink); }
+    .q-header-inner { max-width: 1100px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; justify-content: center; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #F3E7CF; }
+    .brand img { width: 52px; height: auto; }
+    .brand span { font: 500 26px/1 'Playfair Display', Georgia, serif; letter-spacing: -.01em; }
+
+    .main { flex: 1; width: 100%; max-width: 720px; margin: 0 auto; padding: 48px 16px 56px; }
+    .step-panel { display: none; }
+    .step-panel.active { display: block; animation: fade .25s ease; }
+    @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .step-panel.active { animation: none; } }
+
+    h1.q-title { font-size: clamp(1.5rem, 1.2rem + 1.4vw, 1.9rem); line-height: 1.2; font-weight: 700; color: var(--ink); letter-spacing: -.02em; }
+    h1.q-title:focus, h2:focus { outline: none; }
+    .intro { margin-top: 12px; color: var(--muted); font-size: 1.02rem; }
+    .intro p + p { margin-top: 12px; }
+    .intro strong { color: var(--ink); }
+
+    .qhead { display: flex; align-items: center; gap: 12px; margin: 32px 0 14px; }
+    .qhead h2 { font-size: 1.3rem; font-weight: 700; color: var(--ink); letter-spacing: -.01em; }
+    .pill { display: inline-flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 999px; background: #E3EFE9; color: var(--ink); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+    .card { background: linear-gradient(180deg, var(--surf), #fff 70%); border: 1px solid var(--bdr); border-radius: var(--radius); padding: 22px 22px 8px; box-shadow: var(--shadow); }
+    .card + .card { margin-top: 14px; }
+    .sum-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--bdr); }
+    .sum-lbl { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .sum-lbl small { display: block; font-size: .8rem; letter-spacing: 0; text-transform: none; font-weight: 500; margin-top: 2px; }
+    .sum-big { font-size: clamp(1.9rem, 1.5rem + 1.6vw, 2.4rem); font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap; }
+    .sum-big small { font-size: .95rem; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+    dl.rows { margin: 0; }
+    dl.rows > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--bdr); }
+    dl.rows > div:last-child { border-bottom: 0; }
+    dl.rows dt { color: var(--muted); }
+    dl.rows dd { color: var(--ink); font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+    .card-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 6px; }
+    .card-h h3 { font-size: 1rem; font-weight: 600; color: var(--muted); }
+    .edit { font-weight: 700; font-size: .92rem; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; padding: 8px 4px; }
+
+    /* Billing breakdown, rendered by renderBreakdown(). */
+    .bill-h { margin: 6px 0 4px; font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .price-breakdown { margin: 0 0 14px; }
+    .pb-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: baseline; padding: 10px 0; border-bottom: 1px dashed var(--bdr); font-size: .95rem; }
+    .pb-row:last-of-type { border-bottom: 0; }
+    .pb-when { font-size: .74rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; }
+    .pb-label { color: var(--ink-2); }
+    .pb-amt { font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .pb-amt.free { color: var(--ok); }
+    .pb-was { font-weight: 500; color: var(--muted); text-decoration: line-through; margin-right: 6px; }
+    .pb-note { margin-top: 8px; font-size: .88rem; color: var(--muted); }
+    /* Quarterly billing toggle. The checkbox is the control; the whole row is its label. */
+    .addon { display: flex; align-items: center; gap: 14px; margin: 6px 0 14px; padding: 14px 16px; border: 1.5px solid var(--bdr-2); border-radius: var(--radius); background: #fff; cursor: pointer; min-height: 48px; transition: border-color .15s, box-shadow .15s; }
+    .addon[hidden] { display: none; }
+    .addon:has(input:checked) { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink), var(--shadow); background: linear-gradient(180deg, #F3F8F5, #fff); }
+    .addon .a-icon { flex: none; width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--bdr); display: flex; align-items: center; justify-content: center; background: #fff; }
+    .addon .a-icon svg { width: 28px; height: 28px; color: var(--ink); }
+    .addon .a-meta { flex: 1; min-width: 0; }
+    .addon .a-name { display: block; font-weight: 700; color: var(--ink); }
+    .addon .a-desc { display: block; font-size: 1rem; color: var(--muted); }
+    .switch { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .85rem; font-weight: 700; color: var(--ink); }
+    .switch input { appearance: none; -webkit-appearance: none; width: 50px; height: 30px; border-radius: 999px; background: #6F8078; position: relative; cursor: pointer; margin: 0; transition: background .15s; }
+    .switch input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
+    .switch input:checked { background: var(--ink); }
+    .switch input:checked::after { transform: translateX(20px); }
+    .switch input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) { .addon, .switch input, .switch input::after { transition: none; } }
+    .founding-note { margin: 12px 0; padding: 12px 14px; border-radius: 10px; background: var(--tan-50); border: 1px solid #E8D6AE; font-size: .92rem; color: var(--ink-2); }
+    .founding-note strong { color: var(--ink); }
+
+    /* Preferred pickup day */
+    .day-card-wrap { padding-bottom: 20px; }
+    .day-card-wrap h2 { font-size: 1.1rem; font-weight: 700; color: var(--ink); }
+    .day-card-wrap .day-sub { color: var(--muted); font-size: .95rem; margin-top: 4px; }
+    .day-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 14px; }
+    .day-card { font: inherit; background: #fff; border: 1.5px solid var(--bdr); border-radius: 12px; padding: 14px 6px; cursor: pointer; text-align: center; min-height: 72px; transition: border-color .15s, box-shadow .15s; }
+    .day-card:hover { border-color: var(--bdr-2); box-shadow: var(--shadow); }
+    .day-card.selected { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink), var(--shadow); background: linear-gradient(180deg, #F3F8F5, #fff); }
+    .day-name { font-weight: 700; color: var(--ink); }
+    .day-note { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+    .day-card.full { cursor: not-allowed; background: var(--soft); box-shadow: none; }
+    .day-card.full .day-name { color: var(--muted); text-decoration: line-through; }
+    .day-err { color: var(--err); font-weight: 600; font-size: .9rem; margin-top: 10px; }
+    .day-err:empty { display: none; }
+
+    /* Buttons */
+    .btn-primary, .book-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 56px; margin-top: 18px; border: 0; border-radius: 12px; background: var(--ink); color: #fff; font: inherit; font-size: 1.05rem; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px -10px rgba(4,64,42,.7); transition: background .15s, opacity .15s; }
+    .btn-primary:hover, .book-btn:hover:not(:disabled) { background: #06553A; }
+    .book-btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+    .privacy, .card-secured { display: flex; align-items: center; gap: 6px; margin: 10px 4px 0; font-size: .85rem; color: var(--muted); }
+    .privacy svg, .card-secured svg { width: 14px; height: 14px; flex: none; }
+    .edit-link { display: inline-block; margin-top: 18px; background: none; border: 0; font: inherit; font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 8px 0; }
+
+    /* Payment panel */
+    .pay-title { font-size: 1.4rem; font-weight: 700; color: var(--ink); }
+    .pay-sub { color: var(--muted); margin-top: 6px; }
+    .confirm-rows { margin: -8px 0 6px; }
+    .confirm-row { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--bdr); font-size: .95rem; }
+    .confirm-row:last-child { border-bottom: 0; }
+    .cr-label { color: var(--muted); }
+    .cr-val { color: var(--ink); font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+    .cr-val.highlight { font-size: 1.1rem; }
+    .confirm-notice { margin-top: 16px; padding: 14px 16px; border-radius: 12px; background: var(--soft); border: 1px solid var(--bdr); font-size: .9rem; color: var(--ink-2); }
+    .form-section { margin-top: 22px; }
+    .form-section-hd { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .consent-block { margin-top: 20px; display: grid; gap: 12px; }
+    .consent-row { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; font-size: .9rem; color: var(--ink-2); cursor: pointer; }
+    .consent-row input { width: 22px; height: 22px; margin-top: 1px; accent-color: var(--ink); cursor: pointer; }
+    .consent-row a { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+    .wallet-block { margin-bottom: 4px; }
+    .wallet-or { display: flex; align-items: center; gap: 12px; margin: 14px 0; font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .wallet-or::before, .wallet-or::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
+    .card-wrap { display: grid; gap: 6px; }
+    .card-wrap:focus-within #stripe-card-element { border-color: var(--ink) !important; box-shadow: 0 0 0 3px rgba(4,64,42,.18); }
+
+    /* Success */
+    .success-card { display: none; text-align: center; padding: 36px 24px; border: 1px solid var(--bdr); border-radius: var(--radius); box-shadow: var(--shadow); background: #fff; }
+    .success-card.show { display: block; }
+    .success-icon { width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 30px; display: flex; align-items: center; justify-content: center; }
+    .success-title { font: 500 1.8rem/1.2 'Playfair Display', Georgia, serif; color: var(--ink); }
+    .success-title em { color: #8A6A3A; }
+    .success-msg { margin: 10px auto 18px; max-width: 460px; color: var(--muted); }
+    .success-summary { text-align: left; margin: 0 auto 22px; max-width: 460px; }
+    .ss-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bdr); font-size: .92rem; }
+    .ss-row:last-child { border-bottom: 0; }
+    .ss-row span:first-child { color: var(--muted); }
+    .ss-row span:last-child { color: var(--ink); font-weight: 700; text-align: right; }
+
+    footer { text-align: center; padding: 18px 16px 28px; font-size: .84rem; color: var(--muted); }
+    footer a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+
+    @media (max-width: 560px) {
+      .main { padding-top: 28px; }
+      .brand img { width: 44px; }
+      .brand span { font-size: 22px; }
+      .card { padding: 18px 16px 6px; }
+      .sum-top { flex-direction: column; align-items: flex-start; gap: 6px; }
+      .day-grid { grid-template-columns: repeat(2, 1fr); }
+      dl.rows > div { flex-direction: column; gap: 2px; }
+      dl.rows dd { text-align: left; }
+      .pb-row { grid-template-columns: 1fr auto; }
+      .pb-row .pb-label { grid-column: 1 / -1; grid-row: 2; }
+    }
+  </style>
+
+  <!-- GA4, measurement ID G-XXXXXXXXXX. Inline here; pages without an inline snippet load /js/analytics.js. -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    // page_location is pinned to the bare path on purpose. This page's URL
+    // carries the customer's name and phone from the quote builder, and gtag
+    // otherwise defaults page_location to location.href — which would file a
+    // real phone number into Analytics on every checkout pageview. The body
+    // script strips those params from the bar, but this config runs first.
+    gtag('config', 'G-XXXXXXXXXX', { page_location: location.origin + location.pathname });
+  </script>
+  <!-- The site-wide password gate (js/site-lock.js) was removed everywhere on
+       2026-09-03. It had been a no-op since launch (LOCKED=false, 2026-08-13)
+       but was still a blocking request in the <head> of every page.
+
+       ⚠️ HISTORY WORTH KEEPING, if a gate is ever reintroduced: this page must
+       stay reachable without it. A2P 10DLC campaign reviewers have to load the
+       checkout to verify the SMS opt-in checkbox, and a gate hides it from
+       them — which fails the review. Gate the rest of the site if you must,
+       never this page. Real charges are blocked server-side by
+       BOOKINGS_OPEN / BOOKINGS_OPEN_SERVER regardless, so a gate was never
+       what protected the money. -->
+  <!-- Needed for the pre-launch reservation capture below: the day a visitor
+       picks here used to be discarded entirely while bookings are closed. -->
+  <script src="../js/leads.js" defer></script>
+  <!-- Vercel Web Analytics: first-party, cookieless page views -->
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to your quote</a>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs><symbol id="i-tag" viewBox="0 0 32 32"><path d="M4 16.2V5.5A1.5 1.5 0 0 1 5.5 4h10.7a1.5 1.5 0 0 1 1 .4l10.4 10.4a1.5 1.5 0 0 1 0 2.1L16.9 27.6a1.5 1.5 0 0 1-2.1 0L4.4 17.2a1.5 1.5 0 0 1-.4-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="10" cy="10" r="2" fill="currentColor"/><path d="M13.5 21.5l7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol></defs>
+</svg>
+
+<header class="q-header">
+  <div class="q-header-inner">
+    <a class="brand" href="../index.html"><span>Brand Name</span><span class="sr-only">, back to the home page</span></a>
+  </div>
+</header>
+
+<main class="main" id="main">
+
+  <!-- PRE-LAUNCH NOTICE (shown until we open; hidden automatically when bookings open) -->
+  <div id="prelaunch-banner" style="display:none;margin:0 0 22px;padding:18px 22px;background:#fff7e8;border:1.5px solid #e8c97a;border-radius:12px;text-align:center;">
+    <p style="margin:0 0 6px;font-weight:700;color:#04402A;font-size:15px;">Your spot is reserved.</p>
+    <!-- "soon" is the date-free default. If js/maintenance-banner.js names a
+         reopen date, the script below swaps this text for it — this literal is
+         never the place to write a date. -->
+    <p style="margin:0;color:#4A4A3C;font-size:13px;line-height:1.5;">We open for online booking <strong id="reopen-date">soon</strong>, and your details are saved. No card needed now. We'll text you to set a time.</p>
+  </div>
+
+  <!-- STEP 1 — YOUR INSTANT QUOTE -->
+  <section class="step-panel active" id="step-quote" aria-labelledby="q-title">
+    <h1 class="q-title" id="q-title" tabindex="-1">Thanks for choosing Brand Name<span id="hi-name"></span></h1>
+    <div class="intro">
+      <p>Here's your instant quote. No waiting, no surprises.</p>
+      <p>If the price works for you, pick a day and click <strong>Continue to payment</strong>.</p>
+      <p>Before the job we'll reach out to confirm the details and an arrival window.</p>
+    </div>
+
+    <div class="qhead"><h2>Your instant quote</h2><span class="pill">Summary</span></div>
+
+    <div class="card sum-card">
+      <div class="sum-top">
+        <span class="sum-lbl" id="sum-lbl">Your price</span>
+        <span class="sum-big" id="sum-big"></span>
+      </div>
+      <dl class="rows" id="sum-rows"></dl>
+      <!-- Quarterly prepay: 13 weeks up front at 10% off, priced server-side in
+           create-subscription (quarterCents). It sits here, after the contact
+           step, beside the price it changes. Hidden on a one-time haul,
+           which has no quarter to prepay. -->
+      <label class="addon" id="row-quarterly" hidden>
+        <span class="a-icon"><svg aria-hidden="true"><use href="#i-tag"/></svg></span>
+        <span class="a-meta">
+          <span class="a-name">Quarterly billing</span>
+          <span class="a-desc" id="quarterly-desc">Pay every 3 months and save 10% on every visit. Still no contract.</span>
+        </span>
+        <span class="switch"><input type="checkbox" role="switch" id="quarterly" aria-describedby="quarterly-desc"><span aria-hidden="true" id="quarterly-state">Off</span></span>
+      </label>
+      <p class="bill-h">Your billing schedule</p>
+      <div id="price-breakdown" class="price-breakdown"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><h3>Contact details</h3><a class="edit" id="edit-contact" href="junk.html?edit=contact">Edit<span class="sr-only"> contact details</span></a></div>
+      <dl class="rows" id="contact-rows"></dl>
+    </div>
+
+    <div class="card day-card-wrap">
+      <h2 id="h-day">Preferred day</h2>
+      <p class="day-sub" id="day-sub">We haul Monday through Friday. Pick a day and we'll keep coming back on it automatically.</p>
+      <div class="day-grid" role="group" aria-labelledby="h-day" aria-describedby="day-sub">
+        <button type="button" class="day-card" data-day="Monday" aria-pressed="false"><div class="day-name">Monday</div><div class="day-note">Open</div></button>
+        <button type="button" class="day-card" data-day="Tuesday" aria-pressed="false"><div class="day-name">Tuesday</div><div class="day-note">Open</div></button>
+        <button type="button" class="day-card" data-day="Wednesday" aria-pressed="false"><div class="day-name">Wednesday</div><div class="day-note">Open</div></button>
+        <button type="button" class="day-card" data-day="Thursday" aria-pressed="false"><div class="day-name">Thursday</div><div class="day-note">Open</div></button>
+        <button type="button" class="day-card" data-day="Friday" aria-pressed="false"><div class="day-name">Friday</div><div class="day-note">Open</div></button>
+      </div>
+      <p class="day-err" id="day-err" role="alert"></p>
+    </div>
+
+    <button type="button" class="btn-primary" id="day-next">Continue to payment</button>
+    <p class="privacy"><svg aria-hidden="true"><use href="#i-lock"/></svg>Secure checkout powered by Stripe. Nothing is charged until you confirm on the next screen.</p>
+    <a class="edit-link" href="junk.html?edit=plan">← Change load or plan</a>
+  </section>
+
+  <!-- STEP 2 — PAYMENT -->
+  <section class="step-panel" id="step-confirm" aria-labelledby="pay-title">
+    <h1 class="pay-title" id="pay-title" tabindex="-1">Payment</h1>
+    <p class="pay-sub">Check it over, choose how you'd like to pay, and you're on the route.</p>
+    <div class="card" style="margin-top:18px;">
+      <div class="confirm-rows" id="confirm-rows"></div>
+    </div>
+    <div class="confirm-notice">
+      Your first payment (shown above) is charged today to reserve your spot. Cancel anytime; recurring billing then continues on the same cycle.
+      <br><br><strong>What happens next:</strong> we'll text or call you from (000) 000-0000 within one business day to confirm the job.
+    </div>
+
+    <div class="consent-block">
+      <label class="consent-row">
+        <input type="checkbox" id="consent-terms" />
+        <span>I agree to the <a href="../terms.html" target="_blank" rel="noopener">Terms of Service</a> and <a href="../privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+      </label>
+      <label class="consent-row">
+        <input type="checkbox" id="consent-liability" />
+        <span>I confirm the items are reachable on the day, and nothing in the load is hazardous (paint, chemicals, fuel, asbestos). TODO: match the terms.</span>
+      </label>
+      <!-- Must stay visible on this page: A2P 10DLC reviewers load the checkout
+           to verify this opt-in. Optional, never a condition of booking. -->
+      <label class="consent-row">
+        <input type="checkbox" id="consent-sms" />
+        <span>(Optional) I consent to receive transactional SMS from Brand Name at the phone number above (booking confirmations, day-before reminders, "job done" texts). Up to ~6 msgs/month. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help. Not required to book.</span>
+      </label>
+    </div>
+
+    <!-- PAYMENT — every option in one place.
+         Wallets (Apple Pay / Google Pay / Link) first, then the card field.
+         Both are mounted lazily when this step opens: Stripe needs a visible
+         container for either to render. The wallet row reveals itself only if
+         the browser reports a usable wallet.
+         Keep this a .form-section: the pre-launch gate hides the payment
+         block by walking up from #stripe-card-element to .form-section. -->
+    <div class="form-section pay-section">
+      <p class="form-section-hd">Pay with</p>
+      <div class="wallet-block" id="wallet-block" style="display:none;">
+        <div id="express-checkout-element"></div>
+        <div class="wallet-or"><span>or pay by card</span></div>
+      </div>
+      <div class="card-wrap">
+        <div id="stripe-card-element" style="padding:15px 14px;background:#fff;border:1.5px solid #C9BEA9;border-radius:10px;"></div>
+        <div id="stripe-card-errors" role="alert" style="color:#B42318;font-size:13px;min-height:14px;padding:0 4px;font-weight:600;"></div>
+      </div>
+      <p class="card-secured">
+        <svg aria-hidden="true"><use href="#i-lock"/></svg>
+        <span id="card-secured-msg">Secured by Stripe, charged today</span>
+      </p>
+    </div>
+
+    <button class="book-btn" id="book-btn" disabled>Confirm &amp; start service</button>
+    <button type="button" class="edit-link" id="back-to-quote">← Back to your quote</button>
+  </section>
+
+  <!-- SUCCESS -->
+  <div class="success-card" id="success-card" role="status">
+    <div class="success-icon" aria-hidden="true">✓</div>
+    <h2 class="success-title">You're on the <em>route.</em></h2>
+    <p class="success-msg" id="success-msg">We'll text you before your first visit. After that, we'll be back on schedule, no reminders needed.</p>
+    <div class="success-summary" id="success-summary"></div>
+    <a href="../index.html" class="btn-primary" style="max-width:260px;margin:0 auto;text-decoration:none;">Back to Home</a>
+  </div>
+
+</main>
+
+<footer>
+  © Brand Name · <a href="../faq.html">FAQ</a> · <a href="../terms.html">Terms</a> · <a href="../privacy.html">Privacy</a> · <a href="tel:+10000000000">(000) 000-0000</a>
+</footer>
+<script type="module">
+  // Module: deferred until the document and Stripe.js (deferred) are ready.
+  // ── PARAMS FROM QUOTE
+  //
+  // Name and phone arrive here in the query string. They do not stay there: a
+  // URL carrying a customer's phone number ends up in browser history, in
+  // document.referrer on the hop to thanks.html, and in any analytics call that
+  // reports location.href. Read once, moved to sessionStorage, stripped from
+  // the address bar — and read back from sessionStorage if the params are gone,
+  // so a refresh doesn't lose the contact details the booking needs.
+  //
+  // Only these two are stripped. fi / cents / load / freq / coupon / quarterly
+  // / zip stay in the URL: they're the quote and the service area, not the
+  // customer, and the server recomputes the price from them regardless.
+  //
+  // Email never rides in the URL at all: junk.html stashes it (with the ZIP
+  // its gate accepted) under the same key before linking here. Anything the
+  // quote page already asked for is pre-filled below — nobody types it twice.
+  const params = new URLSearchParams(location.search);
+
+  const CONTACT_KEY = 'quoteContact';
+  const urlName  = params.get('name')  || '';
+  const urlPhone = params.get('phone') || '';
+  let stashed = {};
+  try { stashed = JSON.parse(sessionStorage.getItem(CONTACT_KEY) || '{}') || {}; } catch (e) { stashed = {}; }
+  const custName  = urlName  || stashed.name  || '';
+  const custPhone = urlPhone || stashed.phone || '';
+  const custEmail = stashed.email || '';
+  const custAddr  = stashed.addr  || '';
+  const custItems = stashed.items || '';
+  const custZip   = /^\d{5}$/.test(params.get('zip') || '') ? params.get('zip') : (stashed.zip || '');
+  if (urlName || urlPhone) {
+    // Private mode can throw on either of these. Both are best-effort: failing
+    // to stash or failing to rewrite leaves the page working exactly as before.
+    try { sessionStorage.setItem(CONTACT_KEY, JSON.stringify({ ...stashed, name: custName, phone: custPhone })); } catch (e) { /* no storage */ }
+    params.delete('name');
+    params.delete('phone');
+    const qs = params.toString();
+    try { history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '')); } catch (e) { /* nothing depends on this */ }
+  }
+
+  const freq      = params.get('freq')  || '';
+  const coupon    = params.get('coupon') || '';
+  // Starting value only: the toggle on this page changes it (see setQuarterly).
+  let quarterly = params.get('quarterly') === '1';
+
+  // ── CADENCE TABLE — GENERATED from pricing.config.mjs. Run `npm run build:pricing`.
+  // This page has to name the billing period in three places (the breakdown, the
+  // wallet sheet, the receipt). Hand-copying that from the quote builder is what
+  // produced the old hardcoded "every other <day>" bug, so it is generated now.
+  /* BUILD:checkout-billing */
+  const FREQ_LABELS  = ["One-time haul","Monthly pickup"];
+  const FREQ_EVERY   = ["charged once","every month"];
+  // Period length in weeks; null for a one-time column.
+  const FREQ_WEEKS   = [null,4.333333];
+  const ONE_TIME_COL = 0;
+  // Recurrence per column, in Stripe's vocabulary (Apple Pay uses the same).
+  const FREQ_STRIPE  = [null,{"interval":"month"}];
+  const LOAD_LABELS  = ["Single item","1/4 truck","1/2 truck","3/4 truck","Full truck"];
+  // A quarter is 13 weeks of service at 10% off, recurring plans only.
+  const WEEKS_PER_QUARTER   = 13;
+  const QUARTERLY_DISCOUNT  = 0.1;
+  /* /BUILD:checkout-billing */
+
+  // Frequency index into the price matrix. Bounds come from the generated table
+  // so a change to the ladder can't leave a stale literal here — it was /^[0-5]$/
+  // while there were six columns and there are now four.
+  const fiRaw = parseInt(params.get('fi'), 10);
+  const fi = Number.isInteger(fiRaw) && fiRaw >= 0 && fiRaw < FREQ_LABELS.length
+           ? fiRaw
+           : ONE_TIME_COL;   // unparseable link → the safest plan (a single charge)
+
+  // Per-visit price in cents. `price` was the old dollars param; a stale link
+  // still resolves rather than quoting $0, and the server re-checks either way.
+  const centsRaw = parseInt(params.get('cents'), 10);
+  const quotedCents = Number.isInteger(centsRaw) && centsRaw >= 0
+    ? centsRaw
+    : Math.round((parseFloat(String(params.get('price') || '').replace(/[^0-9.]/g, '')) || 0) * 100);
+
+  // Human cadence phrase for a chosen day.
+  function cadenceLabel(day) {
+    if (fi === ONE_TIME_COL)   return `One-time visit, ${day}`;
+    if (FREQ_WEEKS[fi] === 1)  return `Every ${day}`;
+    if (FREQ_WEEKS[fi] === 2)  return `Every other ${day}`;
+    return `${FREQ_LABELS[fi]}, on a ${day}`;   // monthly: one ${day} per calendar month
+  }
+
+  // Load size: a PRICES row index. Clamped to the generated table.
+  const loadRaw = parseInt(params.get('load'), 10);
+  const loadIdx = Number.isInteger(loadRaw) ? Math.min(LOAD_LABELS.length - 1, Math.max(0, loadRaw)) : 0;
+  const loadLabel = LOAD_LABELS[loadIdx];
+
+  // ── STATE
+  let selectedDay = null;
+  const formData = {
+    fname: '', lname: '', addr: '', city: '', zip: '',
+    cc: { last4: '', exp: '' }
+  };
+
+  // pre-fill name from quote if available
+  if (custName) {
+    const parts = custName.trim().split(/\s+/);
+    formData.fname = parts[0] || '';
+    formData.lname = parts.slice(1).join(' ');
+  }
+
+  // ── DAY SELECTION
+  document.querySelectorAll('.day-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.classList.contains('full')) return;   // day at capacity — not selectable
+      document.querySelectorAll('.day-card').forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-pressed', 'false'); });
+      card.classList.add('selected');
+      card.setAttribute('aria-pressed', 'true');
+      selectedDay = card.dataset.day;
+      document.getElementById('day-err').textContent = '';
+    });
+  });
+
+  // ── DAY CAPACITY — grey out route days that are already full.
+  // Fail-open: any error leaves every day bookable (the server re-checks on
+  // submit, so a stale/failed read can never overbook).
+  (async () => {
+    try {
+      const r = await fetch('/api/day-capacity', { headers: { 'Accept': 'application/json' } });
+      if (!r.ok) return;
+      const { full = [] } = await r.json();
+      full.forEach(day => {
+        const card = document.querySelector(`.day-card[data-day="${day}"]`);
+        if (!card) return;
+        card.classList.add('full');
+        card.classList.remove('selected');
+        card.setAttribute('aria-pressed', 'false');
+        card.setAttribute('aria-disabled', 'true');
+        const note = card.querySelector('.day-note');
+        if (note) note.textContent = 'Fully booked';
+        if (selectedDay === day) selectedDay = null;
+      });
+    } catch (_) { /* fail open — leave all days selectable */ }
+  })();
+
+  // ── CONTACT FROM THE ESTIMATOR
+  // Everything was typed once, on the contact step of junk.html. City is filled from
+  // the ZIP further down, once the generated ZIP_CITY table exists.
+  formData.addr  = custAddr;
+  formData.zip   = custZip;
+  formData.email = custEmail;
+
+  // ── STRIPE ELEMENTS
+  const stripe = window.Stripe ? window.Stripe(window.STRIPE_PUBLISHABLE_KEY) : null;
+  let cardElement = null;
+  // Tracked so the book button can tell "no card entered" (point at the field
+  // or the wallet buttons right above it) apart from "card was declined".
+  let cardComplete = false;
+  let cardMounted  = false;
+  let cardTouched  = false;
+
+  if (stripe) {
+    const elements = stripe.elements({
+      fonts: [{ cssSrc: 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap' }],
+    });
+    cardElement = elements.create('card', {
+      style: {
+        base: {
+          color: '#04402A',
+          fontFamily: '"DM Sans", system-ui, sans-serif',
+          fontSize: '16px',   // 16px keeps iOS Safari from zooming the page on focus
+          letterSpacing: '.02em',
+          '::placeholder': { color: 'rgba(4,64,42,.4)' },
+        },
+        invalid: { color: '#c0392b' },
+      },
+    });
+    cardElement.on('focus', () => { cardTouched = true; });
+    cardElement.on('change', e => {
+      cardComplete = !!e.complete;
+      document.getElementById('stripe-card-errors').textContent = e.error ? e.error.message : '';
+    });
+  } else {
+    document.getElementById('stripe-card-errors').textContent =
+      'Stripe.js failed to load. Check your network or publishable key.';
+  }
+
+  /**
+   * Mount the card field. Deferred until the confirm step is on screen for the
+   * same reason as the wallet buttons: the payment block lives inside a
+   * `display:none` panel until then, and Stripe renders its iframe at zero
+   * height in a hidden container. Called from goTo('confirm'); idempotent.
+   */
+  function mountCard() {
+    if (!cardElement) return;
+    if (!cardMounted) {
+      cardMounted = true;
+      cardElement.mount('#stripe-card-element');
+    }
+    // The card field asks for a billing ZIP. It is almost always the service
+    // ZIP typed on step 1, so pre-fill it rather than make them type it again.
+    // Pre-filled, not hidden: a card billed to another address has to be able
+    // to correct it or the issuer's postal-code check fails. Only until they
+    // first focus the field — re-entering this step must not undo their edit.
+    if (!cardTouched && formData.zip) cardElement.update({ value: { postalCode: formData.zip } });
+  }
+
+  // ── PRICING BREAKDOWN (uses the customer's actual quoted price)
+  // Two decimals, always: prices carry cents as of 2026-08-13 and rounding to
+  // whole dollars here showed "$24" against a $24.13 charge.
+  function fmt(cents) { return cents === 0 ? 'Free' : `$${(cents / 100).toFixed(2)}`; }
+  const isOneTime = fi === ONE_TIME_COL;
+  if (isOneTime) quarterly = false;   // a single haul has no quarter to prepay
+
+  /**
+   * Cents charged up front for a quarter. Priced off the WEEKLY-EQUIVALENT rate,
+   * not the plan's own period: 13 weeks of monthly service is 3 visits, so
+   * multiplying a monthly price by 13 would bill for 13 months. This mirrors
+   * quarterCents() in api/create-subscription.js — if the two disagree the page
+   * shows one number and Stripe charges another.
+   */
+  function quarterCents() {
+    return Math.round((quotedCents / FREQ_WEEKS[fi]) * WEEKS_PER_QUARTER * (1 - QUARTERLY_DISCOUNT));
+  }
+
+  // ── FOUNDING-MEMBER OFFER (dormant)
+  // Scoops Co. ran a launch discount through this. Its server half
+  // (api/_lib/founding.js, /api/founding-spots) was not carried over, so
+  // foundingOffer stays null and every price below is the regular one.
+  // To run a launch offer, port those two files and restore setFounding() calls.
+  let foundingOffer = null;   // { percentOff } while the offer applies to this booking
+
+  /** The regular charge for today's billing period, before the founding offer. */
+  function regularChargeCents() {
+    if (isOneTime) return quotedCents;
+    return quarterly ? quarterCents() : quotedCents;
+  }
+
+  /**
+   * Cents off for the founding offer. Mirrors firstMonthDiscountCents() in
+   * api/_lib/founding.js — a quarter is 3 months, so a quarterly plan gets the
+   * percentage off one third of its first charge. Every other plan gets it off
+   * each charge in the first month.
+   */
+  function foundingDiscountCents() {
+    const charge = regularChargeCents();
+    if (!foundingOffer || !(charge > 0)) return 0;
+    const monthCents = (!isOneTime && quarterly) ? charge / 3 : charge;
+    return Math.round(monthCents * foundingOffer.percentOff / 100);
+  }
+
+  /** What the card is actually charged today. */
+  function chargedTodayCents() {
+    return regularChargeCents() - foundingDiscountCents();
+  }
+
+  /** What the offer takes off, in words. A one-time cleanup has no "first month". */
+  const FOUNDING_SCOPE = isOneTime ? 'this haul' : 'your first month';
+  function foundingTermsText() {
+    return `${foundingOffer.percentOff}% off ${FOUNDING_SCOPE}`;
+  }
+  document.querySelectorAll('[data-founding-scope]').forEach(el => { el.textContent = FOUNDING_SCOPE; });
+
+  /** Do more charges than today's fall inside the discounted first month? */
+  function foundingRepeats() {
+    return !!foundingOffer && !isOneTime && !quarterly && FREQ_WEEKS[fi] <= 2;
+  }
+
+  /** Human plan name — used on the review step, the receipt, and in analytics. */
+  function planLabel() {
+    if (isOneTime) return 'One-time haul';
+    return quarterly ? 'Quarterly (10% off)' : FREQ_LABELS[fi];
+  }
+
+  /** "…and then" line: what recurs, and how often. Null for a single charge. */
+  function recurringLine() {
+    if (isOneTime) return null;
+    if (quarterly) return `${fmt(quarterCents())} every 3 months`;
+    const regular = `${fmt(quotedCents)} ${FREQ_EVERY[fi]}`;
+    return foundingRepeats()
+      ? `${fmt(chargedTodayCents())} ${FREQ_EVERY[fi]} for your first month, then ${regular}`
+      : regular;
+  }
+
+  function renderBreakdown() {
+    const el = document.getElementById('price-breakdown');
+    const securedMsg = document.getElementById('card-secured-msg');
+
+    // `was` is the regular price, struck through beside a founding-discounted row.
+    const pct   = foundingOffer ? `${foundingOffer.percentOff}% off` : '';
+    const today = chargedTodayCents();
+    const was   = foundingOffer ? regularChargeCents() : null;
+    let rows, note, securedText;
+    if (isOneTime) {
+      rows = [{ when: 'Today', label: foundingOffer ? `One-time haul, founding member ${pct}` : 'One-time haul', amount: today, was }];
+      note = 'Single charge, no subscription, no recurring billing.';
+      securedText = 'Secured by Stripe, charged today.';
+    } else if (quarterly) {
+      const qCents = quarterCents();
+      rows = [
+        { when: 'Today',          label: foundingOffer ? `First quarter (10% off, plus ${pct} your first month)` : 'First quarter (10% off)', amount: today, was },
+        { when: 'Every 3 months', label: 'Quarterly billing, 10% off', amount: qCents },
+      ];
+      note = `Save 10% by paying quarterly: ${WEEKS_PER_QUARTER} weeks of service up front. Cancel anytime.`;
+      securedText = 'Secured by Stripe, first quarter charged today.';
+    } else {
+      // Every plan bills on its own cadence, so the period is named from the
+      // generated table rather than assumed to be weekly.
+      const every = FREQ_EVERY[fi];              // "every week" · "every 2 weeks" · "every month"
+      const Every = every.replace(/^every /, 'Every ');
+      rows = [{ when: 'Today', label: foundingOffer ? `First visit, founding member ${pct}` : 'First visit', amount: today, was }];
+      if (foundingRepeats()) {
+        rows.push({ when: 'Rest of month 1', label: `${Every}, still ${pct}`, amount: today, was });
+        rows.push({ when: 'After that', label: `${Every}, regular price`, amount: quotedCents });
+      } else {
+        rows.push({ when: Every, label: `Recurring, ${FREQ_LABELS[fi].toLowerCase()}`, amount: quotedCents });
+      }
+      note = `One charge per visit, ${every}. Cancel anytime, no deposit, no contract.`;
+      securedText = 'Secured by Stripe, first visit charged today.';
+    }
+
+    el.innerHTML = rows.map(r =>
+      `<div class="pb-row">
+        <span class="pb-when">${r.when}</span>
+        <span class="pb-label">${r.label}</span>
+        <span class="pb-amt${r.amount === 0 ? ' free' : ''}">${r.was ? `<span class="pb-was">${fmt(r.was)}</span>` : ''}${fmt(r.amount)}</span>
+      </div>`
+    ).join('') + `<p class="pb-note">${note}</p>`;
+
+    if (securedMsg) securedMsg.textContent = securedText;
+  }
+  renderBreakdown();
+
+  /**
+   * Switch the founding offer on or off for this booking and re-price every
+   * place the page shows money: the breakdown, the review rows (once they
+   * exist), and the amount the wallet sheet authorizes.
+   */
+  function setFounding(offer) {
+    foundingOffer = offer && offer.percentOff > 0 ? { percentOff: offer.percentOff } : null;
+    renderBreakdown();
+    if (selectedDay) buildConfirm();
+    if (expressElements && chargedTodayCents() > 0) expressElements.update({ amount: chargedTodayCents() });
+  }
+
+  // Scoops Co. waited on the founding-offer read here before mounting wallets.
+  const foundingSettled = Promise.resolve();
+
+  // ── STEP NAV
+  // Every step advance is a GA4 event. This page had no instrumentation at all,
+  // so a drop-off between "signup" and "confirm" was invisible — you could only
+  // see that a booking didn't happen, never where it stalled.
+  function track(name, params) {
+    try {
+      if (typeof gtag === 'function') gtag('event', name, params || {});
+    } catch (e) { /* analytics must never break checkout */ }
+  }
+
+  function goTo(step, opts) {
+    opts = opts || {};
+    track('schedule_step', { step: step });
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    // The phone's back button returns from payment to the quote instead of
+    // leaving the page.
+    if (opts.push !== false) {
+      try { history.pushState({ step: step }, ''); } catch (e) { /* no history API */ }
+    }
+
+    if (step === 'quote') {
+      document.getElementById('step-quote').classList.add('active');
+      document.getElementById('q-title').focus({ preventScroll: true });
+    } else if (step === 'confirm') {
+      buildConfirm();
+      document.getElementById('step-confirm').classList.add('active');
+      document.getElementById('pay-title').focus({ preventScroll: true });
+      // Both payment elements mount here, not earlier: Stripe needs a visible
+      // container to render either, and this is the first step where a tap can
+      // legitimately complete the booking.
+      mountCard();
+      foundingSettled.then(mountWallets);
+      // By here formData, selectedDay and the plan are all populated, so this
+      // is the first moment there's a reservation worth storing.
+      if (!BOOKINGS_OPEN_CLIENT) reserveSpot();
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  document.getElementById('day-next').addEventListener('click', () => {
+    if (!selectedDay) {
+      document.getElementById('day-err').textContent = 'Pick a day to continue.';
+      document.querySelector('.day-card:not(.full)')?.focus();
+      track('schedule_validation_error', { missing: 'day' });
+      return;
+    }
+    goTo('confirm');
+  });
+  document.getElementById('back-to-quote').addEventListener('click', () => goTo('quote'));
+  window.addEventListener('popstate', e => {
+    if (document.getElementById('success-card').classList.contains('show')) return;
+    goTo(e.state && e.state.step === 'confirm' && selectedDay ? 'confirm' : 'quote', { push: false });
+  });
+
+
+  // ZIP gate — GENERATED from SERVICE_AREA in pricing.config.mjs. Edit there,
+  // then run `npm run build:pricing`.
+  // This is the list that used to get forgotten: the 2026-07-29 expansion
+  // reached the other three files and missed this one, so quoted customers were
+  // turned away at checkout. That's why it's generated now.
+  /* BUILD:checkout-zips */
+  const VALID_ZIPS = new Set(['97030','97080','97060','97024']);
+  const ZIP_CITY   = {'97024':'Fairview','97030':'Gresham','97060':'Troutdale','97080':'Gresham'};
+  /* /BUILD:checkout-zips */
+
+  // ── CONTACT CHECK
+  // This page only works with what the estimator's contact step collected. A tab
+  // that lost its sessionStorage (new tab, private window, a shared link) is
+  // sent back to that step with the plan intact rather than shown a quote it
+  // can't book.
+  formData.city = ZIP_CITY[formData.zip] || '';
+  const contactComplete = formData.fname && formData.email && custPhone && formData.addr && VALID_ZIPS.has(formData.zip);
+  if (!contactComplete) {
+    const back = new URLSearchParams(location.search);
+    back.set('edit', 'contact');
+    back.set('load', String(loadIdx));
+    back.set('freq', String(fi));
+    location.replace(`junk.html?${back}`);
+  }
+
+  // ── QUOTE SUMMARY — the card at the top of the page.
+  const escText = v => String(v).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+  function renderQuote() {
+    const big = document.getElementById('sum-big');
+    const lbl = document.getElementById('sum-lbl');
+    if (isOneTime) {
+      lbl.innerHTML = 'Your price<small>One-time haul</small>';
+      big.textContent = fmt(quotedCents);
+    } else if (quarterly) {
+      lbl.innerHTML = `Your price<small>Every 3 months, 10% off</small>`;
+      big.textContent = fmt(quarterCents());
+    } else {
+      lbl.innerHTML = `Your price<small>Per visit, billed ${FREQ_EVERY[fi]}</small>`;
+      big.innerHTML = `${fmt(quotedCents)} <small>/visit</small>`;
+    }
+    const rows = [
+      ['Service frequency', FREQ_LABELS[fi]],
+      ['Load', loadLabel],
+      ...(custItems ? [['Items', custItems]] : []),
+      ['Billing', isOneTime ? 'Single charge' : quarterly ? 'Quarterly (save 10%)' : 'Per visit'],
+      ['Included', 'Loading, hauling and dump fees'],
+    ];
+    document.getElementById('sum-rows').innerHTML = rows
+      .map(([k, v]) => `<div><dt>${k}</dt><dd>${escText(v)}</dd></div>`).join('');
+    const addr = [formData.addr, [formData.city, formData.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    const contact = [
+      ['Name', `${formData.fname} ${formData.lname}`.trim()],
+      ['Email', formData.email],
+      ['Phone', custPhone],
+      ['Address', addr],
+    ];
+    document.getElementById('contact-rows').innerHTML = contact
+      .map(([k, v]) => `<div><dt>${k}</dt><dd>${escText(v || '—')}</dd></div>`).join('');
+    const first = formData.fname ? `, ${formData.fname}` : '';
+    document.getElementById('hi-name').textContent = first ? `${first}!` : '!';
+    // A one-time haul is a single visit on the day they pick, not a standing slot.
+    if (isOneTime) {
+      document.getElementById('h-day').textContent = 'Preferred day';
+      document.getElementById('day-sub').textContent = 'We haul Monday through Friday. Pick the day that suits you and we\'ll confirm the arrival window.';
+    }
+  }
+  renderQuote();
+  // Edit links carry the plan, and the quarterly choice, so the estimator
+  // reopens on the same answers and hands them back here.
+  function renderEditLinks() {
+    const plan = new URLSearchParams({ load: String(loadIdx), freq: String(fi), quarterly: quarterly ? '1' : '0' });
+    if (coupon) plan.set('coupon', coupon);
+    document.getElementById('edit-contact').href = `junk.html?edit=contact&${plan}`;
+    document.querySelector('a.edit-link[href^="junk.html"]').href = `junk.html?edit=plan&${plan}`;
+  }
+  renderEditLinks();
+
+  // ── QUARTERLY TOGGLE
+  // Every place the page shows money reads `quarterly`, so flipping it
+  // re-renders all of them: the headline price, the summary rows, the billing
+  // schedule, the review rows and the amount a wallet sheet would authorize.
+  // The URL keeps the choice so a refresh doesn't quietly undo it.
+  const qToggle = document.getElementById('quarterly');
+  function setQuarterly(on) {
+    quarterly = !isOneTime && !!on;
+    qToggle.checked = quarterly;
+    document.getElementById('quarterly-state').textContent = quarterly ? 'On' : 'Off';
+    renderQuote();
+    renderBreakdown();
+    renderEditLinks();
+    if (selectedDay) buildConfirm();
+    if (expressElements && chargedTodayCents() > 0) expressElements.update({ amount: chargedTodayCents() });
+    const u = new URLSearchParams(location.search);
+    u.set('quarterly', quarterly ? '1' : '0');
+    try { history.replaceState(history.state, '', `${location.pathname}?${u}`); } catch (e) { /* nothing depends on this */ }
+  }
+  document.getElementById('row-quarterly').hidden = isOneTime;
+  qToggle.addEventListener('change', () => {
+    setQuarterly(qToggle.checked);
+    track('quarterly_toggle', { on: quarterly });
+  });
+  // Initial state only. Not setQuarterly(): the page has already rendered, and
+  // expressElements (declared further down) can't be touched before its `let`.
+  qToggle.checked = quarterly;
+  document.getElementById('quarterly-state').textContent = quarterly ? 'On' : 'Off';
+  try { history.replaceState({ step: 'quote' }, ''); } catch (e) { /* ignore */ }
+
+  // ── BUILD CONFIRM
+  function buildConfirm() {
+    const fullName = `${formData.fname} ${formData.lname}`.trim() || 'N/A';
+    const addr     = `${formData.addr}, ${formData.city} ${formData.zip}`.replace(/^,\s*|,\s*$/g, '');
+    const rows = [
+      { l: 'Name',       v: fullName },
+      { l: 'Phone',      v: custPhone || 'N/A' },
+      { l: 'Address',    v: addr || 'N/A' },
+      { l: 'Day',        v: cadenceLabel(selectedDay) },
+      { l: 'Load',       v: loadLabel },
+    ];
+    rows.push({ l: 'Plan', v: planLabel() });
+    if (foundingOffer) rows.push({ l: 'Founding member', v: foundingTermsText() });
+    if (isOneTime) {
+      rows.push({ l: 'Total', v: fmt(chargedTodayCents()), highlight: true });
+    } else {
+      rows.push({ l: 'Today', v: fmt(chargedTodayCents()), highlight: true });
+      rows.push({ l: 'Then',  v: recurringLine() });
+    }
+
+    document.getElementById('confirm-rows').innerHTML = rows.map(r =>
+      `<div class="confirm-row">
+        <span class="cr-label">${r.l}</span>
+        <span class="cr-val${r.highlight ? ' highlight' : ''}">${r.v}</span>
+      </div>`
+    ).join('');
+  }
+
+  // ── BOOK (Stripe)
+  const bookBtn = document.getElementById('book-btn');
+  const bookErr = document.createElement('p');
+  bookErr.style.cssText = 'color:#c0392b;font-size:13px;text-align:center;margin-top:10px;min-height:16px;';
+  bookBtn.parentNode.insertBefore(bookErr, bookBtn.nextSibling);
+
+  // ── PRE-LAUNCH GATE (client-side mirror of the BOOKINGS_OPEN server kill switch).
+  // We're not accepting bookings until launch. Rather than let visitors enter a card
+  // and hit the server's 503 wall, we surface the early-list notice up front: show the
+  // banner, hide the payment + consent blocks, and neutralize the book button.
+  // NOTE: the notice is DATE-FREE as of 2026-08-08 (founder call) — we published a
+  // date twice and missed it twice (07-02, 08-05). If a date is ever named again it
+  // goes in js/maintenance-banner.js and nowhere else; the #reopen-date literal in
+  // the markup above reads "soon" and is overwritten from there on load.
+  // Open the gates when ops are actually real.
+  // Interested visitors were already captured as a lead on the quote page (junk.html).
+  // Scoops Co. opened this on 2026-08-13, its launch day.
+  // charges a real card, and the server agrees (BOOKINGS_OPEN_SERVER=true).
+  // This constant is UI only: it has never been what stops a charge, and it
+  // still isn't. If you need to stop taking money, flip BOOKINGS_OPEN_SERVER in
+  // api/create-subscription.js — that one covers direct POSTs to the API, which
+  // is the surface that actually matters.
+  const BOOKINGS_OPEN_CLIENT = false;   // CLOSED until launch: flip with BOOKINGS_OPEN_SERVER
+  if (!BOOKINGS_OPEN_CLIENT) {
+    const banner = document.getElementById('prelaunch-banner');
+    if (banner) banner.style.display = 'block';
+    // maintenance-banner.js is deferred, so it hasn't run yet at parse time —
+    // pick the date up once it has. The literal in the markup is only a
+    // fallback; this banner is never shown without JS anyway.
+    document.addEventListener('DOMContentLoaded', () => {
+      const d = document.getElementById('reopen-date');
+      if (d && window.SCOOPS_REOPEN_TEXT) d.textContent = window.SCOOPS_REOPEN_TEXT;
+    });
+    const hide = el => { if (el) el.style.display = 'none'; };
+    hide(document.getElementById('stripe-card-element')?.closest('.form-section')); // payment
+    hide(document.querySelector('.consent-block'));
+    hide(document.querySelector('.confirm-notice'));
+    bookBtn.textContent = 'Your spot is reserved, we’ll text to confirm';
+    bookBtn.disabled = true;
+    bookBtn.style.cursor = 'default';
+    // Reaching a locked book button is the strongest pre-launch intent signal
+    // there is: worth counting so we know what opening day is walking into.
+    track('booking_blocked_prelaunch', {});
+  }
+
+  /**
+   * Pre-launch reservation capture.
+   *
+   * While bookings are closed this page charges nothing and — until now — SAVED
+   * nothing either: the address, load and chosen day were collected,
+   * rendered into the confirm table, and dropped on page close. junk.html had
+   * already banked name/phone/quote, so we weren't losing the lead, but we were
+   * losing everything that makes it schedulable, and the notice promising "your
+   * spot is reserved" wasn't backed by a stored row.
+   *
+   * Writes one row per visitor reaching the confirm step. Fires once.
+   */
+  let reserved = false;
+  function reserveSpot() {
+    if (reserved || !window.SiteLeads) return;
+    reserved = true;
+    window.SiteLeads.capture({
+      service: 'junk',
+      first_name: formData.fname || null,
+      phone: custPhone || null,
+      zip: formData.zip || null,
+      quoted_price: quotedCents ? quotedCents / 100 : null,   // dollars, cents kept
+      notes: [
+        'PRE-LAUNCH RESERVATION (confirm step reached, bookings closed)',
+        `Preferred day: ${selectedDay ? cadenceLabel(selectedDay) : 'not chosen'}`,
+        `Address: ${[formData.addr, formData.city, formData.zip].filter(Boolean).join(', ') || 'N/A'}`,
+        `Plan: ${planLabel()}`,
+        `Load: ${loadLabel}`,
+        custItems ? `Items: ${custItems}` : ''
+      ].filter(Boolean).join(' | ')
+    });
+  }
+
+  // Consent gating: enable the book button when terms + liability are checked.
+  // SMS opt-in is optional (recorded if checked, never required).
+  const consentTerms     = document.getElementById('consent-terms');
+  const consentSms       = document.getElementById('consent-sms');
+  const consentLiability = document.getElementById('consent-liability');
+  const consentState     = { terms_accepted_at: null, sms_opt_in_at: null, liability_acknowledged_at: null };
+  function refreshConsent() {
+    if (!BOOKINGS_OPEN_CLIENT) return; // pre-launch: button stays locked
+    const now = () => new Date().toISOString();
+    consentState.terms_accepted_at         = consentTerms.checked     ? (consentState.terms_accepted_at         || now()) : null;
+    consentState.sms_opt_in_at             = consentSms.checked       ? (consentState.sms_opt_in_at             || now()) : null;
+    consentState.liability_acknowledged_at = consentLiability.checked ? (consentState.liability_acknowledged_at || now()) : null;
+    // SMS opt-in is intentionally NOT required — carriers (A2P 10DLC / CTIA) forbid
+    // making message consent a condition of purchase. Only terms + liability gate booking.
+    bookBtn.disabled = !(consentTerms.checked && consentLiability.checked);
+  }
+  consentTerms.addEventListener('change', refreshConsent);
+  consentSms.addEventListener('change', refreshConsent);
+  consentLiability.addEventListener('change', refreshConsent);
+
+  // Billing details are always taken from the form, never from the wallet:
+  // the service address is what we quoted and what the ZIP gate approved, so
+  // the PaymentMethod has to carry that address on both paths.
+  function billingDetails() {
+    return {
+      name:  `${formData.fname} ${formData.lname}`.trim(),
+      email: formData.email,
+      phone: custPhone || undefined,
+      address: {
+        line1:       formData.addr,
+        city:        formData.city,
+        postal_code: formData.zip,
+        country:     'US',
+      },
+    };
+  }
+
+  /**
+   * Drive one PaymentIntent to a finished state, whatever state it arrives in.
+   * Resolves when the money has moved (or is moving); throws with a message
+   * fit to show the customer otherwise. The payment method is passed on
+   * confirm explicitly, so an intent created without one attached still pays.
+   */
+  async function settlePayment(clientSecret, paymentMethodId) {
+    const { paymentIntent, error } = await stripe.retrievePaymentIntent(clientSecret);
+    if (error) throw new Error(error.message);
+
+    let pi = paymentIntent;
+    if (pi.status === 'requires_action') {
+      const r = await stripe.handleNextAction({ clientSecret });
+      if (r.error) throw new Error(r.error.message);
+      pi = r.paymentIntent;
+    } else if (pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation') {
+      const r = await stripe.confirmCardPayment(clientSecret, { payment_method: paymentMethodId });
+      if (r.error) throw new Error(r.error.message);
+      pi = r.paymentIntent;
+    }
+
+    if (pi.status === 'succeeded' || pi.status === 'processing') return pi;
+    throw new Error('Your payment did not go through. Please try another card or payment method.');
+  }
+
+  const WALLET_LABELS = { apple_pay: 'Apple Pay', google_pay: 'Google Pay', link: 'Link' };
+  let bookingInFlight = false;
+
+  /**
+   * Everything after a PaymentMethod exists: create the customer + subscription
+   * (or one-time charge), handle any 3DS step-up, then show the success card.
+   *
+   * Shared by the card button and the wallet buttons so there is exactly one
+   * booking code path — the two entry points differ only in how the card
+   * details were collected. Throws on failure; the caller shows the message.
+   *
+   * @param paymentMethod Stripe PaymentMethod object (card or wallet-backed)
+   * @param source        'card' | 'apple_pay' | 'google_pay' | 'link'
+   */
+  async function submitBooking(paymentMethod, source) {
+    try {
+      // 2. Call backend to create customer + subscription.
+      // No local re-parse of the price here — it shadowed the outer quotedCents
+      // and isOneTime with a second, separately-derived copy, which is exactly
+      // how a page ends up displaying one number and posting another.
+      const res = await fetch('/api/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email:           formData.email,
+          name:            `${formData.fname} ${formData.lname}`.trim(),
+          phone:           custPhone,
+          paymentMethodId: paymentMethod.id,
+          quarterly,
+          quotedCents,                   // cross-check only — server recomputes from load+freqIdx+coupon
+          load:            loadIdx,
+          freqIdx:         fi,
+          coupon,
+          zip:             formData.zip,
+          freq,
+          metadata: {
+            address:                   `${formData.addr}, ${formData.city} ${formData.zip}`,
+            pickup_day:                cadenceLabel(selectedDay),
+            pickup_weekday:            selectedDay || '',   // bare weekday — used to schedule visits
+            freq_idx:                  String(fi),          // cadence index — drives visit interval
+            items:                     custItems.slice(0, 480),   // Stripe caps a metadata value at 500 chars
+            frequency:                 freq || '',
+            // heard_via is no longer collected before payment — the question
+            // moved to thanks.html, so it lands in the leads table rather than
+            // in this metadata blob (and so it is absent from the Discord ping).
+            terms_accepted_at:         consentState.terms_accepted_at || '',
+            sms_opt_in_at:             consentState.sms_opt_in_at || '',
+            liability_acknowledged_at: consentState.liability_acknowledged_at || '',
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Server error');
+
+      // 3. Settle the charge. The two intents arrive in different states: the
+      //    one-time PaymentIntent was already confirmed server-side (usually
+      //    `succeeded`, sometimes `requires_action` for 3DS), while a
+      //    subscription's first invoice (payment_behavior default_incomplete)
+      //    has not been attempted at all. Confirming blindly would ask Stripe to
+      //    confirm an intent that already succeeded — an error shown to a
+      //    customer whose card was just charged — so read the status first.
+      if (data.oneTimeClientSecret)      await settlePayment(data.oneTimeClientSecret, paymentMethod.id);
+      if (data.firstInvoiceClientSecret) await settlePayment(data.firstInvoiceClientSecret, paymentMethod.id);
+
+      // SUCCESS
+      // Wallet PaymentMethods are still `type: card`, but the last4 belongs to
+      // the device token rather than the plastic — so name the wallet instead of
+      // implying we stored the customer's own card number.
+      const walletLabel = WALLET_LABELS[source] || null;
+      const last4 = (paymentMethod.card && paymentMethod.card.last4) || '••••';
+      const addr  = `${formData.addr}, ${formData.city} ${formData.zip}`;
+
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+
+      const summaryRows = [
+        { l: 'Day',          v: cadenceLabel(selectedDay) },
+        { l: 'Address',      v: addr },
+        walletLabel
+          ? { l: 'Paid With',    v: `${walletLabel} •••• ${last4}` }
+          : { l: 'Card on File', v: `•••• ${last4}` },
+        { l: 'Plan',         v: planLabel() },
+      ];
+      if (foundingOffer) summaryRows.push({ l: 'Founding member', v: foundingTermsText() });
+      // Stripe's figure when it sent one: that is the amount on the card.
+      const chargedCents = Number.isFinite(data.amountChargedToday) ? data.amountChargedToday : chargedTodayCents();
+      summaryRows.push({ l: 'Charged Today', v: fmt(chargedCents) });
+      const then = recurringLine();
+      if (then) summaryRows.push({ l: 'Then', v: then });
+      if (custPhone) summaryRows.push({ l: 'Confirmation to', v: custPhone });
+
+      // Save booking summary so the welcome page can show it after redirect
+      try {
+        sessionStorage.setItem('bookingSummary', JSON.stringify({
+          // Send the resolved cadence phrase, not just the weekday. thanks.html
+          // has no access to `fi`, so given a bare day it can only guess — and
+          // it guessed "Every other", which is wrong for 3 of the 4 plans.
+          cadence:    cadenceLabel(selectedDay),
+          day:        selectedDay,
+          plan:       planLabel(),
+          last4:      last4,
+          wallet:     walletLabel,
+          amountCents: chargedCents,
+          phone:      custPhone || null,
+          address:    addr,
+          firstName:  formData.fname || null,
+          // Carried purely so the referral question on thanks.html can file its
+          // answer against a real booking instead of an anonymous row. Stripe
+          // ids are not secrets, and this never leaves the customer's own tab
+          // except in the lead they choose to submit.
+          lastName:   formData.lname || null,
+          email:      formData.email || null,
+          zip:        formData.zip || null,
+          customerId: data.customerId || null,
+        }));
+      } catch (e) { /* storage is best-effort */ }
+
+      // Same cadence vocabulary as everywhere else on the page, keyed off the
+      // generated table rather than column literals.
+      const cadenceMsg = FREQ_WEEKS[fi] === 1 ? `every ${selectedDay}`
+                       : FREQ_WEEKS[fi] === 2 ? `every other ${selectedDay}`
+                       : `one ${selectedDay} a month`;
+      document.getElementById('success-msg').textContent = isOneTime
+        ? `We'll text you to confirm the arrival window on ${selectedDay}. One and done, no subscription.`
+        : `We'll text you before your first visit. After that, we'll see you ${cadenceMsg}, no reminders needed.`;
+      // Values include free-text form input (address, name). Self-XSS at worst
+      // — it's the customer's own typing on their own screen — but escaped so a
+      // stray `<` in an address can't break the markup. Mirrors thanks.html.
+      const escHtml = v => String(v).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      ));
+      document.getElementById('success-summary').innerHTML = summaryRows
+        .map(r => `<div class="ss-row"><span>${escHtml(r.l)}</span><span>${escHtml(r.v)}</span></div>`).join('');
+      document.getElementById('success-card').classList.add('show');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Analytics — fire purchase / lead conversion
+      try {
+        const value = chargedCents / 100; // actual amount charged today (quarterly ≠ monthly price)
+        if (typeof gtag === 'function') {
+          gtag('event', 'purchase', {
+            transaction_id: 'junk_' + Date.now(),
+            value: value,
+            currency: 'USD',
+            payment_method: source || 'card',   // card vs wallet — tells us whether wallets earn their keep
+            items: [{ item_name: 'Junk Removal', item_category: isOneTime ? 'one_time' : 'subscription', quantity: 1, price: value }]
+          });
+        }
+        if (typeof fbq === 'function') fbq('track', 'Purchase', { value: value, currency: 'USD' });
+      } catch (e) { /* analytics is best-effort */ }
+
+      // Redirect to the welcome page after a brief confirmation
+      setTimeout(() => { window.location.href = 'thanks.html'; }, 1800);
+    } catch (err) {
+      // Release the lock so the customer can retry or switch payment method.
+      // Deliberately not released on success: the page is mid-redirect and a
+      // second tap must not start a second booking.
+      bookingInFlight = false;
+      throw err;
+    }
+  }
+
+  // ── CARD PATH
+  bookBtn.addEventListener('click', async () => {
+    if (!BOOKINGS_OPEN_CLIENT) return; // pre-launch: no charges (server also blocks via BOOKINGS_OPEN)
+    if (bookingInFlight) return;
+    if (!stripe || !cardElement) {
+      bookErr.textContent = 'Stripe is not initialized.';
+      return;
+    }
+    if (!cardComplete) {
+      // The card field is directly above this button now, so the message points
+      // at it rather than sending anyone back two steps.
+      bookErr.textContent = walletAvailable
+        ? 'Finish entering your card above, or tap Apple Pay / Google Pay instead.'
+        : 'Please finish entering your card details above.';
+      return;
+    }
+    bookErr.textContent = '';
+    bookingInFlight = true;
+    bookBtn.disabled = true;
+    const originalText = bookBtn.textContent;
+    bookBtn.textContent = 'Processing…';
+    track('booking_attempt', { method: 'card' });
+
+    try {
+      // 1. Create PaymentMethod from the Card Element
+      const pm = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: billingDetails(),
+      });
+      if (pm.error) throw new Error(pm.error.message);
+
+      await submitBooking(pm.paymentMethod, 'card');
+    } catch (err) {
+      bookErr.textContent = err.message || 'Payment failed. Please try again.';
+      bookBtn.disabled = false;
+      bookBtn.textContent = originalText;
+      bookingInFlight = false;
+    }
+  });
+
+  // ── WALLET PATH — Apple Pay / Google Pay / Link
+  //
+  // Uses the Express Checkout Element in deferred-intent mode with
+  // `paymentMethodCreation: 'manual'`, which is the one configuration that
+  // hands back a PaymentMethod instead of confirming an Intent itself. That
+  // keeps /api/create-subscription untouched: it still receives a
+  // paymentMethodId and builds the customer + subscription exactly as before.
+  //
+  // Separate Elements group from the card element on purpose — the card
+  // element predates deferred mode and the two can't share one group.
+  //
+  // Samsung Pay is deliberately absent: Stripe supports it for in-person
+  // Terminal readers only, not on the web. Samsung phones check out through
+  // Google Pay in Chrome and Samsung Internet, which these buttons cover.
+  let expressElements = null, walletMounted = false, walletAvailable = false;
+  let walletFounding = false;   // the founding state the wallet options were built with
+  let walletQuarterly = false;  // the quarterly state the wallet options were built with
+
+  /**
+   * Apple requires recurring charges to be disclosed in the sheet itself, and
+   * the disclosure has to match what Stripe will actually charge — the sheet
+   * said "every week" for every plan while the ladder had five cadences in it.
+   * Null for a one-time cleanup. A founding member's discounted first month is
+   * disclosed as Apple's trial billing, ahead of the regular price.
+   */
+  function applePayOptions() {
+    if (isOneTime) return null;
+    const billing = quarterly
+      ? { interval: 'month', interval_count: 3 }
+      : FREQ_STRIPE[fi];
+    // Apple Pay has no `week` unit (year · month · day · hour · minute), and
+    // Stripe.js throws on one. Passing Stripe's `week` straight through made
+    // this whole element fail to build on weekly and every-other-week plans,
+    // so Apple Pay, Google Pay and Link never showed on the two most-booked
+    // cadences. A week is disclosed as 7 days; the charge itself still runs
+    // on Stripe's weekly interval, which is the same period.
+    const count = billing.interval_count || 1;
+    const applePayInterval = billing.interval === 'week'
+      ? { unit: 'day', count: 7 * count }
+      : { unit: billing.interval, count };
+    const request = {
+      paymentDescription: 'Brand Name junk removal',
+      managementURL: 'https://www.example.com/faq.html',
+      regularBilling: {
+        amount: regularChargeCents(),
+        label: quarterly ? 'Brand Name quarterly plan' : `Brand Name ${FREQ_LABELS[fi].toLowerCase()} plan`,
+        recurringPaymentIntervalUnit: applePayInterval.unit,
+        recurringPaymentIntervalCount: applePayInterval.count,
+      },
+      billingAgreement: 'Recurring charge until cancelled. Cancel anytime, no contract.',
+    };
+    if (foundingOffer) {
+      request.trialBilling = {
+        amount: chargedTodayCents(),
+        label: `Founding member, first month (${foundingOffer.percentOff}% off)`,
+        recurringPaymentIntervalUnit: applePayInterval.unit,
+        recurringPaymentIntervalCount: applePayInterval.count,
+      };
+    }
+    return { recurringPaymentRequest: request };
+  }
+
+  function mountWallets() {
+    if (walletMounted || !stripe || !BOOKINGS_OPEN_CLIENT) return;
+    const amount = chargedTodayCents();
+    if (!(amount > 0)) return;            // nothing to authorize
+    walletMounted = true;                 // set before the async work — one mount, ever
+
+    expressElements = stripe.elements({
+      mode:     isOneTime ? 'payment' : 'subscription',
+      amount:   amount,                   // what's actually charged today
+      currency: 'usd',
+      paymentMethodCreation: 'manual',
+      appearance: { variables: { borderRadius: '10px' } },
+    });
+
+    const opts = {
+      buttonHeight: 48,
+      buttonTheme:  { applePay: 'black', googlePay: 'black' },
+      // Amazon Pay and Klarna can't be used with manual PaymentMethod creation,
+      // and neither they nor PayPal can back a card-on-file subscription.
+      // Apple Pay and Google Pay are 'always', not 'auto': 'auto' lets Stripe
+      // hide a supported wallet when it judges the button unhelpful, and only
+      // 'always' offers Apple Pay in non-Safari desktop browsers at all.
+      paymentMethods: {
+        applePay: 'always', googlePay: 'always', link: 'auto',
+        amazonPay: 'never', paypal: 'never', klarna: 'never',
+      },
+    };
+    const applePay = applePayOptions();
+    if (applePay) opts.applePay = applePay;
+    walletFounding = !!foundingOffer;
+    walletQuarterly = quarterly;
+
+    const walletBlock = document.getElementById('wallet-block');
+    // A wallet that can't be built must cost us the wallet row, never the
+    // confirm step. create() throws synchronously on a bad option, and that
+    // exception used to escape through goTo('confirm') half-way through it.
+    let expressElement;
+    try {
+      expressElement = expressElements.create('expressCheckout', opts);
+    } catch (err) {
+      walletBlock.style.display = 'none';
+      console.error('[wallet] Express Checkout Element failed to build:', err);
+      track('wallet_build_error', { message: String(err && err.message || err).slice(0, 100) });
+      return;
+    }
+
+    // `ready` is the only trustworthy answer on whether this browser has a
+    // wallet. Until it fires the block stays hidden, so nobody sees a blank gap.
+    expressElement.on('ready', ev => {
+      const avail = (ev && ev.availablePaymentMethods) || {};
+      const names = Object.keys(avail).filter(k => avail[k]);
+      walletAvailable = names.length > 0;
+      walletBlock.style.display = walletAvailable ? 'block' : 'none';
+      if (walletAvailable) track('wallet_available', { methods: names.join(',') });
+    });
+    expressElement.on('loaderror', () => { walletBlock.style.display = 'none'; });
+
+    // Not calling resolve() is the documented way to abort — the wallet sheet
+    // simply never opens. Consent is recorded before any charge on this path
+    // too; the card button enforces the same rule via its disabled state.
+    expressElement.on('click', ev => {
+      if (bookingInFlight) return;
+      if (!(consentTerms.checked && consentLiability.checked)) {
+        bookErr.textContent = 'Please accept the terms and the load confirmation first.';
+        return;
+      }
+      bookErr.textContent = '';
+      // The founding offer closed after the wallet was built: re-disclose the
+      // plan at the price it now costs. Only then, so the everyday path passes
+      // exactly what it always has.
+      const applePay = (walletFounding !== !!foundingOffer || walletQuarterly !== quarterly) && ev.expressPaymentType === 'apple_pay'
+        ? applePayOptions() : null;
+      try {
+        ev.resolve(applePay ? { business: { name: 'Brand Name' }, applePay } : { business: { name: 'Brand Name' } });
+      } catch (err) {
+        if (!applePay) throw err;
+        ev.resolve({ business: { name: 'Brand Name' } });
+      }
+    });
+
+    expressElement.on('confirm', async ev => {
+      if (bookingInFlight) return ev.paymentFailed({ reason: 'fail' });
+      const source = ev.expressPaymentType || 'wallet';
+      bookingInFlight = true;
+      bookErr.textContent = '';
+      bookBtn.disabled = true;
+      track('booking_attempt', { method: source });
+      try {
+        const { error: submitError } = await expressElements.submit();
+        if (submitError) throw new Error(submitError.message);
+
+        const { error, paymentMethod } = await stripe.createPaymentMethod({
+          elements: expressElements,
+          params:   { billing_details: billingDetails() },
+        });
+        if (error) throw new Error(error.message);
+
+        await submitBooking(paymentMethod, source);
+      } catch (err) {
+        ev.paymentFailed({ reason: 'fail' });
+        bookErr.textContent = err.message || 'Payment failed. Please try again.';
+        bookBtn.disabled = false;
+        bookingInFlight = false;
+      }
+    });
+
+    expressElement.mount('#express-checkout-element');
+  }
+</script>
+
+</body>
+</html>

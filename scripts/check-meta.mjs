@@ -24,6 +24,8 @@ const seenT = new Map(), seenD = new Map();
 for (const file of pages(ROOT)) {
   const f = path.relative(ROOT, file);
   const h = fs.readFileSync(file, 'utf8');
+  // Pages Google is told to skip (checkout, thanks) never show a snippet.
+  if (/<meta name="robots" content="noindex/.test(h)) continue;
   const t = attr(h, /<title>([^<]*)<\/title>/);
   const d = attr(h, /<meta name="description" content="([^"]*)"/);
   const ot = attr(h, /<meta property="og:title" content="([^"]*)"/);

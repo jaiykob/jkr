@@ -1,48 +1,86 @@
 # Junk removal: working notes for Claude
 
 A skeleton built on 2026-09-27 from the Scoops Co. stack
-(`C:\Users\chris\scoopco`): static pages + Vercel serverless API. **Not live,
-no name, no domain yet.** Placeholders: "Brand Name", "example.com",
-"(000) 000-0000", and every `TODO` (`grep -rn TODO`).
+(`C:\Users\chris\scoopco`): static pages + Vercel serverless API + Stripe +
+Supabase. The booking flow is Scoops Co.'s, file for file, with dogs replaced
+by load size. **Not live, no name, no domain yet.** Placeholders: "Brand Name",
+"example.com", "(000) 000-0000", `pk_test_REPLACE_ME`, `G-XXXXXXXXXX`,
+`YOUR-PROJECT.supabase.co`, and every `TODO` (`grep -rn TODO`).
 
 The founder is finishing a degree. Keep sessions focused and small.
 
-## Layout
+## Flow map (same shape as Scoops Co.)
 
-| Path | What it is |
-| --- | --- |
-| `pricing.config.mjs` | **The only price table.** Integer cents, per truck load, plus surcharges and the ZIP gate |
-| `api/price.js` | Serves the table to the pages |
-| `api/quote-request.js` | Takes a quote request, **recomputes the price on the server**, logs the lead |
-| `index.html` | Homepage |
-| `onboarding/quote.html` | Quote form (ZIP first, then load size, then contact) |
-| `css/site.css`, `js/site.js`, `fonts/` | Design system copied from Scoops Co. |
-| `scripts/check-meta.mjs` | `npm test`: title/description length, og match, no dashes, no duplicates |
+```
+index.html → onboarding/junk.html        → onboarding/schedule-junk.html      → onboarding/thanks.html
+             (3 steps: load size,          (quote summary, day picker,
+              one-time or recurring,        "Continue to payment" → Stripe)
+              ZIP + contact → "View quote")
+                                                  ↓
+                                   POST /api/create-subscription
+                                     ↓                      ↓
+                          one-time PaymentIntent     recurring subscription
+                                                  ↓
+                                   Stripe → /api/stripe-webhook
+                                                  ↓
+                          Supabase spine + confirmation email + Discord ping
+```
 
-## Rules carried over from Scoops Co.
+Contact details travel in sessionStorage (`quoteContact`), never in the URL.
+The webhook, not the checkout, writes customers/subscriptions/visits and sends
+the confirmation. `/api/cron-visits` (daily) schedules recurring visits and
+sends reminders. `/api/day-capacity` greys out full days (`DAILY_CAP`).
 
-- **Never commit directly to `main`** once this is deployed. Branch, then merge.
-- **Money is integer cents**, printed with `toFixed(2)`. Never hand-type a
-  price into a page: pages read `/api/price`.
-- **The server is authoritative.** Never trust a price the browser sends.
-- **No card is charged at quote time.** Junk jobs are confirmed on site, so
-  payment comes after. Revisit if deposits are added.
-- **Fail-soft on leads:** a database or email error must never lose a lead.
-  Log the full lead if every channel fails.
-- **Secrets:** `.gitignore` covers `.env*`, keys, `.vercel`. Never commit one.
-- Mobile: running text at least 16px, tap targets at least 48×48 (`--tap`),
-  no horizontal scroll at 360/390/430.
+## Pricing is generated — never hand-edit the copies
 
-## Copy voice
+Edit **`pricing.config.mjs`** (rows = load sizes, columns = one-time haul /
+monthly pickup, integer cents after rounding), then run
+**`npm run build:pricing`**. It rewrites the blocks between `BUILD:` markers in
+`api/create-subscription.js` (authoritative), `onboarding/junk.html`,
+`onboarding/schedule-junk.html` and `index.html`. The server recomputes every
+booking and refuses one that doesn't match ("Quote is out of date").
 
-A company: "we / us / our", never "I / me / my". Plain, genuine, correct
-grammar, no slang. **No dashes as punctuation** (em or en). Questions a
-customer asks stay in their voice ("Do I need to be home?").
+Never hardcode a column index; derive it (`ONE_TIME_COL`, `BILLING_BY_COL`).
+Adding a column means a matching `CADENCE` entry in `api/_lib/schedule.js`
+(`npm test` fails if they disagree).
 
-## Known gaps (next steps, roughly in order)
+## The booking gates (all CLOSED until launch)
 
-1. Name, domain, phone, real prices, real service ZIPs.
-2. Prices are fetched in the browser, so Google does not see them. Scoops Co.
-   fixed this by generating them into the HTML at build time (`build-pricing`).
-3. Lead delivery (database + Discord + email), then photo upload.
-4. Header/footer generation, sitemap, city pages, blog, as at Scoops Co.
+1. `BOOKINGS_OPEN_SERVER` in `api/create-subscription.js`
+2. `BOOKINGS_OPEN=true` env var in Vercel
+3. `BOOKINGS_OPEN_CLIENT` in `onboarding/schedule-junk.html` (UI only)
+
+Only live mode (`sk_live`) is gated. Emergency brake: flip #1 to `false`.
+
+## Deliberately not carried over from Scoops Co.
+
+- Founding-member offer (server half). The checkout math is still there,
+  dormant (`foundingOffer` stays null).
+- Gresham/Portland shared-ZIP street lookup (`service-address.js`).
+- $0 free-booking path, admin dashboard, visit photos, Spanish build,
+  generated header/footer, city pages, blog, sitemap.
+
+## Setup before launch
+
+Env vars: `STRIPE_SECRET_KEY`, `STRIPE_PRODUCT_ID`, `STRIPE_WEBHOOK_SECRET`,
+`BOOKINGS_OPEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
+`EMAIL_FROM`, `OPS_WEBHOOK_URL` (Discord), `SITE_ORIGIN`, `CRON_SECRET`.
+Apply `db/schema.sql` in Supabase (it includes the `leads` table). Put the
+publishable key in `schedule-junk.html` and the anon key in `js/leads.js`.
+The Stripe webhook URL must use the host that does NOT redirect.
+
+## Rules carried over
+
+- Branch, then merge to `main`, once this deploys from `main`.
+- Money is integer cents, printed with `toFixed(2)`.
+- Fail-soft on the spine (a db or email error never loses a booking);
+  fail-open on capacity.
+- Secrets: `.gitignore` covers `.env*`, keys, `.vercel`. Never commit one.
+- Mobile: text at least 16px, tap targets at least 48×48, no sideways scroll.
+- Copy: "we / us / our", plain, no slang, **no dashes as punctuation**.
+
+## Tests
+
+`npm test`: schedule math, booking API against a fake Stripe (validation,
+price cross-check, ZIP gate, closed live gate, both payment paths), generated
+price blocks in sync, titles and descriptions.

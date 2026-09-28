@@ -1,0 +1,307 @@
+/**
+ * Brand Name — email templates.
+ *
+ * Each template is a pure function: ctx in, { subject, html, text } out. No
+ * sending here (that's email.js), no data fetching — callers pass a plain ctx
+ * so templates stay testable and the wiring site decides where data comes from.
+ *
+ * Two classes, matching the transactional/marketing split:
+ *   TRANSACTIONAL (no unsubscribe, sent off a customer action):
+ *     1. bookingConfirmation   2. paymentFailed   3. serviceComplete
+ *   MARKETING (CAN-SPAM: physical address + unsubscribe required):
+ *     4. reviewRequest   5. leadRecapture   6. visitReminder   7. winBack
+ *
+ *   visitReminder is operational but we treat its footer as marketing-grade
+ *   (address + unsubscribe) so it's safe to route through the marketing domain
+ *   alongside SMS once A2P clears.
+ */
+
+/**
+ * SUBJECT LINES — house rules, because these are the only part of an email most
+ * people ever read:
+ *   1. Never repeat the brand. The From name is already "Brand Name"; spending
+ *      the ~35 characters a phone shows on saying it twice buys nothing.
+ *   2. No emoji. Every subject here used to carry a 🐾 or 🌿, which reads as
+ *      marketing on a booking confirmation and costs inbox placement on the
+ *      transactional ones that must arrive.
+ *   3. Lead with the specific fact — the day, the amount, the thing that
+ *      happened — not a category label. "We're scooping Tuesday" beats
+ *      "Reminder: Brand Name visits".
+ * Keep them under ~45 characters so nothing truncates on a phone.
+ */
+
+const BRAND = {
+  name:    'Brand Name',
+  green:   '#2D5A1E',
+  deep:    '#04402A',
+  tan:     '#C8A96E',
+  page:    '#F7F3ED',
+  card:    '#FFFFFF',
+  text:    '#04402A',
+  muted:   'rgba(4,64,42,.65)',
+  border:  'rgba(4,64,42,.12)',
+  // Dedicated email asset — NOT images/logo.png. That file is 1402x1122 and
+  // ~972KB, and the header rendered it into a 44x44 box, so every email pulled
+  // a megabyte to show a squashed, wrong-aspect thumbnail. This one is 144x96
+  // (2x of the 72x48 display box), matches the mark's real 3:2 aspect, and is
+  // 5.6KB. Regenerate from images/logo-mark.png if the mark ever changes.
+  logo:    'https://example.com/images/email-logo.png',
+  site:    'https://example.com',
+  phone:   '(000) 000-0000',
+  email:   'hello@example.com',
+  // CAN-SPAM requires a valid physical postal address in marketing email.
+  // TODO before first marketing send: set EMAIL_MAILING_ADDRESS to a PO box or
+  // the DBA/registered-agent address — do NOT leak a home address.
+  address: () => process.env.EMAIL_MAILING_ADDRESS || 'Gresham, OR',
+};
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function button(label, url) {
+  if (!url) return '';
+  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0;">
+    <tr><td style="border-radius:10px;background:${BRAND.green};">
+      <a href="${escapeHtml(url)}" style="display:inline-block;padding:14px 28px;font-family:'DM Sans',Arial,sans-serif;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:10px;">${escapeHtml(label)}</a>
+    </td></tr>
+  </table>`;
+}
+
+/**
+ * Shared HTML shell. Marketing variant adds the CAN-SPAM footer block.
+ * @param {{preheader?:string, heading:string, bodyHtml:string, marketing?:boolean, unsubscribeUrl?:string}} o
+ */
+function layout({ preheader = '', heading, bodyHtml, marketing = false, unsubscribeUrl, title }) {
+  // The shell shipped without a <title>, which is what clients use for the
+  // browser tab on "view in browser" and what some webmail shows above the
+  // message — so it was falling back to junk. Defaults to the heading, which
+  // is always a real sentence.
+  const docTitle = escapeHtml(title || heading || BRAND.name);
+  const footerLegal = marketing
+    ? `<p style="margin:8px 0;color:${BRAND.muted};font-size:12px;line-height:1.6;">
+         You're getting this because you contacted ${BRAND.name} about dog waste removal in east Multnomah County.<br/>
+         ${escapeHtml(BRAND.address())}<br/>
+         ${unsubscribeUrl ? `<a href="${escapeHtml(unsubscribeUrl)}" style="color:${BRAND.muted};text-decoration:underline;">Unsubscribe</a>` : 'Reply STOP to opt out.'}
+       </p>`
+    : `<p style="margin:8px 0;color:${BRAND.muted};font-size:12px;line-height:1.6;">
+         ${BRAND.name} · Gresham, OR · <a href="tel:+10000000000" style="color:${BRAND.muted};">${BRAND.phone}</a>
+       </p>`;
+
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<title>${docTitle} · ${BRAND.name}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="color-scheme" content="light"/>
+</head>
+<body style="margin:0;padding:0;background:${BRAND.page};">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${BRAND.page};padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:${BRAND.card};border:1px solid ${BRAND.border};border-radius:16px;overflow:hidden;">
+        <!-- Brand band. The logo mark is CREAM — it's drawn for the site's dark
+             green nav — so it has to sit on ${BRAND.deep} here too. It spent its
+             first run on the white card, where a cream silhouette on #FFFFFF was
+             invisible in every client.
+             The wordmark beside it is live text, not part of the image, so the
+             header still reads as Brand Name when a client blocks images (Outlook
+             blocks by default) instead of rendering an empty white box. -->
+        <tr><td style="background:${BRAND.deep};padding:20px 32px;">
+          <table role="presentation" cellspacing="0" cellpadding="0"><tr>
+            <td style="padding-right:12px;">
+              <img src="${BRAND.logo}" width="72" height="48" alt="" style="display:block;border:0;width:72px;height:48px;"/>
+            </td>
+            <td style="font-family:'Playfair Display',Georgia,serif;font-size:22px;letter-spacing:.04em;color:${BRAND.tan};white-space:nowrap;">
+              ${BRAND.name}
+            </td>
+          </tr></table>
+        </td></tr>
+        <tr><td style="padding:24px 32px 8px;font-family:'DM Sans',Arial,sans-serif;">
+          <h1 style="margin:0;font-size:22px;line-height:1.3;color:${BRAND.deep};font-weight:700;">${escapeHtml(heading)}</h1>
+        </td></tr>
+        <tr><td style="padding:0 32px 8px;font-family:'DM Sans',Arial,sans-serif;font-size:16px;line-height:1.6;color:${BRAND.text};">
+          ${bodyHtml}
+        </td></tr>
+        <tr><td style="padding:16px 32px 28px;border-top:1px solid ${BRAND.border};font-family:'DM Sans',Arial,sans-serif;">
+          ${footerLegal}
+        </td></tr>
+      </table>
+      <p style="max-width:560px;margin:16px auto 0;font-family:'DM Sans',Arial,sans-serif;font-size:11px;color:${BRAND.muted};text-align:center;">
+        © ${new Date().getFullYear()} ${BRAND.name} · <a href="${BRAND.site}" style="color:${BRAND.muted};">example.com</a>
+      </p>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+// Small helper for a labeled detail row inside the card.
+function detail(label, value) {
+  if (value == null || value === '') return '';
+  return `<tr>
+    <td style="padding:6px 0;font-size:14px;color:${BRAND.muted};width:120px;">${escapeHtml(label)}</td>
+    <td style="padding:6px 0;font-size:15px;color:${BRAND.text};font-weight:600;">${escapeHtml(value)}</td>
+  </tr>`;
+}
+
+/* ─────────────────────────  TRANSACTIONAL  ───────────────────────── */
+
+// 1. Booking confirmation — fires off Stripe customer.subscription.created.
+function bookingConfirmation(ctx = {}) {
+  const { name, plan, amount, frequency, pickupDay, address, load } = ctx;
+  // heading is passed raw — layout() escapes it (escaping here would double-encode).
+  const heading = `You're booked${name ? ', ' + name : ''}!`;
+  const rows = [
+    detail('Plan', plan),
+    detail('Frequency', frequency),
+    detail('Day', pickupDay),
+    detail('Address', address),
+    detail('Load', load),
+    detail('Charged', amount),
+  ].join('');
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Thanks for choosing Brand Name Your service is confirmed — here are the details:</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
+    <p style="margin:12px 0;">On your first visit we'll do a full-yard reset, double-bag everything, and haul it off-site. We always re-latch the gate on the way out.</p>
+    <p style="margin:12px 0;">Questions? Just reply to this email or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  return {
+    subject: pickupDay ? `You're booked — ${pickupDay}` : "You're booked — service confirmed",
+    html: layout({ preheader: 'Your pickup is all set — here are the details.', heading, bodyHtml }),
+    text: `You're booked${name ? ', ' + name : ''}!\n\nPlan: ${plan || ''}\nFrequency: ${frequency || ''}\nPickup day: ${pickupDay || ''}\nAddress: ${address || ''}\nCharged: ${amount || ''}\n\nWe'll reset the yard, double-bag, haul off-site, and always re-latch the gate.\nQuestions? Reply here or call ${BRAND.phone}.\n— Brand Name`,
+  };
+}
+
+// 2. Payment failed — fires off invoice.payment_failed.
+function paymentFailed(ctx = {}) {
+  const { name, amount, updateUrl } = ctx;
+  const heading = 'A quick heads-up about your payment';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we couldn't process your most recent payment${amount ? ` of <strong>${escapeHtml(amount)}</strong>` : ''}.</p>
+    <p style="margin:12px 0;">No action is needed on the yard — we just need a working card on file to keep your service going. It only takes a sec:</p>
+    ${button('Update payment method', updateUrl)}
+    <p style="margin:12px 0;">If you think this is a mistake or want to sort it out by phone, reply here or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  return {
+    subject: amount ? `Your ${amount} payment didn't go through` : "Your payment didn't go through",
+    html: layout({ preheader: 'We couldn\'t process your last payment — quick fix inside.', heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}, we couldn't process your last payment${amount ? ` of ${amount}` : ''}.\nUpdate your card to keep service going: ${updateUrl || BRAND.site}\nQuestions? Reply here or call ${BRAND.phone}.\n— Brand Name`,
+  };
+}
+
+// 3. Service-complete — fires when a visit is marked done (visit-tracking trigger).
+//
+// The gate line is deliberately conditional on gatePhotoUrl: this email asserts a
+// specific fact about one visit, so it only makes the claim when there's a photo
+// backing it. No gate photo (or a property with no gate) → the claim is dropped,
+// never asserted unproven. The generic "we always re-latch" policy promise in
+// bookingConfirmed is unaffected.
+function serviceComplete(ctx = {}) {
+  const { name, visitDate, nextVisitDate, photoUrl, gatePhotoUrl, address } = ctx;
+  const heading = 'All scooped — your yard is clean 🌿';
+  const photo = (url, alt, caption) => url
+    ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" width="100%" style="display:block;border:0;border-radius:12px;margin:12px 0 4px;max-width:496px;"/>
+       ${caption ? `<p style="margin:0 0 12px;font-size:13px;color:${BRAND.muted};">${escapeHtml(caption)}</p>` : ''}`
+    : '';
+  const gateClaim = gatePhotoUrl ? ", and the gate's latched" : '';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we just finished${visitDate ? ` your ${escapeHtml(visitDate)} visit` : ' your visit'}${address ? ` at ${escapeHtml(address)}` : ''}. Everything's double-bagged and hauled off-site${gateClaim}.</p>
+    ${photo(photoUrl, 'Your freshly cleaned yard')}
+    ${photo(gatePhotoUrl, 'Your gate, latched on the way out', 'Your gate, latched on the way out.')}
+    ${nextVisitDate ? `<p style="margin:12px 0;">Your next visit is scheduled for <strong>${escapeHtml(nextVisitDate)}</strong>.</p>` : ''}
+    <p style="margin:12px 0;">See anything we missed? Reply to this email — we'll make it right.</p>`;
+  return {
+    subject: nextVisitDate ? `Yard's clean — back ${nextVisitDate}` : "All done — your yard is clean",
+    html: layout({
+      preheader: `Service complete — double-bagged, hauled off${gatePhotoUrl ? ', gate latched' : ''}.`,
+      heading, bodyHtml,
+    }),
+    text: `Hi${name ? ' ' + name : ''}, we finished${visitDate ? ` your ${visitDate} visit` : ' your visit'}. Double-bagged, hauled off-site${gatePhotoUrl ? ', gate latched' : ''}.${nextVisitDate ? `\nNext visit: ${nextVisitDate}.` : ''}\nMissed something? Just reply.\n— Brand Name`,
+  };
+}
+
+/* ─────────────────────────  MARKETING  ───────────────────────── */
+
+// 4. Review request — timed off visit count; GBP is the #1 growth channel.
+function reviewRequest(ctx = {}) {
+  const { name, reviewUrl, unsubscribeUrl } = ctx;
+  const heading = 'How are we doing?';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, it's been a few visits now — we hope the yard's staying spotless.</p>
+    <p style="margin:12px 0;">If you've got 30 seconds, a quick Google review helps other local dog owners find us more than anything else we could do. It would mean a lot.</p>
+    ${button('Leave a review', reviewUrl)}
+    <p style="margin:12px 0;">And if anything's been less than perfect, reply here first — we'd rather fix it than read about it. 🙂</p>`;
+  return {
+    subject: 'How did we do?',
+    html: layout({ preheader: 'A 30-second Google review helps more than anything.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
+    text: `Hi${name ? ' ' + name : ''}, a few visits in — hope the yard's spotless!\nA quick Google review helps other local dog owners find us: ${reviewUrl || BRAND.site}\nAnything less than perfect? Reply here first.\n— Brand Name`,
+  };
+}
+
+// 5. Lead recapture — quoted but never booked. Owned by the OpenClaw agent.
+function leadRecapture(ctx = {}) {
+  const { name, quoteUrl, quotedPrice, unsubscribeUrl } = ctx;
+  const heading = 'Still thinking it over?';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, you grabbed a quote${quotedPrice ? ` (${escapeHtml(quotedPrice)})` : ''} from Brand Name but didn't finish booking — totally understand, life's busy.</p>
+    <p style="margin:12px 0;">When you're ready, your spot's still here. We're insured, contract-free, and we double-bag and haul everything off-site so nothing sits in your bin.</p>
+    ${button('Pick up where you left off', quoteUrl)}
+    <p style="margin:12px 0;">Have a question first? Reply to this email or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  return {
+    subject: quotedPrice ? `Your ${quotedPrice} quote is still good` : 'Your quote is still good',
+    html: layout({ preheader: 'Pick up where you left off — your spot is still here.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
+    text: `Hi${name ? ' ' + name : ''}, you grabbed a quote${quotedPrice ? ` (${quotedPrice})` : ''} but didn't finish booking.\nWhen you're ready: ${quoteUrl || BRAND.site}\nInsured, no contracts, hauled off-site. Questions? ${BRAND.phone}.\n— Brand Name`,
+  };
+}
+
+// 6. Visit reminder — "we're coming tomorrow" (email placeholder until SMS/A2P).
+function visitReminder(ctx = {}) {
+  const { name, visitDate, pickupDay, unsubscribeUrl } = ctx;
+  const heading = 'We\'re coming by soon 🚪';
+  const when = visitDate || pickupDay || 'your next scheduled day';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, just a reminder that Brand Name is scheduled to visit on <strong>${escapeHtml(when)}</strong>.</p>
+    <p style="margin:12px 0;">To help us get in and out: please <strong>unlock the gate</strong> and bring pets inside if you can. We'll re-latch everything on our way out.</p>
+    <p style="margin:12px 0;">Need to reschedule or skip this one? Reply here or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  return {
+    // The gate ask lives in the preheader, not the subject — `when` can be a
+    // full date and the pair together truncates on a phone.
+    subject: `We're scooping ${when}`,
+    html: layout({ preheader: 'Please unlock the gate and bring pets inside.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
+    text: `Hi${name ? ' ' + name : ''}, reminder: Brand Name visits ${when}.\nPlease unlock the gate and bring pets inside — we'll re-latch on the way out.\nReschedule/skip? Reply or call ${BRAND.phone}.\n— Brand Name`,
+  };
+}
+
+// 7. Win-back — reactivate a churned customer.
+function winBack(ctx = {}) {
+  const { name, reactivateUrl, offer, unsubscribeUrl } = ctx;
+  const heading = 'We\'d love to have you back 🐾';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, it's been a while since your last Brand Name visit and we miss keeping your yard clean.</p>
+    <p style="margin:12px 0;">Picking back up is easy — same crew, same off-site haul-away, no contracts.${offer ? ` <strong>${escapeHtml(offer)}</strong>` : ''}</p>
+    ${button('Restart my service', reactivateUrl)}
+    <p style="margin:12px 0;">Or just reply and tell us what day works — we'll handle the rest.</p>`;
+  return {
+    subject: 'Ready to restart your service?',
+    html: layout({ preheader: 'Pick your service back up — same crew, no contracts.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
+    text: `Hi${name ? ' ' + name : ''}, it's been a while — we'd love to have you back.${offer ? ' ' + offer : ''}\nRestart: ${reactivateUrl || BRAND.site}\nOr reply with a day that works.\n— Brand Name`,
+  };
+}
+
+module.exports = {
+  BRAND,
+  escapeHtml,
+  layout,
+  // transactional
+  bookingConfirmation,
+  paymentFailed,
+  serviceComplete,
+  // marketing
+  reviewRequest,
+  leadRecapture,
+  visitReminder,
+  winBack,
+};

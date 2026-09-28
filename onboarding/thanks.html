@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Brand Name | You're Booked</title>
+  <meta name="description" content="Your Brand Name service is confirmed. Watch a quick welcome and learn what happens next." />
+  <meta name="robots" content="noindex" />
+  <!-- Self-hosted fonts (fonts/). The Google Fonts stylesheet was render-blocking:
+       the browser had to fetch Google's CSS before it learned which fonts to get. -->
+  <style>
+    @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/dm-sans.woff2) format('woff2'); }
+    @font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400 600; font-display: swap; src: url(/fonts/playfair.woff2) format('woff2'); }
+    @font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400 500; font-display: swap; src: url(/fonts/playfair-italic.woff2) format('woff2'); }
+  </style>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --rg: #04402A; --tan: #C8A96E; --dtan: #7A5C2E;
+      --page: #F7F3ED; --card: #FFFFFF; --surf: #F0EBE1;
+      --tx: #04402A; --txm: rgba(4,64,42,.8); --txd: rgba(4,64,42,.74);
+      --bdr: rgba(4,64,42,.12); --bdrt: rgba(200,169,110,.42);
+    }
+    body {
+      font-family: 'DM Sans', sans-serif; background: var(--page); color: var(--tx);
+      min-height: 100vh; line-height: 1.7;
+    }
+
+    nav {
+      background: var(--rg); padding: 18px 32px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid rgba(200,169,110,.18);
+    }
+    nav a.brand { display: inline-flex; align-items: center; color: var(--tan); text-decoration: none; }
+    .nav-logo, nav a.brand, nav > a { display: inline-flex !important; align-items: center; gap: 12px; }
+    .nav-wordmark { font-family: 'Playfair Display', serif; font-weight: 500; font-size: clamp(20px, 2vw, 24px); letter-spacing: .04em; color: var(--tan); line-height: 1; white-space: nowrap; }
+    nav a.brand img { display: block; height: 44px; width: auto; }
+
+    main { max-width: 800px; margin: 0 auto; padding: 56px 24px 96px; }
+
+    .header { text-align: center; margin-bottom: 36px; }
+    .eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: .26em;
+      text-transform: uppercase; color: var(--dtan); margin-bottom: 10px;
+    }
+    h1 {
+      font-family: 'Playfair Display', serif; font-weight: 400;
+      font-size: clamp(38px, 5vw, 54px); line-height: 1.08;
+      color: var(--rg); margin-bottom: 14px;
+    }
+    h1 em { font-style: normal; color: var(--dtan); }
+    .sub { font-size: 16px; color: var(--txm); max-width: 560px; margin: 0 auto; }
+
+    /* Booking summary card */
+    .summary-card {
+      background: var(--card); border: 1px solid var(--bdrt);
+      border-radius: 18px; padding: 28px 32px;
+      box-shadow: 0 14px 40px rgba(4,64,42,.08);
+      margin-bottom: 32px;
+    }
+    .summary-card h2 {
+      font-family: 'Playfair Display', serif; font-weight: 500;
+      font-size: 20px; color: var(--rg); margin-bottom: 18px;
+    }
+    .summary-rows .row {
+      display: flex; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid var(--bdr);
+      font-size: 14px;
+    }
+    .summary-rows .row:last-child { border-bottom: none; }
+    .summary-rows .label { color: var(--txm); }
+    .summary-rows .value { color: var(--rg); font-weight: 600; text-align: right; }
+
+    /* What's next */
+    .next-steps {
+      background: var(--surf); border: 1px solid var(--bdr);
+      border-radius: 16px; padding: 26px 28px; margin-bottom: 32px;
+    }
+    .next-steps h2 {
+      font-family: 'Playfair Display', serif; font-weight: 500;
+      font-size: 20px; color: var(--rg); margin-bottom: 18px;
+    }
+    .next-steps ol { padding-left: 20px; font-size: 14.5px; line-height: 1.85; color: var(--txm); }
+    .next-steps li { margin-bottom: 6px; }
+    .next-steps li::marker { color: var(--tan); font-weight: 700; }
+    .next-steps strong { color: var(--rg); }
+
+    /* Action buttons */
+    .actions {
+      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+      margin-bottom: 28px;
+    }
+    .btn {
+      padding: 14px 28px; border-radius: 12px; text-decoration: none;
+      font-size: 13px; font-weight: 700; letter-spacing: .06em;
+      transition: transform .2s, background .2s, border-color .2s;
+    }
+    .btn-primary { background: var(--rg); color: var(--tan); }
+    .btn-primary:hover { background: #254a25; transform: translateY(-2px); }
+    .btn-ghost { background: none; border: 1.5px solid var(--bdr); color: var(--txm); }
+    .btn-ghost:hover { border-color: var(--tan); color: var(--rg); }
+
+    .signoff {
+      text-align: center; font-size: 13px; color: var(--txd);
+      font-family: 'Playfair Display', serif; font-style: normal;
+      margin-top: 12px;
+    }
+
+    /* Referral question — moved here from the checkout form on 2026-08-31.
+       Asked once the booking is paid for, so it costs nobody a conversion. */
+    .referral {
+      background: var(--card); border: 1px solid var(--bdrt);
+      border-radius: 18px; padding: 26px 28px; margin-bottom: 32px;
+      box-shadow: 0 14px 40px rgba(4,64,42,.08);
+    }
+    .referral h2 {
+      font-family: 'Playfair Display', serif; font-weight: 500;
+      font-size: 20px; color: var(--rg); margin-bottom: 6px;
+    }
+    .referral .ask { font-size: 14px; color: var(--txm); margin-bottom: 18px; }
+    /* Chips, not a <select>: eight options is a tap each instead of a tap, a
+       scroll and a tap through a native picker. */
+    .ref-opts { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 4px; }
+    .ref-opt {
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+      padding: 11px 16px; border-radius: 999px; cursor: pointer;
+      background: var(--surf); border: 1.5px solid var(--bdr); color: var(--rg);
+      transition: background .18s, border-color .18s, color .18s;
+    }
+    .ref-opt:hover { border-color: var(--bdrt); }
+    .ref-opt[aria-pressed="true"] { background: var(--rg); border-color: var(--rg); color: var(--tan); }
+    .ref-other { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; }
+    .ref-other label {
+      font-size: 10px; font-weight: 700; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--dtan);
+    }
+    .ref-other input {
+      padding: 13px 14px; background: var(--surf);
+      border: 1.5px solid var(--bdr); border-radius: 8px;
+      font-family: 'DM Sans', sans-serif; font-size: 16px; color: var(--tx);
+      outline: none; transition: border-color .2s, background .2s;
+    }
+    .ref-other input:focus { border-color: var(--tan); background: #fdf8f0; }
+    .ref-send {
+      margin-top: 18px; border: none; cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .ref-send:disabled { opacity: .4; cursor: default; transform: none; }
+    .ref-done { margin-top: 4px; font-size: 14px; color: var(--txm); }
+
+    @media (max-width: 600px) {
+      main { padding: 40px 18px 72px; }
+      .referral { padding: 22px 18px; }
+      .ref-send { width: 100%; }
+    }
+      .lang-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tan) !important; border: 1px solid rgba(200,169,110,.45); border-radius: 100px; padding: 5px 13px; text-decoration: none; white-space: nowrap; }
+    .lang-switch:hover { background: rgba(200,169,110,.14); }
+    .crumb { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+</style>
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
+    gtag('js',new Date());gtag('config','G-XXXXXXXXXX');
+    // Query string stripped: thanks.html is same-origin with the checkout, so
+    // document.referrer is the FULL previous URL — which used to include the
+    // customer's name and phone. The checkout no longer leaves those in its
+    // URL, but reporting a bare path here means a stale tab can't leak them
+    // either.
+    gtag('event','conversion_thanks',{ source: (document.referrer || '').split('?')[0] });
+  </script>
+  <!-- Files the referral answer below into public.leads. -->
+  <script src="../js/leads.js" defer></script>
+  <!-- Vercel Web Analytics: first-party, cookieless page views -->
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+
+<nav>
+  <a class="brand" href="../index.html" aria-label="Brand Name"><span class="nav-wordmark">Brand Name</span></a></nav>
+
+<main>
+
+  <header class="header">
+    <p class="eyebrow">Booking Confirmed</p>
+    <h1 id="welcome-heading">Welcome to <em>Brand&nbsp;Name</em></h1>
+    <p class="sub">Thank you for choosing us. Your service is confirmed. Your confirmation is on its way to your inbox and phone. If you have any questions, call or text; we're always happy to help.</p>
+  </header>
+
+  <!-- Booking summary, populated from sessionStorage by the script below -->
+  <section class="summary-card" id="summary-card" hidden>
+    <h2>Your booking</h2>
+    <div class="summary-rows" id="summary-rows"></div>
+  </section>
+
+  <!-- Referral question. It used to be step 1 of checkout, between someone's
+       address and their card; it's attribution we want, not something we need
+       in order to do the job, so it's asked here instead — after the money
+       has already cleared. Entirely optional: skipping it does nothing. -->
+  <section class="referral" id="referral">
+    <h2>One last thing</h2>
+    <p class="ask">How did you hear about us? It tells us where to show up next, and it's the only thing on this page you can ignore.</p>
+    <div class="ref-opts" id="ref-opts">
+      <button type="button" class="ref-opt" aria-pressed="false" data-val="Friend / Word of Mouth">Friend or word of mouth</button>
+      <button type="button" class="ref-opt" aria-pressed="false" data-val="Neighbor / Saw your truck">Neighbor or saw your truck</button>
+      <button type="button" class="ref-opt" aria-pressed="false" data-val="Google Search">Google search</button>
+      <button type="button" class="ref-opt" aria-pressed="false" data-val="Instagram">Instagram</button>
+      <button type="button" class="ref-opt" aria-pressed="false" data-val="Facebook">Facebook</button>
+      <button type="button" class="ref-opt" aria-pressed="false" data-val="Nextdoor">Nextdoor</button>
+      <button type="button" class="ref-opt" aria-pressed="false" data-val="Flyer / Postcard">Flyer or postcard</button>
+      <button type="button" class="ref-opt" aria-pressed="false" data-val="Other">Something else</button>
+    </div>
+    <div class="ref-other" id="ref-other" hidden>
+      <label for="ref-other-input">Where exactly?</label>
+      <input type="text" id="ref-other-input" placeholder="Optional" maxlength="120" />
+    </div>
+    <button class="btn btn-primary ref-send" id="ref-send" disabled>Send</button>
+    <p class="ref-done" id="ref-done" hidden></p>
+  </section>
+
+  <!-- What happens next -->
+  <section class="next-steps">
+    <h2>What happens next</h2>
+    <ol>
+      <li><strong>Within 24 hours:</strong> you'll get a text confirming your day and an arrival window. TODO: match how you actually schedule.</li>
+      <li><strong>The day before:</strong> a reminder with the arrival window.</li>
+      <li><strong>When we finish:</strong> a "job done" text the moment the truck is loaded.</li>
+      <li><strong>Any time:</strong> text or call us to change the day or cancel. TODO: cancellation terms.</li>
+    </ol>
+  </section>
+
+  <div class="actions">
+    <a class="btn btn-primary" href="../index.html">Back to Brand Name</a>
+    <a class="btn btn-ghost" href="tel:+10000000000">Call or text us: (000) 000-0000</a>
+  </div>
+
+  <p class="signoff">The Brand Name team</p>
+
+</main>
+
+<script>
+  // Populate the booking summary from sessionStorage (set by schedule-junk.html before redirect).
+  (function renderSummary() {
+    let raw;
+    try { raw = sessionStorage.getItem('bookingSummary'); } catch (e) { return; }
+    if (!raw) return;
+    let s;
+    try { s = JSON.parse(raw); } catch (e) { return; }
+
+    // Two decimals, always — same rule as fmt() in schedule-junk.html. Prices
+    // carry cents as of 2026-08-13, and toFixed(0) here printed "Charged Today
+    // $24" against a $24.13 charge on the FINAL confirmation screen. The
+    // checkout page was fixed at the reprice; this copy was missed until
+    // 2026-08-14.
+    const fmt = c => (c == null ? 'N/A' : (c === 0 ? 'Free' : `$${(c / 100).toFixed(2)}`));
+    // Everything below goes through innerHTML, and these values started life as
+    // free-text form input (name, address). Same-origin sessionStorage written
+    // by our own checkout, so this is self-XSS at worst — escaped anyway,
+    // because a summary row is not worth a markup-injection footgun.
+    const esc = v => String(v).replace(/[&<>"']/g, c => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+    const rows = [];
+    // `cadence` is resolved by schedule-junk.html, which knows the frequency.
+    // Fall back to the bare weekday for a summary saved before that field
+    // existed — never re-guess the cadence, which is how this row spent its
+    // life telling weekly customers they were on every-other-week service.
+    if (s.cadence)    rows.push({ l: 'Schedule',       v: s.cadence });
+    else if (s.day)   rows.push({ l: 'Day',            v: s.day });
+    if (s.address)    rows.push({ l: 'Address',        v: s.address });
+    if (s.last4)      rows.push({ l: 'Card on File',   v: `•••• ${s.last4}` });
+    if (s.plan)       rows.push({ l: 'Plan',           v: s.plan });
+    if (s.amountCents != null) rows.push({ l: 'Charged Today', v: fmt(s.amountCents) });
+    if (s.phone)      rows.push({ l: 'Confirmation to', v: s.phone });
+
+    if (rows.length === 0) return;
+
+    document.getElementById('summary-rows').innerHTML = rows
+      .map(r => `<div class="row"><span class="label">${esc(r.l)}</span><span class="value">${esc(r.v)}</span></div>`).join('');
+    document.getElementById('summary-card').hidden = false;
+
+    // Personalise the heading if we have a first name
+    if (s.firstName) {
+      const h = document.getElementById('welcome-heading');
+      h.innerHTML = `Welcome, <em>${esc(s.firstName)}.</em>`;
+    }
+  })();
+
+  /**
+   * Referral capture.
+   *
+   * Files one row in public.leads via SiteLeads, tagged `referral`, carrying
+   * the Stripe customer id from the booking so the answer can be tied back to a
+   * real subscription. Deliberately fail-soft in both directions: the booking is
+   * already paid for, so nothing here may show the customer an error or block
+   * anything, and a missing sessionStorage summary (bookmarked page, second
+   * device, cleared storage) just means the row lands without the ids.
+   */
+  (function referral() {
+    const card    = document.getElementById('referral');
+    const optsEl  = document.getElementById('ref-opts');
+    const otherEl = document.getElementById('ref-other');
+    const otherIn = document.getElementById('ref-other-input');
+    const sendBtn = document.getElementById('ref-send');
+    const doneEl  = document.getElementById('ref-done');
+    if (!card) return;
+
+    let chosen = null;
+
+    optsEl.addEventListener('click', e => {
+      const btn = e.target.closest('.ref-opt');
+      if (!btn) return;
+      optsEl.querySelectorAll('.ref-opt').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+      chosen = btn.dataset.val;
+      otherEl.hidden = chosen !== 'Other';
+      sendBtn.disabled = false;
+      if (chosen === 'Other') otherIn.focus();
+    });
+
+    sendBtn.addEventListener('click', async () => {
+      if (!chosen) return;
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending…';
+
+      // Same key the checkout wrote — may legitimately be absent.
+      let s = {};
+      try { s = JSON.parse(sessionStorage.getItem('bookingSummary') || '{}'); } catch (e) { /* no summary, no ids */ }
+
+      const detail = chosen === 'Other' ? (otherIn.value || '').trim().slice(0, 120) : '';
+      const answer = detail ? `Other: ${detail}` : chosen;
+
+      try {
+        if (window.SiteLeads) {
+          await window.SiteLeads.capture({
+            service:    'referral',
+            first_name: s.firstName || null,
+            last_name:  s.lastName  || null,
+            email:      s.email     || null,
+            phone:      s.phone     || null,
+            zip:        s.zip       || null,
+            address:    s.address   || null,
+            notes: [
+              `HEARD VIA: ${answer}`,
+              `Stripe customer: ${s.customerId || 'unknown'}`,
+              `Plan: ${s.plan || 'N/A'}`,
+              `Schedule: ${s.cadence || s.day || 'N/A'}`
+            ].join(' | ')
+          });
+        }
+        if (typeof gtag === 'function') gtag('event', 'referral_source', { source: answer });
+      } catch (e) { /* fail-soft: the booking is already paid for */ }
+
+      // Shown whether or not the write landed. The answer is a nice-to-have and
+      // SiteLeads keeps a localStorage copy either way; telling a paying
+      // customer their optional survey failed would be worse than losing it.
+      optsEl.hidden  = true;
+      otherEl.hidden = true;
+      sendBtn.hidden = true;
+      doneEl.textContent = 'Thank you, that helps more than you’d think.';
+      doneEl.hidden = false;
+    });
+  })();
+</script>
+
+</body>
+</html>
