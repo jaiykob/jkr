@@ -19,7 +19,7 @@ book/                  the booking flow
   quote.html             step 1: load size, one-time or monthly, ZIP + contact
   checkout.html          step 2: price, day, payment (Stripe)
   thanks.html            step 3: confirmation
-admin/index.html       admin dashboard, served at /admin/
+jkr/index.html       admin dashboard, served at /jkr/
 api/                   Vercel serverless functions
   create-booking.js      charges the card (authoritative price + ZIP check)
   stripe-webhook.js      after payment: database rows, email, Discord ping
@@ -72,7 +72,7 @@ Adding a column means a matching `CADENCE` entry in `api/_lib/schedule.js`
 
 Only live mode (`sk_live`) is gated. Emergency brake: flip #1 to `false`.
 
-## Admin dashboard (`/admin/`)
+## Admin dashboard: `jkr/` (served at `/jkr/`)
 
 Clients and leads, schedule, bookings, and job actions (start, before and
 after photos, mark done, skip). Marking a job done emails the customer the
