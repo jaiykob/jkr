@@ -162,9 +162,9 @@ function buildDiscordEmbed(ctx, payload) {
   if (m.heard_via)              fields.push({ name: 'Heard via', value: m.heard_via, inline: true });
 
   // Links out to the two places you'd actually go from a ping. The CRM link
-  // carries no token by design — admin/index.html prompts and keeps it in
+  // carries no token by design — jkr/index.html prompts and keeps it in
   // sessionStorage, so the URL stays safe to sit in a chat log forever.
-  const links = [`[Open CRM](${SITE_ORIGIN}/admin/)`];
+  const links = [`[Open CRM](${SITE_ORIGIN}/jkr/)`];
   if (ctx.customerId) {
     const base = stripeDashboardBase(ctx.livemode);
     links.push(`[Stripe customer](${base}/customers/${ctx.customerId})`);
