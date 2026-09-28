@@ -49,7 +49,7 @@
       ]
     },
     {
-      "source": "/jkr",
+      "source": "/admin",
       "headers": [
         {
           "key": "Cache-Control",
@@ -62,7 +62,7 @@
       ]
     },
     {
-      "source": "/jkr/:path*",
+      "source": "/admin/:path*",
       "headers": [
         {
           "key": "Cache-Control",

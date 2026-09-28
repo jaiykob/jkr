@@ -8,7 +8,7 @@
  * drift a customer off the day they were promised.
  *
  * freq_idx columns (mirror COLUMNS in pricing.config.mjs and PRICES in
- * create-subscription.js):
+ * create-booking.js):
  *   0 = one-time haul, 1 = monthly pickup
  * Add a column there and a matching CADENCE entry here, in the same position.
  */

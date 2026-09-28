@@ -20,7 +20,7 @@
   <script>window.STRIPE_PUBLISHABLE_KEY = 'pk_test_REPLACE_ME';</script>
   <style>
     /* ── Your instant quote — the page after the 3-step estimator
-       (onboarding/junk.html). Layout mirrors Happy Poop Scoop's quote page:
+       (book/quote.html). Layout mirrors Happy Poop Scoop's quote page:
        thank-you + intro, a summary card with the total, the contact details
        they gave, then one button to payment. We add the one thing their flow
        leaves to a phone call: the customer picks their route day here, because
@@ -262,7 +262,7 @@
       </div>
       <dl class="rows" id="sum-rows"></dl>
       <!-- Quarterly prepay: 13 weeks up front at 10% off, priced server-side in
-           create-subscription (quarterCents). It sits here, after the contact
+           create-booking (quarterCents). It sits here, after the contact
            step, beside the price it changes. Hidden on a one-time haul,
            which has no quarter to prepay. -->
       <label class="addon" id="row-quarterly" hidden>
@@ -278,7 +278,7 @@
     </div>
 
     <div class="card">
-      <div class="card-h"><h3>Contact details</h3><a class="edit" id="edit-contact" href="junk.html?edit=contact">Edit<span class="sr-only"> contact details</span></a></div>
+      <div class="card-h"><h3>Contact details</h3><a class="edit" id="edit-contact" href="quote.html?edit=contact">Edit<span class="sr-only"> contact details</span></a></div>
       <dl class="rows" id="contact-rows"></dl>
     </div>
 
@@ -295,7 +295,7 @@
     </div>
 
     <button type="button" class="btn-primary" id="day-next">Continue to payment</button>
-    <a class="edit-link" href="junk.html?edit=plan">← Change load or plan</a>
+    <a class="edit-link" href="quote.html?edit=plan">← Change load or plan</a>
   </section>
 
   <!-- STEP 2 — PAYMENT -->
@@ -378,7 +378,7 @@
   // / zip stay in the URL: they're the quote and the service area, not the
   // customer, and the server recomputes the price from them regardless.
   //
-  // Email never rides in the URL at all: junk.html stashes it (with the ZIP
+  // Email never rides in the URL at all: quote.html stashes it (with the ZIP
   // its gate accepted) under the same key before linking here. Anything the
   // quote page already asked for is pre-filled below — nobody types it twice.
   const params = new URLSearchParams(location.search);
@@ -504,7 +504,7 @@
   })();
 
   // ── CONTACT FROM THE ESTIMATOR
-  // Everything was typed once, on the contact step of junk.html. City is filled from
+  // Everything was typed once, on the contact step of quote.html. City is filled from
   // the ZIP further down, once the generated ZIP_CITY table exists.
   formData.addr  = custAddr;
   formData.zip   = custZip;
@@ -576,7 +576,7 @@
    * Cents charged up front for a quarter. Priced off the WEEKLY-EQUIVALENT rate,
    * not the plan's own period: 13 weeks of monthly service is 3 visits, so
    * multiplying a monthly price by 13 would bill for 13 months. This mirrors
-   * quarterCents() in api/create-subscription.js — if the two disagree the page
+   * quarterCents() in api/create-booking.js — if the two disagree the page
    * shows one number and Stripe charges another.
    */
   function quarterCents() {
@@ -783,7 +783,7 @@
     back.set('edit', 'contact');
     back.set('load', String(loadIdx));
     back.set('freq', String(fi));
-    location.replace(`junk.html?${back}`);
+    location.replace(`quote.html?${back}`);
   }
 
   // ── QUOTE SUMMARY — the card at the top of the page.
@@ -833,8 +833,8 @@
   function renderEditLinks() {
     const plan = new URLSearchParams({ load: String(loadIdx), freq: String(fi), quarterly: quarterly ? '1' : '0' });
     if (coupon) plan.set('coupon', coupon);
-    document.getElementById('edit-contact').href = `junk.html?edit=contact&${plan}`;
-    document.querySelector('a.edit-link[href^="junk.html"]').href = `junk.html?edit=plan&${plan}`;
+    document.getElementById('edit-contact').href = `quote.html?edit=contact&${plan}`;
+    document.querySelector('a.edit-link[href^="quote.html"]').href = `quote.html?edit=plan&${plan}`;
   }
   renderEditLinks();
 
@@ -911,12 +911,12 @@
   // goes in js/maintenance-banner.js and nowhere else; the #reopen-date literal in
   // the markup above reads "soon" and is overwritten from there on load.
   // Open the gates when ops are actually real.
-  // Interested visitors were already captured as a lead on the quote page (junk.html).
+  // Interested visitors were already captured as a lead on the quote page (quote.html).
   // Scoops Co. opened this on 2026-08-13, its launch day.
   // charges a real card, and the server agrees (BOOKINGS_OPEN_SERVER=true).
   // This constant is UI only: it has never been what stops a charge, and it
   // still isn't. If you need to stop taking money, flip BOOKINGS_OPEN_SERVER in
-  // api/create-subscription.js — that one covers direct POSTs to the API, which
+  // api/create-booking.js — that one covers direct POSTs to the API, which
   // is the surface that actually matters.
   const BOOKINGS_OPEN_CLIENT = false;   // CLOSED until launch: flip with BOOKINGS_OPEN_SERVER
   if (!BOOKINGS_OPEN_CLIENT) {
@@ -946,7 +946,7 @@
    *
    * While bookings are closed this page charges nothing and — until now — SAVED
    * nothing either: the address, load and chosen day were collected,
-   * rendered into the confirm table, and dropped on page close. junk.html had
+   * rendered into the confirm table, and dropped on page close. quote.html had
    * already banked name/phone/quote, so we weren't losing the lead, but we were
    * losing everything that makes it schedulable, and the notice promising "your
    * spot is reserved" wasn't backed by a stored row.
@@ -1056,7 +1056,7 @@
       // No local re-parse of the price here — it shadowed the outer quotedCents
       // and isOneTime with a second, separately-derived copy, which is exactly
       // how a page ends up displaying one number and posting another.
-      const res = await fetch('/api/create-subscription', {
+      const res = await fetch('/api/create-booking', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1235,7 +1235,7 @@
   // Uses the Express Checkout Element in deferred-intent mode with
   // `paymentMethodCreation: 'manual'`, which is the one configuration that
   // hands back a PaymentMethod instead of confirming an Intent itself. That
-  // keeps /api/create-subscription untouched: it still receives a
+  // keeps /api/create-booking untouched: it still receives a
   // paymentMethodId and builds the customer + subscription exactly as before.
   //
   // Separate Elements group from the card element on purpose — the card

@@ -35,7 +35,7 @@ const db  = require('./_lib/db');
 const { firstVisitDate } = require('./_lib/schedule');
 
 // Display label per plan key. MUST cover every value PLAN_KEYS can produce in
-// api/create-subscription.js plus 'quarterly'. A missing key prints the raw
+// api/create-booking.js plus 'quarterly'. A missing key prints the raw
 // slug into the customer's confirmation email (a real Scoops Co. bug).
 const PLAN_LABEL = {
   one_time:  'One-time haul',
@@ -115,7 +115,7 @@ async function gatherContext(stripe, event) {
   }
 
   // Booking metadata is written onto the subscription (and customer) by
-  // create-subscription.js. Subscription wins because it carries the most.
+  // create-booking.js. Subscription wins because it carries the most.
   const metadata = {
     ...(customer && customer.metadata)     || {},
     ...(obj.metadata)                       || {},
@@ -162,9 +162,9 @@ function buildDiscordEmbed(ctx, payload) {
   if (m.heard_via)              fields.push({ name: 'Heard via', value: m.heard_via, inline: true });
 
   // Links out to the two places you'd actually go from a ping. The CRM link
-  // carries no token by design — jkr/index.html prompts and keeps it in
+  // carries no token by design — admin/index.html prompts and keeps it in
   // sessionStorage, so the URL stays safe to sit in a chat log forever.
-  const links = [`[Open CRM](${SITE_ORIGIN}/jkr/)`];
+  const links = [`[Open CRM](${SITE_ORIGIN}/admin/)`];
   if (ctx.customerId) {
     const base = stripeDashboardBase(ctx.livemode);
     links.push(`[Stripe customer](${base}/customers/${ctx.customerId})`);
@@ -325,7 +325,7 @@ function toIso(unixSeconds) {
   return unixSeconds ? new Date(Number(unixSeconds) * 1000).toISOString() : null;
 }
 // The LAST five-digit group: the first is often the house number out here
-// ("18250 SE Stark St, Gresham 97030"). Mirrors create-subscription.js.
+// ("18250 SE Stark St, Gresham 97030"). Mirrors create-booking.js.
 function zipFromAddress(addr) {
   const all = String(addr || '').match(/\b\d{5}\b/g);
   return all ? all[all.length - 1] : null;
@@ -345,7 +345,7 @@ async function persistSpine(ctx, event) {
     event.type === 'invoice.payment_succeeded' && obj.billing_reason === 'subscription_create';
 
   try {
-    // A recurring booking. create-subscription uses payment_behavior
+    // A recurring booking. create-booking uses payment_behavior
     // 'default_incomplete', so subscription.created fires BEFORE the card is
     // charged — the customer can still be declined. The rows are written then
     // (useful for the CRM), but the first VISIT is only scheduled once the

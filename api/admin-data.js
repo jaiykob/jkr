@@ -1,7 +1,7 @@
 /**
  * Vercel Serverless Function — admin-data
  *
- * Founder-only data feed for jkr/index.html (the admin dashboard, served at /jkr/). Returns every customer + their
+ * Founder-only data feed for admin/index.html (the admin dashboard, served at /admin/). Returns every customer + their
  * subscriptions/visits, plus all quote-stage and commercial leads.
  *
  * SECURITY:

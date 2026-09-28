@@ -1,4 +1,4 @@
-// The admin APIs behind jkr/index.html: header-only token auth, constant-time
+// The admin APIs behind admin/index.html: header-only token auth, constant-time
 // compare, and no data without the token. No network: fetch is stubbed.
 import { createRequire } from 'node:module';
 import path from 'node:path';
