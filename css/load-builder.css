@@ -1,0 +1,110 @@
+/* Load builder (js/load-builder.js): the truck, the price, the item list.
+   Used on the homepage hero and step 1 of the quote. Colors come from the
+   page's tokens with fallbacks, so it reads right on both. */
+.lb {
+  --lb-ink: var(--rg, #15171A);
+  --lb-hi: var(--tan, #FFD23F);
+  --lb-line: rgba(21,23,26,.12);
+  --lb-muted: rgba(21,23,26,.72);
+  display: grid; gap: 18px 28px; grid-template-columns: minmax(0, 1fr);
+}
+.lb-host { container-type: inline-size; min-width: 0; }
+.lb > * { min-width: 0; }
+.lb-stage { position: relative; }
+.lb-stage svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+.lb-box     { fill: #fff; stroke: var(--lb-ink); stroke-width: 5; }
+.lb-bed     { fill: #EFEBE2; }
+.lb-cab     { fill: var(--lb-hi); stroke: var(--lb-ink); stroke-width: 5; stroke-linejoin: round; }
+.lb-glass   { fill: #BFD7EA; stroke: var(--lb-ink); stroke-width: 3; stroke-linejoin: round; }
+.lb-lamp    { fill: #FFF3C4; stroke: var(--lb-ink); stroke-width: 2.5; }
+.lb-chassis { fill: var(--lb-ink); }
+.lb-tire    { fill: var(--lb-ink); }
+.lb-hub     { fill: #C9C4B8; }
+.lb-tierline { stroke: rgba(21,23,26,.28); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.lb-tiertext { font: 700 11px/1 'DM Sans', system-ui, sans-serif; fill: rgba(21,23,26,.55); letter-spacing: .02em; paint-order: stroke; stroke: #EFEBE2; stroke-width: 4px; stroke-linejoin: round; }
+.lb-over { font: 800 15px/1 'DM Sans', system-ui, sans-serif; fill: #B42318; }
+.lb-ghost { fill: var(--lb-hi); fill-opacity: .6; transition: y .35s cubic-bezier(.34,1.3,.64,1), height .35s cubic-bezier(.34,1.3,.64,1); }
+
+.lb-cell { opacity: 0; transform-box: fill-box; transform-origin: 50% 100%; transition: opacity .2s; stroke: rgba(0,0,0,.18); stroke-width: .8; }
+.lb-cell.on { opacity: 1; }
+.lb-cell.drop { animation: lb-drop .5s cubic-bezier(.3,1.5,.55,1) both; }
+@keyframes lb-drop {
+  0%   { transform: translateY(-160px) scaleY(1.2); opacity: 0; }
+  55%  { opacity: 1; }
+  80%  { transform: translateY(0) scaleY(.8); }
+  100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+.lb.is-over .lb-box { stroke: #B42318; }
+.lb.shake .lb-stage { animation: lb-shake .45s ease; }
+@keyframes lb-shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+
+.lb-meter { height: 8px; margin-top: 10px; border-radius: 99px; background: rgba(21,23,26,.1); overflow: hidden; }
+.lb-meter-fill { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--lb-hi), #FF9F1C 70%, #E4572E); transition: width .45s cubic-bezier(.34,1.3,.64,1); }
+
+/* readout */
+.lb-readout { display: grid; gap: 10px; align-content: start; }
+.lb-size { font: 700 1rem/1.3 'DM Sans', system-ui, sans-serif; color: var(--lb-muted); }
+.lb-price-row { display: flex; align-items: baseline; gap: 6px; }
+.lb-price { font: 800 clamp(2.6rem, 9cqi, 3.6rem)/1 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.03em; color: var(--lb-ink); font-variant-numeric: tabular-nums; }
+.lb-unit { font-size: 1rem; font-weight: 600; color: var(--lb-muted); }
+.lb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.lb-seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 4px; gap: 4px; border-radius: 12px; background: rgba(21,23,26,.07); justify-self: start; }
+.lb-seg-btn { min-height: 44px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent; font: 700 1rem/1 'DM Sans', system-ui, sans-serif; color: var(--lb-muted); cursor: pointer; transition: background .2s, color .2s, box-shadow .2s; }
+.lb-seg-btn[aria-pressed="true"] { background: #fff; color: var(--lb-ink); box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+
+.lb-cta {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 56px; padding: 0 28px; border-radius: 14px;
+  background: var(--lb-hi); color: var(--lb-ink); text-decoration: none;
+  font: 800 1.1rem/1 'DM Sans', system-ui, sans-serif;
+  box-shadow: 0 6px 0 var(--lb-ink); transition: transform .12s, box-shadow .12s, opacity .2s;
+}
+.lb-cta::after { content: '→'; font-size: 1.2em; transition: transform .2s; }
+.lb-cta:hover::after { transform: translateX(4px); }
+.lb-cta:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--lb-ink); }
+.lb-cta[aria-disabled="true"] { opacity: .5; }
+
+/* items */
+.lb-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+.lb-item {
+  display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: 4px 10px;
+  min-height: 56px; padding: 4px 6px 4px 14px; border-radius: 14px;
+  background: #fff; border: 1.5px solid var(--lb-line);
+  transition: border-color .2s, box-shadow .2s, transform .15s;
+}
+.lb-item.has { border-color: var(--sw); box-shadow: inset 4px 0 0 var(--sw); }
+.lb-sw { width: 16px; height: 16px; border-radius: 5px; background: var(--sw); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+.lb-name { min-width: 0; font-weight: 600; font-size: 1rem; line-height: 1.25; color: var(--lb-ink); cursor: pointer; user-select: none; padding: 12px 0; }
+.lb-count { min-width: 1.6em; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--lb-ink); }
+.lb-item:not(.has) .lb-count { color: rgba(21,23,26,.35); }
+.lb-step {
+  width: 48px; height: 48px; border-radius: 12px; border: 0; cursor: pointer;
+  font: 700 1.5rem/1 'DM Sans', system-ui, sans-serif; color: var(--lb-ink); background: rgba(21,23,26,.06);
+  transition: background .15s, transform .1s;
+}
+.lb-step:hover { background: rgba(21,23,26,.12); }
+.lb-step:active { transform: scale(.92); }
+.lb-plus { background: var(--lb-hi); }
+.lb-plus:hover { background: #F5C400; }
+.lb-step:disabled { opacity: .35; cursor: default; }
+.lb-step:focus-visible, .lb-seg-btn:focus-visible, .lb-cta:focus-visible { outline: 3px solid #0B6BCB; outline-offset: 2px; }
+
+@container (min-width: 520px) {
+  .lb-items { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* Wide: truck and price side by side, the items in a grid underneath. */
+@container (min-width: 700px) {
+  .lb { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); grid-template-areas: "stage read" "items items"; align-items: center; }
+  .lb-stage { grid-area: stage; }
+  .lb-readout { grid-area: read; }
+  .lb-items { grid-area: items; }
+}
+@container (min-width: 1000px) {
+  .lb-items { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lb-cell.drop, .lb.shake .lb-stage { animation: none; }
+  .lb-meter-fill, .lb-ghost { transition: none; }
+}

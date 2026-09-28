@@ -32,14 +32,14 @@
 
 const BRAND = {
   name:    'Brand Name',
-  green:   '#2D5A1E',
-  deep:    '#04402A',
-  tan:     '#C8A96E',
-  page:    '#F7F3ED',
+  green:   '#15171A',
+  deep:    '#15171A',
+  tan:     '#FFD23F',
+  page:    '#F5F2EA',
   card:    '#FFFFFF',
-  text:    '#04402A',
-  muted:   'rgba(4,64,42,.65)',
-  border:  'rgba(4,64,42,.12)',
+  text:    '#15171A',
+  muted:   'rgba(21,23,26,.65)',
+  border:  'rgba(21,23,26,.12)',
   // Dedicated email asset — NOT images/logo.png. That file is 1402x1122 and
   // ~972KB, and the header rendered it into a 44x44 box, so every email pulled
   // a megabyte to show a squashed, wrong-aspect thumbnail. This one is 144x96
@@ -47,7 +47,7 @@ const BRAND = {
   // 5.6KB. Regenerate from images/logo-mark.png if the mark ever changes.
   logo:    'https://example.com/images/email-logo.png',
   site:    'https://example.com',
-  phone:   '(000) 000-0000',
+  phone:   '(925) 408-6053',
   email:   'hello@example.com',
   // CAN-SPAM requires a valid physical postal address in marketing email.
   // TODO before first marketing send: set EMAIL_MAILING_ADDRESS to a PO box or
@@ -91,7 +91,7 @@ function layout({ preheader = '', heading, bodyHtml, marketing = false, unsubscr
          ${unsubscribeUrl ? `<a href="${escapeHtml(unsubscribeUrl)}" style="color:${BRAND.muted};text-decoration:underline;">Unsubscribe</a>` : 'Reply STOP to opt out.'}
        </p>`
     : `<p style="margin:8px 0;color:${BRAND.muted};font-size:12px;line-height:1.6;">
-         ${BRAND.name} · Gresham, OR · <a href="tel:+10000000000" style="color:${BRAND.muted};">${BRAND.phone}</a>
+         ${BRAND.name} · Gresham, OR · <a href="tel:+19254086053" style="color:${BRAND.muted};">${BRAND.phone}</a>
        </p>`;
 
   return `<!doctype html>
@@ -117,7 +117,7 @@ function layout({ preheader = '', heading, bodyHtml, marketing = false, unsubscr
             <td style="padding-right:12px;">
               <img src="${BRAND.logo}" width="72" height="48" alt="" style="display:block;border:0;width:72px;height:48px;"/>
             </td>
-            <td style="font-family:'Playfair Display',Georgia,serif;font-size:22px;letter-spacing:.04em;color:${BRAND.tan};white-space:nowrap;">
+            <td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:800;letter-spacing:-.01em;color:${BRAND.tan};white-space:nowrap;">
               ${BRAND.name}
             </td>
           </tr></table>
@@ -168,7 +168,7 @@ function bookingConfirmation(ctx = {}) {
     <p style="margin:0 0 12px;">Thanks for choosing Brand Name Your service is confirmed — here are the details:</p>
     <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
     <p style="margin:12px 0;">On the day we'll text you an arrival window. We do all the lifting and loading, and haul everything away. TODO: say where it goes (donation, recycling, dump).</p>
-    <p style="margin:12px 0;">Questions? Just reply to this email or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+    <p style="margin:12px 0;">Questions? Just reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: pickupDay ? `You're booked — ${pickupDay}` : "You're booked — service confirmed",
     html: layout({ preheader: 'Your pickup is all set — here are the details.', heading, bodyHtml }),
@@ -184,7 +184,7 @@ function paymentFailed(ctx = {}) {
     <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we couldn't process your most recent payment${amount ? ` of <strong>${escapeHtml(amount)}</strong>` : ''}.</p>
     <p style="margin:12px 0;">Your booking is safe. We just need a working card on file to keep your service going. It only takes a sec:</p>
     ${button('Update payment method', updateUrl)}
-    <p style="margin:12px 0;">If you think this is a mistake or want to sort it out by phone, reply here or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+    <p style="margin:12px 0;">If you think this is a mistake or want to sort it out by phone, reply here or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: amount ? `Your ${amount} payment didn't go through` : "Your payment didn't go through",
     html: layout({ preheader: 'We couldn\'t process your last payment — quick fix inside.', heading, bodyHtml }),
@@ -242,7 +242,7 @@ function leadRecapture(ctx = {}) {
     <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, you grabbed a quote${quotedPrice ? ` (${escapeHtml(quotedPrice)})` : ''} from Brand Name but didn't finish booking — totally understand, life's busy.</p>
     <p style="margin:12px 0;">When you're ready, your spot's still here. We do all the lifting and hauling, and the price you saw is the price you pay. TODO: only true claims.</p>
     ${button('Pick up where you left off', quoteUrl)}
-    <p style="margin:12px 0;">Have a question first? Reply to this email or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+    <p style="margin:12px 0;">Have a question first? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: quotedPrice ? `Your ${quotedPrice} quote is still good` : 'Your quote is still good',
     html: layout({ preheader: 'Pick up where you left off — your spot is still here.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
@@ -258,7 +258,7 @@ function visitReminder(ctx = {}) {
   const bodyHtml = `
     <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, just a reminder that Brand Name is scheduled to visit on <strong>${escapeHtml(when)}</strong>.</p>
     <p style="margin:12px 0;">To help us get in and out: please make sure the items are reachable and there is room for the truck to park. We'll text you an arrival window.</p>
-    <p style="margin:12px 0;">Need to reschedule or skip this one? Reply here or call <a href="tel:+10000000000" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+    <p style="margin:12px 0;">Need to reschedule or skip this one? Reply here or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: `We're hauling ${when}`,
     html: layout({ preheader: 'Please make sure the items are reachable.', heading, bodyHtml, marketing: true, unsubscribeUrl }),

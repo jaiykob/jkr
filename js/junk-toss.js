@@ -41,10 +41,10 @@
   var css = getComputedStyle(document.documentElement);
   function tok(n, f) { var v = css.getPropertyValue(n).trim(); return v || f; }
   var C = {
-    rg: tok('--rg', '#04402A'), fg: tok('--fg', '#2D5A1E'), tan: tok('--tan', '#C8A96E'),
-    ltan: tok('--ltan', '#E3CC9C'), dtan: tok('--dtan', '#7A5C2E'), page: tok('--page', '#F7F3ED')
+    rg: tok('--rg', '#15171A'), fg: tok('--fg', '#2B2F36'), tan: tok('--tan', '#FFD23F'),
+    ltan: tok('--ltan', '#FFE58A'), dtan: tok('--dtan', '#7A5A00'), page: tok('--page', '#F5F2EA')
   };
-  var FONT = "'DM Sans', sans-serif", DISPLAY = "'Playfair Display', serif";
+  var FONT = "'DM Sans', sans-serif", DISPLAY = "'Bricolage Grotesque', serif";
 
   // r = collider radius · pts = base points · vol = load units · w = how often
   var KINDS = [
@@ -232,8 +232,8 @@
     }
   }
   var DUST = ['#8A6A3A', '#6B4A2B', '#B89A6A', '#A58C66'];
-  var SPARK = ['#C8A96E', '#F0E0B4', '#FFFFFF', '#FFD27A'];
-  var CONFETTI = ['#C8A96E', '#F0E0B4', '#A8D67C', '#FFFFFF', '#E86A4A'];
+  var SPARK = ['#FFD23F', '#F0E0B4', '#FFFFFF', '#FFD27A'];
+  var CONFETTI = ['#FFD23F', '#F0E0B4', '#A8D67C', '#FFFFFF', '#E86A4A'];
   function floatText(x, y, text, big, color) {
     floats.push({ x: x, y: y, text: text, age: 0, life: big ? 1.3 : 0.9, big: !!big, c: color || C.rg });
   }
@@ -507,7 +507,7 @@
     drawItem(KINDS[4], 30, GROUND - 58, -0.2);
     ctx.globalAlpha = 1;
     // launch spot
-    ctx.fillStyle = 'rgba(4,64,42,.12)';
+    ctx.fillStyle = 'rgba(21,23,26,.12)';
     ctx.beginPath(); ctx.ellipse(LX, GROUND - 2, 34, 7, 0, 0, 6.283); ctx.fill();
   }
 
@@ -571,7 +571,7 @@
       ctx.setLineDash([]);
     }
     // power meter
-    ctx.fillStyle = 'rgba(4,64,42,.15)'; rr(LX - 34, LY + 40, 68, 8, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(21,23,26,.15)'; rr(LX - 34, LY + 40, 68, 8, 4); ctx.fill();
     ctx.fillStyle = v.p > 0.85 ? '#E86A4A' : C.tan; rr(LX - 34, LY + 40, 68 * v.p, 8, 4); ctx.fill();
   }
 
@@ -581,7 +581,7 @@
     ctx.fillStyle = C.rg; ctx.font = '600 ' + Math.round(30 * U) + 'px ' + DISPLAY; ctx.textAlign = 'left';
     ctx.fillText(String(score), 20, 14);
     var scoreW = ctx.measureText(String(score)).width;
-    ctx.font = '700 ' + Math.round(12 * U) + 'px ' + FONT; ctx.fillStyle = 'rgba(4,64,42,.7)';
+    ctx.font = '700 ' + Math.round(12 * U) + 'px ' + FONT; ctx.fillStyle = 'rgba(21,23,26,.7)';
     ctx.fillText('BEST ' + Math.max(best, score), 22, 14 + 36 * U);
     // multiplier chip
     var m = mult();
@@ -597,21 +597,21 @@
     }
     // timer bar
     var tw = W < 800 ? 150 : 220, tx = W / 2 - tw / 2, frac = Math.max(0, Math.min(1, timeLeft / ROUND_SECS));
-    ctx.fillStyle = 'rgba(4,64,42,.12)'; rr(tx, 18, tw, 12 * U, 6 * U); ctx.fill();
+    ctx.fillStyle = 'rgba(21,23,26,.12)'; rr(tx, 18, tw, 12 * U, 6 * U); ctx.fill();
     ctx.fillStyle = timeLeft <= 5 ? '#E86A4A' : C.rg; rr(tx, 18, Math.max(12 * U, tw * Math.min(1, frac)), 12 * U, 6 * U); ctx.fill();
     ctx.font = '700 ' + Math.round(14 * U) + 'px ' + FONT; ctx.fillStyle = timeLeft <= 5 ? '#B0412E' : C.rg; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     ctx.fillText(Math.ceil(Math.max(0, timeLeft)) + 's', W / 2, 22 + 14 * U);
     // truck load meter
     var mw = W < 800 ? 150 : 170, mh = 14 * U, mx = W - mw - 20, my = 18, f = Math.min(1, truck.fill / CAPACITY);
-    ctx.fillStyle = 'rgba(4,64,42,.12)'; rr(mx, my, mw, mh, mh / 2); ctx.fill();
+    ctx.fillStyle = 'rgba(21,23,26,.12)'; rr(mx, my, mw, mh, mh / 2); ctx.fill();
     ctx.fillStyle = C.tan; rr(mx, my, Math.max(mh, mw * f), mh, mh / 2); ctx.fill();
-    ctx.fillStyle = 'rgba(4,64,42,.35)';
+    ctx.fillStyle = 'rgba(21,23,26,.35)';
     [0.25, 0.5, 0.75].forEach(function (q) { ctx.fillRect(mx + mw * q - 1, my, 2, mh); });
     ctx.font = '700 ' + Math.round(11 * U) + 'px ' + FONT; ctx.fillStyle = C.rg; ctx.textAlign = 'right';
     var lbl = f >= 1 ? 'FULL TRUCK' : f >= 0.75 ? '3/4 TRUCK' : f >= 0.5 ? '1/2 TRUCK' : f >= 0.25 ? '1/4 TRUCK' : 'LOAD';
     ctx.fillText(lbl + (trucks && W >= 800 ? '  ·  TRUCK ' + (trucks + 1) : ''), W - 20, my + mh + 6);
     // next up
-    ctx.textAlign = 'left'; ctx.font = '700 ' + Math.round(11 * U) + 'px ' + FONT; ctx.fillStyle = 'rgba(4,64,42,.7)';
+    ctx.textAlign = 'left'; ctx.font = '700 ' + Math.round(11 * U) + 'px ' + FONT; ctx.fillStyle = 'rgba(21,23,26,.7)';
     var ny = 14 + 58 * U;
     ctx.fillText('NEXT', 22, ny);
     ctx.save(); ctx.globalAlpha = 0.85;

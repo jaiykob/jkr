@@ -1,5 +1,5 @@
 /* Junk Toss: homepage game (js/junk-toss.js) */
-.jt { position: relative; max-width: 960px; margin: 0 auto; border-radius: var(--r-md); overflow: hidden; box-shadow: var(--sh-md); background: #EAF1EC; }
+.jt { position: relative; max-width: 960px; margin: 0 auto; border-radius: var(--r-md); overflow: hidden; box-shadow: var(--sh-md); background: #EDE8DD; }
 .jt-canvas { display: block; width: 100%; aspect-ratio: 800 / 450; cursor: crosshair; touch-action: pan-y; }
 /* while a round is on, a drag anywhere is a throw, not a page scroll */
 .jt.is-playing .jt-canvas { touch-action: none; }
@@ -7,12 +7,12 @@
 
 .jt-overlay {
   position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 10px; padding: 16px; text-align: center; background: rgba(247,243,237,.82); backdrop-filter: blur(2px);
+  gap: 10px; padding: 16px; text-align: center; background: rgba(245,242,234,.82); backdrop-filter: blur(2px);
 }
 .jt-overlay[hidden] { display: none; }
-.jt-title { font-family: 'Playfair Display', serif; font-size: clamp(28px, 6vw, 48px); line-height: 1.1; color: var(--rg); }
+.jt-title { font-family: 'Bricolage Grotesque', serif; font-size: clamp(28px, 6vw, 48px); line-height: 1.1; color: var(--rg); }
 .jt-sub { font-size: 16px; color: var(--txm); max-width: 32ch; }
-.jt-big { font-family: 'Playfair Display', serif; font-size: clamp(40px, 10vw, 72px); line-height: 1; color: var(--rg); font-variant-numeric: tabular-nums; }
+.jt-big { font-family: 'Bricolage Grotesque', serif; font-size: clamp(40px, 10vw, 72px); line-height: 1; color: var(--rg); font-variant-numeric: tabular-nums; }
 .jt-best { font-size: 16px; font-weight: 700; color: var(--dtan); min-height: 1.4em; }
 .jt-new { font-size: 16px; font-weight: 800; letter-spacing: .08em; color: #B0412E; }
 .jt-actions { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; justify-content: center; }

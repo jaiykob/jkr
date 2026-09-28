@@ -5,7 +5,12 @@ A skeleton built from the Scoops Co. stack (`C:\Users\chris\scoopco`) on
 **Not live, no name, no domain yet.** Pages carry titles and placeholder
 pictures only; the founder will write the copy.
 
-Placeholders to replace: "Brand Name", "example.com", "(000) 000-0000",
+Redesigned 2026-09-28: charcoal and hi-vis yellow, Bricolage Grotesque for
+display type, and a "load builder" (tap items, the truck fills, the price is
+live) as the homepage hero and quote step 1. Phone (925) 408-6053 and the six
+city service area come from Scoops Co.
+
+Placeholders to replace: "Brand Name", "example.com",
 `pk_test_REPLACE_ME`, `G-XXXXXXXXXX`, `YOUR-PROJECT.supabase.co`,
 `images/placeholder.svg`, and every `TODO` (`grep -rn TODO`).
 
@@ -16,7 +21,8 @@ The founder is finishing a degree. Keep sessions focused and small.
 ```
 index.html             homepage
 book/                  the booking flow
-  quote.html             step 1: load size, one-time or monthly, ZIP + contact
+  quote.html             step 1: the load builder + one-time or monthly
+                         step 2: ZIP + contact
   checkout.html          step 2: price, day, payment (Stripe)
   thanks.html            step 3: confirmation
 jkr/index.html       admin dashboard, served at /jkr/
@@ -30,6 +36,8 @@ api/                   Vercel serverless functions
   visit-photo.js         dashboard before/after photos
   _lib/                  shared: db, email, email templates, schedule math
 css/ js/ fonts/ images/  design system, scripts, fonts, pictures
+  js/load-builder.js     the truck: items → load size → price (home + quote)
+  js/home.js, css/home.css  homepage only: scroll road, tilt cards, ZIP check
 db/schema.sql          Supabase tables (apply once)
 pricing.config.mjs     THE price table and service area
 scripts/               build-pricing, tests, meta check
@@ -58,6 +66,10 @@ between `BUILD:` markers in `api/create-booking.js` (authoritative),
 `book/quote.html`, `book/checkout.html` and `index.html`. The server
 recomputes every booking and refuses one that doesn't match ("Quote is out of
 date").
+
+`ITEMS` (units out of 100 per truck) and each load's `fits` ceiling drive the
+load builder: the smallest load whose `fits` holds the tapped units is the
+size. Items only pick a size; the server still prices the size.
 
 Never hardcode a column index; derive it (`ONE_TIME_COL`, `BILLING_BY_COL`).
 Adding a column means a matching `CADENCE` entry in `api/_lib/schedule.js`

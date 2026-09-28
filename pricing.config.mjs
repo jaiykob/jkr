@@ -50,12 +50,40 @@ export const PRICE_TABLE = [
  * "6+ dogs").
  */
 export const LOADS = {
-  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance' },
-  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner' },
-  half:    { label: '1/2 truck',    note: 'A small room or a garage corner' },
-  three:   { label: '3/4 truck',    note: 'A full room or a small garage' },
-  full:    { label: 'Full truck',   note: 'A garage, basement or estate' },
+  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance', fits: 15 },
+  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner',     fits: 25 },
+  half:    { label: '1/2 truck',    note: 'A small room or a garage corner',   fits: 50 },
+  three:   { label: '3/4 truck',    note: 'A full room or a small garage',     fits: 75 },
+  full:    { label: 'Full truck',   note: 'A garage, basement or estate',      fits: 100 },
 };
+
+/**
+ * The load builder (homepage hero and quote step 1). A customer taps what they
+ * have, each item drops blocks into the truck, and the smallest load size that
+ * holds it all is the price. A full truck is 100 units (about 15 cubic yards,
+ * so one unit is roughly 0.15 cubic yards).
+ *
+ *   units   space the item takes, out of 100
+ *   color   its block color in the truck
+ *
+ * `fits` above is each load size's ceiling in the same units. "Single item" is
+ * one item of 15 units or less; anything over 100 is quoted by hand.
+ * These numbers only pick a size; the server prices the size, never the items.
+ */
+export const ITEMS = [
+  { key: 'couch',    label: 'Couch',                units: 12, color: '#E4572E' },
+  { key: 'mattress', label: 'Mattress and box spring', units: 10, color: '#4C8BF5' },
+  { key: 'fridge',   label: 'Fridge or freezer',    units: 8,  color: '#9AA5B1' },
+  { key: 'washer',   label: 'Washer or dryer',      units: 6,  color: '#C3CBD3' },
+  { key: 'chair',    label: 'Chair or recliner',    units: 6,  color: '#A0522D' },
+  { key: 'dresser',  label: 'Dresser or cabinet',   units: 7,  color: '#8B5A2B' },
+  { key: 'table',    label: 'Table',                units: 7,  color: '#C68B59' },
+  { key: 'tv',       label: 'TV or electronics',    units: 2,  color: '#2E3440' },
+  { key: 'boxes',    label: '5 boxes or bags',      units: 4,  color: '#D9B26F' },
+  { key: 'yard',     label: 'Yard debris pile',     units: 20, color: '#3FA34D' },
+  { key: 'carpet',   label: 'Carpet, one room',     units: 8,  color: '#8E6CCF' },
+  { key: 'misc',     label: 'Something else',       units: 5,  color: '#F2A541' },
+];
 
 /**
  * Column order. The generated matrices are positional: every freq_idx in the
@@ -89,6 +117,7 @@ function assertSane(table) {
   const keys = Object.keys(LOADS);
   table.forEach((row, i) => {
     if (row.load !== keys[i]) fail(`row ${i + 1} is "${row.load}"; rows must follow LOADS order (${keys.join(', ')})`);
+    if (!(LOADS[row.load]?.fits > (i ? LOADS[keys[i - 1]].fits : 0))) fail(`${row.load}: fits must grow with each load size`);
     for (const c of COLUMNS) {
       const v = row[c];
       if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) fail(`${row.load} / ${c} is "${v}"; every price must be a number, zero or more`);
@@ -123,13 +152,17 @@ export function quarterlyCents(row, col) {
 }
 
 /**
- * Service area. TODO: set the real one. Feeds three generated gates
+ * Service area: the same six cities as Scoops Co. (2026-09-28), main ZIPs
+ * only (no shared Portland ZIPs, no street lookup). Feeds three generated gates
  * (server, estimator, checkout), so it can only be changed here.
  */
 export const SERVICE_AREA = [
-  { city: 'Gresham',   region: 'OR', zips: ['97030', '97080'] },
-  { city: 'Troutdale', region: 'OR', zips: ['97060'] },
-  { city: 'Fairview',  region: 'OR', zips: ['97024'] },
+  { city: 'Gresham',      region: 'OR', zips: ['97030', '97080'] },
+  { city: 'Troutdale',    region: 'OR', zips: ['97060'] },
+  { city: 'Happy Valley', region: 'OR', zips: ['97086'] },
+  { city: 'Fairview',     region: 'OR', zips: ['97024'] },
+  { city: 'Boring',       region: 'OR', zips: ['97009'] },
+  { city: 'Damascus',     region: 'OR', zips: ['97089'] },
 ];
 
 export const ALL_ZIPS = SERVICE_AREA.flatMap((a) => a.zips);

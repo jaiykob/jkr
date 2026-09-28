@@ -8,14 +8,15 @@
  *   api/create-booking.js     server-prices, server-zips   (authoritative)
  *   book/quote.html           quote-jsonld, quote-zips, quote-prices
  *   book/checkout.html  checkout-billing, checkout-zips
- *   index.html                     home-prices
+ *   index.html                     home-prices, home-builder
+ *   book/quote.html                 (also) quote-builder
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   PRICES, COLUMNS, COLUMN_LABELS, BILLING, BILLING_BY_COL, ONE_TIME_COL, LOAD_OPTIONS,
-  SERVICE_AREA, ALL_ZIPS, WEEKS_PER_QUARTER, QUARTERLY_DISCOUNT, STARTING_AT, fmt,
+  SERVICE_AREA, ALL_ZIPS, ITEMS, WEEKS_PER_QUARTER, QUARTERLY_DISCOUNT, STARTING_AT, fmt,
 } from '../pricing.config.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -111,9 +112,28 @@ const checkoutZips = [
 ].join('\n');
 
 /* ── homepage ─────────────────────────────────────────────────────────── */
-const homePrices = LOAD_OPTIONS.map((o, r) =>
-  `      <div class="card"><h3>${o.label}</h3><p class="pc-price">${fmt(PRICES[r][ONE_TIME_COL])}</p></div>`,
-).join('\n');
+const recurringCol = COLUMNS.findIndex((c) => BILLING[c].stripe);
+const homePrices = LOAD_OPTIONS.map((o, r) => [
+  `      <a class="tier" href="book/quote.html?load=${r}&amp;freq=${ONE_TIME_COL}" style="--fill:${o.fits}%">`,
+  `        <span class="tier-truck" aria-hidden="true"><span class="tier-load"></span></span>`,
+  `        <span class="tier-name">${o.label}</span>`,
+  `        <span class="tier-note">${o.note}</span>`,
+  `        <span class="tier-price">${fmt(PRICES[r][ONE_TIME_COL])}</span>`,
+  ...(recurringCol >= 0 ? [`        <span class="tier-sub">${fmt(PRICES[r][recurringCol])} ${COLUMN_LABELS[COLUMNS[recurringCol]].toLowerCase()}</span>`] : []),
+  '      </a>',
+].join('\n')).join('\n');
+
+/* The load builder's data (js/load-builder.js), for the homepage and quote. */
+const builderData = {
+  prices: PRICES,
+  loads: LOAD_OPTIONS.map((o) => ({ label: o.label, note: o.note, fits: o.fits })),
+  items: ITEMS,
+  freqLabels: COLUMNS.map((c) => COLUMN_LABELS[c]),
+  freqUnits: COLUMNS.map((c) => BILLING[c].unit),
+  oneTimeCol: ONE_TIME_COL,
+  zips: Object.fromEntries(SERVICE_AREA.flatMap((a) => a.zips.map((z) => [z, a.city]))),
+};
+const builderBlock = (indent) => `${indent}window.LOAD_BUILDER = ${Jslash(builderData)};`;
 
 /* ── splice ───────────────────────────────────────────────────────────── */
 function splice(src, name, body, comment, file) {
@@ -135,6 +155,7 @@ const TARGETS = [
     { name: 'quote-jsonld', body: quoteJsonld, comment: false },
     { name: 'quote-zips',   body: quoteZips,   comment: true },
     { name: 'quote-prices', body: quotePrices, comment: true },
+    { name: 'quote-builder', body: builderBlock('    '), comment: true },
   ] },
   { file: 'book/checkout.html', blocks: [
     { name: 'checkout-billing', body: checkoutBilling, comment: true },
@@ -142,6 +163,7 @@ const TARGETS = [
   ] },
   { file: 'index.html', blocks: [
     { name: 'home-prices', body: homePrices, comment: false },
+    { name: 'home-builder', body: builderBlock('  '), comment: true },
   ] },
 ];
 

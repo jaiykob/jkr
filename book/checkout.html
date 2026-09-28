@@ -8,9 +8,9 @@
   <!-- Self-hosted fonts, declared inline; no preload (it slowed LCP, measured 2026-09-23). -->
   <style>
     /* fonts/fonts.css, inlined: three rules are cheaper than a blocking request. */
-    @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(/fonts/dm-sans.woff2) format('woff2'); }
-    @font-face { font-family: 'Playfair Display'; font-style: normal; font-weight: 400 600; font-display: swap; src: url(/fonts/playfair.woff2) format('woff2'); }
-    @font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400 500; font-display: swap; src: url(/fonts/playfair-italic.woff2) format('woff2'); }
+    @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(../fonts/dm-sans.woff2) format('woff2'); }
+    @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(../fonts/bricolage.woff2) format('woff2'); }
+    
   </style>
   <!-- Deferred: it was render-blocking in the <head> and held first paint of
        the quote (mobile LCP 6.5s). The checkout script below is a module, and
@@ -28,24 +28,24 @@
        Every text colour is WCAG AA on its background (see tokens). */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --rg:    #04402A;     /* forest — brand, 11.8:1 on white */
-      --ink:   #04402A;
-      --ink-2: #1F3A2E;
-      --muted: #4A6B5D;     /* 5.9:1 on white */
-      --accent:#7A5C2E;     /* tan for text, 6.2:1 on white */
-      --tan:   #C8A96E;     /* fills only */
-      --tan-50:#F6EEDD;
+      --rg:    #15171A;     /* forest — brand, 11.8:1 on white */
+      --ink:   #15171A;
+      --ink-2: #2B2F36;
+      --muted: #595E66;     /* 5.9:1 on white */
+      --accent:#7A5A00;     /* tan for text, 6.2:1 on white */
+      --tan:   #FFD23F;     /* fills only */
+      --tan-50:#FFF6D6;
       --card:  #FFFFFF;
-      --soft:  #F7F3ED;
-      --surf:  #F3EFE7;
-      --bdr:   #DDD5C6;
-      --bdr-2: #C9BEA9;
+      --soft:  #F5F2EA;
+      --surf:  #ECE7DC;
+      --bdr:   #E2DDD2;
+      --bdr-2: #CFC8B9;
       --focus: #0B6BCB;
       --err:   #B42318;
       --ok:    #146C43;
-      --tx:    #04402A;
+      --tx:    #15171A;
       --radius:14px;
-      --shadow:0 10px 30px -14px rgba(4,64,42,.25);
+      --shadow:0 10px 30px -14px rgba(21,23,26,.25);
     }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
     body { font: 400 16px/1.55 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; background: #fff; color: var(--ink-2); min-height: 100svh; display: flex; flex-direction: column; }
@@ -58,9 +58,9 @@
     /* Header — same forest bar as the estimator. */
     .q-header { background: var(--ink); }
     .q-header-inner { max-width: 1100px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; justify-content: center; }
-    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #F3E7CF; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: #FFD23F; }
     .brand img { width: 52px; height: auto; }
-    .brand span { font: 500 26px/1 'Playfair Display', Georgia, serif; letter-spacing: -.01em; }
+    .brand span { font: 500 26px/1 'Bricolage Grotesque', Georgia, serif; letter-spacing: -.01em; }
 
     .main { flex: 1; width: 100%; max-width: 720px; margin: 0 auto; padding: 48px 16px 56px; }
     .step-panel { display: none; }
@@ -76,7 +76,7 @@
 
     .qhead { display: flex; align-items: center; gap: 12px; margin: 32px 0 14px; }
     .qhead h2 { font-size: 1.3rem; font-weight: 700; color: var(--ink); letter-spacing: -.01em; }
-    .pill { display: inline-flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 999px; background: #E3EFE9; color: var(--ink); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .pill { display: inline-flex; align-items: center; height: 26px; padding: 0 12px; border-radius: 999px; background: #FFF1B8; color: var(--ink); font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 
     .card { background: linear-gradient(180deg, var(--surf), #fff 70%); border: 1px solid var(--bdr); border-radius: var(--radius); padding: 22px 22px 8px; box-shadow: var(--shadow); }
     .card + .card { margin-top: 14px; }
@@ -108,14 +108,14 @@
     /* Quarterly billing toggle. The checkbox is the control; the whole row is its label. */
     .addon { display: flex; align-items: center; gap: 14px; margin: 6px 0 14px; padding: 14px 16px; border: 1.5px solid var(--bdr-2); border-radius: var(--radius); background: #fff; cursor: pointer; min-height: 48px; transition: border-color .15s, box-shadow .15s; }
     .addon[hidden] { display: none; }
-    .addon:has(input:checked) { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink), var(--shadow); background: linear-gradient(180deg, #F3F8F5, #fff); }
+    .addon:has(input:checked) { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink), var(--shadow); background: linear-gradient(180deg, #FFFBEA, #fff); }
     .addon .a-icon { flex: none; width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--bdr); display: flex; align-items: center; justify-content: center; background: #fff; }
     .addon .a-icon svg { width: 28px; height: 28px; color: var(--ink); }
     .addon .a-meta { flex: 1; min-width: 0; }
     .addon .a-name { display: block; font-weight: 700; color: var(--ink); }
     .addon .a-desc { display: block; font-size: 1rem; color: var(--muted); }
     .switch { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .85rem; font-weight: 700; color: var(--ink); }
-    .switch input { appearance: none; -webkit-appearance: none; width: 50px; height: 30px; border-radius: 999px; background: #6F8078; position: relative; cursor: pointer; margin: 0; transition: background .15s; }
+    .switch input { appearance: none; -webkit-appearance: none; width: 50px; height: 30px; border-radius: 999px; background: #6E7278; position: relative; cursor: pointer; margin: 0; transition: background .15s; }
     .switch input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
     .switch input:checked { background: var(--ink); }
     .switch input:checked::after { transform: translateX(20px); }
@@ -131,7 +131,7 @@
     .day-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 14px; }
     .day-card { font: inherit; background: #fff; border: 1.5px solid var(--bdr); border-radius: 12px; padding: 14px 6px; cursor: pointer; text-align: center; min-height: 72px; transition: border-color .15s, box-shadow .15s; }
     .day-card:hover { border-color: var(--bdr-2); box-shadow: var(--shadow); }
-    .day-card.selected { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink), var(--shadow); background: linear-gradient(180deg, #F3F8F5, #fff); }
+    .day-card.selected { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink), var(--shadow); background: linear-gradient(180deg, #FFFBEA, #fff); }
     .day-name { font-weight: 700; color: var(--ink); }
     .day-note { font-size: .8rem; color: var(--muted); margin-top: 2px; }
     .day-card.full { cursor: not-allowed; background: var(--soft); box-shadow: none; }
@@ -140,8 +140,8 @@
     .day-err:empty { display: none; }
 
     /* Buttons */
-    .btn-primary, .book-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 56px; margin-top: 18px; border: 0; border-radius: 12px; background: var(--ink); color: #fff; font: inherit; font-size: 1.05rem; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px -10px rgba(4,64,42,.7); transition: background .15s, opacity .15s; }
-    .btn-primary:hover, .book-btn:hover:not(:disabled) { background: #06553A; }
+    .btn-primary, .book-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 56px; margin-top: 18px; border: 0; border-radius: 12px; background: var(--ink); color: #fff; font: inherit; font-size: 1.05rem; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px -10px rgba(21,23,26,.7); transition: background .15s, opacity .15s; }
+    .btn-primary:hover, .book-btn:hover:not(:disabled) { background: #000000; }
     .book-btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
     .privacy, .card-secured { display: flex; align-items: center; gap: 6px; margin: 10px 4px 0; font-size: .85rem; color: var(--muted); }
     .privacy svg, .card-secured svg { width: 14px; height: 14px; flex: none; }
@@ -167,13 +167,13 @@
     .wallet-or { display: flex; align-items: center; gap: 12px; margin: 14px 0; font-size: .8rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
     .wallet-or::before, .wallet-or::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
     .card-wrap { display: grid; gap: 6px; }
-    .card-wrap:focus-within #stripe-card-element { border-color: var(--ink) !important; box-shadow: 0 0 0 3px rgba(4,64,42,.18); }
+    .card-wrap:focus-within #stripe-card-element { border-color: var(--ink) !important; box-shadow: 0 0 0 3px rgba(21,23,26,.18); }
 
     /* Success */
     .success-card { display: none; text-align: center; padding: 36px 24px; border: 1px solid var(--bdr); border-radius: var(--radius); box-shadow: var(--shadow); background: #fff; }
     .success-card.show { display: block; }
     .success-icon { width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 30px; display: flex; align-items: center; justify-content: center; }
-    .success-title { font: 500 1.8rem/1.2 'Playfair Display', Georgia, serif; color: var(--ink); }
+    .success-title { font: 500 1.8rem/1.2 'Bricolage Grotesque', Georgia, serif; color: var(--ink); }
     .success-title em { color: #8A6A3A; }
     .success-msg { margin: 10px auto 18px; max-width: 460px; color: var(--muted); }
     .success-summary { text-align: left; margin: 0 auto 22px; max-width: 460px; }
@@ -229,6 +229,16 @@
   <!-- Vercel Web Analytics: first-party, cookieless page views -->
   <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
   <script defer src="/_vercel/insights/script.js"></script>
+  <style>
+    /* 2026-09-28 redesign: bold display type, the logo mark, and the
+       hi-vis button the homepage and quote use. */
+    .brand span, .brand-name { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif !important; font-weight: 800 !important; }
+    h1, .q-title, .pay-title { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; font-weight: 800; letter-spacing: -.03em; }
+    .btn-primary, .book-btn { background: #FFD23F !important; color: #15171A !important; box-shadow: 0 5px 0 #15171A !important; }
+    .btn-primary:hover, .book-btn:hover { background: #F5C400 !important; }
+    .btn-primary:active, .book-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #15171A !important; }
+    .book-btn:disabled { opacity: .5; }
+  </style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to your quote</a>
@@ -246,7 +256,7 @@
 
   <!-- PRE-LAUNCH NOTICE (shown until we open; hidden automatically when bookings open) -->
   <div id="prelaunch-banner" style="display:none;margin:0 0 22px;padding:18px 22px;background:#fff7e8;border:1.5px solid #e8c97a;border-radius:12px;text-align:center;">
-    <p style="margin:0;font-weight:700;color:#04402A;font-size:15px;">Online booking opens soon.</p>
+    <p style="margin:0;font-weight:700;color:#15171A;font-size:15px;">Online booking opens soon.</p>
   </div>
 
   <!-- STEP 1 — YOUR INSTANT QUOTE -->
@@ -336,7 +346,7 @@
         <div class="wallet-or"><span>or pay by card</span></div>
       </div>
       <div class="card-wrap">
-        <div id="stripe-card-element" style="padding:15px 14px;background:#fff;border:1.5px solid #C9BEA9;border-radius:10px;"></div>
+        <div id="stripe-card-element" style="padding:15px 14px;background:#fff;border:1.5px solid #CFC8B9;border-radius:10px;"></div>
         <div id="stripe-card-errors" role="alert" style="color:#B42318;font-size:13px;min-height:14px;padding:0 4px;font-weight:600;"></div>
       </div>
       <p class="card-secured">
@@ -361,7 +371,7 @@
 </main>
 
 <footer>
-  © Brand Name · <a href="tel:+10000000000">(000) 000-0000</a>
+  © Brand Name · <a href="tel:+19254086053">(925) 408-6053</a>
 </footer>
 <script type="module">
   // Module: deferred until the document and Stripe.js (deferred) are ready.
@@ -526,11 +536,11 @@
     cardElement = elements.create('card', {
       style: {
         base: {
-          color: '#04402A',
+          color: '#15171A',
           fontFamily: '"DM Sans", system-ui, sans-serif',
           fontSize: '16px',   // 16px keeps iOS Safari from zooming the page on focus
           letterSpacing: '.02em',
-          '::placeholder': { color: 'rgba(4,64,42,.4)' },
+          '::placeholder': { color: 'rgba(21,23,26,.4)' },
         },
         invalid: { color: '#c0392b' },
       },
@@ -767,8 +777,8 @@
   // reached the other three files and missed this one, so quoted customers were
   // turned away at checkout. That's why it's generated now.
   /* BUILD:checkout-zips */
-  const VALID_ZIPS = new Set(['97030','97080','97060','97024']);
-  const ZIP_CITY   = {'97024':'Fairview','97030':'Gresham','97060':'Troutdale','97080':'Gresham'};
+  const VALID_ZIPS = new Set(['97030','97080','97060','97086','97024','97009','97089']);
+  const ZIP_CITY   = {'97009':'Boring','97024':'Fairview','97030':'Gresham','97060':'Troutdale','97080':'Gresham','97086':'Happy Valley','97089':'Damascus'};
   /* /BUILD:checkout-zips */
 
   // ── CONTACT CHECK
