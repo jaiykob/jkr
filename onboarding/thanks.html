@@ -184,14 +184,12 @@
 <main>
 
   <header class="header">
-    <p class="eyebrow">Booking Confirmed</p>
-    <h1 id="welcome-heading">Welcome to <em>Brand&nbsp;Name</em></h1>
-    <p class="sub">Thank you for choosing us. Your service is confirmed. Your confirmation is on its way to your inbox and phone. If you have any questions, call or text; we're always happy to help.</p>
+    <h1 id="welcome-heading">Booked</h1>
   </header>
 
   <!-- Booking summary, populated from sessionStorage by the script below -->
   <section class="summary-card" id="summary-card" hidden>
-    <h2>Your booking</h2>
+    <h2>Booking</h2>
     <div class="summary-rows" id="summary-rows"></div>
   </section>
 
@@ -200,8 +198,7 @@
        in order to do the job, so it's asked here instead — after the money
        has already cleared. Entirely optional: skipping it does nothing. -->
   <section class="referral" id="referral">
-    <h2>One last thing</h2>
-    <p class="ask">How did you hear about us? It tells us where to show up next, and it's the only thing on this page you can ignore.</p>
+    <h2>How Did You Hear About Us?</h2>
     <div class="ref-opts" id="ref-opts">
       <button type="button" class="ref-opt" aria-pressed="false" data-val="Friend / Word of Mouth">Friend or word of mouth</button>
       <button type="button" class="ref-opt" aria-pressed="false" data-val="Neighbor / Saw your truck">Neighbor or saw your truck</button>
@@ -222,21 +219,13 @@
 
   <!-- What happens next -->
   <section class="next-steps">
-    <h2>What happens next</h2>
-    <ol>
-      <li><strong>Within 24 hours:</strong> you'll get a text confirming your day and an arrival window. TODO: match how you actually schedule.</li>
-      <li><strong>The day before:</strong> a reminder with the arrival window.</li>
-      <li><strong>When we finish:</strong> a "job done" text the moment the truck is loaded.</li>
-      <li><strong>Any time:</strong> text or call us to change the day or cancel. TODO: cancellation terms.</li>
-    </ol>
+    <h2>What Happens Next</h2>
   </section>
 
   <div class="actions">
-    <a class="btn btn-primary" href="../index.html">Back to Brand Name</a>
-    <a class="btn btn-ghost" href="tel:+10000000000">Call or text us: (000) 000-0000</a>
+    <a class="btn btn-primary" href="../index.html">Home</a>
+    <a class="btn btn-ghost" href="tel:+10000000000">(000) 000-0000</a>
   </div>
-
-  <p class="signoff">The Brand Name team</p>
 
 </main>
 
@@ -358,7 +347,7 @@
       optsEl.hidden  = true;
       otherEl.hidden = true;
       sendBtn.hidden = true;
-      doneEl.textContent = 'Thank you, that helps more than you’d think.';
+      doneEl.textContent = 'Thanks.';
       doneEl.hidden = false;
     });
   })();
