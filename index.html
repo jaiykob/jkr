@@ -28,6 +28,7 @@
     @font-face { font-family: 'Playfair Display'; font-style: italic; font-weight: 400 500; font-display: swap; src: url(/fonts/playfair-italic.woff2) format('woff2'); }
   </style>
   <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/junk-toss.css">
   <script src="js/site.js" defer></script>
 </head>
 <body>
@@ -107,6 +108,39 @@
   </div>
 </section>
 
+<section class="band" aria-labelledby="junk-toss">
+  <div class="wrap">
+    <div class="section-head center"><h2 class="section-title" id="junk-toss">Junk Toss</h2></div>
+    <div class="jt" data-junktoss>
+      <div class="jt-stage">
+        <canvas class="jt-canvas" width="800" height="450" tabindex="0" aria-label="Junk Toss game. Drag back and let go to throw junk into the truck. With a keyboard, use the arrow keys to aim and Space to throw."></canvas>
+        <div class="jt-overlay" data-jt-start>
+          <p class="jt-title">Junk Toss</p>
+          <p class="jt-sub">Drag back, let go, and land it in the truck.</p>
+          <button type="button" class="btn-primary" data-jt-play>Play</button>
+          <p class="jt-best" data-jt-best></p>
+        </div>
+        <div class="jt-overlay" data-jt-over hidden>
+          <p class="jt-sub">Your score</p>
+          <p class="jt-big" data-jt-score>0</p>
+          <p class="jt-new" data-jt-newbest hidden>NEW BEST</p>
+          <p class="jt-best" data-jt-best></p>
+          <div class="jt-actions">
+            <button type="button" class="btn-primary" data-jt-play>Play again</button>
+            <a class="jt-link" href="book/quote.html">Get my price</a>
+          </div>
+        </div>
+      </div>
+      <div class="jt-bar">
+        <button type="button" class="jt-sound is-on" data-jt-sound aria-pressed="true" aria-label="Turn sound off">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/><g class="jt-waves"><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></g></svg>
+        </button>
+      </div>
+      <p class="visually-hidden" aria-live="polite" data-jt-live></p>
+    </div>
+  </div>
+</section>
+
 <section class="band is-surf" aria-labelledby="faq">
   <div class="wrap-text">
     <div class="section-head center"><h2 class="section-title" id="faq">FAQ</h2></div>
@@ -130,6 +164,7 @@
     <a href="tel:+10000000000">(000) 000-0000</a>
   </div>
 </footer>
+<script src="js/junk-toss.js" defer></script>
 <script src="js/preview-nav.js" defer></script>
 </body>
 </html>
