@@ -17,6 +17,7 @@
  */
 
 const crypto = require('crypto');
+const db = require('./_lib/db');
 
 function safeEqual(a, b) {
   const ab = Buffer.from(String(a));
@@ -68,9 +69,20 @@ module.exports = async (req, res) => {
   }
 
   const [customers, leads] = await Promise.all([
-    q('customers?select=*,subscriptions(*),visits(id,scheduled_date,status,route_date,route_seq,completed_at,visit_photos(kind))&order=created_at.desc'),
+    q('customers?select=*,subscriptions(*),visits(id,scheduled_date,status,route_date,route_seq,completed_at,visit_photos(kind,storage_path))&order=created_at.desc'),
     q('leads?select=*&order=created_at.desc'),
   ]);
+
+  // The customer's quote photos get short-lived links so the job card can show
+  // them. Only open jobs: finished ones don't need the look ahead.
+  const quoteShots = [];
+  for (const c of customers || []) for (const v of c.visits || []) {
+    if (v.status === 'completed' || v.status === 'canceled') continue;
+    for (const ph of v.visit_photos || []) if (ph.kind === 'quote') quoteShots.push(ph);
+  }
+  await Promise.all(quoteShots.slice(0, 200).map(async (ph) => {
+    ph.url = await db.signPhotoDownload(ph.storage_path, 60 * 60).catch(() => null);
+  }));
 
   res.setHeader('Cache-Control', 'no-store');
   return res.status(200).json({

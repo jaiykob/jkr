@@ -275,6 +275,13 @@ async function recordVisitPhoto({ visitId, customerId, kind, storagePath }) {
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
+/** Storage paths of a visit's photos of one kind ([] when none, null on error). */
+async function visitPhotoPaths(visitId, kind) {
+  if (!visitId || !kind) return null;
+  const rows = await rest('GET', `visit_photos?visit_id=eq.${encodeURIComponent(visitId)}&kind=eq.${encodeURIComponent(kind)}&select=storage_path`);
+  return Array.isArray(rows) ? rows.map((r) => r.storage_path) : null;
+}
+
 // Low-level Supabase Storage call (different base path than PostgREST).
 async function storage(method, path, body) {
   const { url, key } = cfg();
@@ -315,6 +322,35 @@ async function signPhotoDownload(objectPath, expiresIn = 60 * 60 * 24 * 7) {
   return `${url}/storage/v1${data.signedURL}`;
 }
 
+/**
+ * Customer quote photos (api/photo-quote.js) live in the same private bucket
+ * under quotes/. The server names them, so a path that doesn't match this is
+ * not ours and is never recorded or signed.
+ */
+const QUOTE_PHOTO_RE = /^quotes\/\d{4}-\d{2}-\d{2}\/[a-f0-9]{24}\.jpg$/;
+
+/** Upload JPEG bytes to the private bucket. Returns the path, or null. */
+async function uploadPhoto(objectPath, buffer) {
+  const { url, key } = cfg();
+  if (!key) { console.log('[db] no service key — photo upload skipped:', objectPath); return null; }
+  try {
+    const r = await fetch(`${url}/storage/v1/object/${PHOTO_BUCKET}/${objectPath}`, {
+      method: 'POST',
+      headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'false' },
+      body: buffer,
+    });
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      console.error('[db] photo upload non-2xx:', objectPath, r.status, t.slice(0, 200));
+      return null;
+    }
+    return objectPath;
+  } catch (e) {
+    console.error('[db] photo upload failed:', objectPath, e.message);
+    return null;
+  }
+}
+
 module.exports = {
   upsertCustomer,
   upsertSubscription,
@@ -329,7 +365,10 @@ module.exports = {
   activeSubscriptionsWithVisits,
   scheduledVisitCountsByWeekday,
   recordVisitPhoto,
+  visitPhotoPaths,
   signPhotoUpload,
   signPhotoDownload,
+  uploadPhoto,
+  QUOTE_PHOTO_RE,
   PHOTO_BUCKET,
 };

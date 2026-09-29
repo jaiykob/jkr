@@ -21,13 +21,14 @@ The founder is finishing a degree. Keep sessions focused and small.
 ```
 index.html             homepage
 book/                  the booking flow
-  quote.html             step 1: the load builder + one-time or monthly
+  quote.html             step 1: photos or taps fill the truck + one-time or monthly
                          step 2: ZIP + contact
   checkout.html          step 2: price, day, payment (Stripe)
   thanks.html            step 3: confirmation
 jkr/index.html       admin dashboard, served at /jkr/
 api/                   Vercel serverless functions
   create-booking.js      charges the card (authoritative price + ZIP check)
+  photo-quote.js         customer photos → Claude counts the items → the truck
   stripe-webhook.js      after payment: database rows, email, Discord ping
   day-capacity.js        which days are full
   cron-visits.js         daily: next recurring jobs + reminders
@@ -67,6 +68,16 @@ between `BUILD:` markers in `api/create-booking.js` (authoritative),
 recomputes every booking and refuses one that doesn't match ("Quote is out of
 date").
 
+**Photo quotes:** the customer sends up to 4 photos; `api/photo-quote.js`
+asks Claude (`claude-opus-5`, structured output limited to the `ITEMS` keys)
+to count them, and the page drops the count into the truck for them to fix.
+Claude only counts; prices never come from it. The photos are kept in the
+private `visit-photos` bucket under `quotes/`, ride with the booking as
+`metadata.photos` (the server keeps only paths it named, `QUOTE_PHOTO_RE`),
+become `visit_photos` rows of kind `quote`, and show up in the Discord ping
+and on the dashboard job. No `ANTHROPIC_API_KEY` → 503 and the page falls
+back to tapping.
+
 `ITEMS` (units out of 100 per truck) and each load's `fits` ceiling drive the
 load builder: the smallest load whose `fits` holds the tapped units is the
 size. Items only pick a size; the server still prices the size.
@@ -100,7 +111,7 @@ Discord booking alert links to it.
 
 Env vars: `STRIPE_SECRET_KEY`, `STRIPE_PRODUCT_ID`, `STRIPE_WEBHOOK_SECRET`,
 `BOOKINGS_OPEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
-`EMAIL_FROM`, `OPS_WEBHOOK_URL` (Discord), `SITE_ORIGIN`, `CRON_SECRET`,
+`EMAIL_FROM`, `OPS_WEBHOOK_URL` (Discord), `ANTHROPIC_API_KEY` (photo quotes), `SITE_ORIGIN`, `CRON_SECRET`,
 `ADMIN_DASHBOARD_TOKEN` (a long random string).
 Apply `db/schema.sql` in Supabase (it includes the `leads` table). Put the
 publishable key in `book/checkout.html` and the anon key in `js/leads.js`.
@@ -123,5 +134,6 @@ Spanish pages, generated header/footer, city pages, blog, sitemap.
 
 ## Tests
 
-`npm test`: schedule math, booking API against a fake Stripe, admin auth,
+`npm test`: schedule math, booking API against a fake Stripe, photo quotes
+against a fake Claude API, admin auth,
 generated prices in sync, titles and descriptions.

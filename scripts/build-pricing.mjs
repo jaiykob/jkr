@@ -9,6 +9,7 @@
  *   book/quote.html           quote-jsonld, quote-zips, quote-prices
  *   book/checkout.html  checkout-billing, checkout-zips
  *   index.html                     home-prices, home-builder
+ *   api/photo-quote.js              server-items
  *   book/quote.html                 (also) quote-builder
  */
 import fs from 'node:fs';
@@ -135,6 +136,13 @@ const builderData = {
 };
 const builderBlock = (indent) => `${indent}window.LOAD_BUILDER = ${Jslash(builderData)};`;
 
+/* The photo reader's item list (api/photo-quote.js): keys and labels only. */
+const serverItems = [
+  'const ITEMS = [',
+  ...ITEMS.map((i) => `  ${J({ key: i.key, label: i.label })},`),
+  '];',
+].join('\n');
+
 /* ── splice ───────────────────────────────────────────────────────────── */
 function splice(src, name, body, comment, file) {
   const open  = comment ? `/* BUILD:${name} */`  : `<!-- BUILD:${name} -->`;
@@ -150,6 +158,9 @@ const TARGETS = [
   { file: 'api/create-booking.js', blocks: [
     { name: 'server-prices', body: serverPrices, comment: true },
     { name: 'server-zips',   body: serverZips,   comment: true },
+  ] },
+  { file: 'api/photo-quote.js', blocks: [
+    { name: 'server-items', body: serverItems, comment: true },
   ] },
   { file: 'book/quote.html', blocks: [
     { name: 'quote-jsonld', body: quoteJsonld, comment: false },

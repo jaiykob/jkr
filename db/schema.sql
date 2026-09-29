@@ -132,12 +132,13 @@ create trigger visits_updated_at before update on public.visits
 -- `visit-photos` storage bucket; this table holds the object path + metadata.
 -- customer_id is denormalized so RLS can scope photo reads without a join.
 -- `gate` backs the "the gate's latched" claim in the serviceComplete email.
+-- `quote` is a photo the customer sent with their quote (api/photo-quote.js).
 -- ============================================================================
 create table if not exists public.visit_photos (
   id                uuid primary key default gen_random_uuid(),
   visit_id          uuid not null references public.visits(id) on delete cascade,
   customer_id       uuid not null references public.customers(id) on delete cascade,
-  kind              text not null check (kind in ('before','after','gate')),
+  kind              text not null check (kind in ('before','after','gate','quote')),
   storage_path      text not null,         -- object path in the private bucket
   taken_at          timestamptz not null default now(),
   sent_to_client_at timestamptz,
@@ -165,7 +166,7 @@ begin
   end loop;
 end $$;
 alter table public.visit_photos add constraint visit_photos_kind_check
-  check (kind in ('before','after','gate'));
+  check (kind in ('before','after','gate','quote'));
 create index if not exists visit_photos_visit_idx    on public.visit_photos(visit_id);
 create index if not exists visit_photos_customer_idx on public.visit_photos(customer_id);
 

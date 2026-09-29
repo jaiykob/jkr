@@ -158,6 +158,9 @@ function buildDiscordEmbed(ctx, payload) {
   if (m.pickup_day)             fields.push({ name: 'Day',       value: m.pickup_day, inline: true });
   if (m.load)                   fields.push({ name: 'Load',      value: m.load, inline: true });
   if (m.items)                  fields.push({ name: 'Items',     value: String(m.items).slice(0, 1000), inline: false });
+  if (ctx.photoLinks && ctx.photoLinks.length) {
+    fields.push({ name: 'Photos', value: ctx.photoLinks.map((u, i) => `[Photo ${i + 1}](${u})`).join('  ·  '), inline: false });
+  }
   if (m.frequency)              fields.push({ name: 'Frequency', value: m.frequency, inline: true });
   if (m.heard_via)              fields.push({ name: 'Heard via', value: m.heard_via, inline: true });
 
@@ -240,6 +243,12 @@ function opsPayload(ctx, event) {
 async function notifyOps(ctx, payload) {
   const url = process.env.OPS_WEBHOOK_URL;
   if (!url) return;
+  // The customer's photos, as week-long signed links, so the ping shows the
+  // job. Fail-soft: no links is still a ping.
+  if (payload.kind === 'signup_or_payment' && !ctx.photoLinks) {
+    const paths = quotePhotoPaths(ctx.metadata);
+    ctx.photoLinks = paths.length ? (await Promise.all(paths.map((p) => db.signPhotoDownload(p)))).filter(Boolean) : [];
+  }
   const raw  = process.env.OPS_WEBHOOK_RAW === '1';
   const body = raw ? { ...payload, ctx } : buildDiscordEmbed(ctx, payload);
   try {
@@ -334,6 +343,25 @@ function zipFromAddress(addr) {
 // Persist the booking spine to Supabase (service_role). Fail-safe: every db.*
 // call no-ops + logs when SUPABASE_SERVICE_ROLE_KEY is unset or the schema isn't
 // applied yet, so this can deploy dormant and never break the webhook.
+// The customer's quote photos (api/photo-quote.js), as create-booking.js
+// passed them: only server-named paths, never anything else in the bucket.
+function quotePhotoPaths(m) {
+  return String((m && m.photos) || '').split(',').map((p) => p.trim())
+    .filter((p) => db.QUOTE_PHOTO_RE.test(p)).slice(0, 4);
+}
+
+// Attach them to the job so the dashboard shows them. Idempotent: a webhook
+// redelivery finds them already there.
+async function keepQuotePhotos(m, customerId, visit) {
+  const paths = quotePhotoPaths(m);
+  if (!visit || !visit.id || !paths.length) return;
+  const have = await db.visitPhotoPaths(visit.id, 'quote');
+  if (have === null) return;
+  for (const p of paths) {
+    if (!have.includes(p)) await db.recordVisitPhoto({ visitId: visit.id, customerId, kind: 'quote', storagePath: p });
+  }
+}
+
 async function persistSpine(ctx, event) {
   if (!ctx || !ctx.customerId) return;
   const obj = event.data.object || {};
@@ -379,9 +407,10 @@ async function persistSpine(ctx, event) {
       // First visit — paid bookings only, idempotent (none if one exists).
       if (subscription && status === 'active') {
         const date = firstVisitDate({ freqIdx: m.freq_idx, weekday: m.pickup_weekday });
-        if (date) await db.ensureFirstVisit({
+        const visit = date ? await db.ensureFirstVisit({
           customerId: customer.id, subscriptionId: subscription.id, scheduledDate: date,
-        });
+        }) : null;
+        await keepQuotePhotos(m, customer.id, visit);
       }
     } else if (event.type === 'payment_intent.succeeded' && m.plan === 'one_time') {
       // One-time haul: no Stripe subscription. Persist the customer and a
@@ -406,9 +435,10 @@ async function persistSpine(ctx, event) {
       });
       if (subscription) {
         const date = firstVisitDate({ freqIdx: m.freq_idx, weekday: m.pickup_weekday });
-        if (date) await db.ensureFirstVisit({
+        const visit = date ? await db.ensureFirstVisit({
           customerId: customer.id, subscriptionId: subscription.id, scheduledDate: date,
-        });
+        }) : null;
+        await keepQuotePhotos(m, customer.id, visit);
       }
     } else if (event.type === 'invoice.payment_succeeded' && subId) {
       await db.updateSubscriptionByStripeId(subId, {

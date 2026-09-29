@@ -7,7 +7,7 @@
   var D = window.LOAD_BUILDER || {};
 
   // Hero: the configurator. "Book this load" opens the quote with the size set.
-  if (window.LoadBuilder) LoadBuilder.mount(document.getElementById('heroBuilder'), { cta: { href: 'book/quote.html' }, persist: true });
+  if (window.LoadBuilder) LoadBuilder.mount(document.getElementById('heroBuilder'), { cta: { href: 'book/quote.html' }, persist: true, photos: { endpoint: 'api/photo-quote' } });
 
   // How it works: the truck drives the road as the section scrolls by.
   var road = document.querySelector('.road');
