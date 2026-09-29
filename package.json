@@ -3,14 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "description": "Junk removal site skeleton, built from the Scoops Co. stack",
-  "engines": { "node": ">=18.0.0" },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "test": "node scripts/test-schedule.mjs && node scripts/test-booking.mjs && node scripts/test-admin.mjs && node scripts/build-pricing.mjs --check && node scripts/check-meta.mjs",
+    "test": "node scripts/test-schedule.mjs && node scripts/test-booking.mjs && node scripts/test-photo-quote.mjs && node scripts/test-admin.mjs && node scripts/build-pricing.mjs --check && node scripts/check-meta.mjs",
     "build:pricing": "node scripts/build-pricing.mjs",
     "check:pricing": "node scripts/build-pricing.mjs --check",
     "check:meta": "node scripts/check-meta.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0",
     "stripe": "^16.0.0"
   }
 }

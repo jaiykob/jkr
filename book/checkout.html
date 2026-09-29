@@ -403,6 +403,9 @@
   const custEmail = stashed.email || '';
   const custAddr  = stashed.addr  || '';
   const custItems = stashed.items || '';
+  // Paths of the photos they sent with the quote (api/photo-quote.js). The
+  // server keeps only paths in the shape it names, so these are a hint, not trust.
+  const custPhotos = Array.isArray(stashed.photos) ? stashed.photos.filter(p => typeof p === 'string').slice(0, 4) : [];
   const custZip   = /^\d{5}$/.test(params.get('zip') || '') ? params.get('zip') : (stashed.zip || '');
   if (urlName || urlPhone) {
     // Private mode can throw on either of these. Both are best-effort: failing
@@ -817,6 +820,7 @@
       ['Service frequency', FREQ_LABELS[fi]],
       ['Load', loadLabel],
       ...(custItems ? [['Items', custItems]] : []),
+      ...(custPhotos.length ? [['Photos', `${custPhotos.length} sent`]] : []),
       ['Billing', isOneTime ? 'Single charge' : quarterly ? 'Quarterly (save 10%)' : 'Per visit'],
     ];
     document.getElementById('sum-rows').innerHTML = rows
@@ -1087,6 +1091,7 @@
             pickup_weekday:            selectedDay || '',   // bare weekday — used to schedule visits
             freq_idx:                  String(fi),          // cadence index — drives visit interval
             items:                     custItems.slice(0, 480),   // Stripe caps a metadata value at 500 chars
+            photos:                    custPhotos.join(',').slice(0, 480),
             frequency:                 freq || '',
             // heard_via is no longer collected before payment — the question
             // moved to thanks.html, so it lands in the leads table rather than

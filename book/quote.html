@@ -385,7 +385,7 @@
           <h2 id="h-load" tabindex="-1">What's going?</h2>
           <span class="pill">Step 1 of 2</span>
         </div>
-        <p class="sub">Tap what you have. The truck fills and your price updates.</p>
+        <p class="sub">Send a photo and we count it for you, or tap what you have. Your price updates as the truck fills.</p>
         <div id="builder" class="q-builder"></div>
 
         <fieldset class="freq">
@@ -639,7 +639,7 @@
         sync();
     }
     builder = window.LoadBuilder
-        ? LoadBuilder.mount($('builder'), { freq: false, persist: true, fi: ONE_TIME_COL, onChange: fromBuilder })
+        ? LoadBuilder.mount($('builder'), { freq: false, persist: true, fi: ONE_TIME_COL, photos: { endpoint: '../api/photo-quote' }, onChange: fromBuilder })
         : null;
 
     // ── CONTACT VALIDATION — errors appear next to the field that caused them,
@@ -728,7 +728,9 @@
         const items = $('f-items').value.trim().slice(0, 500);
         const cents = PRICES[state.load][state.fi];
 
-        write(CONTACT_KEY, { name, phone, email, addr, zip, items });
+        // The photo paths api/photo-quote.js stored; they ride with the booking.
+        const photos = (read('quotePhotos') || []).filter(p => typeof p === 'string').slice(0, 4);
+        write(CONTACT_KEY, { name, phone, email, addr, zip, items, photos });
 
         // Every quote is a lead, whether or not they pay. This is the moment
         // the price is revealed, so it is the moment worth recording.

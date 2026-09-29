@@ -71,6 +71,12 @@ ok(pi && pi[1].amount === PRICES[2][ONE_TIME_COL], 'one-time charged a different
 ok(pi && pi[1].metadata.load === '1/2 truck' && pi[1].metadata.plan === 'one_time', 'one-time metadata wrong');
 ok(!calls.some((c) => c[0] === 'sub'), 'one-time created a subscription');
 
+console.log('== quote photos ==');
+const okPath = 'quotes/2026-09-28/0123456789abcdef01234567.jpg';
+const ph = await call(good({ metadata: { ...good().metadata, photos: `${okPath},1111/visit/after-1.jpg,../x.jpg` } }));
+const phPi = calls.find((c) => c[0] === 'pi');
+ok(ph.status === 200 && phPi && phPi[1].metadata.photos === okPath, `photo paths not filtered to server-named ones: ${phPi && phPi[1].metadata.photos}`);
+
 console.log('== recurring pickup ==');
 const rec = await call(good({ freqIdx: RECUR, quotedCents: PRICES[2][RECUR] }));
 ok(rec.status === 200 && rec.json.plan === COLUMNS[RECUR], `recurring failed: ${JSON.stringify(rec.json)}`);

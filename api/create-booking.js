@@ -192,7 +192,12 @@ module.exports = async (req, res) => {
   }
 
   // Set after the client's metadata is spread, so a page can't overwrite them.
-  const serverMeta = { plan: planKey, load: LOAD_LABELS[row], load_idx: String(row) };
+  // Quote photos (api/photo-quote.js): only paths in the shape the server
+  // names them. The webhook signs these for the owner, so a page must not be
+  // able to slip in any other object in the bucket.
+  const photos = String((metadata && metadata.photos) || '').split(',')
+    .map((p) => p.trim()).filter((p) => db.QUOTE_PHOTO_RE.test(p)).slice(0, 4);
+  const serverMeta = { plan: planKey, load: LOAD_LABELS[row], load_idx: String(row), photos: photos.join(',') };
 
   // Idempotency anchor: a network retry of the SAME booking reuses these keys
   // (Stripe returns the original objects instead of a second customer and a
