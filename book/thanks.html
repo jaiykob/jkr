@@ -185,6 +185,8 @@
     .btn-primary:active, .book-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #15171A !important; }
     .book-btn:disabled { opacity: .5; }
   </style>
+  <!-- Red with an asterisk = a placeholder guess (css/guess.css, npm run guesses). -->
+  <link rel="stylesheet" href="../css/guess.css">
 </head>
 <body>
 
@@ -271,6 +273,7 @@
     if (s.address)    rows.push({ l: 'Address',        v: s.address });
     if (s.last4)      rows.push({ l: 'Card on File',   v: `•••• ${s.last4}` });
     if (s.plan)       rows.push({ l: 'Plan',           v: s.plan });
+    if (s.travel)     rows.push({ l: 'Travel',         v: s.travel });
     if (s.amountCents != null) rows.push({ l: 'Charged Today', v: fmt(s.amountCents) });
     if (s.phone)      rows.push({ l: 'Confirmation to', v: s.phone });
 

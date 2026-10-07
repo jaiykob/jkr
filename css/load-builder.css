@@ -48,6 +48,9 @@
 .lb-price-row { display: flex; align-items: baseline; gap: 6px; }
 .lb-price { font: 800 clamp(2.6rem, 9cqi, 3.6rem)/1 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.03em; color: var(--lb-ink); font-variant-numeric: tabular-nums; }
 .lb-unit { font-size: 1rem; font-weight: 600; color: var(--lb-muted); }
+/* What travel adds, under the price ("Includes $25.00 travel, Zone 2"). */
+.lb-travel { margin: 0; font-size: 1rem; line-height: 1.4; font-weight: 600; color: var(--lb-muted); }
+.lb-travel .guess { font-weight: 700; }
 .lb-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 .lb-seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 4px; gap: 4px; border-radius: 12px; background: rgba(21,23,26,.07); justify-self: start; }

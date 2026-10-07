@@ -153,7 +153,7 @@ function detail(label, value) {
 
 // 1. Booking confirmation — fires off Stripe customer.subscription.created.
 function bookingConfirmation(ctx = {}) {
-  const { name, plan, amount, frequency, pickupDay, address, load } = ctx;
+  const { name, plan, amount, frequency, pickupDay, address, load, travel } = ctx;
   // heading is passed raw — layout() escapes it (escaping here would double-encode).
   const heading = `You're booked${name ? ', ' + name : ''}!`;
   const rows = [
@@ -162,6 +162,7 @@ function bookingConfirmation(ctx = {}) {
     detail('Day', pickupDay),
     detail('Address', address),
     detail('Load', load),
+    detail('Travel', travel),
     detail('Charged', amount),
   ].join('');
   const bodyHtml = `
@@ -172,7 +173,7 @@ function bookingConfirmation(ctx = {}) {
   return {
     subject: pickupDay ? `You're booked — ${pickupDay}` : "You're booked — service confirmed",
     html: layout({ preheader: 'Your pickup is all set — here are the details.', heading, bodyHtml }),
-    text: `You're booked${name ? ', ' + name : ''}!\n\nPlan: ${plan || ''}\nFrequency: ${frequency || ''}\nDay: ${pickupDay || ''}\nAddress: ${address || ''}\nCharged: ${amount || ''}\n\nWe'll text you an arrival window, then do all the lifting and hauling.\nQuestions? Reply here or call ${BRAND.phone}.\n— Brand Name`,
+    text: `You're booked${name ? ', ' + name : ''}!\n\nPlan: ${plan || ''}\nFrequency: ${frequency || ''}\nDay: ${pickupDay || ''}\nAddress: ${address || ''}${travel ? `\nTravel: ${travel}` : ''}\nCharged: ${amount || ''}\n\nWe'll text you an arrival window, then do all the lifting and hauling.\nQuestions? Reply here or call ${BRAND.phone}.\n— Brand Name`,
   };
 }
 

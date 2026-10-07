@@ -239,6 +239,8 @@
     .btn-primary:active, .book-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #15171A !important; }
     .book-btn:disabled { opacity: .5; }
   </style>
+  <!-- Red with an asterisk = a placeholder guess (css/guess.css, npm run guesses). -->
+  <link rel="stylesheet" href="../css/guess.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to your quote</a>
@@ -373,6 +375,8 @@
 <footer>
   © Brand Name · <a href="tel:+19254086053">(925) 408-6053</a>
 </footer>
+<!-- The travel zones (window.TRAVEL), generated from pricing.config.mjs. -->
+<script src="../js/travel.js"></script>
 <script type="module">
   // Module: deferred until the document and Stripe.js (deferred) are ready.
   // ── PARAMS FROM QUOTE
@@ -438,6 +442,8 @@
   // A quarter is 13 weeks of service at 10% off, recurring plans only.
   const WEEKS_PER_QUARTER   = 13;
   const QUARTERLY_DISCOUNT  = 0.1;
+  // true while the load prices are placeholders: shown red with an asterisk.
+  const PRICE_GUESS = true;
   /* /BUILD:checkout-billing */
 
   // Frequency index into the price matrix. Bounds come from the generated table
@@ -518,7 +524,7 @@
 
   // ── CONTACT FROM THE ESTIMATOR
   // Everything was typed once, on the contact step of quote.html. City is filled from
-  // the ZIP further down, once the generated ZIP_CITY table exists.
+  // the ZIP further down, from the travel zones (js/travel.js).
   formData.addr  = custAddr;
   formData.zip   = custZip;
   formData.email = custEmail;
@@ -774,23 +780,22 @@
   });
 
 
-  // ZIP gate — GENERATED from SERVICE_AREA in pricing.config.mjs. Edit there,
-  // then run `npm run build:pricing`.
-  // This is the list that used to get forgotten: the 2026-07-29 expansion
-  // reached the other three files and missed this one, so quoted customers were
-  // turned away at checkout. That's why it's generated now.
-  /* BUILD:checkout-zips */
-  const VALID_ZIPS = new Set(['97030','97080','97060','97086','97024','97009','97089']);
-  const ZIP_CITY   = {'97009':'Boring','97024':'Fairview','97030':'Gresham','97060':'Troutdale','97080':'Gresham','97086':'Happy Valley','97089':'Damascus'};
-  /* /BUILD:checkout-zips */
+  // ── SERVICE AREA AND TRAVEL — window.TRAVEL (js/travel.js), GENERATED from
+  // ZONES in pricing.config.mjs. Null outside every zone. The price in the URL
+  // already includes the travel fee; this splits it out for the summary, and
+  // the server recomputes both.
+  const trip = window.TRAVEL ? window.TRAVEL.travelFor(custZip) : null;
+  const travelGuess = !!(window.TRAVEL && window.TRAVEL.GUESS);
+  // Red with an asterisk while a number is a placeholder (css/guess.css).
+  const guessHtml = (text, on) => (on ? `<span class="guess">${text}</span>` : text);
 
   // ── CONTACT CHECK
   // This page only works with what the estimator's contact step collected. A tab
   // that lost its sessionStorage (new tab, private window, a shared link) is
   // sent back to that step with the plan intact rather than shown a quote it
   // can't book.
-  formData.city = ZIP_CITY[formData.zip] || '';
-  const contactComplete = formData.fname && formData.email && custPhone && formData.addr && VALID_ZIPS.has(formData.zip);
+  formData.city = trip ? trip.place : '';
+  const contactComplete = formData.fname && formData.email && custPhone && formData.addr && trip;
   if (!contactComplete) {
     const back = new URLSearchParams(location.search);
     back.set('edit', 'contact');
@@ -808,23 +813,27 @@
     const lbl = document.getElementById('sum-lbl');
     if (isOneTime) {
       lbl.innerHTML = 'Your price<small>One-time haul</small>';
-      big.textContent = fmt(quotedCents);
+      big.innerHTML = guessHtml(fmt(quotedCents), PRICE_GUESS);
     } else if (quarterly) {
       lbl.innerHTML = `Your price<small>Every 3 months, 10% off</small>`;
-      big.textContent = fmt(quarterCents());
+      big.innerHTML = guessHtml(fmt(quarterCents()), PRICE_GUESS);
     } else {
       lbl.innerHTML = `Your price<small>Per visit, billed ${FREQ_EVERY[fi]}</small>`;
-      big.innerHTML = `${fmt(quotedCents)} <small>/visit</small>`;
+      big.innerHTML = `${guessHtml(fmt(quotedCents), PRICE_GUESS)} <small>/visit</small>`;
     }
+    // Per visit: the load's price, then travel for the ZIP's zone. A third
+    // element marks a value that is already HTML (the red guess spans).
+    const travelCents = trip ? trip.cents : 0;
     const rows = [
       ['Service frequency', FREQ_LABELS[fi]],
-      ['Load', loadLabel],
+      ['Load', `${escText(loadLabel)}: ${guessHtml(fmt(quotedCents - travelCents), PRICE_GUESS)}`, true],
+      ...(trip ? [['Travel', `${escText(trip.label)}, ${escText(trip.place)}: ${guessHtml(trip.cents ? fmt(trip.cents) : 'no charge', travelGuess)}`, true]] : []),
       ...(custItems ? [['Items', custItems]] : []),
       ...(custPhotos.length ? [['Photos', `${custPhotos.length} sent`]] : []),
       ['Billing', isOneTime ? 'Single charge' : quarterly ? 'Quarterly (save 10%)' : 'Per visit'],
     ];
     document.getElementById('sum-rows').innerHTML = rows
-      .map(([k, v]) => `<div><dt>${k}</dt><dd>${escText(v)}</dd></div>`).join('');
+      .map(([k, v, html]) => `<div><dt>${k}</dt><dd>${html ? v : escText(v)}</dd></div>`).join('');
     const addr = [formData.addr, [formData.city, formData.zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
     const contact = [
       ['Name', `${formData.fname} ${formData.lname}`.trim()],
@@ -882,6 +891,12 @@
   document.getElementById('quarterly-state').textContent = quarterly ? 'On' : 'Off';
   try { history.replaceState({ step: 'quote' }, ''); } catch (e) { /* ignore */ }
 
+  // "Zone 2: $25.00 per visit" (or "no travel charge"), for the plain text rows.
+  function travelText() {
+    if (!trip) return '';
+    return `${trip.label}: ${trip.cents ? fmt(trip.cents) + (isOneTime ? '' : ' per visit') : 'no travel charge'}`;
+  }
+
   // ── BUILD CONFIRM
   function buildConfirm() {
     const fullName = `${formData.fname} ${formData.lname}`.trim() || 'N/A';
@@ -892,6 +907,7 @@
       { l: 'Address',    v: addr || 'N/A' },
       { l: 'Day',        v: cadenceLabel(selectedDay) },
       { l: 'Load',       v: loadLabel },
+      ...(trip ? [{ l: 'Travel', v: travelText() }] : []),
     ];
     rows.push({ l: 'Plan', v: planLabel() });
     if (foundingOffer) rows.push({ l: 'Founding member', v: foundingTermsText() });
@@ -1132,6 +1148,7 @@
           ? { l: 'Paid With',    v: `${walletLabel} •••• ${last4}` }
           : { l: 'Card on File', v: `•••• ${last4}` },
         { l: 'Plan',         v: planLabel() },
+        ...(trip ? [{ l: 'Travel', v: travelText() }] : []),
       ];
       if (foundingOffer) summaryRows.push({ l: 'Founding member', v: foundingTermsText() });
       // Stripe's figure when it sent one: that is the amount on the card.
@@ -1150,6 +1167,7 @@
           cadence:    cadenceLabel(selectedDay),
           day:        selectedDay,
           plan:       planLabel(),
+          travel:     trip ? travelText() : null,
           last4:      last4,
           wallet:     walletLabel,
           amountCents: chargedCents,

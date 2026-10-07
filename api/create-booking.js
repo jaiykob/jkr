@@ -62,11 +62,9 @@ function quarterCents(perPeriodCents, col) {
   return Math.round((perPeriodCents / weeks) * WEEKS_PER_QUARTER * (1 - 0.10));
 }
 
-// The authoritative service-area gate. GENERATED from SERVICE_AREA in
-// pricing.config.mjs.
-/* BUILD:server-zips */
-const VALID_ZIPS = new Set(['97030','97080','97060','97086','97024','97009','97089']);
-/* /BUILD:server-zips */
+// The authoritative service-area gate AND the travel fee: a ZIP outside every
+// zone gets null. GENERATED (whole file) from ZONES in pricing.config.mjs.
+const travel = require('./_lib/travel');
 
 /**
  * The ZIP in "123 Oak Ln, Gresham 97030": the LAST five-digit group. The first
@@ -150,7 +148,8 @@ module.exports = async (req, res) => {
   if (!(row >= 0 && row < PRICES.length) || !(fi >= 0 && fi < PRICES[0].length)) {
     return res.status(400).json({ error: 'Invalid quote parameters. Please rebuild your quote.' });
   }
-  if (!VALID_ZIPS.has(String(zip || '').trim())) {
+  const trip = travel.travelFor(zip);
+  if (!trip) {
     return res.status(400).json({ error: 'Sorry, that address is outside our service area' });
   }
   // The address is what the route and the CRM use, so it has to name the ZIP
@@ -161,7 +160,10 @@ module.exports = async (req, res) => {
   }
 
   const pct       = COUPONS[String(coupon).trim().toUpperCase()] || 0;
-  const baseCents = PRICES[row][fi];   // already cents: do NOT multiply by 100
+  // Per visit: the load's price plus the travel fee for the ZIP's zone. Both
+  // are already cents: do NOT multiply by 100. A coupon comes off the whole.
+  const loadCents = PRICES[row][fi];
+  const baseCents = loadCents + trip.cents;
   const amount    = pct > 0 ? Math.round(baseCents * (1 - pct / 100)) : baseCents;
   // Derived from the billing table, never from a hardcoded column index.
   const isOneTime = !BILLING_BY_COL[fi].stripe;
@@ -197,7 +199,13 @@ module.exports = async (req, res) => {
   // able to slip in any other object in the bucket.
   const photos = String((metadata && metadata.photos) || '').split(',')
     .map((p) => p.trim()).filter((p) => db.QUOTE_PHOTO_RE.test(p)).slice(0, 4);
-  const serverMeta = { plan: planKey, load: LOAD_LABELS[row], load_idx: String(row), photos: photos.join(',') };
+  // Travel rides with every booking so the email, Discord ping, database and
+  // dashboard can show it without recomputing it.
+  const serverMeta = {
+    plan: planKey, load: LOAD_LABELS[row], load_idx: String(row), photos: photos.join(','),
+    load_cents: String(loadCents), zip: trip.zip, zone: trip.zone, zone_label: trip.label,
+    travel_cents: String(trip.cents), miles: String(trip.miles),
+  };
 
   // Idempotency anchor: a network retry of the SAME booking reuses these keys
   // (Stripe returns the original objects instead of a second customer and a
@@ -226,7 +234,7 @@ module.exports = async (req, res) => {
         payment_method: paymentMethodId,
         confirm: true,
         off_session: false,
-        description: `Brand Name — ${LOAD_LABELS[row]} haul`,
+        description: `Brand Name — ${LOAD_LABELS[row]} haul, ${trip.label}`,
         statement_descriptor_suffix: 'HAUL',
         metadata: { ...metadata, ...serverMeta, plan: 'one_time' },
         automatic_payment_methods: { enabled: true, allow_redirects: 'never' },

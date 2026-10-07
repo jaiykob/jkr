@@ -60,7 +60,8 @@ function limited(ip) {
 }
 
 const SYSTEM = [
-  'You help a junk removal company in Gresham, Oregon price jobs from photos.',
+  'You help a junk removal company that serves the Portland metro, from a base',
+  'in Gresham, price jobs from photos.',
   'A customer photographed the things they want hauled away. Count what you see',
   'using only the item keys below, so the company can pick the right truck load.',
   '',

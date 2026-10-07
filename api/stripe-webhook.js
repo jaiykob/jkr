@@ -66,6 +66,17 @@ function fmtAmount(cents) {
   return `$${(Number(cents) / 100).toFixed(2)}`;
 }
 
+/**
+ * "Zone 2: $25.00" for the customer, from the travel metadata create-booking
+ * writes (zone_label, travel_cents). Null for a booking made before travel
+ * zones existed, so nothing prints an empty travel line.
+ */
+function travelLine(m) {
+  if (!m || m.travel_cents == null || m.travel_cents === '' || !m.zone_label) return null;
+  const cents = Number(m.travel_cents);
+  return `${m.zone_label}: ${cents ? fmtAmount(cents) : 'no travel charge'}`;
+}
+
 function stripeDashboardBase(livemode) {
   return livemode ? 'https://dashboard.stripe.com' : 'https://dashboard.stripe.com/test';
 }
@@ -157,6 +168,8 @@ function buildDiscordEmbed(ctx, payload) {
   if (m.address)                fields.push({ name: 'Address',   value: m.address, inline: false });
   if (m.pickup_day)             fields.push({ name: 'Day',       value: m.pickup_day, inline: true });
   if (m.load)                   fields.push({ name: 'Load',      value: m.load, inline: true });
+  // The zone and road miles from the base: how far the truck is going.
+  if (travelLine(m))            fields.push({ name: 'Travel',    value: [m.zone_label, m.miles ? `${m.miles} mi` : null, Number(m.travel_cents) ? fmtAmount(m.travel_cents) : 'no travel charge'].filter(Boolean).join(' · '), inline: true });
   if (m.items)                  fields.push({ name: 'Items',     value: String(m.items).slice(0, 1000), inline: false });
   if (ctx.photoLinks && ctx.photoLinks.length) {
     fields.push({ name: 'Photos', value: ctx.photoLinks.map((u, i) => `[Photo ${i + 1}](${u})`).join('  ·  '), inline: false });
@@ -300,6 +313,7 @@ async function emailCustomer(ctx, event) {
       pickupDay: m.pickup_day,
       address:   m.address,
       load:      m.load,
+      travel:    travelLine(m),
     });
   } else if (event.type === 'invoice.payment_failed' && obj.billing_reason !== 'subscription_create') {
     // Renewals only. A first invoice fails while the customer is still on the
@@ -399,6 +413,9 @@ async function persistSpine(ctx, event) {
         freqIdx:              m.freq_idx,
         pickupDay:            m.pickup_day,
         loadSize:             m.load,
+        travelZone:           m.zone_label,
+        travelCents:          m.travel_cents,
+        travelMiles:          m.miles,
         priceCents:           priceCents != null ? priceCents : Number(m.quoted_price ?? m.quoted_monthly) || null,
         status,
         currentPeriodEnd:     toIso(sub.current_period_end ?? (item && item.current_period_end)),
@@ -428,6 +445,9 @@ async function persistSpine(ctx, event) {
         freqIdx:    m.freq_idx,
         pickupDay:  m.pickup_day,
         loadSize:   m.load,
+        travelZone:  m.zone_label,
+        travelCents: m.travel_cents,
+        travelMiles: m.miles,
         priceCents: obj.amount_received ?? obj.amount ?? null,
         status:     'one_time',
         startedAt:  new Date().toISOString(),
@@ -511,3 +531,7 @@ module.exports = async (req, res) => {
 
   return res.status(200).json({ received: true });
 };
+
+// For scripts/test-ops.mjs: what the owner and the customer are shown.
+module.exports.buildDiscordEmbed = buildDiscordEmbed;
+module.exports.travelLine = travelLine;

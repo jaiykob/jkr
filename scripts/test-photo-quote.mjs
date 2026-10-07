@@ -68,6 +68,9 @@ ok(b && b.messages[0].content.filter((c) => c.type === 'image').length === 2, 'b
 ok(b && b.output_config && b.output_config.format.type === 'json_schema', 'no structured output');
 const keys = b && b.output_config.format.schema.properties.items.items.properties.key.enum;
 ok(JSON.stringify(keys) === JSON.stringify(ITEMS.map((i) => i.key)), 'schema keys differ from ITEMS');
+// The service area is the Portland metro (2026-10-07), from a Gresham base.
+const sys = b && (typeof b.system === 'string' ? b.system : JSON.stringify(b.system));
+ok(/Portland metro/.test(sys || '') && !/in Gresham, Oregon price/.test(sys || ''), 'the prompt does not name the Portland metro');
 
 console.log('== cleanup ==');
 const { tidy } = handler;

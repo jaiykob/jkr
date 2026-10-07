@@ -4,7 +4,8 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { PRICES, ONE_TIME_COL, COLUMNS, BILLING, ALL_ZIPS } from '../pricing.config.mjs';
+import { PRICES, ONE_TIME_COL, COLUMNS, BILLING, ALL_ZIPS, ZIP_ZONES, ZONES } from '../pricing.config.mjs';
+import ZIP_MILES from '../data/zip-miles.mjs';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -87,6 +88,40 @@ const q = await call(good({ freqIdx: RECUR, quotedCents: PRICES[2][RECUR], quart
 ok(q.status === 200 && q.json.plan === 'quarterly', 'quarterly failed');
 const qs = calls.find((c) => c[0] === 'sub');
 ok(qs && qs[1].items[0].price_data.recurring.interval_count === 3, 'quarterly not billed every 3 months');
+
+console.log('== travel ==');
+// A ZIP in the second zone (a real fee), and one measured but past the last zone.
+const z2 = ALL_ZIPS.find((z) => ZIP_ZONES[z].zone === ZONES[1].key);
+const t2 = ZIP_ZONES[z2].cents;
+const farZip = Object.keys(ZIP_MILES.zips).find((z) => !ZIP_ZONES[z]);
+ok(t2 > 0 && farZip, 'test setup: need a zone 2 ZIP with a fee and a ZIP past the last zone');
+// ZIP+4 in the address: the ZIP is still read as the five digits.
+const away = good({ zip: z2, quotedCents: PRICES[2][ONE_TIME_COL] + t2,
+  metadata: { address: `9 Elm St, Portland ${z2}-1234`, pickup_weekday: 'Tuesday' } });
+const tr = await call(away);
+const trPi = calls.find((c) => c[0] === 'pi');
+ok(tr.status === 200, `zone 2 booking refused: ${JSON.stringify(tr.json)}`);
+ok(trPi && trPi[1].amount === PRICES[2][ONE_TIME_COL] + t2, 'travel not added to the one-time charge');
+ok(trPi && trPi[1].metadata.zone === ZONES[1].key && trPi[1].metadata.zone_label === ZONES[1].label, 'zone missing from metadata');
+ok(trPi && trPi[1].metadata.travel_cents === String(t2) && trPi[1].metadata.load_cents === String(PRICES[2][ONE_TIME_COL]), 'travel or load cents missing from metadata');
+ok(trPi && trPi[1].metadata.zip === z2 && trPi[1].metadata.miles === String(ZIP_ZONES[z2].miles), 'zip or miles missing from metadata');
+const cust = calls.find((c) => c[0] === 'customer');
+ok(cust && cust[1].metadata.zone === ZONES[1].key, 'travel missing from the customer metadata');
+// The total without travel (an old quote, or a fee that changed since) is refused.
+const loadOnly = await call({ ...away, quotedCents: PRICES[2][ONE_TIME_COL] });
+ok(loadOnly.status === 400 && /out of date/.test(loadOnly.json.error), 'a total without travel was accepted');
+ok(calls.length === 0, 'a refused travel quote created a Stripe object');
+const tooFar = await call(good({ zip: farZip, metadata: { address: `1 Main St ${farZip}` } }));
+ok(tooFar.status === 400 && /outside our service area/.test(tooFar.json.error), `a ZIP past the last zone was accepted (${farZip})`);
+// Recurring and quarterly carry travel on every visit.
+const subT = await call({ ...away, freqIdx: RECUR, quotedCents: PRICES[2][RECUR] + t2 });
+const subC = calls.find((c) => c[0] === 'sub');
+ok(subT.status === 200 && subC && subC[1].items[0].price_data.unit_amount === PRICES[2][RECUR] + t2, 'the monthly price left travel out');
+ok(subC && subC[1].metadata.travel_cents === String(t2), 'travel missing from the subscription metadata');
+await call({ ...away, freqIdx: RECUR, quotedCents: PRICES[2][RECUR] + t2, quarterly: true });
+const qT = calls.find((c) => c[0] === 'sub');
+const weeks = BILLING[COLUMNS[RECUR]].weeks;
+ok(qT && qT[1].items[0].price_data.unit_amount === Math.round(((PRICES[2][RECUR] + t2) / weeks) * 13 * 0.9), 'the quarterly prepay left travel out');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
