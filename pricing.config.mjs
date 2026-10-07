@@ -152,6 +152,12 @@ export function quarterlyCents(row, col) {
 }
 
 /**
+ * Where every travel distance is measured from. GUESS*: Gresham city center,
+ * not the real yard. Moving it means re-running `node scripts/measure-zips.mjs`.
+ */
+export const BASE = { label: 'Gresham', lat: 45.4982, lon: -122.4316 };
+
+/**
  * Service area: the same six cities as Scoops Co. (2026-09-28), main ZIPs
  * only (no shared Portland ZIPs, no street lookup). Feeds three generated gates
  * (server, estimator, checkout), so it can only be changed here.
