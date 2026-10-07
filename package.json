@@ -10,7 +10,8 @@
     "test": "node scripts/test-schedule.mjs && node scripts/test-booking.mjs && node scripts/test-photo-quote.mjs && node scripts/test-admin.mjs && node scripts/build-pricing.mjs --check && node scripts/check-meta.mjs",
     "build:pricing": "node scripts/build-pricing.mjs",
     "check:pricing": "node scripts/build-pricing.mjs --check",
-    "check:meta": "node scripts/check-meta.mjs"
+    "check:meta": "node scripts/check-meta.mjs",
+    "score": "node scripts/score.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

@@ -117,3 +117,4 @@ graph TD
 
 | Gen | Parent | What changed | Score | Best so far |
 | --- | --- | --- | --- | --- |
+| 0 | main (e702c16) | nothing yet: the scorecard alone | 12 | 12 |
