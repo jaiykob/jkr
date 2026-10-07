@@ -1,11 +1,45 @@
-// Travel reaches the owner and the customer after payment: the Discord ping,
-// the confirmation email, and the row the dashboard reads. No network.
+// After payment: the Discord ping, the owner email, the customer emails and
+// the row the dashboard reads, through the real webhook handler with a fake
+// Stripe and a stand-in email sender. No network.
 import { createRequire } from 'node:module';
+import { Readable } from 'node:stream';
 
 const require = createRequire(import.meta.url);
 delete process.env.SUPABASE_URL;
-const { buildDiscordEmbed, travelLine } = require('../api/stripe-webhook.js');
+delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Fake Stripe (the event is the request body) and a sendEmail that records.
+const sent = [];
+let customerMeta = {};
+class FakeStripe {
+  constructor() {
+    this.webhooks = { constructEvent: (raw) => JSON.parse(raw.toString('utf8')) };
+    this.customers = { retrieve: async (id) => ({ id, name: 'Jane Smith', email: 'jane@example.com', phone: '5035550100', metadata: customerMeta }) };
+    this.subscriptions = { retrieve: async (id) => ({ id, status: 'active', items: { data: [] }, metadata: {} }) };
+  }
+}
+const Module = require('node:module');
+const load = Module._load;
+Module._load = function (req, ...rest) {
+  if (req === 'stripe') return FakeStripe;
+  if (req === './_lib/email') return { sendEmail: async (m) => { sent.push(m); return { ok: true }; } };
+  return load.call(this, req, ...rest);
+};
+const webhook = require('../api/stripe-webhook.js');
+const { buildDiscordEmbed, travelLine } = webhook;
 const tpl = require('../api/_lib/email-templates.js');
+
+async function deliver(event, env = {}) {
+  Object.assign(process.env, { STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_WEBHOOK_SECRET: 'whsec_x', OPS_WEBHOOK_URL: '', OPS_EMAIL: '' }, env);
+  sent.length = 0;
+  const req = Readable.from([Buffer.from(JSON.stringify(event))]);
+  req.method = 'POST';
+  req.headers = { 'stripe-signature': 't=1,v1=x' };
+  let status = 0;
+  const res = { status(s) { status = s; return this; }, json() { return this; }, end() { return this; }, setHeader() {} };
+  await webhook(req, res);
+  return status;
+}
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL: ' + m); } };
@@ -29,23 +63,73 @@ ok(/Travel: Zone 2: \$25\.00/.test(mail.text), 'confirmation email text has no t
 const plain = tpl.bookingConfirmation({ name: 'Jane', load: '1/2 truck', amount: '$349.00' });
 ok(!/Travel/.test(plain.html), 'an email without travel still prints a travel row');
 
+console.log('== owner email ==');
+const booking = (id, over = {}) => ({
+  id, type: 'payment_intent.succeeded', livemode: false,
+  data: { object: { id: 'pi_1', customer: 'cus_1', amount_received: 37400, metadata: {
+    plan: 'one_time', load: '1/2 truck', zone_label: 'Zone 2', travel_cents: '2500', miles: '16.8',
+    address: '9 Elm St, Portland 97202', pickup_day: 'Tuesday, Oct 14', items: 'Couch, mattress', frequency: 'One-time haul', ...over } } },
+});
+// Discord is down (its fetch throws): the owner email still goes.
+const realFetch = globalThis.fetch;
+globalThis.fetch = async () => { throw new Error('discord unreachable'); };
+let st = await deliver(booking('evt_1'), { OPS_EMAIL: 'owner@example.com', OPS_WEBHOOK_URL: 'https://discord.invalid/webhook' });
+const owner = sent.find((m) => m.to === 'owner@example.com');
+ok(st === 200, `webhook answered ${st}`);
+ok(!!owner, 'no owner email on a new booking');
+ok(owner && owner.idempotencyKey === 'evt_1:owner', `owner email key is ${owner && owner.idempotencyKey} (a redelivery would send twice)`);
+ok(owner && /New booking/.test(owner.subject) && /\$374\.00/.test(owner.subject), `owner subject: ${owner && owner.subject}`);
+ok(owner && /1\/2 truck/.test(owner.html) && /Zone 2/.test(owner.html) && /9 Elm St/.test(owner.html) && /503/.test(owner.html), 'owner email lacks the load, travel, address or phone');
+ok(owner && /\/jkr\//.test(owner.html), 'owner email does not link the dashboard');
+ok(sent.some((m) => m.to === 'jane@example.com'), 'the customer confirmation stopped going out');
+globalThis.fetch = realFetch;
+// No OPS_EMAIL: no owner email, no error, the customer still hears from us.
+st = await deliver(booking('evt_2'));
+ok(st === 200 && !sent.some((m) => /New booking/.test(m.subject || '')), 'an owner email went out with OPS_EMAIL unset');
+ok(sent.some((m) => m.to === 'jane@example.com'), 'without OPS_EMAIL the customer email stopped');
+// A renewal is not a new booking.
+st = await deliver({ id: 'evt_3', type: 'invoice.payment_succeeded', livemode: false,
+  data: { object: { id: 'in_1', customer: 'cus_1', subscription: 'sub_1', billing_reason: 'subscription_cycle', amount_paid: 34400, metadata: {} } } },
+  { OPS_EMAIL: 'owner@example.com' });
+ok(!sent.some((m) => m.to === 'owner@example.com'), 'a monthly renewal sent an owner booking email');
+// A declined card is not a booking either.
+st = await deliver({ id: 'evt_4', type: 'payment_intent.payment_failed', livemode: false,
+  data: { object: { id: 'pi_2', customer: 'cus_1', amount: 37400, metadata: { plan: 'one_time' } } } }, { OPS_EMAIL: 'owner@example.com' });
+ok(!sent.some((m) => m.to === 'owner@example.com'), 'a declined card sent an owner booking email');
+
+console.log('== customer emails ==');
+const ctxAll = { name: 'Jane', plan: 'One-time haul', amount: '$374.00', frequency: 'One-time haul', pickupDay: 'Tuesday', address: '1 Oak St',
+  load: '1/2 truck', travel: 'Zone 2: $25.00', quoteUrl: 'https://www.example.com/book/quote.html', quotedPrice: '$374.00',
+  reviewUrl: 'https://g.page/r/x', visitDate: 'Tue, Oct 14', updateUrl: 'https://pay.example.com', unsubscribeUrl: 'https://www.example.com/u', photos: [] };
+const strip = (h) => String(h).replace(/<style[\s\S]*?<\/style>/g, '').replace(/<[^>]+>/g, ' ').replace(/&[a-z#0-9]+;/g, ' ');
+for (const [k, fn] of Object.entries(tpl)) {
+  if (typeof fn !== 'function' || /^(layout|button|detail|escape)/i.test(k)) continue;
+  let out; try { out = fn(ctxAll); } catch { continue; }
+  if (!out || !out.html) continue;
+  const all = `${out.subject}\n${strip(out.html)}\n${out.text || ''}`;
+  ok(!/[—–]/.test(all), `${k}: a dash as punctuation: "${(all.match(/.{0,25}[—–].{0,25}/) || [''])[0]}"`);
+  ok(!/\bTODO\b/.test(all), `${k}: a TODO a customer would read`);
+  ok(!/\b(okay|gonna|honestly|totally|a lot of|super easy|no biggie)\b/i.test(all), `${k}: slang: "${(all.match(/.{0,20}\b(okay|gonna|honestly|totally|a lot of|super easy|no biggie)\b.{0,20}/i) || [''])[0]}"`);
+  ok(!/\b(dogs?|poop|scoop\w*|Scoops|yard)\b/i.test(all.replace(/yard debris/gi, '')), `${k}: a leftover from the old business`);
+}
+
 console.log('== database ==');
-// The row upsertSubscription sends to Supabase, captured instead of sent.
-const sent = [];
+// The row upsertSubscription sends to Supabase, captured instead of rows.
+const rows = [];
 process.env.SUPABASE_URL = 'https://test.invalid';
 process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
 globalThis.fetch = async (url, init) => {
-  sent.push({ url, body: JSON.parse(init.body || 'null') });
+  rows.push({ url, body: JSON.parse(init.body || 'null') });
   return { ok: true, status: 201, json: async () => [{ id: 'sub-row' }], text: async () => '' };
 };
 const db = require('../api/_lib/db.js');
 await db.upsertSubscription({ customerId: 'c1', plan: 'one_time', loadSize: '1/2 truck', priceCents: 37400,
   travelZone: 'Zone 2', travelCents: '2500', travelMiles: '16.8', dedupeId: 'pi_1' });
-const row = sent.length && sent[sent.length - 1].body;
+const row = rows.length && rows[rows.length - 1].body;
 ok(row && row.travel_zone === 'Zone 2' && row.travel_cents === 2500 && row.travel_miles === 16.8, `travel not in the subscription row: ${JSON.stringify(row)}`);
-sent.length = 0;
+rows.length = 0;
 await db.upsertSubscription({ customerId: 'c1', plan: 'one_time', loadSize: '1/2 truck', priceCents: 34900, dedupeId: 'pi_2' });
-const before = sent.length && sent[sent.length - 1].body;
+const before = rows.length && rows[rows.length - 1].body;
 ok(before && !('travel_zone' in before) && !('travel_cents' in before), 'a booking without travel wrote empty travel columns');
 
 console.log(`\n${pass} passed, ${fail} failed`);
