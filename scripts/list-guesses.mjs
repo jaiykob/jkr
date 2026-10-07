@@ -43,7 +43,7 @@ function walk(dir, out = []) {
 const { GUESS } = await import(pathToFileURL(path.join(ROOT, 'pricing.config.mjs')).href);
 const FLAG_NOTES = {
   prices: 'The load prices (`PRICE_TABLE` in `pricing.config.mjs`): every load size, one-time and monthly.',
-  zones:  'The travel zones (`ZONES` in `pricing.config.mjs`): the mile bands and the fee for each zone.',
+  zones:  'The travel zones (`ZONES` in `pricing.config.mjs`): the mile bands and the fee for each zone. **Founder note (2026-10-07):** 30 miles may be too far for junk removal; a max radius of 22 to 24 road miles, with every fee covering its drive. At 24 miles about 19 of the 40 town files fall outside and `npm run build` names them.',
   base:   'The base point (`BASE` in `pricing.config.mjs`): Gresham city center, not the real yard. Moving it means re-running `node scripts/measure-zips.mjs`.',
 };
 

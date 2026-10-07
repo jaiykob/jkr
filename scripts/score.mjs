@@ -80,13 +80,23 @@ const TOTAL = T2 ? LOAD_CENTS + T2.cents : 0;
 /* ── local server + headless Chrome ───────────────────────────────────────── */
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css',
   '.svg': 'image/svg+xml', '.json': 'application/json', '.woff2': 'font/woff2', '.png': 'image/png', '.jpg': 'image/jpeg' };
+// ?__probe=<round>: which parts of the page each round measures for small
+// text, and (from round 2) which links and buttons must be 48px tall.
+const PROBE_SETS = {
+  1: { text: ['.lb-travel', '.lb-unit', '#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut'], taps: [] },
+  2: { text: ['main .prose', 'main .faq-list', '.town-local', '.town-zones', '#zoneList', 'footer', '#maint-banner'],
+       taps: ['.site-nav a', '.site-nav button', 'footer a', '.town-nearby a', '.hub-towns a'] },
+};
 const PROBE = `<script>(function(){setTimeout(function(){try{
-var sel=['.lb-travel','.lb-unit','#h-zip','#pick-sum','#zoneList','#sum-rows','#zipOut'];var small=[];
-sel.forEach(function(s){document.querySelectorAll(s).forEach(function(n){[n].concat([].slice.call(n.querySelectorAll('*'))).forEach(function(e){
+var SETS=${JSON.stringify(PROBE_SETS)};var set=SETS[new URLSearchParams(location.search).get('__probe')]||SETS[1];
+var small=[],taps=[];
+set.text.forEach(function(s){document.querySelectorAll(s).forEach(function(n){[n].concat([].slice.call(n.querySelectorAll('*'))).forEach(function(e){
 var t=(e.childNodes.length&&[].some.call(e.childNodes,function(c){return c.nodeType===3&&c.textContent.trim();}));
 var r=e.getBoundingClientRect();if(!t||!r.width||!r.height)return;var fs=parseFloat(getComputedStyle(e).fontSize);
 if(fs<16)small.push(s+' '+e.tagName.toLowerCase()+'.'+e.className+' '+fs+'px');});});});
-document.documentElement.setAttribute('data-probe',JSON.stringify({sw:document.documentElement.scrollWidth,vw:window.innerWidth,small:small}));
+set.taps.forEach(function(s){document.querySelectorAll(s).forEach(function(e){var r=e.getBoundingClientRect();
+if(!r.width||!r.height||getComputedStyle(e).visibility==='hidden')return;if(r.height<47.5||r.width<47.5)taps.push(s+' "'+(e.textContent||'').trim().slice(0,20)+'" '+Math.round(r.width)+'x'+Math.round(r.height));});});
+document.documentElement.setAttribute('data-probe',JSON.stringify({sw:document.documentElement.scrollWidth,vw:window.innerWidth,small:small,taps:taps}));
 }catch(e){document.documentElement.setAttribute('data-probe',JSON.stringify({error:String(e)}));}},1500);})();</script>`;
 const SEED = `<!doctype html><meta charset="utf-8"><script>
 var q=new URLSearchParams(location.search);var s=JSON.parse(q.get('s')||'{}');
@@ -135,7 +145,186 @@ const QUOTE_URL = () => `/book/quote.html?load=${LOAD_ROW}&freq=${C.ONE_TIME_COL
 const CHECKOUT_URL = () => seeded(`/book/checkout.html?${new URLSearchParams({ fi: String(C.ONE_TIME_COL), load: String(LOAD_ROW), cents: String(TOTAL), zip: Z2, freq: 'One-time haul', __probe: '1' })}`,
   { quoteContact: { ...SAMPLE_CONTACT, zip: Z2 } });
 
+/* ── round 2 helpers: towns, pages, visible text, links ───────────────────── */
+const TOWN_DIR = 'content/towns';
+function townFiles() {
+  try { return fs.readdirSync(path.join(ROOT, TOWN_DIR)).filter((f) => f.endsWith('.md') && f !== 'README.md').sort(); } catch { return []; }
+}
+/** Just enough of a town file for scoring: header fields, Local and FAQ. */
+function townLite(file) {
+  const s = (read(`${TOWN_DIR}/${file}`) || '').replace(/\r\n/g, '\n');
+  const head = s.split(/^## /m)[0];
+  const field = (k) => ((head.match(new RegExp(`^${k}:\\s*(.*)$`, 'm')) || [])[1] || '').trim();
+  const section = (name) => ((s.split(new RegExp(`^## ${name}\\s*$`, 'm'))[1] || '').split(/^## /m)[0]).trim();
+  return {
+    slug: file.replace(/\.md$/, ''), name: field('name'), state: field('state'),
+    zips: field('zips').split(/[,\s]+/).filter(Boolean), local: section('Local'),
+    faqs: (section('FAQ').match(/^Q:/gm) || []).length,
+  };
+}
+const towns = () => townFiles().map(townLite);
+const STANDALONE = ['faq.html', 'privacy.html', 'terms.html', '404.html'];
+const round2Pages = () => [...STANDALONE, 'service-areas.html', 'index.html', ...towns().map((t) => `${t.slug}.html`)].filter(exists);
+/** What a visitor reads: no head, scripts, styles, comments or tags. */
+function visibleText(html) {
+  return text(String(html || '').replace(/<head>[\s\S]*?<\/head>/i, '').replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<!--[\s\S]*?-->/g, ' ').replace(/<svg[\s\S]*?<\/svg>/gi, ' '));
+}
+/** The content of <!-- CITY:name --> regions, or the page with them emptied. */
+const cityRegion = (html, name) => ((String(html).match(new RegExp(`<!-- CITY:${name} -->([\\s\\S]*?)<!-- /CITY:${name} -->`)) || [])[1] || '');
+const withoutCity = (html) => String(html).replace(/\r\n/g, '\n').replace(/(<!-- CITY:([a-z-]+) -->)[\s\S]*?(<!-- \/CITY:\2 -->)/g, '$1$3');
+const words = (s) => text(s).split(/\s+/).filter(Boolean).length;
+const sentences = (s) => text(s).toLowerCase().replace(/\[\[|\]\]/g, '').split(/[.!?]+\s/).map((x) => x.trim()).filter((x) => x.split(/\s+/).length >= 8);
+
 const ROUNDS = {
+  2: [
+    { id: 'tests', pts: 10, desc: 'npm test passes', run() {
+      const r = run('npm', ['test']);
+      return r.code === 0 || `npm test failed: ${r.out.split('\n').filter((l) => /FAIL|Error|STALE|stale/.test(l)).slice(0, 3).join(' | ')}`;
+    } },
+    { id: 'chrome', pts: 10, desc: 'one header and footer: build-chrome --check, nav links Service areas and FAQ, footer links Privacy and Terms', run() {
+      if (!exists('scripts/build-chrome.mjs')) return 'scripts/build-chrome.mjs missing';
+      if (run('node', ['scripts/build-chrome.mjs', '--check']).code !== 0) return 'build-chrome --check fails';
+      const home = read('index.html') || '';
+      const nav = (home.match(/<nav class="site-nav">[\s\S]*?<\/nav>/) || [''])[0];
+      if (!/href="service-areas\.html"/.test(nav) || !/href="faq\.html"/.test(nav)) return 'homepage nav does not link service-areas.html and faq.html';
+      const foot = (home.match(/<footer>[\s\S]*?<\/footer>/) || [''])[0];
+      if (!/href="privacy\.html"/.test(foot) || !/href="terms\.html"/.test(foot)) return 'footer does not link privacy.html and terms.html';
+      for (const f of [...STANDALONE, 'service-areas.html']) {
+        const s = read(f);
+        if (!s) return `${f} missing`;
+        if (!/<nav class="site-nav">/.test(s) || !/<footer>/.test(s)) return `${f} has no shared header or footer`;
+      }
+      return true;
+    } },
+    { id: 'towns', pts: 10, desc: '35+ town files, every ZIP in a zone, Oregon and Washington, one page each', run() {
+      const t = towns();
+      if (t.length < 35) return `${t.length} town files`;
+      for (const x of t) {
+        if (!x.name || !x.zips.length) return `${x.slug}: no name or ZIPs`;
+        const bad = x.zips.filter((z) => !C.ZIP_ZONES || !C.ZIP_ZONES[z]);
+        if (bad.length) return `${x.slug}: ${bad.join(', ')} not in a zone`;
+        if (!exists(`${x.slug}.html`)) return `${x.slug}.html missing`;
+      }
+      if (!t.some((x) => x.state === 'OR') || !t.some((x) => x.state === 'WA')) return 'needs Oregon and Washington towns';
+      return true;
+    } },
+    { id: 'town-pages', pts: 15, desc: 'town pages: build-towns --check, title and H1 name the town, canonical, the rest identical to the homepage, 120+ words of local copy', run() {
+      if (!exists('scripts/build-towns.mjs')) return 'scripts/build-towns.mjs missing';
+      if (run('node', ['scripts/build-towns.mjs', '--check']).code !== 0) return 'build-towns --check fails';
+      const home = withoutCity(read('index.html'));
+      const t = towns();
+      if (!t.length) return 'no towns';
+      for (const x of t) {
+        const s = read(`${x.slug}.html`) || '';
+        const title = (s.match(/<title>([^<]*)<\/title>/) || [])[1] || '';
+        const h1 = text((s.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || '');
+        if (!title.includes(x.name) || !h1.includes(x.name)) return `${x.slug}: title or H1 does not name ${x.name}`;
+        if (!s.includes(`<link rel="canonical" href="https://www.example.com/${x.slug}.html"`)) return `${x.slug}: canonical missing`;
+        if (withoutCity(s) !== home) return `${x.slug}: differs from the homepage outside its CITY regions`;
+        if (words(cityRegion(s, 'local')) < 120) return `${x.slug}: ${words(cityRegion(s, 'local'))} words of local copy`;
+      }
+      return true;
+    } },
+    { id: 'unique', pts: 10, desc: 'no 8+ word sentence of local copy shared by two towns; 2+ own FAQs each', run() {
+      const seen = new Map();
+      for (const x of towns()) {
+        if (x.faqs < 2) return `${x.slug}: ${x.faqs} FAQs`;
+        for (const s of sentences(x.local)) {
+          if (seen.has(s) && seen.get(s) !== x.slug) return `"${s.slice(0, 50)}..." in ${seen.get(s)} and ${x.slug}`;
+          seen.set(s, x.slug);
+        }
+      }
+      return towns().length > 0 || 'no towns';
+    } },
+    { id: 'town-travel', pts: 5, desc: 'each town page shows its zones and fees from the config', run() {
+      if (!towns().length) return 'no towns';
+      for (const x of towns()) {
+        const local = text(cityRegion(read(`${x.slug}.html`), 'local'));
+        for (const z of new Set(x.zips.map((zip) => C.ZIP_ZONES[zip]).filter(Boolean).map((r) => `${r.label}|${r.cents}`))) {
+          const [label, cents] = z.split('|');
+          const fee = +cents ? fmt(+cents) : 'no travel charge';
+          if (!local.includes(label) || !local.toLowerCase().includes(fee.toLowerCase())) return `${x.slug}: no "${label}" with "${fee}"`;
+        }
+      }
+      return true;
+    } },
+    { id: 'hub', pts: 5, desc: 'hub links every town by zone; homepage zone list links towns', run() {
+      const hub = read('service-areas.html');
+      if (!hub) return 'service-areas.html missing';
+      for (const x of towns()) if (!hub.includes(`href="${x.slug}.html"`)) return `hub does not link ${x.slug}`;
+      const list = byId(read('index.html'), 'zoneList');
+      if (!list || !/href="[a-z-]+\.html"/.test(list.inner)) return 'homepage zone list has no town links';
+      return towns().length > 0 || 'no towns';
+    } },
+    { id: 'standalone', pts: 10, desc: 'FAQ 14+ questions on the topics people ask; terms and privacy sections; 404 links work from any depth', run() {
+      const faq = read('faq.html'), terms = read('terms.html'), priv = read('privacy.html'), nf = read('404.html');
+      if (!faq || !terms || !priv || !nf) return 'a standalone page is missing';
+      const q = (faq.match(/<summary/g) || []).length;
+      if (q < 14) return `FAQ has ${q} questions`;
+      const ft = visibleText(faq).toLowerCase();
+      for (const k of ['travel', 'zone', 'photo', 'more than', "can't take", 'home', 'pay', 'cancel']) if (!ft.includes(k)) return `FAQ never says "${k}"`;
+      const th = [...terms.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => text(m[1]).toLowerCase()).join(' | ');
+      for (const k of ['who we are', 'where we work', 'prices', 'paying', 'cancel', 'refund', 'responsible', 'messages']) if (!th.includes(k)) return `terms has no "${k}" section (${th.slice(0, 80)})`;
+      const ph = [...priv.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => text(m[1]).toLowerCase()).join(' | ');
+      for (const k of ['what we collect', 'photos', 'how we use', 'who we share', 'your choices', 'questions']) if (!ph.includes(k)) return `privacy has no "${k}" section`;
+      const rel = [...nf.matchAll(/\shref="([^"]+)"/g)].map((m) => m[1]).filter((u) => !/^(https?:|tel:|mailto:|#)/.test(u));
+      if (rel.some((u) => !u.startsWith('/'))) return `404 has relative links: ${rel.filter((u) => !u.startsWith('/')).slice(0, 3).join(', ')}`;
+      return run('node', ['scripts/check-meta.mjs']).code === 0 || 'check-meta fails';
+    } },
+    { id: 'copy', pts: 10, desc: 'no dashes as punctuation, slang, or leftover dog or Scoops words in what visitors read', run() {
+      for (const f of round2Pages()) {
+        const t = visibleText(read(f));
+        const m = t.match(/[—–]/) || t.match(/\b(okay|gonna|honestly|a lot of|figure (it )?out)\b/i) || t.match(/\b(dogs?|poop|pooper|scoop(s|ed|ing|er)?|Scoops)\b/i);
+        if (m) return `${f}: "${t.slice(Math.max(0, m.index - 30), m.index + 30)}"`;
+      }
+      return round2Pages().length > 6 || 'pages missing';
+    } },
+    { id: 'links', pts: 5, desc: 'every relative link and anchor on the new pages resolves', run() {
+      const idsOf = new Map();
+      const ids = (f) => { if (!idsOf.has(f)) idsOf.set(f, new Set([...(read(f) || '').matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]))); return idsOf.get(f); };
+      for (const f of round2Pages()) {
+        for (const m of (read(f) || '').matchAll(/\s(?:href|src)="([^"]+)"/g)) {
+          const u = m[1].replace(/&amp;/g, '&');
+          if (/^(https?:|tel:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
+          const [p0, hash] = u.split('#');
+          const p = p0.split('?')[0];
+          const target = !p ? f : p.startsWith('/') ? p.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(f), p));
+          if (p && !exists(target)) return `${f}: ${u} not found`;
+          if (hash && target.endsWith('.html') && !ids(target).has(hash)) return `${f}: #${hash} not on ${target}`;
+        }
+      }
+      return true;
+    } },
+    { id: 'mobile', pts: 5, desc: '360px on FAQ, terms, an Oregon town, a Washington town, the hub: no sideways scroll, text 16px+, taps 48px+', async run() {
+      if (!CHROME) return 'no Chrome to measure with';
+      const t = towns();
+      const or = t.find((x) => x.state === 'OR' && x.slug !== 'gresham'), wa = t.find((x) => x.state === 'WA');
+      if (!or || !wa) return 'needs an Oregon and a Washington town';
+      for (const f of ['faq.html', 'terms.html', `${or.slug}.html`, `${wa.slug}.html`, 'service-areas.html']) {
+        if (!exists(f)) return `${f} missing`;
+        const p = probeOf(await dump(`/${f}?__probe=2`));
+        if (!p) return `${f}: page did not report`;
+        if (p.error) return `${f}: ${p.error}`;
+        if (p.vw !== 360) return `${f}: measured at ${p.vw}px`;
+        if (p.sw > p.vw) return `${f}: ${p.sw}px wide in a ${p.vw}px window`;
+        if (p.small.length) return `${f}: small text ${p.small.slice(0, 2).join('; ')}`;
+        if (p.taps.length) return `${f}: small taps ${p.taps.slice(0, 2).join('; ')}`;
+      }
+      return true;
+    } },
+    { id: 'site-js', pts: 5, desc: 'analytics on every public page, the maintenance banner loaded, checkout reads SITE_REOPEN_TEXT', run() {
+      if (!/G-XXXXXXXXXX/.test(read('js/analytics.js') || '')) return 'js/analytics.js missing';
+      if (!exists('js/maintenance-banner.js')) return 'js/maintenance-banner.js missing';
+      for (const f of round2Pages()) {
+        const s = read(f);
+        if (!/analytics\.js/.test(s) && !/gtag\/js\?id=/.test(s)) return `${f} has no analytics`;
+        if (f !== '404.html' && !/maintenance-banner\.js/.test(s)) return `${f} does not load the banner`;
+      }
+      const co = read('book/checkout.html') || '';
+      return (/SITE_REOPEN_TEXT/.test(co) && !/SCOOPS_REOPEN_TEXT/.test(co)) || 'checkout still reads SCOOPS_REOPEN_TEXT';
+    } },
+  ],
   1: [
     { id: 'tests', pts: 12, desc: 'npm test passes', run() {
       const r = run('npm', ['test']);

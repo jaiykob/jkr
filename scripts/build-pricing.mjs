@@ -150,26 +150,6 @@ const homeJsonld = [
   '  </script>',
 ].join('\n');
 
-/* The zone list in "Where we go": one card per zone, nearest places first.
-   Bands and fees print red with an asterisk while GUESS.zones is on. */
-const zoneMiles = (z, i) => (i === 0 ? `Up to ${z.upToMiles} road miles from ${BASE.label}` : `${ZONE_LIST[i - 1].upToMiles} to ${z.upToMiles} road miles`);
-const zoneFee = (z) => (z.cents ? `+${fmt(z.cents)} per visit` : 'No travel charge');
-const zonePlaces = (key) => {
-  const p = PLACES_BY_ZONE[key];
-  return p.length > 8 ? `${p.slice(0, 8).join(', ')} and ${p.length - 8} more` : p.join(', ');
-};
-const homeArea = [
-  '    <ol class="zones" id="zoneList">',
-  ...ZONE_LIST.map((z, i) => [
-    `      <li data-zone="${z.key}">`,
-    `        <span class="zone-top"><span class="zone-name">${z.label}</span><span class="zone-fee">${guessed(zoneFee(z), GUESS.zones)}</span></span>`,
-    `        <span class="zone-miles">${guessed(zoneMiles(z, i), GUESS.zones)}</span>`,
-    `        <span class="zone-places">${zonePlaces(z.key)}</span>`,
-    '      </li>',
-  ].join('\n')),
-  '    </ol>',
-].join('\n');
-
 /* Under the price tiers: what travel adds, from the zone table. */
 const first = ZONE_LIST[0], last = ZONE_LIST[ZONE_LIST.length - 1];
 const homeTravelNote = `    <p class="tiers-travel">Travel is added by zone: ${guessed(first.cents ? `+${fmt(first.cents)}` : 'no charge', GUESS.zones)} within ${guessed(`${first.upToMiles} road miles`, GUESS.zones)} of ${BASE.label}, up to ${guessed(`+${fmt(last.cents)}`, GUESS.zones)} at ${guessed(`${last.upToMiles} miles`, GUESS.zones)}. <a href="#area">Find your zone</a></p>`;
@@ -253,7 +233,6 @@ const TARGETS = [
     { name: 'home-jsonld', body: homeJsonld, comment: false },
     { name: 'home-prices', body: homePrices, comment: false },
     { name: 'home-travel-note', body: homeTravelNote, comment: false },
-    { name: 'home-area', body: homeArea, comment: false },
     { name: 'home-builder', body: builderBlock('  '), comment: true },
   ] },
 ];

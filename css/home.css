@@ -11,7 +11,7 @@
 }
 .nav-logo { gap: 10px; }
 
-.h-eyebrow { font-size: .8rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--tan); margin-bottom: 14px; }
+.h-eyebrow { font-size: 1rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--tan); margin-bottom: 14px; }
 .h-eyebrow.dark { color: var(--dtan); }
 
 /* ── HERO ─────────────────────────────────────────────────────────────── */
@@ -221,3 +221,49 @@
   .ticker span:nth-child(n+13) { display: none; }
   .tier-load { transition: none; }
 }
+
+/* ── Town pages (scripts/build-towns.mjs) ─────────────────────────────── */
+/* The town's own section: its copy beside its travel zones, then its
+   neighborhoods and the other towns in its zone. Empty on the homepage. */
+.town-grid { display: grid; gap: 28px; align-items: start; }
+@media (min-width: 860px) { .town-grid { grid-template-columns: 1.4fr 1fr; gap: 48px; } }
+.town-local .prose p { font-size: 1.0625rem; }
+.town-h3 { font: 800 1.2rem/1.25 'Bricolage Grotesque', sans-serif; letter-spacing: -.01em; color: var(--rg); margin: 0 0 12px; }
+.town-zones { padding: 22px; border-radius: var(--r-md); background: var(--rg); color: var(--on-dark); }
+.town-zones .town-h3 { color: #fff; }
+.town-zones ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.town-zones li { display: grid; gap: 2px; padding-left: 14px; border-left: 3px solid var(--tan); }
+.tz-name { font-weight: 800; font-size: 1.0625rem; color: #fff; }
+.tz-zips, .tz-note { font-size: 1rem; line-height: 1.5; color: var(--on-dark-m); }
+.tz-note { margin-top: 14px; }
+.town-zones .guess { color: #FF8A80; }
+.town-local > .wrap > .town-h3 { margin-top: 36px; }
+.town-areas { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
+.town-areas li { font-size: 1rem; padding: 8px 14px; border-radius: var(--r-pill); background: var(--page); border: 1px solid var(--bdr); color: var(--rg); }
+.town-nearby { margin-top: 32px; }
+.town-nearby ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
+.town-nearby a {
+  display: inline-flex; align-items: center; min-height: 48px; padding: 0 16px; border-radius: var(--r-pill);
+  border: 1.5px solid var(--rg); color: var(--rg); font-weight: 700; text-decoration: none; font-size: 1rem;
+}
+.town-nearby a:hover { background: var(--tan); }
+.faq-more { margin-top: 18px; text-align: center; }
+.faq-more a { display: inline-flex; align-items: center; min-height: 48px; color: var(--rg); font-weight: 700; text-decoration: underline; text-decoration-color: var(--tan); text-decoration-thickness: 3px; text-underline-offset: 4px; }
+
+/* The hub (service-areas.html): every town, zone by zone. */
+.hub-zone { margin-top: 32px; }
+.hub-miles { font-size: 1rem; color: var(--txm); margin: -4px 0 12px; }
+.hub-towns { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 0; padding: 0; }
+.hub-towns a {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 0 14px;
+  border-radius: var(--r-sm); background: var(--page); border: 1px solid var(--bdr); color: var(--rg);
+  font-weight: 700; font-size: 1rem; text-decoration: none;
+}
+.hub-towns a:hover { border-color: var(--rg); background: var(--tan); }
+.hub-state { font-size: 1rem; font-weight: 600; color: var(--txm); }
+.hub-not-listed { margin-top: 28px; font-size: 1rem; color: var(--txm); }
+.hub-not-listed a { color: var(--rg); font-weight: 700; text-decoration: underline; text-decoration-color: var(--tan); text-decoration-thickness: 3px; }
+/* Town links inside the dark zone cards on the homepage. */
+.zone-places a { color: #fff; text-decoration: underline; text-decoration-color: rgba(255,210,63,.6); text-underline-offset: 3px; }
+.zone-places a:hover { color: var(--tan); }
+.zones li.is-hit .zone-places a { color: var(--rg); text-decoration-color: var(--rg); }
