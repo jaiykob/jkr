@@ -2,7 +2,7 @@
 
 Pasteable copy for every place we advertise, one file per channel, because
 the limits differ (characters, self promotion rules, tone). Carried over from
-Scoops Co. and rewritten for junk removal (2026-10-07).
+the founder's first business and rewritten for junk removal (2026-10-07).
 
 | File | Channel |
 | --- | --- |
