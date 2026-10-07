@@ -22,4 +22,7 @@ None.
 ## Red on the pages right now
 
 - `book/checkout.html` (1): ${text}
+- `faq.html` (6): at no charge, Stairs and long carries are included in the price., Most weeks we have a day open within two or three days., a licensed transfer station, such as Metro Central in Portland or Metro South in Oregon City, Fridges, freezers and air conditioners go to a recycler licensed to remove the refrigerant., change your day with at least 24 hours notice at no cost
 - `index.html` (22): $99.00, $89.00, $199.00, $179.00, $349.00, $319.00, $479.00, $439.00, $599.00, $549.00, no charge, 10 road miles, +$75.00, 40 miles, No travel charge, Up to 10 road miles from Gresham, +$25.00 per visit, 10 to 20 road miles, +$50.00 per visit, 20 to 30 road miles, +$75.00 per visit, 30 to 40 road miles
+- `privacy.html` (5): October 7, 2026, 90 days, we do not collect health data of any kind, three years, hello@example.com
+- `terms.html` (11): October 7, 2026, It is a sole proprietorship run by its owner, who also does the work., hello@example.com, 40 road miles, with a full refund, we charge the smaller load size and refund the difference, if we cannot reach you within 30 minutes, the visit counts as a cancellation on the day, Change your day with at least 24 hours notice at no cost., general liability insurance, the price of the job, These terms are governed by the laws of the State of Oregon. A job in Washington is also subject to Washington law where it applies.

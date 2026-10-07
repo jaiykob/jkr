@@ -1,0 +1,55 @@
+/* Reading pages: the FAQ, privacy, terms and 404 (and the blog, later).
+   Loaded after css/site.css, which brings the tokens, header, footer and the
+   FAQ accordion. The jkr look: Bricolage Grotesque headings on the cream page,
+   a yellow rule, charcoal text. Every line of text 16px or more. */
+
+.article { max-width: var(--w-text); margin: 0 auto; padding: 28px var(--gutter) 72px; }
+
+/* Breadcrumb: 48px taps, 16px text. */
+.article .trail { font-size: 1rem; margin: 0 0 12px; }
+.article .trail ol { margin: 0; padding: 0; }
+.article .trail a { display: inline-flex; align-items: center; min-height: 48px; color: var(--dtan); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+.article h1 {
+  font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; font-weight: 800; letter-spacing: -.03em;
+  font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.1; color: var(--rg); margin-bottom: 16px; text-wrap: balance;
+}
+.article h1 span { display: block; color: var(--dtan); }
+.a-lede { font-size: 1.125rem; line-height: 1.7; color: var(--txm); padding-bottom: 24px; margin-bottom: 8px; border-bottom: 3px solid var(--tan); }
+.updated { font-size: 1rem; font-weight: 700; color: var(--dtan); margin-bottom: 16px; }
+
+.article h2 {
+  font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; font-weight: 800; letter-spacing: -.02em;
+  font-size: clamp(1.4rem, 3.4vw, 1.7rem); line-height: 1.25; color: var(--rg); margin: 40px 0 12px; text-wrap: balance;
+}
+.article h3 { font-size: 1.125rem; font-weight: 700; color: var(--rg); margin: 26px 0 8px; }
+.article p, .article li { font-size: 1.0625rem; line-height: 1.8; color: var(--txm); }
+.article p { margin-bottom: 16px; }
+.article ul, .article ol { margin: 0 0 18px 22px; }
+.article li { margin-bottom: 8px; }
+.article strong { color: var(--rg); }
+.article p a, .article li a, .article .faq-answer a {
+  color: var(--rg); font-weight: 700; text-decoration: underline; text-decoration-color: var(--tan);
+  text-decoration-thickness: 3px; text-underline-offset: 3px;
+}
+.article p a:hover, .article li a:hover { color: var(--dtan); }
+
+/* The FAQ: groups of questions, each an accordion from css/site.css. */
+.faq-group { margin-top: 36px; }
+.faq-group > h2 { margin-top: 0; }
+.article .faq-list details { background: var(--card); }
+.article .faq-answer p { margin-bottom: 12px; }
+.article .faq-answer p:last-child { margin-bottom: 0; }
+
+/* Ask us / get a price block at the foot of a page. */
+.a-cta { margin-top: 44px; padding: 26px 24px; border-radius: var(--r-md); background: var(--rg); color: var(--on-dark); }
+.a-cta h2 { color: #fff; margin: 0 0 8px; }
+.a-cta p { color: var(--on-dark-m); }
+.a-cta .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.a-cta a.btn-primary, .a-cta a.btn-ghost { min-height: 48px; display: inline-flex; align-items: center; }
+.a-cta .btn-ghost { color: #fff; border-color: rgba(255,255,255,.4); }
+
+/* 404 */
+.not-found { text-align: left; }
+.not-found ul { list-style: none; margin: 18px 0 0; display: grid; gap: 8px; }
+.not-found li a { display: inline-flex; align-items: center; min-height: 48px; }
