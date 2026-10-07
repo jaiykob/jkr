@@ -16,6 +16,28 @@ Placeholders to replace: "Brand Name", "example.com",
 
 The founder is finishing a degree. Keep sessions focused and small.
 
+## The plan (agreed 2026-10-07, a starting point the founder will adjust)
+
+Spec: `docs/superpowers/specs/2026-10-07-scoops-import-design.md`. Read it
+before starting any of this work. Three parts, in order:
+
+1. **Import**, in five rounds, each its own branch and its own step by step
+   plan written when the round starts:
+   1. Service area and travel pricing: the whole Portland metro (Clark County,
+      WA included), price = load + a travel fee by zone, zone set by ZIP in
+      road miles from a Gresham base. **Not built yet**: the code below still
+      serves the six city area with no travel fee.
+   2. Pages and site parts: shared chrome, a page for every town in the area,
+      FAQ, privacy, terms, 404. Copy drafted from Scoops Co.
+   3. Business docs and follow-up helpers, owner booking email.
+   4. SEO tools.
+   5. Blog, Spanish, commercial form, founding offer (off).
+2. **Walkthrough** of the whole site with the founder.
+3. **Photo first quote with an on site adjustment**: charge more when the job
+   is bigger than the photos showed. Its own spec.
+
+Progress: spec written; round 1 not started.
+
 ## Folder map
 
 ```
