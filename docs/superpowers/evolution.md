@@ -441,3 +441,32 @@ graph TD
 | Gen | Parent | What changed | Score | Best so far |
 | --- | --- | --- | --- | --- |
 | 0 | main (292f003) | nothing yet: the round 5 scorecard alone | 25 | 25 |
+| 1 | gen 0 | founding offer, off, computed on the server (Task 2); commercial request form (Task 3); not scored at their commits | n/a | 25 |
+| 2 | gen 1 | twelve posts and the blog index (Task 4); first run 20 (a post description too long broke `npm test`), then 60, then 65 with the blog linked from the footer | 65 | 65 |
+| 3 | gen 2 | Spanish homepage through the phrase list, Spanish scripts, hreflang and the language switch, Spanish FAQ (Task 5) | 75 | 75 |
+| 4 | gen 3 | Spanish sections in all 40 town files, es/ town pages and hub (Task 6) | 80 | 80 |
+| 5 | gen 4 | the twelve posts in Spanish and es/blog/ (Task 7) | **100** | **100** |
+
+The last check of the round 5 scorecard re-runs rounds 1 to 4: all four
+still 100. Two older checks were generalised on the way, not loosened: a
+folder's page is listed as the folder (`/blog/`, `/es/`), as its canonical
+says, and a town page's language switch is its own (it goes to that town's
+Spanish page), so round 2 compares the rest of the page.
+
+```mermaid
+graph LR
+  S0["gen 0 · 25"] --> S1["gen 1 · not scored"] --> S2["gen 2 · 65"] --> S3["gen 3 · 75"] --> S4["gen 4 · 80"] --> S5["gen 5 · 100"]
+```
+
+## Part 1 complete
+
+| Round | What | Plan child | Build |
+| --- | --- | --- | --- |
+| 1 | service area and travel pricing | 100 | 100 |
+| 2 | pages and site parts | 100 | 100 |
+| 3 | business docs and follow-up | 100 | 100 |
+| 4 | SEO tools | 100 | 100 |
+| 5 | blog, Spanish, extras | 100 | 100 |
+
+Next: Part 2, the walkthrough with the founder, then Part 3, the photo first
+quote with the on site upcharge (its own spec).

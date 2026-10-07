@@ -23,6 +23,13 @@ moment. Tick with the commit that fixes it. Bigger work lives in the plan
 - [ ] Screen readers may read the red guess asterisk as "star".
 - [ ] Homepage FAQ: "What if I guess the size wrong?" should match the on site
       rule word for word once Part 3 lands.
+- [ ] Spanish: a native speaker reads `i18n/es.json`, `es/faq.html`, the town
+  files' Spanish sections and `content/blog/es/` (drafted 2026-10-07, tú, "retiro de
+  basura" for junk removal).
+- [ ] Spanish pages: the photo quote ignores Claude's English note and shows its
+  own count line; ask Claude for the note in Spanish (`api/photo-quote.js`).
+- [ ] Spanish pages: the preview bar and the guess legend (`js/preview-nav.js`,
+  owner tools) stay English.
 
 ## Logic to verify
 
