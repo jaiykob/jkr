@@ -376,3 +376,97 @@ still 100.
 graph LR
   S0["gen 0 · 15"] --> S1["gen 1 · not scored"] --> S2["gen 2 · 65"] --> S3["gen 3 · 70"] --> S4["gen 4 · 80"] --> S5["gen 5 · 90"] --> S6["gen 6 · 100"]
 ```
+
+---
+
+## Round 5: blog, Spanish, extras
+
+Rubric (10 points each): **coverage**; **one source** (a town's English and
+Spanish copy edited in one place; prices never typed into posts);
+**editable** (plain text files, not HTML); **Spanish quality** (written for a
+reader in Spanish with "tú", not word swapped; nothing left in English that a
+Spanish reader meets before checkout); **SEO correctness** (hreflang pairs,
+canonicals, sitemap, schema); **drift protection**; **testable**; **money
+safety** (the founding offer is computed on the server, off by default,
+tested); **copy rules**; **small steps**.
+
+### Plan A: port Scoops Co.'s pieces as they are
+
+Blog posts as hand written HTML; Spanish by Scoops Co.'s phrase map over
+the homepage template, with Spanish town pages translated from the English
+town pages phrase by phrase; commercial form and founding offer copied.
+
+| Coverage | One source | Editable | Spanish | SEO | Drift | Testable | Money | Rules | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 6 | 5 | 6 | 9 | 8 | 7 | 9 | 8 | 7 | **75** |
+
+A phrase map works for the shared template, but forty towns of local copy
+translated phrase by phrase reads as a machine wrote it, and hand written
+HTML posts are hard for the founder to edit.
+
+### Plan B: everything from content files
+
+Posts are `content/blog/en/*.md` and `content/blog/es/*.md`; each town file
+gains its Spanish copy beside the English; the homepage template is
+rewritten in Spanish as its own file.
+
+| Coverage | One source | Editable | Spanish | SEO | Drift | Testable | Money | Rules | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 7 | 10 | 10 | 9 | 7 | 8 | 8 | 9 | 7 | **84** |
+
+A separate Spanish homepage drifts from the English one the first time the
+homepage changes; there is no check that catches it.
+
+### Child (A × B)
+
+From A: the phrase map for the shared homepage template (`i18n/es.json`),
+so the Spanish homepage, towns and hub are always the English template
+translated, and the build lists any phrase with no Spanish. From B: posts
+and town copy in plain text files, a town's Spanish beside its English in
+the same file, Spanish written for the reader. New: the founding offer test
+first and computed on the server; hreflang pairs checked both ways.
+
+| Coverage | One source | Editable | Spanish | SEO | Drift | Testable | Money | Rules | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | **100** |
+
+```mermaid
+graph TD
+  A5["Plan A · port · 75"] --> C5["Child · 100"]
+  B5["Plan B · content files · 84"] --> C5
+```
+
+### Build generations
+
+| Gen | Parent | What changed | Score | Best so far |
+| --- | --- | --- | --- | --- |
+| 0 | main (292f003) | nothing yet: the round 5 scorecard alone | 25 | 25 |
+| 1 | gen 0 | founding offer, off, computed on the server (Task 2); commercial request form (Task 3); not scored at their commits | n/a | 25 |
+| 2 | gen 1 | twelve posts and the blog index (Task 4); first run 20 (a post description too long broke `npm test`), then 60, then 65 with the blog linked from the footer | 65 | 65 |
+| 3 | gen 2 | Spanish homepage through the phrase list, Spanish scripts, hreflang and the language switch, Spanish FAQ (Task 5) | 75 | 75 |
+| 4 | gen 3 | Spanish sections in all 40 town files, es/ town pages and hub (Task 6) | 80 | 80 |
+| 5 | gen 4 | the twelve posts in Spanish and es/blog/ (Task 7) | **100** | **100** |
+
+The last check of the round 5 scorecard re-runs rounds 1 to 4: all four
+still 100. Two older checks were generalised on the way, not loosened: a
+folder's page is listed as the folder (`/blog/`, `/es/`), as its canonical
+says, and a town page's language switch is its own (it goes to that town's
+Spanish page), so round 2 compares the rest of the page.
+
+```mermaid
+graph LR
+  S0["gen 0 · 25"] --> S1["gen 1 · not scored"] --> S2["gen 2 · 65"] --> S3["gen 3 · 75"] --> S4["gen 4 · 80"] --> S5["gen 5 · 100"]
+```
+
+## Part 1 complete
+
+| Round | What | Plan child | Build |
+| --- | --- | --- | --- |
+| 1 | service area and travel pricing | 100 | 100 |
+| 2 | pages and site parts | 100 | 100 |
+| 3 | business docs and follow-up | 100 | 100 |
+| 4 | SEO tools | 100 | 100 |
+| 5 | blog, Spanish, extras | 100 | 100 |
+
+Next: Part 2, the walkthrough with the founder, then Part 3, the photo first
+quote with the on site upcharge (its own spec).

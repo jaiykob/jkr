@@ -2,6 +2,7 @@ name: Molalla
 state: OR
 zips: 97038
 lede: Molalla is in our Zone 4, about thirty five road miles from our base. Your ZIP adds the travel, shown in your price before you book.
+lede_es: Molalla está en nuestra Zona 4, a unas treinta y cinco millas por carretera de nuestra base. Tu código postal suma el viaje, y lo ves en tu precio antes de reservar.
 areas: Downtown Molalla, Molalla River, Highway 213, Feyrer Park, Mulino Road, Molalla Buckeroo grounds
 
 ## Local
@@ -15,3 +16,15 @@ A: [[Trailer frames need a hand quote]], since they are heavy steel. Send a phot
 
 Q: How far ahead should I book in Molalla?
 A: A few days ahead works best, so we can plan the drive. If you need us sooner, call or text and we will see what we can do.
+
+## Local (es)
+Molalla queda más allá de Oregon City, al pie de las montañas Cascade, a treinta y cinco millas por carretera de nuestra base, en la Zona 4. Es un pueblo pequeño con una calle principal, casas nuevas en las orillas y grandes extensiones de bosque y tierras de cultivo alrededor.
+
+Las propiedades rurales de aquí suelen juntar cosas más grandes: remolques viejos desarmados, madera sobrante, jacuzzis, columpios y equipo de exterior roto. Planeamos los trabajos de Molalla con tiempo por el trayecto, así que reservar con unos días nos deja juntar paradas cercanas.
+
+## FAQ (es)
+Q: ¿Se llevan un remolque de carga desarmado?
+A: [[Los chasis de remolque necesitan un precio aparte]], porque son de acero pesado. Manda una foto y el tamaño.
+
+Q: ¿Con cuánta anticipación debo reservar en Molalla?
+A: Lo mejor es con unos días, para planear el trayecto. Si nos necesitas antes, llama o escribe y vemos qué podemos hacer.

@@ -227,6 +227,7 @@
        picks here used to be discarded entirely while bookings are closed. -->
   <script src="../js/leads.js" defer></script>
   <script src="../js/maintenance-banner.js" defer></script>
+  <script src="../js/founding.js"></script>
   <!-- Vercel Web Analytics: first-party, cookieless page views -->
   <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -603,11 +604,10 @@
     return Math.round((quotedCents / FREQ_WEEKS[fi]) * WEEKS_PER_QUARTER * (1 - QUARTERLY_DISCOUNT));
   }
 
-  // ── FOUNDING-MEMBER OFFER (dormant)
-  // Scoops Co. ran a launch discount through this. Its server half
-  // (api/_lib/founding.js, /api/founding-spots) was not carried over, so
-  // foundingOffer stays null and every price below is the regular one.
-  // To run a launch offer, port those two files and restore setFounding() calls.
+  // ── FOUNDING MEMBER OFFER (off unless FOUNDING.open in api/_lib/founding.js)
+  // The terms live on the server; js/founding.js reads /api/founding-spots and
+  // setFounding() reprices this page when the offer is open. The server
+  // re-counts the spots and decides the charge (founding_closed if it just ended).
   let foundingOffer = null;   // { percentOff } while the offer applies to this booking
 
   /** The regular charge for today's billing period, before the founding offer. */
@@ -723,8 +723,13 @@
     if (expressElements && chargedTodayCents() > 0) expressElements.update({ amount: chargedTodayCents() });
   }
 
-  // Scoops Co. waited on the founding-offer read here before mounting wallets.
-  const foundingSettled = Promise.resolve();
+  // The founding offer (api/_lib/founding.js, off unless FOUNDING.open), read
+  // once through js/founding.js. Wallets mount after it settles, so Apple Pay
+  // authorizes the amount the page shows. A closed offer, a failed read or no
+  // JS all mean the regular price.
+  const foundingSettled = (window.SiteFounding ? window.SiteFounding.ready : Promise.resolve(null))
+    .then(d => { if (d && d.open) setFounding(d); })
+    .catch(() => {});
 
   // ── STEP NAV
   // Every step advance is a GA4 event. This page had no instrumentation at all,
@@ -1100,6 +1105,7 @@
           load:            loadIdx,
           freqIdx:         fi,
           coupon,
+          founding:        !!foundingOffer,   // shown the founding discount; the server re-counts
           zip:             formData.zip,
           freq,
           metadata: {
@@ -1120,7 +1126,16 @@
         }),
       });
       const data = await res.json();
+      if (res.status === 409 && data.code === 'founding_closed') {
+        // The last founding spot went while this page was open: show the
+        // regular price and let the customer review it before booking again.
+        setFounding(null);
+        throw new Error(data.error);
+      }
       if (!res.ok) throw new Error(data.error || 'Server error');
+      // The server decides; if it applied the offer the page did not show
+      // (or the other way round), show what was actually charged.
+      if (!!data.founding !== !!foundingOffer) setFounding(data.founding);
 
       // 3. Settle the charge. The two intents arrive in different states: the
       //    one-time PaymentIntent was already confirmed server-side (usually

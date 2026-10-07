@@ -45,6 +45,20 @@
     ltan: tok('--ltan', '#FFE58A'), dtan: tok('--dtan', '#7A5A00'), page: tok('--page', '#F5F2EA')
   };
   var FONT = "'DM Sans', sans-serif", DISPLAY = "'Bricolage Grotesque', serif";
+  // Words, by <html lang>: the Spanish pages (es/) get Spanish.
+  var S = document.documentElement.lang === 'es' ? {
+    streakLost: 'Racha perdida', swish: 'LIMPIO', bank: 'DE REBOTE', onFire: ' EN RACHA', streak: ' SEGUIDOS', fullTruck: 'CAMIÓN LLENO',
+    full: function (t) { return 'Camión lleno. ' + t + (t === 1 ? ' camión lleno' : ' camiones llenos') + '. Puntos: '; },
+    best: 'MEJOR ', loads: ['CAMIÓN LLENO', '3/4 DE CAMIÓN', '1/2 DE CAMIÓN', '1/4 DE CAMIÓN', 'CARGA'], truckN: 'CAMIÓN ', next: 'SIGUE',
+    started: function (n) { return 'Empezó el juego. ' + n + ' segundos.'; }, time: 'Tiempo. Puntos: ', newBest: 'Nuevo récord.', bestWas: 'Récord: ',
+    bestLabel: 'Récord: ', soundOff: 'Apagar el sonido', soundOn: 'Encender el sonido'
+  } : {
+    streakLost: S.streakLost, swish: S.swish, bank: S.bank, onFire: ' ON FIRE', streak: ' STREAK', fullTruck: 'FULL TRUCK',
+    full: function (t) { return 'Full truck. ' + t + (t === 1 ? ' truck' : ' trucks') + ' filled. Score '; },
+    best: 'BEST ', loads: ['FULL TRUCK', '3/4 TRUCK', '1/2 TRUCK', '1/4 TRUCK', 'LOAD'], truckN: 'TRUCK ', next: 'NEXT',
+    started: function (n) { return 'Game started. ' + n + ' seconds.'; }, time: 'Time. Score ', newBest: 'New best.', bestWas: 'Best ',
+    bestLabel: 'Best: ', soundOff: 'Turn sound off', soundOn: 'Turn sound on'
+  };
 
   // r = collider radius · pts = base points · vol = load units · w = how often
   var KINDS = [
@@ -300,10 +314,10 @@
     burst(j.x, g.top + 6, 14, DUST, 160, 110, 700);
     if (m > 1 || swish) burst(j.x, g.top, 10 + m * 4, SPARK, 260, 120, 300);
     floatText(j.x, g.top - 26, '+' + pts, false, C.rg);
-    if (swish) floatText(j.x, g.top - 56, 'SWISH', true, C.dtan);
-    else if (bank) floatText(j.x, g.top - 56, 'BANK SHOT', true, C.dtan);
+    if (swish) floatText(j.x, g.top - 56, S.swish, true, C.dtan);
+    else if (bank) floatText(j.x, g.top - 56, S.bank, true, C.dtan);
     if (streak === 3 || streak === 6 || streak === 9 || streak === 12) {
-      floatText(W / 2, 120, 'x' + m + (m >= 3 ? ' ON FIRE' : ' STREAK'), true, '#E86A4A');
+      floatText(W / 2, 120, 'x' + m + (m >= 3 ? S.onFire : S.streak), true, '#E86A4A');
     }
     if (truck.fill >= CAPACITY && truck.mode !== 'leave') fullTruck();
   }
@@ -311,7 +325,7 @@
   function missed(j) {
     if (j.dead) return;
     j.dead = true;
-    if (streak >= 3) floatText(Math.min(W - 60, Math.max(60, j.x)), GROUND - 60, 'Streak lost', false, '#B0412E');
+    if (streak >= 3) floatText(Math.min(W - 60, Math.max(60, j.x)), GROUND - 60, S.streakLost, false, '#B0412E');
     streak = 0;
     sMiss();
   }
@@ -325,9 +339,9 @@
     setTimeout(sHonk, 700);
     kick(12);
     burst(truck.x + truck.bedW / 2, geo(truck).top - 20, 90, CONFETTI, 420, 220, 620);
-    floatText(W / 2, 150, 'FULL TRUCK', true, C.rg);
+    floatText(W / 2, 150, S.fullTruck, true, C.rg);
     floatText(W / 2, 190, '+' + (100 * trucks) + '  ·  +' + TRUCK_BONUS + 's', false, C.dtan);
-    say('Full truck. ' + trucks + (trucks === 1 ? ' truck' : ' trucks') + ' filled. Score ' + score + '.');
+    say(S.full(trucks) + score + '.');
     if (navigator.vibrate) { try { navigator.vibrate([14, 60, 22]); } catch (e) {} }
   }
 
@@ -582,7 +596,7 @@
     ctx.fillText(String(score), 20, 14);
     var scoreW = ctx.measureText(String(score)).width;
     ctx.font = '700 ' + Math.round(12 * U) + 'px ' + FONT; ctx.fillStyle = 'rgba(21,23,26,.7)';
-    ctx.fillText('BEST ' + Math.max(best, score), 22, 14 + 36 * U);
+    ctx.fillText(S.best + Math.max(best, score), 22, 14 + 36 * U);
     // multiplier chip
     var m = mult();
     if (m > 1) {
@@ -608,12 +622,12 @@
     ctx.fillStyle = 'rgba(21,23,26,.35)';
     [0.25, 0.5, 0.75].forEach(function (q) { ctx.fillRect(mx + mw * q - 1, my, 2, mh); });
     ctx.font = '700 ' + Math.round(11 * U) + 'px ' + FONT; ctx.fillStyle = C.rg; ctx.textAlign = 'right';
-    var lbl = f >= 1 ? 'FULL TRUCK' : f >= 0.75 ? '3/4 TRUCK' : f >= 0.5 ? '1/2 TRUCK' : f >= 0.25 ? '1/4 TRUCK' : 'LOAD';
-    ctx.fillText(lbl + (trucks && W >= 800 ? '  ·  TRUCK ' + (trucks + 1) : ''), W - 20, my + mh + 6);
+    var lbl = S.loads[f >= 1 ? 0 : f >= 0.75 ? 1 : f >= 0.5 ? 2 : f >= 0.25 ? 3 : 4];
+    ctx.fillText(lbl + (trucks && W >= 800 ? '  ·  ' + S.truckN + (trucks + 1) : ''), W - 20, my + mh + 6);
     // next up
     ctx.textAlign = 'left'; ctx.font = '700 ' + Math.round(11 * U) + 'px ' + FONT; ctx.fillStyle = 'rgba(21,23,26,.7)';
     var ny = 14 + 58 * U;
-    ctx.fillText('NEXT', 22, ny);
+    ctx.fillText(S.next, 22, ny);
     ctx.save(); ctx.globalAlpha = 0.85;
     var nk = nextKind, sc = 14 * U / nk.r;
     ctx.translate(22 + 54 * U, ny + 8 * U); ctx.scale(sc, sc); drawItem(nk, 0, 0, 0); ctx.restore();
@@ -707,7 +721,7 @@
     if (overEl) overEl.hidden = true;
     root.classList.add('is-playing');
     ac();   // unlock audio on this tap
-    say('Game started. ' + ROUND_SECS + ' seconds.');
+    say(S.started(ROUND_SECS));
     try { canvas.focus({ preventScroll: true }); } catch (e) {}
     run();
   }
@@ -722,7 +736,7 @@
     if (scoreEl) scoreEl.textContent = String(score);
     if (newBestEl) newBestEl.hidden = !isBest;
     sOver();
-    say('Time. Score ' + score + '. ' + (isBest ? 'New best.' : 'Best ' + best + '.'));
+    say(S.time + score + '. ' + (isBest ? S.newBest : S.bestWas + best + '.'));
     setTimeout(function () {
       if (overEl) overEl.hidden = false;
       var again = overEl && overEl.querySelector('[data-jt-play]');
@@ -731,7 +745,7 @@
   }
 
   function paintBest() {
-    Array.prototype.forEach.call(bestEls, function (el) { el.textContent = best ? 'Best: ' + best : ''; });
+    Array.prototype.forEach.call(bestEls, function (el) { el.textContent = best ? S.bestLabel + best : ''; });
   }
 
   /* ── input ───────────────────────────────────────────────────────────── */
@@ -781,7 +795,7 @@
     if (!soundBtn) return;
     soundBtn.setAttribute('aria-pressed', String(soundOn));
     soundBtn.classList.toggle('is-on', soundOn);
-    soundBtn.setAttribute('aria-label', soundOn ? 'Turn sound off' : 'Turn sound on');
+    soundBtn.setAttribute('aria-label', soundOn ? S.soundOff : S.soundOn);
   }
   if (soundBtn) soundBtn.addEventListener('click', function () {
     soundOn = !soundOn;

@@ -86,6 +86,8 @@ const PROBE_SETS = {
   1: { text: ['.lb-travel', '.lb-unit', '#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut'], taps: [] },
   2: { text: ['main .prose', 'main .faq-list', '.town-local', '.town-zones', '#zoneList', 'footer', '#maint-banner'],
        taps: ['.site-nav a', '.site-nav button', 'footer a', '.town-nearby a', '.hub-towns a'] },
+  5: { text: ['.article p', '.article li', '.article h2', '.post-meta', '.lb-travel', '#zipOut', '.commercial-form label', '.commercial-form input', '.commercial-form textarea', 'footer'],
+       taps: ['.site-nav a', '.site-nav button', 'footer a', '.article .trail a', '.commercial-form button', '.post-list a', '.lang-switch'] },
 };
 const PROBE = `<script>(function(){setTimeout(function(){try{
 var SETS=${JSON.stringify(PROBE_SETS)};var set=SETS[new URLSearchParams(location.search).get('__probe')]||SETS[1];
@@ -224,7 +226,149 @@ function indexable() {
   return out.sort();
 }
 
+/* ── round 5 helpers: posts, Spanish twins, links ─────────────────────────── */
+const postSlugs = (lang) => { try { return fs.readdirSync(path.join(ROOT, `content/blog/${lang}`)).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, '')).sort(); } catch { return []; } };
+/** Every relative link and #anchor on these pages that does not resolve. */
+function brokenLinks(files) {
+  const idsOf = new Map();
+  const ids = (f) => { if (!idsOf.has(f)) idsOf.set(f, new Set([...(read(f) || '').matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]))); return idsOf.get(f); };
+  for (const f of files) {
+    for (const m of (read(f) || '').matchAll(/\s(?:href|src)="([^"]+)"/g)) {
+      const u = m[1].replace(/&amp;/g, '&');
+      if (/^(https?:|tel:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
+      const [p0, hash] = u.split('#');
+      const p = p0.split('?')[0];
+      const target = !p ? f : p.startsWith('/') ? p.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(f), p));
+      if (p && !exists(target)) return `${f}: ${u} not found`;
+      if (hash && target.endsWith('.html') && !ids(target).has(hash)) return `${f}: #${hash} not on ${target}`;
+    }
+  }
+  return null;
+}
+const altOf = (html, lang) => ((String(html).match(new RegExp(`<link rel="alternate" hreflang="${lang}" href="([^"]+)"`)) || [])[1] || null);
+const ENGLISH_WORDS = /\b(the|and|your|with|you|our|we|for|of|to)\b/gi;
+
 const ROUNDS = {
+  5: [
+    { id: 'tests', pts: 10, desc: 'npm test passes', run() {
+      const r = run('npm', ['test']);
+      return r.code === 0 || `npm test failed: ${r.out.split('\n').filter((l) => /FAIL|Error|STALE|stale/.test(l)).slice(0, 3).join(' | ')}`;
+    } },
+    { id: 'blog', pts: 15, desc: '12+ posts: generated, linked from the index, 400+ words, BlogPosting schema, links to the quote and a town, no shared sentences', run() {
+      if (!exists('scripts/build-blog.mjs')) return 'scripts/build-blog.mjs missing';
+      if (run('node', ['scripts/build-blog.mjs', '--check']).code !== 0) return 'build-blog --check fails';
+      const posts = postSlugs('en');
+      if (posts.length < 12) return `${posts.length} posts`;
+      const idx = read('blog/index.html') || '';
+      const seen = new Map();
+      for (const p of posts) {
+        if (!idx.includes(`href="${p}.html"`)) return `blog index does not link ${p}`;
+        const s = read(`blog/${p}.html`) || '';
+        const body = (s.match(/<article[^>]*>([\s\S]*?)<\/article>/) || [])[1] || '';
+        if (words(body) < 400) return `${p}: ${words(body)} words`;
+        if (!ldOf(s, 'BlogPosting')) return `${p}: no BlogPosting`;
+        if (!/href="\.\.\/book\/quote\.html"/.test(body)) return `${p}: no link to the quote`;
+        if (!towns().some((t) => body.includes(`href="../${t.slug}.html"`))) return `${p}: links no town page`;
+        // A heading or list item ends a sentence even without a period.
+        for (const x of sentences(body.replace(/<\/(h[1-6]|p|li|div)>/gi, '. '))) { if (seen.has(x) && seen.get(x) !== p) return `"${x.slice(0, 40)}..." in ${seen.get(x)} and ${p}`; seen.set(x, p); }
+      }
+      return true;
+    } },
+    { id: 'blog-copy', pts: 5, desc: 'posts follow the copy rules', run() {
+      for (const lang of ['en', 'es']) for (const p of postSlugs(lang)) {
+        const f = lang === 'en' ? `blog/${p}.html` : `es/blog/${p}.html`;
+        const body = (read(f) || '').match(/<article[^>]*>([\s\S]*?)<\/article>/);
+        const prob = copyProblem(f, visibleText(body ? body[1] : ''));
+        if (prob) return prob;
+      }
+      return postSlugs('en').length > 0 || 'no posts';
+    } },
+    { id: 'spanish-pages', pts: 15, desc: 'Spanish homepage, every town, hub, FAQ and blog: lang="es", canonical, hreflang both ways', run() {
+      if (!exists('scripts/build-es.mjs')) return 'scripts/build-es.mjs missing';
+      if (run('node', ['scripts/build-es.mjs', '--check']).code !== 0) return 'build-es --check fails (stale page or untranslated phrase)';
+      const pairs = [['index.html', 'es/index.html'], ['service-areas.html', 'es/service-areas.html'], ['faq.html', 'es/faq.html'],
+        ...towns().map((t) => [`${t.slug}.html`, `es/${t.slug}.html`]), ['blog/index.html', 'es/blog/index.html'],
+        ...postSlugs('es').map((p) => [`blog/${p}.html`, `es/blog/${p}.html`])];
+      if (postSlugs('es').length < postSlugs('en').length) return `${postSlugs('es').length} Spanish posts for ${postSlugs('en').length} English`;
+      const url = (f) => `https://www.example.com/${f === 'index.html' ? '' : f.replace(/(^|\/)index\.html$/, '$1')}`;
+      for (const [en, es] of pairs) {
+        const e = read(en), s = read(es);
+        if (!e || !s) return `${s ? en : es} missing`;
+        if (!/<html lang="es"/.test(s)) return `${es}: not lang="es"`;
+        if (!s.includes(`<link rel="canonical" href="${url(es)}"`)) return `${es}: canonical is not itself`;
+        if (altOf(s, 'en') !== url(en) || altOf(e, 'es') !== url(es)) return `${en} and ${es} do not point at each other`;
+        if (!altOf(e, 'x-default') || !altOf(s, 'x-default')) return `${en}: no x-default`;
+      }
+      return true;
+    } },
+    { id: 'spanish-text', pts: 10, desc: 'Spanish pages read in Spanish (tú, no leftover English, copy rules)', run() {
+      const files = ['es/index.html', 'es/service-areas.html', 'es/faq.html', ...towns().map((t) => `es/${t.slug}.html`)].filter(exists);
+      if (files.length < 3) return 'Spanish pages missing';
+      for (const f of files) {
+        const main = (read(f).match(/<main[^>]*>([\s\S]*?)<\/main>/) || [])[1] || '';
+        const t = visibleText(main);
+        const en = (t.match(ENGLISH_WORDS) || []);
+        if (en.length > 3) return `${f}: English left: "${en.slice(0, 6).join(' ')}"`;
+        if (/\busted(es)?\b/i.test(t)) return `${f}: says "usted"; write to the reader with tú`;
+        const p = copyProblem(f, t.replace(/\b(yard debris)\b/gi, '')); if (p) return p;
+      }
+      return true;
+    } },
+    { id: 'spanish-js', pts: 5, desc: 'the truck and the ZIP check speak Spanish on Spanish pages', async run() {
+      if (!CHROME) return 'no Chrome';
+      if (!exists('es/index.html')) return 'es/index.html missing';
+      const dom = await dump(seeded('/es/index.html', { quoteZip: '97211', loadBuild: ['couch', 'mattress'] }));
+      const tl = text((String(dom).match(/class="lb-travel"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || '');
+      const zo = byId(dom, 'zipOut');
+      if (!/viaje/i.test(tl)) return `truck travel line: "${tl}"`;
+      if (!zo || !/vamos/i.test(zo.text)) return `ZIP answer: "${zo && zo.text}"`;
+      return true;
+    } },
+    { id: 'commercial', pts: 10, desc: 'commercial request form and API, tested (validation, honeypot, owner email, lead), linked from the site', run() {
+      if (!exists('book/commercial.html') || !exists('api/commercial-lead.js')) return 'form or API missing';
+      const r = run('node', ['scripts/test-commercial.mjs']);
+      if (r.code !== 0 || !/== honeypot ==/.test(r.out)) return `test-commercial: ${r.out.split('\n').filter((l) => /FAIL/.test(l)).slice(0, 2).join(' | ') || 'missing'}`;
+      if (!/href="book\/commercial\.html"/.test(read('index.html') || '')) return 'the homepage does not link the commercial form';
+      return true;
+    } },
+    { id: 'founding', pts: 10, desc: 'founding offer ported, off, computed on the server, tested', run() {
+      const f = read('api/_lib/founding.js') || '';
+      if (!/open:\s*false/.test(f)) return 'api/_lib/founding.js missing or not off';
+      if (!exists('api/founding-spots.js')) return 'api/founding-spots.js missing';
+      const r = run('node', ['scripts/test-founding.mjs']);
+      return (r.code === 0 && /== booking with the offer ==/.test(r.out)) || `test-founding: ${r.out.split('\n').filter((l) => /FAIL/.test(l)).slice(0, 2).join(' | ') || 'missing'}`;
+    } },
+    { id: 'mobile', pts: 5, desc: '360px on the Spanish homepage, a post and the commercial form: no sideways scroll, text 16px+, taps 48px+', async run() {
+      if (!CHROME) return 'no Chrome';
+      const post = postSlugs('en')[0];
+      for (const f of ['es/index.html', `blog/${post}.html`, 'book/commercial.html']) {
+        if (!exists(f)) return `${f} missing`;
+        const p = probeOf(await dump(`/${f}?__probe=5`));
+        if (!p || p.error) return `${f}: ${p ? p.error : 'did not report'}`;
+        if (p.vw !== 360) return `${f}: measured at ${p.vw}px`;
+        if (p.sw > p.vw) return `${f}: ${p.sw}px wide`;
+        if (p.small.length) return `${f}: small text ${p.small.slice(0, 2).join('; ')}`;
+        if (p.taps.length) return `${f}: small taps ${p.taps.slice(0, 2).join('; ')}`;
+      }
+      return true;
+    } },
+    { id: 'seo', pts: 10, desc: 'schema, sitemap, indexability, share cards, titles and every link on the new pages', run() {
+      for (const [cmd, a] of [['check-schema', []], ['build-sitemap', ['--check']], ['check-indexability', ['--local']], ['build-og-cards', ['--check']], ['check-meta', []]]) {
+        if (run('node', [`scripts/${cmd}.mjs`, ...a]).code !== 0) return `${cmd} fails`;
+      }
+      const files = ['blog/index.html', ...postSlugs('en').map((p) => `blog/${p}.html`), 'es/index.html', 'es/faq.html', 'es/service-areas.html',
+        'es/blog/index.html', ...postSlugs('es').map((p) => `es/blog/${p}.html`), ...towns().map((t) => `es/${t.slug}.html`), 'book/commercial.html'].filter(exists);
+      return brokenLinks(files) || true;
+    } },
+    { id: 'earlier', pts: 5, desc: 'rounds 1 to 4 still score 100', run() {
+      for (const n of [1, 2, 3, 4]) {
+        const r = run('node', ['scripts/score.mjs', '--round', String(n), '--json'], { timeout: 1500000 });
+        let j = null; try { j = JSON.parse(r.out.slice(r.out.indexOf('{'))); } catch { /* not json */ }
+        if (!j || j.score !== 100) return `round ${n} scores ${j ? j.score : '?'}: ${j ? j.checks.filter((c) => !c.got).map((c) => c.id).join(', ') : r.out.slice(0, 80)}`;
+      }
+      return true;
+    } },
+  ],
   4: [
     { id: 'tests', pts: 10, desc: 'npm test passes', run() {
       const r = run('npm', ['test']);
@@ -273,7 +417,8 @@ const ROUNDS = {
       if (run('node', ['scripts/build-sitemap.mjs', '--check']).code !== 0) return 'build-sitemap --check fails';
       const sm = read('sitemap.xml') || '';
       const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-      const want = indexable().map((f) => `https://www.example.com/${f === 'index.html' ? '' : f}`);
+      // A folder's index.html is listed as the folder (/, /blog/, /es/), like its canonical.
+      const want = indexable().map((f) => `https://www.example.com/${f.replace(/(^|\/)index\.html$/, '$1')}`);
       const missing = want.filter((u) => !locs.includes(u)), extra = locs.filter((u) => !want.includes(u));
       if (missing.length) return `sitemap misses ${missing.slice(0, 3).join(', ')}`;
       if (extra.length) return `sitemap has ${extra.slice(0, 3).join(', ')}`;
@@ -461,7 +606,9 @@ const ROUNDS = {
     { id: 'town-pages', pts: 15, desc: 'town pages: build-towns --check, title and H1 name the town, canonical, the rest identical to the homepage, 120+ words of local copy', run() {
       if (!exists('scripts/build-towns.mjs')) return 'scripts/build-towns.mjs missing';
       if (run('node', ['scripts/build-towns.mjs', '--check']).code !== 0) return 'build-towns --check fails';
-      const home = withoutCity(read('index.html'));
+      // The language switch is each page's own (it goes to that page's Spanish twin), so it is left out of the comparison.
+      const noSwitch = (s) => s.replace(/<a class="lang-switch"[\s\S]*?<\/a>/, '');
+      const home = noSwitch(withoutCity(read('index.html')));
       const t = towns();
       if (!t.length) return 'no towns';
       for (const x of t) {
@@ -470,7 +617,7 @@ const ROUNDS = {
         const h1 = text((s.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || '');
         if (!title.includes(x.name) || !h1.includes(x.name)) return `${x.slug}: title or H1 does not name ${x.name}`;
         if (!s.includes(`<link rel="canonical" href="https://www.example.com/${x.slug}.html"`)) return `${x.slug}: canonical missing`;
-        if (withoutCity(s) !== home) return `${x.slug}: differs from the homepage outside its CITY regions`;
+        if (noSwitch(withoutCity(s)) !== home) return `${x.slug}: differs from the homepage outside its CITY regions`;
         if (words(cityRegion(s, 'local')) < 120) return `${x.slug}: ${words(cityRegion(s, 'local'))} words of local copy`;
       }
       return true;

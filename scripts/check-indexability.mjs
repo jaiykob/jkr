@@ -44,7 +44,7 @@ if (local) {
   const want = pages();
   for (const rel of want) ok(locs.includes(urlOf(rel)), `${rel} is indexable but not in the sitemap`);
   for (const loc of locs) {
-    const rel = loc === `${site.SITE_URL}/` ? 'index.html' : loc.slice(site.SITE_URL.length + 1);
+    const rel = loc.slice(site.SITE_URL.length + 1).replace(/(^|\/)$/, '$1index.html');
     if (!ok(loc.startsWith(`${site.SITE_URL}/`) && fs.existsSync(path.join(ROOT, rel)), `${loc}: no such page`)) continue;
     const html = read(rel);
     ok(!/<meta name="robots" content="noindex/.test(html), `${loc}: in the sitemap but marked noindex`);

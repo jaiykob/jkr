@@ -119,6 +119,21 @@ img { max-width: 100%; }
   body .lang-switch .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   body .lang-switch .lang-short { display: inline; }
 }
+/* Spanish menu words run longer (measured 2026-10-07: the full Spanish bar
+   needs about 1290px), so on es/ pages the compact bar holds up to 1439px. */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  html[lang="es"] .site-nav { padding: 18px 28px; gap: 16px; }
+  html[lang="es"] .nav-links { gap: 1.1rem; }
+  html[lang="es"] .nav-phone-num { display: none; }
+  html[lang="es"] body .lang-switch .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  html[lang="es"] body .lang-switch .lang-short { display: inline; }
+}
+@media (min-width: 960px) and (max-width: 1099px) {
+  html[lang="es"] .site-nav { padding: 18px 16px; gap: 12px; }
+  html[lang="es"] .nav-links { gap: .55rem; }
+  html[lang="es"] .nav-links a { letter-spacing: 0; }
+  html[lang="es"] .nav-right { gap: 8px; }
+}
 @media (min-width: 960px) and (max-width: 1040px) {
   .site-nav { padding: 18px 20px; }
   .nav-links { gap: .8rem; }
@@ -267,7 +282,7 @@ footer a { color: var(--tan); text-decoration: none; }
   .nav-logo img { height: 34px; }
   .nav-wordmark { font-size: 19px !important; letter-spacing: .02em !important; }
   .nav-right { gap: 6px; }
-  .lang-switch { padding: 5px 9px !important; font-size: 11px !important; letter-spacing: .04em !important; }
+  .lang-switch { padding: 0 10px !important; }
 }
 
 /* ── FOOTER LINKS ── */
@@ -280,7 +295,7 @@ footer a { color: var(--tan); text-decoration: none; }
 .legal-footer a { color: var(--tan); text-decoration: underline; text-underline-offset: 3px; margin: 0 8px; }
 .legal-footer a:hover { text-decoration: underline; }
 
-.lang-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tan) !important; border: 1px solid rgba(255,210,63,.45); border-radius: 100px; padding: 5px 13px; text-decoration: none; white-space: nowrap; }
+.lang-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 1rem; font-weight: 700; letter-spacing: .04em; min-height: 48px; min-width: 48px; justify-content: center; text-transform: uppercase; color: var(--tan) !important; border: 1px solid rgba(255,210,63,.45); border-radius: 100px; padding: 0 14px; text-decoration: none; white-space: nowrap; }
 .lang-switch:hover { background: rgba(255,210,63,.14); }
 
 body .nav-logo { min-height: 48px; }
@@ -291,7 +306,7 @@ body .legal-footer > a { display: inline-flex; align-items: center; justify-cont
 }
 
 body .lang-short { display: none; }
-@media (max-width: 379px) {
+@media (max-width: 479px) {
   body .lang-switch { min-width: 48px; justify-content: center; padding: 0 8px !important; }
   body .lang-switch .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   body .lang-switch .lang-short { display: inline; }

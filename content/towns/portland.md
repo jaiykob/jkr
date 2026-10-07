@@ -2,6 +2,7 @@ name: Portland
 state: OR
 zips: 97201, 97202, 97203, 97204, 97205, 97206, 97209, 97210, 97211, 97212, 97213, 97214, 97215, 97216, 97217, 97218, 97219, 97220, 97221, 97227, 97229, 97230, 97231, 97232, 97233, 97236, 97239, 97266
 lede: Most of Portland sits in our first two travel zones, and east side homes near I-205 often pay no travel at all. Snap or tap what is going and your price shows up right away.
+lede_es: Casi todo Portland está en nuestras dos primeras zonas de viaje, y las casas del lado este cerca de la I-205 muchas veces no pagan viaje. Toma una foto o toca lo que se va y tu precio aparece al instante.
 areas: Parkrose, Lents, Montavilla, Foster Powell, Hollywood, Alberta, St Johns, Sellwood, Pearl District, Hillsdale
 
 ## Local
@@ -15,3 +16,15 @@ A: Yes. We park as close as the street allows and carry from the porch, the base
 
 Q: Do you haul from condos and apartments downtown?
 A: Yes, from the Pearl District to the South Waterfront. [[Most downtown buildings ask you to reserve the freight elevator]], so book it for your day and tell us the time window.
+
+## Local (es)
+Portland es donde hacemos la mayoría de los retiros, y la ciudad es tan grande que el viaje depende de tu lado del río. Barrios del este como Hazelwood, Lents, Powellhurst y Russell están en nuestra zona base, sin cargo de viaje. El lado este más céntrico, el norte de Portland, el centro y Hillsdale están en la Zona 2, y el extremo oeste, desde Multnomah Village hasta Cedar Mill, está en la Zona 3.
+
+Las casas viejas de Portland tienen sótanos, garajes aparte y entradas angostas, así que llevamos una carretilla y planeamos cómo sacar las cosas antes de cargar nada. Muchas calles del lado este no tienen entrada para autos; nos estacionamos junto a la banqueta y cargamos desde el porche. [[Una parada corta para cargar no necesita permiso de estacionamiento en la mayoría de las calles residenciales.]]
+
+## FAQ (es)
+Q: ¿Pueden recoger en una casa de Portland sin entrada para autos?
+A: Sí. Nos estacionamos lo más cerca que permita la calle y cargamos desde el porche, el sótano o el callejón. Si enfrente solo hay una calle con mucho tráfico, avísanos al reservar para planear una parada rápida.
+
+Q: ¿Recogen en condominios y apartamentos del centro?
+A: Sí, desde el Pearl District hasta South Waterfront. [[La mayoría de los edificios del centro te piden reservar el elevador de carga]], así que resérvalo para tu día y dinos el horario.

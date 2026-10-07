@@ -2,6 +2,7 @@ name: Happy Valley
 state: OR
 zips: 97086
 lede: Happy Valley is in our home zone, with no travel charge. Show us what is going with a photo or a few taps and see your price now.
+lede_es: Happy Valley está en nuestra zona base, sin cargo de viaje. Muéstranos lo que se va con una foto o unos toques y ve tu precio ahora.
 areas: Scouters Mountain, Sunnyside, Rock Creek, Happy Valley Park, Mount Talbert, Clackamas Town Center area
 
 ## Local
@@ -15,3 +16,15 @@ A: [[We can take apart wooden playsets and swing sets for an added charge.]] If 
 
 Q: Can you get up a steep Happy Valley driveway?
 A: Our truck handles most hillside driveways. If yours is very steep or narrow, send a photo of it with your items and we will plan the carry.
+
+## Local (es)
+Happy Valley creció rápido, y muchas de sus casas son grandes y nuevas, con garajes para tres autos y mucho espacio para llenar. Está a menos de nueve millas por carretera de nuestra base, así que se queda en la zona base. Trabajamos en las lomas alrededor de Scouters Mountain, sobre Sunnyside Road y en los fraccionamientos cerca de Rock Creek.
+
+Los trabajos comunes en Happy Valley son materiales que sobraron de una remodelación, juegos infantiles que los niños ya no usan y garajes que se fueron llenando desde el día de la mudanza. Nos llevamos [[pequeñas cantidades de tablaroca y madera de un proyecto terminado]], y podemos llevarnos un juego infantil una vez desarmado.
+
+## FAQ (es)
+Q: ¿Desarman un juego infantil en Happy Valley?
+A: [[Podemos desarmar juegos infantiles y columpios de madera con un cargo extra.]] Si ya está en piezas, se cobra como cualquier otra carga.
+
+Q: ¿Pueden subir una entrada empinada en Happy Valley?
+A: Nuestro camión sube la mayoría de las entradas en loma. Si la tuya es muy empinada o angosta, manda una foto de la entrada con tus cosas y planeamos cómo cargar.

@@ -46,7 +46,7 @@ export function pages() {
   const rank = (p) => (p === 'index.html' ? 0 : p === 'service-areas.html' ? 1 : 2);
   return out.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 }
-export const urlOf = (rel) => `${site.SITE_URL}/${rel === 'index.html' ? '' : rel}`;
+export const urlOf = (rel) => `${site.SITE_URL}/${rel.replace(/(^|\/)index\.html$/, '$1')}`;
 
 function lastmod(rel) {
   const r = spawnSync('git', ['log', '-1', '--format=%cs', '--', rel], { cwd: ROOT, encoding: 'utf8' });

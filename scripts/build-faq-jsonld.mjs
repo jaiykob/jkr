@@ -9,7 +9,9 @@
  * in its <head> gets a FAQPage block built from the <details> on the page
  * (inside its CITY:faq region if it has one, else inside <main>). Today that
  * is the homepage (inside its CITY:head, so town pages never inherit it) and
- * faq.html. Town pages and the hub get theirs from build-towns, which builds
+ * faq.html, and es/faq.html once it exists. The Spanish homepage gets its
+ * block from build-es (faqBlock below), from its translated questions. Town
+ * pages and the hub get theirs from build-towns, which builds
  * the visible FAQ and the JSON-LD from the same list.
  *
  * Carried over from Scoops Co., for the same two reasons: Google's policy
@@ -20,12 +22,11 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import site from '../api/_lib/site.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const check = process.argv.includes('--check');
-const PAGES = ['index.html', 'faq.html'];
+const PAGES = ['index.html', 'faq.html', 'es/faq.html'].filter((f) => fs.existsSync(path.join(ROOT, f)));
 const eol = (s) => s.replace(/\r\n/g, '\n');
 const textOf = (html) => String(html).replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
   .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').replace(/\s+([.,;:!?])/g, '$1').trim();
@@ -39,8 +40,9 @@ export function questions(html) {
     .filter((x) => x.q && x.a);
 }
 
-function block(file, html) {
-  const url = file === 'index.html' ? `${site.SITE_URL}/` : `${site.SITE_URL}/${file}`;
+/** The FAQPage <script> for a page (`file` from the site root) from its visible questions. */
+export function faqBlock(file, html) {
+  const url = `${site.SITE_URL}/${file.replace(/(^|\/)index\.html$/, '$1')}`;
   const ld = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
@@ -50,6 +52,8 @@ function block(file, html) {
   return ['  <script type="application/ld+json">', JSON.stringify(ld, null, 2).replace(/^/gm, '  '), '  </script>'].join('\n');
 }
 
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+const check = process.argv.includes('--check');
 const stale = [];
 for (const file of PAGES) {
   const abs = path.join(ROOT, file);
@@ -59,7 +63,7 @@ for (const file of PAGES) {
   const a = before.indexOf(open), b = before.indexOf(close);
   if (a < 0 || b < 0) throw new Error(`${file}: BUILD:faq-jsonld markers not found`);
   const indent = (before.slice(0, a).match(/[ \t]*$/) || [''])[0];
-  const out = before.slice(0, a + open.length) + '\n' + block(file, before) + '\n' + indent + before.slice(b);
+  const out = before.slice(0, a + open.length) + '\n' + faqBlock(file, before) + '\n' + indent + before.slice(b);
   if (out === before) continue;
   if (check) stale.push(file);
   else { fs.writeFileSync(abs, raw.includes('\r\n') ? out.replace(/\n/g, '\r\n') : out); console.log(`build-faq-jsonld: wrote ${file}`); }
@@ -67,4 +71,5 @@ for (const file of PAGES) {
 if (check) {
   if (stale.length) { console.error(`build-faq-jsonld --check: stale, run npm run build:\n  ${stale.join('\n  ')}`); process.exit(1); }
   console.log(`build-faq-jsonld --check: OK, FAQPage matches the visible questions on ${PAGES.join(', ')}`);
+}
 }

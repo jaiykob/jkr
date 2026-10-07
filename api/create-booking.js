@@ -20,6 +20,7 @@ const Stripe = require('stripe');
 const crypto = require('crypto');
 const db = require('./_lib/db');
 const site = require('./_lib/site');
+const founding = require('./_lib/founding');
 const { DAILY_CAP } = require('./_lib/schedule');
 
 // ── Server-side pricing. GENERATED — edit pricing.config.mjs, run `npm run build:pricing`.
@@ -135,6 +136,7 @@ module.exports = async (req, res) => {
     coupon = '',
     zip,
     quarterly = false,   // 10% discount + quarterly billing (recurring plans only)
+    founding: foundingShown = false,   // the page showed the founding member discount
     metadata  = {},
   } = body;
 
@@ -208,14 +210,48 @@ module.exports = async (req, res) => {
     travel_cents: String(trip.cents), miles: String(trip.miles),
   };
 
+  // ── Founding member offer (api/_lib/founding.js; off unless FOUNDING.open)
+  // Re-counted live here, never trusted from the page. Taken off the whole
+  // per visit price, travel included: the first month of a monthly pickup, a
+  // third of a quarterly prepay, or the whole one-time haul. If the page
+  // showed the offer but the last spot just went, refuse before any charge so
+  // the customer reviews the regular price (founding_closed).
+  const quarterlyPlan = !isOneTime && quarterly;
+  const preOfferCents = quarterlyPlan ? quarterCents(amount, fi) : amount;
+  let foundingApplied = false;
+  if (founding.FOUNDING.open) {
+    let left = null;
+    try { left = await founding.spotsLeft(stripe, { fresh: true }); }
+    catch (e) { console.warn('[create-booking] founding count unreadable:', e.message); }
+    if (left === null) foundingApplied = foundingShown === true;
+    else if (left > 0) foundingApplied = true;
+    else if (foundingShown === true) {
+      return res.status(409).json({
+        code:  'founding_closed',
+        error: 'The last founding member spot was just claimed, so this booking is at the regular price. Your updated total is shown above. Please review it and book again.',
+      });
+    }
+  }
+  const foundingCents = foundingApplied ? founding.firstMonthDiscountCents(preOfferCents, { quarterly: quarterlyPlan }) : 0;
+  const foundingResult = foundingApplied ? { percentOff: founding.FOUNDING.percentOff, discountCents: foundingCents } : null;
+  // Stamped after the page's metadata is spread, so a page cannot stamp
+  // itself a founding member (which is what the spot count reads).
+  Object.assign(serverMeta, foundingApplied
+    ? { founding: 'true', founding_discount_cents: String(foundingCents) }
+    : { founding: 'false' });
+
   // Idempotency anchor: a network retry of the SAME booking reuses these keys
   // (Stripe returns the original objects instead of a second customer and a
   // second charge), while a fresh PaymentMethod gets a new key.
   const idemBase = crypto.createHash('sha256')
-    .update([email, paymentMethodId, amount, row, fi, quarterly ? 'q' : 'm'].join('|'))
+    .update([email, paymentMethodId, amount, row, fi, quarterly ? 'q' : 'm', foundingCents].join('|'))
     .digest('hex').slice(0, 40);
 
   try {
+    // 0. The founding coupon (monthly and quarterly), before anything
+    //    customer shaped exists, so a failure here leaves nothing behind.
+    const foundingCoupon = foundingApplied && !isOneTime ? await founding.ensureCoupon(stripe, foundingCents) : null;
+
     // 1. Create customer with default PM
     const customer = await stripe.customers.create({
       email,
@@ -229,13 +265,13 @@ module.exports = async (req, res) => {
     // ── PATH B: One-time haul — single PaymentIntent ──────
     if (isOneTime) {
       const pi = await stripe.paymentIntents.create({
-        amount,
+        amount: amount - foundingCents,
         currency: 'usd',
         customer: customer.id,
         payment_method: paymentMethodId,
         confirm: true,
         off_session: false,
-        description: `Brand Name — ${LOAD_LABELS[row]} haul, ${trip.label}`,
+        description: `${site.NAME}: ${LOAD_LABELS[row]} haul, ${trip.label}${foundingApplied ? `, founding member ${founding.FOUNDING.percentOff}% off` : ''}`,
         statement_descriptor_suffix: 'HAUL',
         metadata: { ...metadata, ...serverMeta, plan: 'one_time' },
         automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
@@ -247,6 +283,7 @@ module.exports = async (req, res) => {
         oneTimeClientSecret:      pi.client_secret,
         firstInvoiceClientSecret: null,
         plan:                     'one_time',
+        founding:                 foundingResult,
         amountChargedToday:       pi.amount,
       });
     }
@@ -268,6 +305,9 @@ module.exports = async (req, res) => {
           recurring: interval,
         },
       }],
+      // The founding coupon rides on the subscription, not the price, so it
+      // ends after one month and the price stays the regular one.
+      ...(foundingCoupon ? { discounts: [{ coupon: foundingCoupon }] } : {}),
       default_payment_method: paymentMethodId,
       payment_behavior:       'default_incomplete',
       payment_settings:       { save_default_payment_method: 'on_subscription' },
@@ -288,7 +328,8 @@ module.exports = async (req, res) => {
       oneTimeClientSecret:      null,
       firstInvoiceClientSecret: pi ? pi.client_secret : null,
       plan:                     planKey,
-      amountChargedToday:       invoice && Number.isFinite(invoice.amount_due) ? invoice.amount_due : finalAmount,
+      founding:                 foundingResult,
+      amountChargedToday:       invoice && Number.isFinite(invoice.amount_due) ? invoice.amount_due : finalAmount - foundingCents,
     });
   } catch (err) {
     if (err && err.type && String(err.type).startsWith('Stripe')) {

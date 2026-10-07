@@ -122,7 +122,7 @@ In priority order:
 4. **Door hangers and flyers** (`marketing/ad-copy/flyer-door-hanger.md`)
    near a job: neighbors see the truck.
 5. **Landlords and property managers:** monthly pickups; the commercial
-   form arrives in round 5.
+   form is at `book/commercial.html`.
 6. **Follow-up helpers** (`agent/skills/`): every quote gets a reply within
    minutes and up to two reminders; every job gets a review request.
 
