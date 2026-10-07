@@ -5,7 +5,7 @@
  * Same job as Scoops Co.'s scripts/build-pricing.mjs. Targets, each delimited
  * by BUILD: markers in its own file:
  *
- *   api/create-booking.js     server-prices, server-zips   (authoritative)
+ *   api/create-booking.js     server-prices                (authoritative)
  *   book/quote.html           quote-jsonld, quote-zips, quote-prices
  *   book/checkout.html  checkout-billing, checkout-zips
  *   index.html                     home-prices, home-builder
@@ -49,7 +49,6 @@ const serverPrices = [
   `const LOAD_LABELS = ${J(LOAD_OPTIONS.map((o) => o.label))};`,
 ].join('\n');
 
-const serverZips = `const VALID_ZIPS = new Set([${zipList(ALL_ZIPS)}]);`;
 
 /* ── estimator ────────────────────────────────────────────────────────── */
 const quotePrices = [
@@ -205,7 +204,6 @@ function splice(src, name, body, comment, file) {
 const TARGETS = [
   { file: 'api/create-booking.js', blocks: [
     { name: 'server-prices', body: serverPrices, comment: true },
-    { name: 'server-zips',   body: serverZips,   comment: true },
   ] },
   { file: 'api/photo-quote.js', blocks: [
     { name: 'server-items', body: serverItems, comment: true },

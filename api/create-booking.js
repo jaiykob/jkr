@@ -62,11 +62,9 @@ function quarterCents(perPeriodCents, col) {
   return Math.round((perPeriodCents / weeks) * WEEKS_PER_QUARTER * (1 - 0.10));
 }
 
-// The authoritative service-area gate. GENERATED from SERVICE_AREA in
-// pricing.config.mjs.
-/* BUILD:server-zips */
-const VALID_ZIPS = new Set(['97030','97080','97024','97236','97233','97060','97009','97230','97216','97089','97266','97086','97206','97215','97015','97202','97220','97218','97254','97213','97055','97019','97222','97232','97211','97212','97214','97022','97027','97267','98664','97204','97207','97208','97228','97238','97240','97242','97250','97251','97252','97253','97256','97258','97268','97269','97280','97281','97282','97283','97286','97290','97291','97292','97293','97294','97296','97298','97209','98683','97227','97045','98684','97023','97205','97201','97210','97217','97203','97239','97068','97036','98682','97004','98661','98662','98666','98668','98687','97219','98660','98663','97034','97221','98607','97225','98665','98686','97005','98606','97011','97075','97076','97077','97223','97035','97010','97229','98685','97013','97224','98671','97078','97079','97008','98604','97067','97231','97062','97003','97006','98642','97042','97070','97007','97049','97017','98622','97123','97014','97140','98648','97038','97124','97129','97002','98639','97020','98629','97056','97032','98674','98675','97132','98601']);
-/* /BUILD:server-zips */
+// The authoritative service-area gate AND the travel fee: a ZIP outside every
+// zone gets null. GENERATED (whole file) from ZONES in pricing.config.mjs.
+const travel = require('./_lib/travel');
 
 /**
  * The ZIP in "123 Oak Ln, Gresham 97030": the LAST five-digit group. The first
@@ -150,7 +148,8 @@ module.exports = async (req, res) => {
   if (!(row >= 0 && row < PRICES.length) || !(fi >= 0 && fi < PRICES[0].length)) {
     return res.status(400).json({ error: 'Invalid quote parameters. Please rebuild your quote.' });
   }
-  if (!VALID_ZIPS.has(String(zip || '').trim())) {
+  const trip = travel.travelFor(zip);
+  if (!trip) {
     return res.status(400).json({ error: 'Sorry, that address is outside our service area' });
   }
   // The address is what the route and the CRM use, so it has to name the ZIP
@@ -161,7 +160,10 @@ module.exports = async (req, res) => {
   }
 
   const pct       = COUPONS[String(coupon).trim().toUpperCase()] || 0;
-  const baseCents = PRICES[row][fi];   // already cents: do NOT multiply by 100
+  // Per visit: the load's price plus the travel fee for the ZIP's zone. Both
+  // are already cents: do NOT multiply by 100. A coupon comes off the whole.
+  const loadCents = PRICES[row][fi];
+  const baseCents = loadCents + trip.cents;
   const amount    = pct > 0 ? Math.round(baseCents * (1 - pct / 100)) : baseCents;
   // Derived from the billing table, never from a hardcoded column index.
   const isOneTime = !BILLING_BY_COL[fi].stripe;
@@ -197,7 +199,13 @@ module.exports = async (req, res) => {
   // able to slip in any other object in the bucket.
   const photos = String((metadata && metadata.photos) || '').split(',')
     .map((p) => p.trim()).filter((p) => db.QUOTE_PHOTO_RE.test(p)).slice(0, 4);
-  const serverMeta = { plan: planKey, load: LOAD_LABELS[row], load_idx: String(row), photos: photos.join(',') };
+  // Travel rides with every booking so the email, Discord ping, database and
+  // dashboard can show it without recomputing it.
+  const serverMeta = {
+    plan: planKey, load: LOAD_LABELS[row], load_idx: String(row), photos: photos.join(','),
+    load_cents: String(loadCents), zip: trip.zip, zone: trip.zone, zone_label: trip.label,
+    travel_cents: String(trip.cents), miles: String(trip.miles),
+  };
 
   // Idempotency anchor: a network retry of the SAME booking reuses these keys
   // (Stripe returns the original objects instead of a second customer and a
@@ -226,7 +234,7 @@ module.exports = async (req, res) => {
         payment_method: paymentMethodId,
         confirm: true,
         off_session: false,
-        description: `Brand Name — ${LOAD_LABELS[row]} haul`,
+        description: `Brand Name — ${LOAD_LABELS[row]} haul, ${trip.label}`,
         statement_descriptor_suffix: 'HAUL',
         metadata: { ...metadata, ...serverMeta, plan: 'one_time' },
         automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
