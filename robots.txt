@@ -1,2 +1,5 @@
 User-agent: *
 Disallow: /api/
+Disallow: /jkr/
+
+Sitemap: https://www.example.com/sitemap.xml

@@ -7,18 +7,19 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "test": "node scripts/test-schedule.mjs && node scripts/test-zones.mjs && node scripts/test-booking.mjs && node scripts/test-photo-quote.mjs && node scripts/test-towns.mjs && node scripts/test-ops.mjs && node scripts/test-admin.mjs && node scripts/build-pricing.mjs --check && node scripts/build-faq-jsonld.mjs --check && node scripts/build-towns.mjs --check && node scripts/build-chrome.mjs --check && node scripts/build-docs.mjs --check && node scripts/check-meta.mjs && node scripts/check-schema.mjs && node scripts/set-domain.mjs --check && node scripts/list-guesses.mjs --check",
+    "test": "node scripts/test-schedule.mjs && node scripts/test-zones.mjs && node scripts/test-booking.mjs && node scripts/test-photo-quote.mjs && node scripts/test-towns.mjs && node scripts/test-ops.mjs && node scripts/test-admin.mjs && node scripts/build-pricing.mjs --check && node scripts/build-faq-jsonld.mjs --check && node scripts/build-towns.mjs --check && node scripts/build-chrome.mjs --check && node scripts/build-docs.mjs --check && node scripts/check-meta.mjs && node scripts/check-schema.mjs && node scripts/build-sitemap.mjs --check && node scripts/check-indexability.mjs --local && node scripts/set-domain.mjs --check && node scripts/list-guesses.mjs --check",
     "build:pricing": "node scripts/build-pricing.mjs",
     "check:pricing": "node scripts/build-pricing.mjs --check",
     "check:meta": "node scripts/check-meta.mjs",
     "score": "node scripts/score.mjs",
     "guesses": "node scripts/list-guesses.mjs",
     "build:chrome": "node scripts/build-chrome.mjs",
-    "build": "node scripts/build-pricing.mjs && node scripts/build-faq-jsonld.mjs && node scripts/build-towns.mjs && node scripts/build-chrome.mjs && node scripts/build-docs.mjs && node scripts/list-guesses.mjs",
+    "build": "node scripts/build-pricing.mjs && node scripts/build-faq-jsonld.mjs && node scripts/build-towns.mjs && node scripts/build-chrome.mjs && node scripts/build-docs.mjs && node scripts/build-sitemap.mjs && node scripts/list-guesses.mjs",
     "build:towns": "node scripts/build-towns.mjs",
     "build:docs": "node scripts/build-docs.mjs",
     "set-domain": "node scripts/set-domain.mjs",
-    "build:faq": "node scripts/build-faq-jsonld.mjs"
+    "build:faq": "node scripts/build-faq-jsonld.mjs",
+    "build:sitemap": "node scripts/build-sitemap.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
