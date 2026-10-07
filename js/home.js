@@ -4,10 +4,10 @@
 (function () {
   'use strict';
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var D = window.LOAD_BUILDER || {};
+  var T = window.TRAVEL;
 
   // Hero: the configurator. "Book this load" opens the quote with the size set.
-  if (window.LoadBuilder) LoadBuilder.mount(document.getElementById('heroBuilder'), { cta: { href: 'book/quote.html' }, persist: true, photos: { endpoint: 'api/photo-quote' } });
+  var hero = window.LoadBuilder ? LoadBuilder.mount(document.getElementById('heroBuilder'), { cta: { href: 'book/quote.html' }, persist: true, photos: { endpoint: 'api/photo-quote' } }) : null;
 
   // How it works: the truck drives the road as the section scrolls by.
   var road = document.querySelector('.road');
@@ -60,25 +60,35 @@
     } else tiers.classList.add('is-in');
   }
 
-  // ZIP check: the answer as you type, and the city lights up.
+  // ZIP check: the answer as you type (zone and travel), its zone lights up,
+  // and the hero truck adds the travel to its price.
   var zin = document.getElementById('zipIn'), zout = document.getElementById('zipOut');
   var form = document.getElementById('zipCheck');
-  if (zin && D.zips) {
+  function money(c) { return '$' + (c / 100).toFixed(2); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  if (zin && T) {
     form.addEventListener('submit', function (e) { e.preventDefault(); });
     zin.addEventListener('input', function () {
       zin.value = zin.value.replace(/\D/g, '').slice(0, 5);
-      var city = D.zips[zin.value];
-      document.querySelectorAll('#areaCities li').forEach(function (li) { li.classList.toggle('is-hit', li.getAttribute('data-city') === city); });
+      var t = zin.value.length === 5 ? T.travelFor(zin.value) : null;
+      document.querySelectorAll('#zoneList li').forEach(function (li) { li.classList.toggle('is-hit', !!t && li.getAttribute('data-zone') === t.zone); });
       zout.className = 'zip-out';
       zout.textContent = '';
       if (zin.value.length < 5) return;
-      if (city) {
+      if (t) {
+        try { sessionStorage.setItem('quoteZip', t.zip); } catch (e) { /* private mode */ }
+        if (hero) hero.setTravel(t);
+        var fee = '<span' + (T.GUESS ? ' class="guess"' : '') + '>' + (t.cents ? 'travel +' + money(t.cents) : 'no travel charge') + '</span>';
         zout.className = 'zip-out ok';
-        zout.innerHTML = 'Yes, we come to ' + city + '. <a href="book/quote.html?zip=' + zin.value + '">Get my price</a>';
+        zout.innerHTML = 'Yes, we come to ' + esc(t.place) + '. ' + esc(t.label) + ': ' + fee + '. <a href="book/quote.html?zip=' + t.zip + '">Get my price</a>';
       } else {
         zout.className = 'zip-out no';
-        zout.innerHTML = 'Not yet. Call or text <a href="tel:+19254086053">(925) 408-6053</a> and ask.';
+        zout.innerHTML = 'That is farther than we price online. Call or text <a href="tel:+19254086053">(925) 408-6053</a> and we will quote it.';
       }
     });
+    // Back on the homepage: the ZIP they already gave us.
+    var saved = '';
+    try { saved = sessionStorage.getItem('quoteZip') || ''; } catch (e) { /* private mode */ }
+    if (/^\d{5}$/.test(saved) && !zin.value) { zin.value = saved; zin.dispatchEvent(new Event('input')); }
   }
 })();

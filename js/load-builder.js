@@ -3,11 +3,17 @@
 
    Everything it knows comes from window.LOAD_BUILDER, which
    `npm run build:pricing` generates from pricing.config.mjs, so this file holds
-   no prices. Items only pick a load size; the price is always the size's price,
-   and the server reprices the size on its own.
+   no prices. Items only pick a load size; the price is always the size's price
+   plus the travel fee for the customer's ZIP (window.TRAVEL, js/travel.js),
+   and the server reprices both on its own.
 
-   LoadBuilder.mount(el, { fi, freq: true|false, cta: {href}, persist, photos: {endpoint}, onChange })
-     → { setFreq(fi), setLoad(row), state }                                     */
+   Until it knows the ZIP the truck shows the load price with "+ travel", never
+   a total that leaves travel out. The last ZIP typed anywhere on the site is
+   kept in sessionStorage (quoteZip), so a ZIP checked on the homepage prices
+   the truck there and on the quote.
+
+   LoadBuilder.mount(el, { fi, freq: true|false, cta: {href}, persist, photos: {endpoint}, travel, onChange })
+     → { setFreq(fi), setLoad(row), setTravel(trip|null), state }               */
 (function () {
   'use strict';
   var NS = 'http://www.w3.org/2000/svg';
@@ -17,6 +23,8 @@
   // sessionStorage: the stored photo paths (they ride with the booking), small
   // thumbnails to show again, and the last read-back line.
   var PHOTOS_KEY = 'quotePhotos', THUMBS_KEY = 'quoteThumbs', NOTE_KEY = 'quotePhotoNote';
+  // sessionStorage: the last ZIP typed on any page (a plain string).
+  var ZIP_KEY = 'quoteZip';
   var MAX_PHOTOS = 4;
   function readStore(k, d) { try { var v = JSON.parse(sessionStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
   function writeStore(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* full or private: the photos still went up */ } }
@@ -87,6 +95,13 @@
     opts = opts || {};
     var MORE = D.loads.length;
     var state = { counts: {}, seq: [], units: 0, row: null, fi: opts.fi != null ? opts.fi : D.oneTimeCol, manual: null };
+    // Travel for the customer's ZIP, or null while we don't know it.
+    var T = window.TRAVEL || null;
+    var trip = opts.travel !== undefined ? opts.travel : savedTrip();
+    function savedTrip() {
+      if (!T) return null;
+      try { return T.travelFor(sessionStorage.getItem(ZIP_KEY) || ''); } catch (e) { return null; }
+    }
 
     // The host is the size container; the layout lives one level down,
     // because a container query can't restyle the container itself.
@@ -137,8 +152,9 @@
     var price = h('span', 'lb-price', '$0');
     var unit = h('span', 'lb-unit', '');
     priceRow.appendChild(price); priceRow.appendChild(unit);
+    var tline = h('p', 'lb-travel'); tline.hidden = true;
     var live = h('p', 'lb-sr'); live.setAttribute('aria-live', 'polite');
-    read.appendChild(size); read.appendChild(priceRow); read.appendChild(live);
+    read.appendChild(size); read.appendChild(priceRow); read.appendChild(tline); read.appendChild(live);
 
     var freqBtns = [];
     if (opts.freq !== false && D.freqLabels.length > 1) {
@@ -159,7 +175,9 @@
       cta.href = opts.cta.href;
       cta.addEventListener('click', function (e) {
         if (state.row == null || state.row >= MORE) { e.preventDefault(); shake(); return; }
-        cta.href = opts.cta.href + '?' + new URLSearchParams({ load: String(state.row), freq: String(state.fi) });
+        var q = { load: String(state.row), freq: String(state.fi) };
+        if (trip) q.zip = trip.zip;
+        cta.href = opts.cta.href + '?' + new URLSearchParams(q);
         try {
           var k = 'quoteContact', prev = JSON.parse(sessionStorage.getItem(k) || '{}') || {};
           prev.items = describe();
@@ -270,16 +288,32 @@
         size.textContent = 'More than a truck';
         unit.textContent = '';
       } else {
-        cents = D.prices[row][state.fi];
+        // The load's price, plus travel once we know the ZIP.
+        cents = D.prices[row][state.fi] + (trip ? trip.cents : 0);
         size.textContent = D.loads[row].label + (state.manual == null ? ' · ' + Math.min(100, state.units) + '% full' : '');
-        unit.textContent = D.freqUnits[state.fi];
+        unit.textContent = D.freqUnits[state.fi] + (trip ? '' : ' + travel');
       }
+      // Placeholder prices print red with an asterisk (css/guess.css).
+      price.classList.toggle('guess', !!(D.guess && D.guess.prices) && row != null && row < MORE);
+      travelLine(row);
       if (row >= MORE) { price.textContent = 'Call us'; shownCents = 0; }
       else count(cents);
       live.textContent = row == null ? '' : row >= MORE ? 'More than a truck. Call us for a price.'
-        : D.loads[row].label + ', ' + fmt(cents) + D.freqUnits[state.fi];
+        : D.loads[row].label + ', ' + fmt(cents) + D.freqUnits[state.fi]
+          + (!trip ? ', plus travel by ZIP code' : trip.cents ? ', including ' + fmt(trip.cents) + ' travel' : '');
       freqBtns.forEach(function (b, k) { b.setAttribute('aria-pressed', String(k === state.fi)); });
       if (cta) cta.setAttribute('aria-disabled', String(row == null || row >= MORE));
+    }
+    // The line under the price: what travel adds, or that it depends on the ZIP.
+    function travelLine(row) {
+      tline.textContent = '';
+      tline.hidden = row == null || row >= MORE;
+      if (tline.hidden) return;
+      if (!trip) { tline.textContent = 'Travel is added by ZIP code.'; return; }
+      var fee = h('span', T && T.GUESS ? 'guess' : '', trip.cents ? fmt(trip.cents) + ' travel' : 'No travel charge');
+      if (trip.cents) tline.appendChild(document.createTextNode('Includes '));
+      tline.appendChild(fee);
+      tline.appendChild(document.createTextNode((trip.cents ? ', ' + trip.label : ' in the ' + trip.label.toLowerCase()) + ' (' + trip.place + ')'));
     }
     function count(to) {
       cancelAnimationFrame(tween);
@@ -393,6 +427,7 @@
     }
 
     function setFreq(fi) { state.fi = fi; readout(); }
+    function setTravel(t) { trip = t || null; readout(); }
     function setLoad(row) {
       state.manual = row == null || row >= MORE ? null : row;
       if (state.manual != null) { state.counts = {}; state.seq = []; }
@@ -417,7 +452,7 @@
       } catch (e) { /* ignore */ }
     }
     render(restored);
-    return { setFreq: setFreq, setLoad: setLoad, setItems: setItems, state: state, describe: describe };
+    return { setFreq: setFreq, setLoad: setLoad, setItems: setItems, setTravel: setTravel, state: state, describe: describe };
   }
 
   window.LoadBuilder = { mount: mount, rowFor: rowFor };

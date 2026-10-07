@@ -160,7 +160,7 @@
 .tier-name { font: 800 1.3rem/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; }
 .tier-note { font-size: 1rem; color: var(--txm); line-height: 1.4; flex: 1; }
 .tier-price { margin-top: 10px; font: 800 2rem/1 'Bricolage Grotesque', sans-serif; letter-spacing: -.03em; }
-.tier-sub { font-size: .95rem; color: var(--txm); }
+.tier-sub { font-size: 1rem; color: var(--txm); }
 .tiers-more { margin-top: 24px; text-align: center; font-size: 1rem; color: var(--txm); }
 .tiers-more a { color: var(--rg); font-weight: 700; }
 
@@ -178,13 +178,23 @@
 .zip-out.ok { color: #7CE38B; }
 .zip-out.no { color: #FFB4A6; }
 .zip-out a { color: var(--tan); }
-.area-cities { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.area-cities li {
-  padding: 18px; border-radius: 16px; border: 1.5px solid rgba(255,255,255,.14);
-  font: 800 1.2rem/1.2 'Bricolage Grotesque', sans-serif; color: rgba(255,255,255,.85);
+/* Travel zones (generated from ZONES): one card per ring around the base. The
+   zone the typed ZIP lands in lights up, like the city tiles before it. */
+.zones { list-style: none; display: grid; gap: 12px; margin: 0; padding: 0; }
+.zones li {
+  display: grid; gap: 4px; padding: 16px 18px; border-radius: 16px;
+  border: 1.5px solid rgba(255,255,255,.14); color: var(--on-dark-m);
   transition: background .3s, color .3s, transform .3s cubic-bezier(.34,1.6,.64,1);
 }
-.area-cities li.is-hit { background: var(--tan); color: var(--rg); transform: scale(1.05) rotate(-1deg); }
+.zone-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.zone-name { font: 800 1.2rem/1.2 'Bricolage Grotesque', sans-serif; color: #fff; }
+.zone-fee { font-weight: 700; font-size: 1rem; color: var(--tan); }
+.zone-miles, .zone-places { font-size: 1rem; line-height: 1.4; }
+.zones li.is-hit { background: var(--tan); color: var(--rg); transform: scale(1.02) rotate(-.5deg); }
+.zones li.is-hit .zone-name, .zones li.is-hit .zone-fee { color: var(--rg); }
+.zones li.is-hit .guess { color: #9B1C1C; }
+.tiers-travel { margin-top: 18px; text-align: center; font-size: 1rem; line-height: 1.5; color: var(--txm); }
+.tiers-travel a { color: var(--rg); font-weight: 700; }
 
 /* ── FAQ ──────────────────────────────────────────────────────────────── */
 .faq { display: grid; gap: 10px; }

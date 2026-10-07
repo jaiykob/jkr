@@ -21,7 +21,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import http from 'node:http';
 import path from 'node:path';
-import { spawnSync, spawn } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
+import { openBrowser } from './lib/browser.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 
@@ -75,7 +76,7 @@ document.documentElement.setAttribute('data-probe',JSON.stringify({sw:document.d
 }catch(e){document.documentElement.setAttribute('data-probe',JSON.stringify({error:String(e)}));}},1500);})();</script>`;
 const SEED = `<!doctype html><meta charset="utf-8"><script>
 var q=new URLSearchParams(location.search);var s=JSON.parse(q.get('s')||'{}');
-Object.keys(s).forEach(function(k){sessionStorage.setItem(k,JSON.stringify(s[k]));});location.replace(q.get('to'));</script>`;
+Object.keys(s).forEach(function(k){sessionStorage.setItem(k,typeof s[k]==='string'?s[k]:JSON.stringify(s[k]));});location.replace(q.get('to'));</script>`;
 
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
@@ -93,27 +94,19 @@ const server = http.createServer((req, res) => {
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
 const ORIGIN = `http://127.0.0.1:${server.address().port}`;
 
-const CHROME = [
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  '/usr/bin/google-chrome', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-].find((p) => fs.existsSync(p));
-const PROFILE = fs.mkdtempSync(path.join(os.tmpdir(), 'jkr-score-'));
+// Pages load in a real phone viewport through device emulation
+// (scripts/lib/browser.mjs). A plain --window-size can't go below ~526px.
+const browser = await openBrowser();
+const CHROME = !!browser;
 const dumps = new Map();
 function dump(url, width = 360) {
   const key = `${width} ${url}`;
-  if (dumps.has(key)) return dumps.get(key);
-  const p = new Promise((resolve) => {
-    if (!CHROME) return resolve('');
-    const c = spawn(CHROME, ['--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
-      `--user-data-dir=${PROFILE}`, `--window-size=${width},900`, '--virtual-time-budget=8000', '--dump-dom', ORIGIN + url]);
-    let out = '';
-    c.stdout.on('data', (d) => { out += d; });
-    const kill = setTimeout(() => c.kill(), 60000);
-    c.on('close', () => { clearTimeout(kill); resolve(out); });
-  });
-  dumps.set(key, p);
-  return p;
+  if (!dumps.has(key)) dumps.set(key, (async () => {
+    if (!browser) return '';
+    const p = await browser.page({ width });
+    try { await p.goto(ORIGIN + url); return await p.html(); } finally { await p.close(); }
+  })());
+  return dumps.get(key);
 }
 const seeded = (to, s) => `/__seed.html?${new URLSearchParams({ s: JSON.stringify(s), to })}`;
 function probeOf(dom) {
@@ -225,6 +218,7 @@ const ROUNDS = {
         const p = probeOf(await dump(url));
         if (!p) return `${name}: page did not report`;
         if (p.error) return `${name}: ${p.error}`;
+        if (p.vw !== 360) return `${name}: measured at ${p.vw}px, not 360px`;
         if (p.sw > p.vw) return `${name}: ${p.sw}px wide in a ${p.vw}px window`;
         if (p.small.length) return `${name}: small text ${p.small.slice(0, 2).join('; ')}`;
       }
@@ -252,7 +246,7 @@ for (const c of checks) {
   results.push({ id: c.id, pts: c.pts, got: r === true ? c.pts : 0, desc: c.desc, why: r === true ? '' : String(r) });
 }
 server.close();
-try { fs.rmSync(PROFILE, { recursive: true, force: true }); } catch { /* Chrome may still hold a file */ }
+if (browser) await browser.close();
 
 const score = results.reduce((s, r) => s + r.got, 0);
 if (JSON_OUT) console.log(JSON.stringify({ round: ROUND, score, checks: results }, null, 2));

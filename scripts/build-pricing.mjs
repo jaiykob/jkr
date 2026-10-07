@@ -17,7 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   PRICES, COLUMNS, COLUMN_LABELS, BILLING, BILLING_BY_COL, ONE_TIME_COL, LOAD_OPTIONS,
-  ZIP_ZONES, ALL_ZIPS, ZONE_LIST, PLACES_BY_ZONE, GUESS, ITEMS, WEEKS_PER_QUARTER, QUARTERLY_DISCOUNT, STARTING_AT, fmt,
+  ZIP_ZONES, ALL_ZIPS, ZONE_LIST, PLACES_BY_ZONE, GUESS, BASE, ITEMS, WEEKS_PER_QUARTER, QUARTERLY_DISCOUNT, STARTING_AT, fmt,
 } from '../pricing.config.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,6 +32,9 @@ const planKey = (c) => (c === 'oneTime' ? 'one_time' : c);
 const pad = (n) => String(n).padStart(6);
 /* A value that is still a placeholder prints red with an asterisk (css/guess.css). */
 const guessed = (html, on) => (on ? `<span class="guess">${html}</span>` : html);
+
+/* Every place with a ZIP in a zone, once each, nearest first ("Vancouver, WA"). */
+const AREA_SERVED = [...new Set(ALL_ZIPS.map((z) => `${ZIP_ZONES[z].place}, ${ZIP_ZONES[z].state}`))];
 
 /* ── server ───────────────────────────────────────────────────────────── */
 const serverPrices = [
@@ -80,9 +83,7 @@ const jsonld = {
   serviceType: 'Junk removal',
   url: 'https://www.example.com/book/quote.html',
   provider: { '@type': 'LocalBusiness', '@id': 'https://www.example.com/#business', name: 'Brand Name' },
-  // Every place with a ZIP in a zone, once each ("Vancouver, WA").
-  areaServed: [...new Set(ALL_ZIPS.map((z) => `${ZIP_ZONES[z].place}, ${ZIP_ZONES[z].state}`))]
-    .map((name) => ({ '@type': 'City', name })),
+  areaServed: AREA_SERVED.map((name) => ({ '@type': 'City', name })),
   offers: {
     '@type': 'AggregateOffer',
     priceCurrency: 'USD',
@@ -135,11 +136,49 @@ const builderData = {
   freqLabels: COLUMNS.map((c) => COLUMN_LABELS[c]),
   freqUnits: COLUMNS.map((c) => BILLING[c].unit),
   oneTimeCol: ONE_TIME_COL,
-  zips: zipCity,
   // Which numbers are placeholders: the builder prints them red with an asterisk.
   guess: { prices: GUESS.prices },
 };
 const builderBlock = (indent) => `${indent}window.LOAD_BUILDER = ${Jslash(builderData)};`;
+
+/* The homepage's business card for search engines, with the whole service area. */
+const homeJsonld = [
+  '  <script type="application/ld+json">',
+  JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': 'https://www.example.com/#business',
+    name: 'Brand Name',
+    url: 'https://www.example.com/',
+    telephone: '+19254086053',
+    areaServed: AREA_SERVED,
+  }, null, 2).replace(/^/gm, '  '),
+  '  </script>',
+].join('\n');
+
+/* The zone list in "Where we go": one card per zone, nearest places first.
+   Bands and fees print red with an asterisk while GUESS.zones is on. */
+const zoneMiles = (z, i) => (i === 0 ? `Up to ${z.upToMiles} road miles from ${BASE.label}` : `${ZONE_LIST[i - 1].upToMiles} to ${z.upToMiles} road miles`);
+const zoneFee = (z) => (z.cents ? `+${fmt(z.cents)} per visit` : 'No travel charge');
+const zonePlaces = (key) => {
+  const p = PLACES_BY_ZONE[key];
+  return p.length > 8 ? `${p.slice(0, 8).join(', ')} and ${p.length - 8} more` : p.join(', ');
+};
+const homeArea = [
+  '    <ol class="zones" id="zoneList">',
+  ...ZONE_LIST.map((z, i) => [
+    `      <li data-zone="${z.key}">`,
+    `        <span class="zone-top"><span class="zone-name">${z.label}</span><span class="zone-fee">${guessed(zoneFee(z), GUESS.zones)}</span></span>`,
+    `        <span class="zone-miles">${guessed(zoneMiles(z, i), GUESS.zones)}</span>`,
+    `        <span class="zone-places">${zonePlaces(z.key)}</span>`,
+    '      </li>',
+  ].join('\n')),
+  '    </ol>',
+].join('\n');
+
+/* Under the price tiers: what travel adds, from the zone table. */
+const first = ZONE_LIST[0], last = ZONE_LIST[ZONE_LIST.length - 1];
+const homeTravelNote = `    <p class="tiers-travel">Travel is added by zone: ${guessed(first.cents ? `+${fmt(first.cents)}` : 'no charge', GUESS.zones)} within ${guessed(`${first.upToMiles} road miles`, GUESS.zones)} of ${BASE.label}, up to ${guessed(`+${fmt(last.cents)}`, GUESS.zones)} at ${guessed(`${last.upToMiles} miles`, GUESS.zones)}. <a href="#area">Find your zone</a></p>`;
 
 /* The photo reader's item list (api/photo-quote.js): keys and labels only. */
 const serverItems = [
@@ -219,7 +258,10 @@ const TARGETS = [
     { name: 'checkout-zips',    body: checkoutZips,    comment: true },
   ] },
   { file: 'index.html', blocks: [
+    { name: 'home-jsonld', body: homeJsonld, comment: false },
     { name: 'home-prices', body: homePrices, comment: false },
+    { name: 'home-travel-note', body: homeTravelNote, comment: false },
+    { name: 'home-area', body: homeArea, comment: false },
     { name: 'home-builder', body: builderBlock('  '), comment: true },
   ] },
 ];

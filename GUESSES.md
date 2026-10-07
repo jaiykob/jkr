@@ -21,4 +21,4 @@ None.
 
 ## Red on the pages right now
 
-- `index.html` (10): $99.00, $89.00, $199.00, $179.00, $349.00, $319.00, $479.00, $439.00, $599.00, $549.00
+- `index.html` (22): $99.00, $89.00, $199.00, $179.00, $349.00, $319.00, $479.00, $439.00, $599.00, $549.00, no charge, 10 road miles, +$75.00, 40 miles, No travel charge, Up to 10 road miles from Gresham, +$25.00 per visit, 10 to 20 road miles, +$50.00 per visit, 20 to 30 road miles, +$75.00 per visit, 30 to 40 road miles
