@@ -55,7 +55,7 @@ GUESS* These prices are placeholder guesses (`GUESS` in `pricing.config.mjs`).
 
 Past 40 road miles: no online price; quoted by hand.
 GUESS* The mile bands and fees are placeholder guesses (`GUESS` in `pricing.config.mjs`).
-GUESS* The base point (Gresham city center) are placeholder guesses (`GUESS` in `pricing.config.mjs`).
+GUESS* The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).
 <!-- /BUILD:docs-zones -->
 
 - **The price a customer sees is load price + their zone's travel fee**, per visit.

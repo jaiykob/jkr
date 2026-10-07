@@ -29,7 +29,7 @@ const MARK = 'GUESS' + '*';   // split so list-guesses does not list this file
 const eol = (s) => s.replace(/\r\n/g, '\n');
 
 const towns = loadTowns();
-const guessNote = (on, what) => (on ? `\n${MARK} ${what} are placeholder guesses (\`GUESS\` in \`pricing.config.mjs\`).` : '');
+const guessNote = (on, sentence) => (on ? `\n${MARK} ${sentence} (\`GUESS\` in \`pricing.config.mjs\`).` : '');
 
 const prices = [
   `| Load size | ${COLUMNS.map((c) => COLUMN_LABELS[c]).join(' | ')} |`,
@@ -37,7 +37,7 @@ const prices = [
   ...LOAD_OPTIONS.map((o, r) => `| ${o.label} (${o.note.toLowerCase()}) | ${PRICES[r].map((c, k) => `${fmt(c)}${BILLING[COLUMNS[k]].stripe ? ' a visit' : ''}`).join(' | ')} |`),
   '',
   'Travel for the customer\'s zone is added to every visit. More than a full truck is quoted by hand.',
-].join('\n') + guessNote(GUESS.prices, 'These prices');
+].join('\n') + guessNote(GUESS.prices, 'These prices are placeholder guesses');
 
 const townsIn = (key) => towns.filter((t) => t.zips.some((z) => ZIP_ZONES[z].zone === key)).map((t) => t.name);
 const zones = [
@@ -46,7 +46,7 @@ const zones = [
   ...ZONES.map((z, i) => `| ${z.label} | ${i ? ZONES[i - 1].upToMiles : 0} to ${z.upToMiles} | ${z.fee ? fmt(Math.round(z.fee * 100)) : 'none'} | ${townsIn(z.key).join(', ') || 'none'} |`),
   '',
   `Past ${ZONES[ZONES.length - 1].upToMiles} road miles: no online price; quoted by hand.`,
-].join('\n') + guessNote(GUESS.zones, 'The mile bands and fees') + guessNote(GUESS.base, `The base point (${BASE.label} city center)`);
+].join('\n') + guessNote(GUESS.zones, 'The mile bands and fees are placeholder guesses') + guessNote(GUESS.base, `The base point (${BASE.label} city center) is a placeholder guess`);
 
 const or = towns.filter((t) => t.state === 'OR').length, wa = towns.filter((t) => t.state === 'WA').length;
 const area = `We serve ${ALL_ZIPS.length} ZIP codes and ${towns.length} towns (${or} in Oregon, ${wa} in Clark County, Washington), out to ${ZONES[ZONES.length - 1].upToMiles} road miles from our base in ${BASE.label}. Every town has its own page (\`content/towns/\`); the hub is \`service-areas.html\`.`;
