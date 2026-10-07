@@ -19,6 +19,7 @@
 const Stripe = require('stripe');
 const crypto = require('crypto');
 const db = require('./_lib/db');
+const site = require('./_lib/site');
 const { DAILY_CAP } = require('./_lib/schedule');
 
 // ── Server-side pricing. GENERATED — edit pricing.config.mjs, run `npm run build:pricing`.
@@ -78,8 +79,8 @@ function zipFromAddress(addr) {
 module.exports = async (req, res) => {
   // ── CORS / preflight ──────────────────────────────────────
   const ALLOWED_ORIGINS = [
-    'https://example.com',      // TODO: real domain
-    'https://www.example.com',
+    `https://${site.DOMAIN}`,   // the site address: api/_lib/site.js
+    site.SITE_URL,
     'http://localhost:3000',
     'http://localhost:5173',
   ];

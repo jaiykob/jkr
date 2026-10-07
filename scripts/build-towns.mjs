@@ -27,10 +27,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { ZIP_ZONES, ZONES, GUESS, fmt } from '../pricing.config.mjs';
+import site from '../api/_lib/site.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TOWN_DIR = path.join(ROOT, 'content/towns');
-const SITE = 'https://www.example.com';
+const SITE = site.SITE_URL;   // api/_lib/site.js: the one place the address lives
 const eol = (s) => s.replace(/\r\n/g, '\n');
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

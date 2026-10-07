@@ -7,7 +7,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "test": "node scripts/test-schedule.mjs && node scripts/test-zones.mjs && node scripts/test-booking.mjs && node scripts/test-photo-quote.mjs && node scripts/test-towns.mjs && node scripts/test-ops.mjs && node scripts/test-admin.mjs && node scripts/build-pricing.mjs --check && node scripts/build-towns.mjs --check && node scripts/build-chrome.mjs --check && node scripts/build-docs.mjs --check && node scripts/check-meta.mjs && node scripts/list-guesses.mjs --check",
+    "test": "node scripts/test-schedule.mjs && node scripts/test-zones.mjs && node scripts/test-booking.mjs && node scripts/test-photo-quote.mjs && node scripts/test-towns.mjs && node scripts/test-ops.mjs && node scripts/test-admin.mjs && node scripts/build-pricing.mjs --check && node scripts/build-towns.mjs --check && node scripts/build-chrome.mjs --check && node scripts/build-docs.mjs --check && node scripts/check-meta.mjs && node scripts/set-domain.mjs --check && node scripts/list-guesses.mjs --check",
     "build:pricing": "node scripts/build-pricing.mjs",
     "check:pricing": "node scripts/build-pricing.mjs --check",
     "check:meta": "node scripts/check-meta.mjs",
@@ -16,7 +16,8 @@
     "build:chrome": "node scripts/build-chrome.mjs",
     "build": "node scripts/build-pricing.mjs && node scripts/build-towns.mjs && node scripts/build-chrome.mjs && node scripts/build-docs.mjs && node scripts/list-guesses.mjs",
     "build:towns": "node scripts/build-towns.mjs",
-    "build:docs": "node scripts/build-docs.mjs"
+    "build:docs": "node scripts/build-docs.mjs",
+    "set-domain": "node scripts/set-domain.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",

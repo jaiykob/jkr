@@ -15,6 +15,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import site from '../api/_lib/site.js';
 import {
   PRICES, COLUMNS, COLUMN_LABELS, BILLING, BILLING_BY_COL, ONE_TIME_COL, LOAD_OPTIONS,
   ZIP_ZONES, ALL_ZIPS, ZONE_LIST, PLACES_BY_ZONE, GUESS, BASE, ITEMS, WEEKS_PER_QUARTER, QUARTERLY_DISCOUNT, STARTING_AT, fmt,
@@ -77,10 +78,10 @@ const all = PRICES.flat();
 const jsonld = {
   '@context': 'https://schema.org',
   '@type': 'Service',
-  '@id': 'https://www.example.com/book/quote.html#service',
+  '@id': `${site.SITE_URL}/book/quote.html#service`,
   serviceType: 'Junk removal',
-  url: 'https://www.example.com/book/quote.html',
-  provider: { '@type': 'LocalBusiness', '@id': 'https://www.example.com/#business', name: 'Brand Name' },
+  url: `${site.SITE_URL}/book/quote.html`,
+  provider: { '@type': 'LocalBusiness', '@id': `${site.SITE_URL}/#business`, name: site.NAME },
   areaServed: AREA_SERVED.map((name) => ({ '@type': 'City', name })),
   offers: {
     '@type': 'AggregateOffer',
@@ -141,10 +142,10 @@ const homeJsonld = [
   JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
-    '@id': 'https://www.example.com/#business',
-    name: 'Brand Name',
-    url: 'https://www.example.com/',
-    telephone: '+19254086053',
+    '@id': `${site.SITE_URL}/#business`,
+    name: site.NAME,
+    url: `${site.SITE_URL}/`,
+    telephone: site.PHONE_TEL,
     areaServed: AREA_SERVED,
   }, null, 2).replace(/^/gm, '  '),
   '  </script>',
