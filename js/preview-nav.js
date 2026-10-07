@@ -60,5 +60,9 @@
     if (go) a.addEventListener('click', (e) => { e.preventDefault(); go(); });
     bar.append(a);
   }
+  // Placeholder guesses print red with an asterisk; the list is GUESSES.md.
+  const key = document.createElement('span');
+  key.innerHTML = '<span style="color:#FF8A80">Red*</span> = a guess, listed in GUESSES.md';
+  bar.append(key);
   document.body.prepend(bar);
 })();

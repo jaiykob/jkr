@@ -30,6 +30,8 @@ const Jslash = (v) => J(v).replace(/\//g, '\\u002F');
 const zipList = (zips) => zips.map((z) => `'${z}'`).join(',');
 const planKey = (c) => (c === 'oneTime' ? 'one_time' : c);
 const pad = (n) => String(n).padStart(6);
+/* A value that is still a placeholder prints red with an asterisk (css/guess.css). */
+const guessed = (html, on) => (on ? `<span class="guess">${html}</span>` : html);
 
 /* ── server ───────────────────────────────────────────────────────────── */
 const serverPrices = [
@@ -121,8 +123,8 @@ const homePrices = LOAD_OPTIONS.map((o, r) => [
   `        <span class="tier-truck" aria-hidden="true"><span class="tier-load"></span></span>`,
   `        <span class="tier-name">${o.label}</span>`,
   `        <span class="tier-note">${o.note}</span>`,
-  `        <span class="tier-price">${fmt(PRICES[r][ONE_TIME_COL])}</span>`,
-  ...(recurringCol >= 0 ? [`        <span class="tier-sub">${fmt(PRICES[r][recurringCol])} ${COLUMN_LABELS[COLUMNS[recurringCol]].toLowerCase()}</span>`] : []),
+  `        <span class="tier-price${GUESS.prices ? ' guess' : ''}">${fmt(PRICES[r][ONE_TIME_COL])}</span>`,
+  ...(recurringCol >= 0 ? [`        <span class="tier-sub">${guessed(fmt(PRICES[r][recurringCol]), GUESS.prices)} ${COLUMN_LABELS[COLUMNS[recurringCol]].toLowerCase()}</span>`] : []),
   '      </a>',
 ].join('\n')).join('\n');
 
@@ -135,6 +137,8 @@ const builderData = {
   freqUnits: COLUMNS.map((c) => BILLING[c].unit),
   oneTimeCol: ONE_TIME_COL,
   zips: zipCity,
+  // Which numbers are placeholders: the builder prints them red with an asterisk.
+  guess: { prices: GUESS.prices },
 };
 const builderBlock = (indent) => `${indent}window.LOAD_BUILDER = ${Jslash(builderData)};`;
 

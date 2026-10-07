@@ -159,8 +159,8 @@ export function quarterlyCents(row, col) {
 }
 
 /**
- * Where every travel distance is measured from. GUESS*: Gresham city center,
- * not the real yard. Moving it means re-running `node scripts/measure-zips.mjs`.
+ * Where every travel distance is measured from (GUESS.base below).
+ * Moving it means re-running `node scripts/measure-zips.mjs`.
  */
 export const BASE = { label: 'Gresham', lat: 45.4982, lon: -122.4316 };
 
