@@ -51,6 +51,35 @@
   }
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* Words, by <html lang>: the Spanish pages (es/) get Spanish. Item and load
+     names come translated in window.LOAD_BUILDER (scripts/build-es.mjs). */
+  var ES = document.documentElement.lang === 'es';
+  var S = ES ? {
+    truck: 'El camión, que se llena mientras agregas cosas', tap: 'Toca lo que tienes', often: '¿Cada cuánto?',
+    book: 'Reservar esta carga', remove: 'Quitar uno: ', add: 'Agregar uno: ', over: 'Se pasa por ', more: 'Más de un camión',
+    full: '% lleno', plusTravel: ' + viaje', callUs: 'Llámanos', moreLive: 'Más de un camión. Llámanos para darte un precio.',
+    plusZip: ', más el viaje según el código postal', including: ', con ', travelAfter: ' de viaje',
+    byZip: 'El viaje se suma según el código postal.', travelFee: ' de viaje', noTravel: 'Sin cargo de viaje', includes: 'Incluye ', inThe: ' en la ',
+    snap: 'Toma una foto', sendUpTo: function (n) { return 'Manda hasta ' + n + ' fotos y nosotros las contamos'; }, or: 'o toca lo que tienes',
+    getting: 'Preparando tus fotos…', cantOpen: 'No pudimos abrir esas fotos. Prueba con otras, o toca lo que tienes abajo.',
+    looking: 'Revisando tus fotos…', tapBelow: 'Toca lo que tienes abajo y nosotros seguimos desde ahí.', weCount: 'Contamos: ',
+    lookRight: ' ¿Está bien? Toca + o − para corregirlo.',
+    cantRead: 'No pudimos leer las fotos en este momento. Toca lo que tienes abajo. Si las fotos llegaron, igual las vamos a ver.'
+  } : {
+    truck: 'The truck, filling up as you add items', tap: 'Tap what you have', often: 'How often',
+    book: 'Book this load', remove: 'Remove one: ', add: 'Add one: ', over: 'Over by ', more: 'More than a truck',
+    full: '% full', plusTravel: ' + travel', callUs: 'Call us', moreLive: 'More than a truck. Call us for a price.',
+    plusZip: ', plus travel by ZIP code', including: ', including ', travelAfter: ' travel',
+    byZip: 'Travel is added by ZIP code.', travelFee: ' travel', noTravel: 'No travel charge', includes: 'Includes ', inThe: ' in the ',
+    snap: 'Snap your junk', sendUpTo: function (n) { return 'Send up to ' + n + ' photos and we count it for you'; }, or: 'or tap what you have',
+    getting: 'Getting your photos ready…', cantOpen: 'We could not open those photos. Try different ones, or tap what you have below.',
+    looking: 'Looking at your photos…', tapBelow: 'Tap what you have below and we will take it from there.', weCount: 'We count: ',
+    lookRight: ' Look right? Tap + or − to fix it.',
+    cantRead: 'We could not read the photos right now. Tap what you have below. If the photos came through, we will still see them.'
+  };
+  // The zone names come from js/travel.js in English ("Home zone", "Zone 2").
+  function zoneName(l) { return ES ? String(l).replace(/^Home zone$/, 'Zona base').replace(/^Zone /, 'Zona ') : l; }
+
   function fmt(c) { return '$' + (c / 100).toFixed(2); }
   function el(tag, attrs, parent) {
     var n = document.createElementNS(NS, tag);
@@ -116,7 +145,7 @@
 
     /* ── stage: truck + readout ─────────────────────────────────────────── */
     var stage = h('div', 'lb-stage');
-    var svg = el('svg', { viewBox: '0 0 410 222', role: 'img', 'aria-label': 'The truck, filling up as you add items' });
+    var svg = el('svg', { viewBox: '0 0 410 222', role: 'img', 'aria-label': S.truck });
     truck(svg);
     var cellsG = el('g', { class: 'lb-cells' }, svg);
     var cw = BED.w / COLS, ch = BED.h / ROWS, cells = [];
@@ -147,7 +176,7 @@
     root.appendChild(stage);
 
     var read = h('div', 'lb-readout');
-    var size = h('p', 'lb-size', 'Tap what you have');
+    var size = h('p', 'lb-size', S.tap);
     var priceRow = h('p', 'lb-price-row');
     var price = h('span', 'lb-price', '$0');
     var unit = h('span', 'lb-unit', '');
@@ -160,7 +189,7 @@
     if (opts.freq !== false && D.freqLabels.length > 1) {
       var seg = h('div', 'lb-seg');
       seg.setAttribute('role', 'group');
-      seg.setAttribute('aria-label', 'How often');
+      seg.setAttribute('aria-label', S.often);
       D.freqLabels.forEach(function (label, k) {
         var b = h('button', 'lb-seg-btn', label);
         b.type = 'button';
@@ -171,7 +200,7 @@
     }
     var cta = null;
     if (opts.cta) {
-      cta = h('a', 'lb-cta', 'Book this load');
+      cta = h('a', 'lb-cta', S.book);
       cta.href = opts.cta.href;
       cta.addEventListener('click', function (e) {
         if (state.row == null || state.row >= MORE) { e.preventDefault(); shake(); return; }
@@ -201,8 +230,8 @@
       var out = h('output', 'lb-count', '0');
       var plus = h('button', 'lb-step lb-plus', '+');
       minus.type = plus.type = 'button';
-      minus.setAttribute('aria-label', 'Remove one: ' + it.label);
-      plus.setAttribute('aria-label', 'Add one: ' + it.label);
+      minus.setAttribute('aria-label', S.remove + it.label);
+      plus.setAttribute('aria-label', S.add + it.label);
       minus.addEventListener('click', function () { change(it.key, -1); });
       plus.addEventListener('click', function () { change(it.key, 1); });
       // tapping the name adds one too: the whole row is the target on a phone
@@ -267,7 +296,7 @@
       var pct = state.manual != null ? ghostPct : units;
       meterFill.style.width = Math.min(100, pct) + '%';
       root.classList.toggle('is-over', state.row === MORE);
-      over.textContent = state.row === MORE ? 'Over by ' + (units - 100) + '%' : '';
+      over.textContent = state.row === MORE ? S.over + (units - 100) + '%' : '';
 
       Object.keys(outs).forEach(function (k) {
         var v = state.counts[k] || 0;
@@ -282,25 +311,25 @@
     function readout() {
       var row = state.row, cents = 0;
       if (row == null) {
-        size.textContent = 'Tap what you have';
+        size.textContent = S.tap;
         unit.textContent = '';
       } else if (row >= MORE) {
-        size.textContent = 'More than a truck';
+        size.textContent = S.more;
         unit.textContent = '';
       } else {
         // The load's price, plus travel once we know the ZIP.
         cents = D.prices[row][state.fi] + (trip ? trip.cents : 0);
-        size.textContent = D.loads[row].label + (state.manual == null ? ' · ' + Math.min(100, state.units) + '% full' : '');
-        unit.textContent = D.freqUnits[state.fi] + (trip ? '' : ' + travel');
+        size.textContent = D.loads[row].label + (state.manual == null ? ' · ' + Math.min(100, state.units) + S.full : '');
+        unit.textContent = D.freqUnits[state.fi] + (trip ? '' : S.plusTravel);
       }
       // Placeholder prices print red with an asterisk (css/guess.css).
       price.classList.toggle('guess', !!(D.guess && D.guess.prices) && row != null && row < MORE);
       travelLine(row);
-      if (row >= MORE) { price.textContent = 'Call us'; shownCents = 0; }
+      if (row >= MORE) { price.textContent = S.callUs; shownCents = 0; }
       else count(cents);
-      live.textContent = row == null ? '' : row >= MORE ? 'More than a truck. Call us for a price.'
+      live.textContent = row == null ? '' : row >= MORE ? S.moreLive
         : D.loads[row].label + ', ' + fmt(cents) + D.freqUnits[state.fi]
-          + (!trip ? ', plus travel by ZIP code' : trip.cents ? ', including ' + fmt(trip.cents) + ' travel' : '');
+          + (!trip ? S.plusZip : trip.cents ? S.including + fmt(trip.cents) + S.travelAfter : '');
       freqBtns.forEach(function (b, k) { b.setAttribute('aria-pressed', String(k === state.fi)); });
       if (cta) cta.setAttribute('aria-disabled', String(row == null || row >= MORE));
     }
@@ -309,11 +338,11 @@
       tline.textContent = '';
       tline.hidden = row == null || row >= MORE;
       if (tline.hidden) return;
-      if (!trip) { tline.textContent = 'Travel is added by ZIP code.'; return; }
-      var fee = h('span', T && T.GUESS ? 'guess' : '', trip.cents ? fmt(trip.cents) + ' travel' : 'No travel charge');
-      if (trip.cents) tline.appendChild(document.createTextNode('Includes '));
+      if (!trip) { tline.textContent = S.byZip; return; }
+      var fee = h('span', T && T.GUESS ? 'guess' : '', trip.cents ? fmt(trip.cents) + S.travelFee : S.noTravel);
+      if (trip.cents) tline.appendChild(document.createTextNode(S.includes));
       tline.appendChild(fee);
-      tline.appendChild(document.createTextNode((trip.cents ? ', ' + trip.label : ' in the ' + trip.label.toLowerCase()) + ' (' + trip.place + ')'));
+      tline.appendChild(document.createTextNode((trip.cents ? ', ' + zoneName(trip.label) : S.inThe + zoneName(trip.label).toLowerCase()) + ' (' + trip.place + ')'));
     }
     function count(to) {
       cancelAnimationFrame(tween);
@@ -356,13 +385,13 @@
       icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('aria-hidden', 'true'); icon.setAttribute('class', 'lb-cam');
       icon.innerHTML = '<path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/>';
       var words = h('span', 'lb-snap-words');
-      words.appendChild(h('strong', null, 'Snap your junk'));
-      words.appendChild(h('small', null, 'Send up to ' + MAX_PHOTOS + ' photos and we count it for you'));
+      words.appendChild(h('strong', null, S.snap));
+      words.appendChild(h('small', null, S.sendUpTo(MAX_PHOTOS)));
       pick.appendChild(input); pick.appendChild(icon); pick.appendChild(words);
       var thumbs = h('div', 'lb-thumbs');
       var msg = h('p', 'lb-ai');
       msg.setAttribute('aria-live', 'polite');
-      var or = h('p', 'lb-or', 'or tap what you have');
+      var or = h('p', 'lb-or', S.or);
       wrap.appendChild(pick); wrap.appendChild(thumbs); wrap.appendChild(msg); wrap.appendChild(or);
       root.appendChild(wrap);
 
@@ -384,14 +413,14 @@
         var files = Array.prototype.slice.call(input.files || [], 0, MAX_PHOTOS);
         input.value = '';
         if (!files.length) return;
-        say('Getting your photos ready…', 'busy');
+        say(S.getting, 'busy');
         Promise.all(files.map(function (f) { return shrink(f, 1280, 0.78); })).then(function (big) {
           big = big.filter(Boolean);
-          if (!big.length) { say('We could not open those photos. Try different ones, or tap what you have below.', 'err'); return; }
+          if (!big.length) { say(S.cantOpen, 'err'); return; }
           return Promise.all(big.map(function (d) { return shrink(d, 160, 0.7); })).then(function (small) {
             showThumbs(small, true);
             host.classList.add('is-reading');
-            say('Looking at your photos…', 'busy');
+            say(S.looking, 'busy');
             return fetch(opts.photos.endpoint, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ photos: big.map(function (d) { return d.split(',')[1]; }) }),
@@ -406,8 +435,10 @@
               var found = j.items || {};
               var names = D.items.filter(function (it) { return found[it.key]; })
                 .map(function (it) { return it.label + (found[it.key] > 1 ? ' x' + found[it.key] : ''); });
+              // Claude writes its note in English; a Spanish page uses its own words.
+              var notes = ES ? '' : j.notes;
               if (!names.length || j.unsure) {
-                var t = (j.notes ? j.notes + ' ' : '') + 'Tap what you have below and we will take it from there.';
+                var t = (notes ? notes + ' ' : '') + S.tapBelow;
                 say(t, 'err'); writeStore(NOTE_KEY, t);
                 if (names.length) setItems(found);
                 return;
@@ -415,13 +446,13 @@
               setItems(found);
               // Claude's own note already says what it saw; the bare list is
               // the fallback when it left none.
-              var note = (j.notes || 'We count: ' + names.join(', ') + '.') + ' Look right? Tap + or − to fix it.';
+              var note = (notes || S.weCount + names.join(', ') + '.') + S.lookRight;
               say(note, 'done'); writeStore(NOTE_KEY, note);
             });
           });
         }).catch(function () {
           showThumbs(readStore(THUMBS_KEY, []), false);
-          say('We could not read the photos right now. Tap what you have below. If the photos came through, we will still see them.', 'err');
+          say(S.cantRead, 'err');
         }).then(function () { host.classList.remove('is-reading'); });
       });
     }

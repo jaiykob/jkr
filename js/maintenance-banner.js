@@ -47,11 +47,14 @@
     bar.setAttribute('role', 'status');
     // Early access, not a closed door: the facts are the same either way (no
     // bookings and no cards until we open), stated as something to do now.
-    var lead = REOPEN_TEXT
-      ? '<b>We start hauling ' + REOPEN_TEXT + '</b>, and we are reserving days now.'
-      : '<b>We open for booking soon</b>, and we are reserving days now.';
-    bar.innerHTML = lead + '<span class="mb-sep">·</span>' +
-      'Get your price and claim a day. No card needed, nothing charged until we haul.';
+    // Spanish pages (es/) get it in Spanish; REOPEN_TEXT is then written in English.
+    var es = document.documentElement.lang === 'es';
+    var lead = es
+      ? (REOPEN_TEXT ? '<b>Empezamos el ' + REOPEN_TEXT + '</b>, y ya estamos apartando días.' : '<b>Muy pronto abrimos las reservas</b>, y ya estamos apartando días.')
+      : (REOPEN_TEXT ? '<b>We start hauling ' + REOPEN_TEXT + '</b>, and we are reserving days now.' : '<b>We open for booking soon</b>, and we are reserving days now.');
+    bar.innerHTML = lead + '<span class="mb-sep">·</span>' + (es
+      ? 'Ve tu precio y aparta un día. Sin tarjeta, no cobramos nada hasta el retiro.'
+      : 'Get your price and claim a day. No card needed, nothing charged until we haul.');
 
     document.body.insertBefore(bar, document.body.firstChild);
   }

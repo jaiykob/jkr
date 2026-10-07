@@ -5,9 +5,22 @@
   'use strict';
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var T = window.TRAVEL;
+  // The site root, from this script's own address: the Spanish homepage lives
+  // in /es/, and the quote and the API are one level up from it.
+  var me = document.currentScript && document.currentScript.src;
+  var ROOT = me ? me.replace(/js\/home\.js(\?.*)?$/, '') : '';
+  var ES = document.documentElement.lang === 'es';
+  var S = ES ? {
+    travel: 'viaje +', noTravel: 'sin cargo de viaje', yes: 'Sí, vamos a ', price: 'Ver mi precio',
+    far: 'Eso queda más lejos de lo que cotizamos en línea. Llama o escribe al ', farEnd: ' y te damos el precio.'
+  } : {
+    travel: 'travel +', noTravel: 'no travel charge', yes: 'Yes, we come to ', price: 'Get my price',
+    far: 'That is farther than we price online. Call or text ', farEnd: ' and we will quote it.'
+  };
+  function zoneName(l) { return ES ? String(l).replace(/^Home zone$/, 'Zona base').replace(/^Zone /, 'Zona ') : l; }
 
   // Hero: the configurator. "Book this load" opens the quote with the size set.
-  var hero = window.LoadBuilder ? LoadBuilder.mount(document.getElementById('heroBuilder'), { cta: { href: 'book/quote.html' }, persist: true, photos: { endpoint: 'api/photo-quote' } }) : null;
+  var hero = window.LoadBuilder ? LoadBuilder.mount(document.getElementById('heroBuilder'), { cta: { href: ROOT + 'book/quote.html' }, persist: true, photos: { endpoint: ROOT + 'api/photo-quote' } }) : null;
 
   // How it works: the truck drives the road as the section scrolls by.
   var road = document.querySelector('.road');
@@ -78,12 +91,12 @@
       if (t) {
         try { sessionStorage.setItem('quoteZip', t.zip); } catch (e) { /* private mode */ }
         if (hero) hero.setTravel(t);
-        var fee = '<span' + (T.GUESS ? ' class="guess"' : '') + '>' + (t.cents ? 'travel +' + money(t.cents) : 'no travel charge') + '</span>';
+        var fee = '<span' + (T.GUESS ? ' class="guess"' : '') + '>' + (t.cents ? S.travel + money(t.cents) : S.noTravel) + '</span>';
         zout.className = 'zip-out ok';
-        zout.innerHTML = 'Yes, we come to ' + esc(t.place) + '. ' + esc(t.label) + ': ' + fee + '. <a href="book/quote.html?zip=' + t.zip + '">Get my price</a>';
+        zout.innerHTML = S.yes + esc(t.place) + '. ' + esc(zoneName(t.label)) + ': ' + fee + '. <a href="' + ROOT + 'book/quote.html?zip=' + t.zip + '">' + S.price + '</a>';
       } else {
         zout.className = 'zip-out no';
-        zout.innerHTML = 'That is farther than we price online. Call or text <a href="tel:+19254086053">(925) 408-6053</a> and we will quote it.';
+        zout.innerHTML = S.far + '<a href="tel:+19254086053">(925) 408-6053</a>' + S.farEnd;
       }
     });
     // Back on the homepage: the ZIP they already gave us.

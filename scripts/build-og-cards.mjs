@@ -58,6 +58,8 @@ function cardFor(rel) {
   if (post) return { kicker: post.lang === 'es' ? 'Del blog' : 'From the blog', title: post.title, sub: post.summary, fee: null, guess: false, small: true };
   const fixed = {
     'index.html': { kicker: 'Junk removal across the Portland metro', title: 'Fill the truck. See your price.', sub: 'Snap a photo or tap what is going. We do the lifting.' },
+    'es/index.html': { kicker: 'Retiro de basura en el área de Portland', title: 'Llena el camión. Ve tu precio.', sub: 'Toma una foto o toca lo que se va. Nosotros cargamos.' },
+    'es/faq.html': { kicker: 'Preguntas', title: 'Retiro de basura, con respuestas claras', sub: 'Precios, fotos, viaje y lo que llevamos.' },
     'book/quote.html': { kicker: 'Get a price', title: 'Snap a photo. See your price.', sub: 'Travel for your ZIP included. Book online in a minute.' },
     'service-areas.html': { kicker: 'Where we haul', title: 'Every town we serve', sub: `${towns.size} towns in Oregon and Washington, by travel zone.` },
     'blog/index.html': { kicker: 'From the blog', title: 'Junk removal, plainly explained', sub: 'Costs, what can go, and where it ends up.' },
