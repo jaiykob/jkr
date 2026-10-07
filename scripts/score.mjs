@@ -176,7 +176,124 @@ const withoutCity = (html) => String(html).replace(/\r\n/g, '\n').replace(/(<!--
 const words = (s) => text(s).split(/\s+/).filter(Boolean).length;
 const sentences = (s) => text(s).toLowerCase().replace(/\[\[|\]\]/g, '').split(/[.!?]+\s/).map((x) => x.trim()).filter((x) => x.split(/\s+/).length >= 8);
 
+/* ── round 3 helpers: docs, marketing, helpers, emails ───────────────────── */
+const mdText = (f) => (read(f) || '').replace(/\r\n/g, '\n');
+const headings = (f) => [...mdText(f).matchAll(/^#{1,3} (.+)$/gm)].map((m) => m[1].toLowerCase()).join(' | ');
+const SLANG = /\b(okay|gonna|honestly|a lot of|figure (it )?out|totally|super easy|no biggie)\b/i;
+const DOGWORDS = /\b(dogs?|poop|pooper|scoop(s|ed|ing|er)?|Scoops|yard secured)\b/i;
+const MARKETING = ['marketing/ad-copy/README.md', 'marketing/ad-copy/flyer-door-hanger.md', 'marketing/ad-copy/facebook-group-posts.md',
+  'marketing/ad-copy/short-form.md', 'marketing/facebook-groups.md', 'marketing/gbp-optimization.md'];
+const HELPERS = ['speed-to-lead', 'quote-followup', 'review-request', 'lead-research-briefing'].map((h) => `agent/skills/${h}/SKILL.md`);
+const SHARED = 'agent/skills/_shared/jkr-context.md';
+/** Text inside ``` fences: the messages a helper actually sends. */
+const fenced = (s) => [...String(s).matchAll(/```[a-z]*\n([\s\S]*?)```/g)].map((m) => m[1]).join('\n');
+function copyProblem(label, s) {
+  const t = String(s);
+  const m = t.match(/[—–]/) || t.match(SLANG) || t.match(DOGWORDS) || t.match(/\bTODO\b/);
+  return m ? `${label}: "${t.slice(Math.max(0, m.index - 30), m.index + 30).replace(/\s+/g, ' ')}"` : null;
+}
+
 const ROUNDS = {
+  3: [
+    { id: 'tests', pts: 10, desc: 'npm test passes', run() {
+      const r = run('npm', ['test']);
+      return r.code === 0 || `npm test failed: ${r.out.split('\n').filter((l) => /FAIL|Error|STALE|stale/.test(l)).slice(0, 3).join(' | ')}`;
+    } },
+    { id: 'docs', pts: 10, desc: 'business plan, launch checklist, accounts, progress and punch list, with their sections', run() {
+      const bp = headings('BUSINESS_PLAN.md');
+      for (const k of ['summary', 'services', 'pricing', 'service area', 'market', 'competition', 'operations', 'marketing', 'money', 'risks']) if (!bp.includes(k)) return `BUSINESS_PLAN.md has no "${k}" section`;
+      if (!/launch/i.test(headings('LAUNCH-DAY.md'))) return 'LAUNCH-DAY.md missing';
+      const acc = mdText('ACCOUNTS.md');
+      for (const k of ['Stripe', 'Supabase', 'Resend', 'Vercel', 'Discord', 'Anthropic', 'Google']) if (!acc.includes(k)) return `ACCOUNTS.md does not list ${k}`;
+      const pr = headings('PROGRESS.md');
+      if (!pr.includes('status') || !pr.includes('change log')) return 'PROGRESS.md needs Status and Change log';
+      if ((mdText('PUNCHLIST.md').match(/^- \[ \]/gm) || []).length < 5) return 'PUNCHLIST.md has fewer than 5 open items';
+      return true;
+    } },
+    { id: 'numbers', pts: 10, desc: 'prices, zones and area in the docs are generated and in sync; no Scoops Co. prices', run() {
+      if (!exists('scripts/build-docs.mjs')) return 'scripts/build-docs.mjs missing';
+      if (run('node', ['scripts/build-docs.mjs', '--check']).code !== 0) return 'build-docs --check fails';
+      const md = ['BUSINESS_PLAN.md', SHARED, 'marketing/ad-copy/README.md'];
+      for (const f of md) if (!/BUILD:docs-prices/.test(mdText(f))) return `${f} has no generated price table`;
+      for (const f of [...md, 'LAUNCH-DAY.md', ...MARKETING, ...HELPERS]) if (/\$(24\.13|79\.99|67\.93|36\.20|117\.99)/.test(mdText(f))) return `${f} still has a Scoops Co. price`;
+      return true;
+    } },
+    { id: 'launch', pts: 10, desc: 'launch checklist covers env vars, gates, webhook host, schema, Washington, base, radius, guesses, analytics, domain', run() {
+      const s = mdText('LAUNCH-DAY.md');
+      const need = ['STRIPE_SECRET_KEY', 'STRIPE_PRODUCT_ID', 'STRIPE_WEBHOOK_SECRET', 'BOOKINGS_OPEN', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
+        'RESEND_API_KEY', 'EMAIL_FROM', 'OPS_WEBHOOK_URL', 'OPS_EMAIL', 'ANTHROPIC_API_KEY', 'SITE_ORIGIN', 'CRON_SECRET', 'ADMIN_DASHBOARD_TOKEN',
+        'BOOKINGS_OPEN_SERVER', 'BOOKINGS_OPEN_CLIENT', 'webhook', 'db/schema.sql', 'db/migrations', 'Washington', 'BASE', '24', 'GUESSES.md', 'G-XXXXXXXXXX', 'example.com'];
+      const miss = need.filter((k) => !s.includes(k));
+      return !miss.length || `LAUNCH-DAY.md never mentions ${miss.slice(0, 4).join(', ')}`;
+    } },
+    { id: 'marketing', pts: 10, desc: 'six marketing files, each with real pieces, the phone number and travel', run() {
+      for (const f of MARKETING) {
+        const s = mdText(f);
+        if (!s) return `${f} missing`;
+        if ((s.match(/^## /gm) || []).length < 3) return `${f} has fewer than 3 sections or pieces`;
+        if (!/408-6053/.test(s)) return `${f} never gives the phone number`;
+        if (!/travel|zone/i.test(s)) return `${f} never mentions travel`;
+      }
+      return true;
+    } },
+    { id: 'helpers', pts: 15, desc: 'four helpers and the shared context: draft mode, quiet hours, dedupe, STOP, no auto posting, zone gate, real columns, generated prices', run() {
+      const ctx = mdText(SHARED);
+      if (!ctx) return `${SHARED} missing`;
+      if (!/BUILD:docs-prices/.test(ctx) || !/BUILD:docs-zones/.test(ctx)) return 'shared context has no generated prices and zones';
+      const schema = mdText('db/schema.sql');
+      const leads = ((schema.match(/create table if not exists public\.leads \(([\s\S]*?)\);/) || [])[1] || '').match(/^\s+([a-z_]+)\s/gm) || [];
+      for (const c of leads.map((x) => x.trim())) if (!ctx.includes(`\`${c}\``)) return `shared context does not name the leads column \`${c}\``;
+      if (!/never auto[- ]?post/i.test(ctx)) return 'shared context lacks the never auto post rule';
+      for (const f of HELPERS) {
+        const s = mdText(f);
+        if (!/^---\nname: [a-z-]+\ndescription: .+\n---/m.test(s)) return `${f}: no frontmatter`;
+        if (!/MODE/.test(s) || !/draft/.test(s)) return `${f}: no draft mode`;
+        if (!s.includes('_shared/jkr-context.md')) return `${f}: does not point to the shared context`;
+        if (!/quiet hours/i.test(s)) return `${f}: no quiet hours`;
+        if (!/dedupe|already (booked|contacted|processed)/i.test(s)) return `${f}: no dedupe rule`;
+        if (!/STOP/.test(s) && f !== HELPERS[3]) return `${f}: no STOP opt out`;
+        if (!/travel ?zone|travelFor|past (our|the) last zone/i.test(s)) return `${f}: no zone gate`;
+      }
+      return true;
+    } },
+    { id: 'owner-email', pts: 15, desc: 'owner email on every booking, independent of Discord, once per event (test-ops)', run() {
+      const r = run('node', ['scripts/test-ops.mjs']);
+      if (!/== owner email ==/.test(r.out)) return 'test-ops has no owner email section';
+      return r.code === 0 || `test-ops fails: ${r.out.split('\n').filter((l) => /FAIL/.test(l)).slice(0, 2).join(' | ')}`;
+    } },
+    { id: 'keepalive', pts: 5, desc: 'Supabase keep-alive: daily, secrets only, skips cleanly until set up', run() {
+      const s = mdText('.github/workflows/supabase-keepalive.yml');
+      if (!s) return 'workflow missing';
+      if (!/cron:/.test(s) || !/secrets\.SUPABASE_URL/.test(s) || !/secrets\.SUPABASE_ANON_KEY/.test(s)) return 'needs a cron and both secrets';
+      if (/eyJ[A-Za-z0-9_-]{10,}/.test(s)) return 'a key is written into the workflow';
+      return /-z "\$\{?SUPABASE_URL/.test(s) || 'does not skip when the secrets are missing';
+    } },
+    { id: 'copy', pts: 10, desc: 'marketing, helper messages and every customer email: no dashes, slang, dog words or TODO', run() {
+      for (const f of MARKETING) { const p = copyProblem(f, mdText(f).replace(/^#.*$/gm, '')); if (p) return p; }
+      for (const f of HELPERS) { const p = copyProblem(`${f} message`, fenced(mdText(f))); if (p) return p; }
+      try {
+        delete require.cache[require.resolve(path.join(ROOT, 'api/_lib/email-templates.js'))];
+        const tpl = require(path.join(ROOT, 'api/_lib/email-templates.js'));
+        const ctx = { name: 'Jane', plan: 'One-time haul', amount: '$374.00', frequency: 'One-time haul', pickupDay: 'Tuesday', address: '1 Oak St',
+          load: '1/2 truck', travel: 'Zone 2: $25.00', quoteUrl: 'https://www.example.com/book/quote.html', quotedPrice: '$374.00', reviewUrl: 'https://g.page/r/x',
+          visitDate: 'Tue, Oct 14', updateUrl: 'https://pay.example.com', unsubscribeUrl: 'https://www.example.com/u', photos: [] };
+        for (const [k, fn] of Object.entries(tpl)) {
+          if (typeof fn !== 'function' || /^(layout|button|detail|escape)/i.test(k)) continue;
+          let out; try { out = fn(ctx); } catch { continue; }
+          if (!out || !out.html) continue;
+          const p = copyProblem(`email ${k}`, `${out.subject}\n${visibleText(out.html)}\n${out.text || ''}`);
+          if (p) return p;
+        }
+      } catch (e) { return `email templates did not load: ${e.message}`; }
+      return true;
+    } },
+    { id: 'guesses', pts: 5, desc: 'GUESSES.md current, with the docs\' guesses marked (10+)', run() {
+      if (run('node', ['scripts/list-guesses.mjs', '--check']).code !== 0) return 'GUESSES.md is stale';
+      const g = mdText('GUESSES.md');
+      const marked = (g.split('## Marked in the source')[1] || '').split('## Red on the pages')[0].match(/^- \[ \]/gm) || [];
+      return marked.length >= 10 || `${marked.length} guesses marked in the docs`;
+    } },
+  ],
   2: [
     { id: 'tests', pts: 10, desc: 'npm test passes', run() {
       const r = run('npm', ['test']);

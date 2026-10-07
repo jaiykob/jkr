@@ -227,3 +227,73 @@ Round 1 re-scored at 100 after round 2: nothing it checks regressed.
 graph LR
   R0["gen 0 · 15"] --> R1["gen 1 · 25"] --> R2["gen 2 · 75"] --> R3["gen 3 · 100"]
 ```
+
+---
+
+## Round 3: business docs and follow-up
+
+Rubric (10 points each): **coverage**; **one source** (prices, zones and
+towns in the docs come from the config, not retyped); **accuracy** (no
+leftover dog or Scoops Co. facts, no claims we can't back, guesses marked);
+**safety** (helpers draft by default, never auto post, quiet hours, opt out);
+**testable**; **house style**; **founder can use it** (plain checklists);
+**guesses marked**; **copy rules**; **small steps**.
+
+### Plan A: port the Scoops Co. docs and helpers, swap the words
+
+| Coverage | One source | Accuracy | Safety | Testable | House | Usable | Guesses | Rules | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 5 | 6 | 10 | 6 | 9 | 8 | 7 | 7 | 8 | **75** |
+
+Fast, and the helpers' safety rules carry over intact. But every price and
+ZIP is retyped (they drifted at Scoops Co. twice), and a word swap leaves
+dog facts hiding in the details.
+
+### Plan B: write fresh, numbers generated
+
+| Coverage | One source | Accuracy | Safety | Testable | House | Usable | Guesses | Rules | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 10 | 9 | 8 | 8 | 7 | 8 | 8 | 9 | 7 | **84** |
+
+Accurate and drift proof, but rewriting the helpers' guardrails from scratch
+risks losing hard won rules (quiet hours, dedupe, the A2P gate).
+
+### Child (A × B)
+
+From B: a `build-docs` step writes the price table, zones and town count into
+the docs and the helpers' shared context between BUILD markers, checked in
+`npm test`; everything else written fresh for junk removal. From A: the
+helpers' guardrails carried over word for word where they are not about dogs
+(MODE draft, quiet hours, dedupe, the SMS gate, never auto post). Added: the
+customer emails the helpers send are cleaned to the copy rules and tested by
+rendering them; the owner booking email is test first.
+
+| Coverage | One source | Accuracy | Safety | Testable | House | Usable | Guesses | Rules | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | **100** |
+
+```mermaid
+graph TD
+  A3["Plan A · port and swap · 75"] --> C3["Child · 100"]
+  B3["Plan B · fresh, generated · 84"] --> C3
+```
+
+Plan: `docs/superpowers/plans/2026-10-07-round-3-business.md`.
+
+### Build generations
+
+| Gen | Parent | What changed | Score | Best so far |
+| --- | --- | --- | --- | --- |
+| 0 | main (ddb27df) | nothing yet: the round 3 scorecard alone | 10 | 10 |
+| 1 | gen 0 | build-docs and the helpers' shared context (Task 2) | 20 | 20 |
+| 2 | gen 1 | business plan, launch checklist, accounts, progress, punch list (Task 3) | 35 | 35 |
+| 3 | gen 2 | marketing (Task 4); the copy check then caught the old business name | 55 | 55 |
+| 4 | gen 3 | owner email, customer emails cleaned (Task 5); helpers (Task 6) | 95 | 95 |
+| 5 | gen 4 | Supabase keep-alive, CLAUDE.md (Task 7) | **100** | **100** |
+
+Rounds 1 and 2 re-scored at 100 after round 3.
+
+```mermaid
+graph LR
+  Q0["gen 0 · 10"] --> Q1["gen 1 · 20"] --> Q2["gen 2 · 35"] --> Q3["gen 3 · 55"] --> Q4["gen 4 · 95"] --> Q5["gen 5 · 100"]
+```

@@ -376,6 +376,39 @@ async function keepQuotePhotos(m, customerId, visit) {
   }
 }
 
+/**
+ * The owner's own copy of every new booking, to OPS_EMAIL, beside the Discord
+ * ping. Two channels on purpose: with only Discord, a dead webhook meant no
+ * alert at all (Scoops Co. punch list). Only "New booking" pings send one
+ * (not renewals, not declines). Keyed by event id, so a Stripe redelivery
+ * sends nothing new. Fail-soft: an error is logged, never thrown.
+ */
+async function emailOwner(ctx, event, payload) {
+  const to = process.env.OPS_EMAIL;
+  if (!to || !payload || payload.kind !== 'signup_or_payment' || !/New booking/.test(payload.title || '')) return;
+  const m = ctx.metadata || {};
+  const msg = tpl.ownerBooking({
+    name:        ctx.name,
+    phone:       ctx.phone,
+    email:       ctx.email,
+    amount:      fmtAmount(payload.amount),
+    plan:        PLAN_LABEL[m.plan] || m.plan,
+    load:        m.load,
+    travel:      travelLine(m),
+    address:     m.address,
+    pickupDay:   m.pickup_day,
+    items:       m.items,
+    photoCount:  quotePhotoPaths(m).length,
+    dashboardUrl: `${SITE_ORIGIN}/jkr/`,
+    stripeUrl:   ctx.customerId ? `${stripeDashboardBase(ctx.livemode)}/customers/${ctx.customerId}` : null,
+  });
+  try {
+    await sendEmail({ to, kind: 'transactional', idempotencyKey: `${event.id}:owner`, ...msg });
+  } catch (e) {
+    console.error('[stripe-webhook] owner email failed:', e.message);
+  }
+}
+
 async function persistSpine(ctx, event) {
   if (!ctx || !ctx.customerId) return;
   const obj = event.data.object || {};
@@ -519,6 +552,8 @@ module.exports = async (req, res) => {
     const ctx = await gatherContext(stripe, event);
     const payload = opsPayload(ctx, event);
     if (payload) await notifyOps(ctx, payload);
+    // The owner email goes out whether or not Discord did.
+    await emailOwner(ctx, event, payload);
 
     // Persist the booking spine to Supabase (customers/subscriptions).
     await persistSpine(ctx, event);
