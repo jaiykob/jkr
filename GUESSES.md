@@ -47,6 +47,7 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - [ ] `agent/skills/_shared/jkr-context.md`: The mile bands and fees are placeholder guesses (`GUESS` in `pricing.config.mjs`).
 - [ ] `agent/skills/_shared/jkr-context.md`: The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).
 - [ ] `agent/skills/_shared/jkr-context.md`: not created yet (`YOUR-PROJECT.supabase.co` in the code).
+- [ ] `agent/skills/review-request/SKILL.md`: not set up yet).
 - [ ] `marketing/ad-copy/README.md`: These prices are placeholder guesses (`GUESS` in `pricing.config.mjs`).
 - [ ] `marketing/ad-copy/README.md`: The mile bands and fees are placeholder guesses (`GUESS` in `pricing.config.mjs`).
 - [ ] `marketing/ad-copy/README.md`: The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).
