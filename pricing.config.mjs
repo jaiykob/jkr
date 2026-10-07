@@ -1,9 +1,9 @@
 /**
- * SINGLE SOURCE OF TRUTH for public pricing and service area.
+ * SINGLE SOURCE OF TRUTH for public pricing, travel zones and service area.
  * Same shape as Scoops Co.'s pricing.config.mjs.
  *
  * ┌─────────────────────────────────────────────────────────────────────┐
- * │  EDIT THE TABLE BELOW, THEN RUN:   npm run build:pricing            │
+ * │  EDIT THE TABLES BELOW, THEN RUN:  npm run build:pricing            │
  * │  That one command rewrites every other copy of these numbers.       │
  * │  Verify at any time with:          npm run check:pricing            │
  * └─────────────────────────────────────────────────────────────────────┘
@@ -11,17 +11,24 @@
  * Nothing here is read by the browser at runtime. `npm run build:pricing`
  * regenerates, in place, everything between BUILD: markers in:
  *
- *   index.html                      the crawlable price list
- *   book/quote.html            the estimator's PRICES matrix, ZIP gate, JSON-LD offers
- *   book/checkout.html   the checkout billing table and ZIP gate
- *   api/create-booking.js      the server PRICES matrix and ZIP gate (authoritative)
+ *   index.html                 the crawlable price list, the zone list
+ *   book/quote.html            the estimator's PRICES matrix, JSON-LD offers
+ *   book/checkout.html         the checkout billing table
+ *   api/create-booking.js      the server PRICES matrix (authoritative)
+ *
+ * and writes the travel module whole, twice: api/_lib/travel.js (server) and
+ * js/travel.js (pages). The two are byte identical; every ZIP check and
+ * travel fee on the site comes from them.
  *
  * WHY THIS MATTERS: the server recomputes each booking's price from its own
  * matrix and rejects any quote that doesn't match ("Quote is out of date").
  * If the client and server copies drift, every checkout 400s.
  *
- * TODO: every price below is a placeholder. Set real ones before launch.
+ * TODO: every price below is a placeholder (GUESS.prices). Set real ones
+ * before launch.
  */
+
+import ZIP_MILES from './data/zip-miles.mjs';
 
 /**
  * ┌─── THE PRICE TABLE — this is the one you edit ──────────────────────┐
@@ -158,20 +165,99 @@ export function quarterlyCents(row, col) {
 export const BASE = { label: 'Gresham', lat: 45.4982, lon: -122.4316 };
 
 /**
- * Service area: the same six cities as Scoops Co. (2026-09-28), main ZIPs
- * only (no shared Portland ZIPs, no street lookup). Feeds three generated gates
- * (server, estimator, checkout), so it can only be changed here.
+ * Which values are guesses (founder, 2026-10-07: "just guess everything for
+ * now and put it in red text with asterisk to store for later"). A guessed
+ * value shows red with an asterisk (css/guess.css) wherever a page prints it,
+ * and `npm run guesses` lists every one in GUESSES.md. Set a flag to false
+ * once the real numbers are in, then run npm run build:pricing.
  */
-export const SERVICE_AREA = [
-  { city: 'Gresham',      region: 'OR', zips: ['97030', '97080'] },
-  { city: 'Troutdale',    region: 'OR', zips: ['97060'] },
-  { city: 'Happy Valley', region: 'OR', zips: ['97086'] },
-  { city: 'Fairview',     region: 'OR', zips: ['97024'] },
-  { city: 'Boring',       region: 'OR', zips: ['97009'] },
-  { city: 'Damascus',     region: 'OR', zips: ['97089'] },
+export const GUESS = {
+  prices: true,   // PRICE_TABLE: placeholder prices
+  zones:  true,   // ZONES: the mile bands and the travel fees
+  base:   true,   // BASE: Gresham city center, not the real yard
+};
+
+/**
+ * ┌─── TRAVEL ZONES: the second table you edit ─────────────────────────┐
+ * │  Rings of ROAD miles from BASE, nearest first. fee is dollars per   │
+ * │  visit, added to the load price. Past the last ring is "call us".   │
+ * └─────────────────────────────────────────────────────────────────────┘
+ *
+ * A ZIP's zone is the first ring whose upToMiles holds the road miles to the
+ * ZIP's center (data/zip-miles.mjs); an edge belongs to the inner ring, so
+ * exactly 10.0 miles is the home zone. Change a band and every ZIP moves with
+ * it on the next build:pricing. The server charges load + fee and refuses a
+ * quote that left the fee out.
+ */
+export const ZONES = [
+  { key: 'home', label: 'Home zone', upToMiles: 10, fee:  0 },
+  { key: 'z2',   label: 'Zone 2',    upToMiles: 20, fee: 25 },
+  { key: 'z3',   label: 'Zone 3',    upToMiles: 30, fee: 50 },
+  { key: 'z4',   label: 'Zone 4',    upToMiles: 40, fee: 75 },
 ];
 
-export const ALL_ZIPS = SERVICE_AREA.flatMap((a) => a.zips);
+/**
+ * Pin a ZIP to a zone by hand, whatever its miles: { '97229': 'z3' }. Wins
+ * over the miles. Use it when a ZIP's center sits in one zone but most of its
+ * streets belong in another.
+ */
+export const ZONE_OVERRIDES = {};
+
+/** Fails the build on a zone table that would misprice a ZIP. */
+function assertZones(zones) {
+  const fail = (msg) => { throw new Error(`pricing.config.mjs: ${msg}\nFix ZONES, then re-run npm run build:pricing.`); };
+  const keys = new Set();
+  zones.forEach((z, i) => {
+    if (keys.has(z.key)) fail(`zone key "${z.key}" is used twice`);
+    keys.add(z.key);
+    if (!(z.upToMiles > (i ? zones[i - 1].upToMiles : 0))) fail(`${z.label}: upToMiles must grow with each zone`);
+    if (typeof z.fee !== 'number' || !(z.fee >= 0) || Math.abs(z.fee * 100 - Math.round(z.fee * 100)) > 1e-6) fail(`${z.label}: fee must be dollars and cents, zero or more`);
+    if (i > 0 && z.fee < zones[i - 1].fee) fail(`${z.label} costs less than ${zones[i - 1].label}`);
+  });
+  return zones;
+}
+assertZones(ZONES);
+
+/** The zone key for a distance in road miles, or null past the last ring. */
+export function zoneForMiles(miles) {
+  const z = ZONES.find((x) => miles <= x.upToMiles);
+  return z ? z.key : null;
+}
+
+/** Every ZIP that lands in a zone, with its zone, fee in cents and place. */
+export function buildZipZones(zips, overrides) {
+  for (const [zip, key] of Object.entries(overrides)) {
+    if (!ZONES.some((x) => x.key === key)) throw new Error(`pricing.config.mjs: ZONE_OVERRIDES ${zip} names unknown zone "${key}"`);
+  }
+  const out = {};
+  for (const [zip, r] of Object.entries(zips)) {
+    const key = overrides[zip] || zoneForMiles(r.miles);
+    if (!key) continue;
+    const z = ZONES.find((x) => x.key === key);
+    out[zip] = { zone: key, label: z.label, cents: Math.round(z.fee * 100), miles: r.miles, place: r.place, state: r.state };
+  }
+  return out;
+}
+
+/** The service area: every ZIP in a zone. Feeds the generated travel module. */
+export const ZIP_ZONES = buildZipZones(ZIP_MILES.zips, ZONE_OVERRIDES);
+// Nearest first. Object keys that look like numbers come back in numeric
+// order, not the file's order, so sort by miles explicitly.
+export const ALL_ZIPS = Object.keys(ZIP_ZONES).sort((a, b) => ZIP_ZONES[a].miles - ZIP_ZONES[b].miles || a.localeCompare(b));
+
+/** The zones with their fees in integer cents, for the generated files. */
+export const ZONE_LIST = ZONES.map((z) => ({ key: z.key, label: z.label, upToMiles: z.upToMiles, cents: Math.round(z.fee * 100) }));
+
+/** Place names per zone, nearest first, each once ("Portland" can be in two). */
+export const PLACES_BY_ZONE = Object.fromEntries(ZONES.map((z) => [z.key,
+  [...new Set(ALL_ZIPS.filter((zip) => ZIP_ZONES[zip].zone === z.key).map((zip) => ZIP_ZONES[zip].place))]]));
+
+/** Travel for one ZIP, or null when it is outside every zone. */
+export function travelFor(zip) {
+  const z = String(zip == null ? '' : zip).trim();
+  const r = /^\d{5}$/.test(z) ? ZIP_ZONES[z] : null;
+  return r ? { zip: z, zone: r.zone, label: r.label, cents: r.cents, miles: r.miles, place: r.place, state: r.state } : null;
+}
 
 /** The headline number: the cheapest one-time haul. */
 export const STARTING_AT = fmt(PRICES[0][ONE_TIME_COL]);
