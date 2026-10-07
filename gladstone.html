@@ -144,6 +144,8 @@
       <h1 class="h-title" id="hero-title">Gladstone junk removal.<span>See your price.</span></h1>
       <p class="h-lede">Gladstone is in our Zone 2. Enter your ZIP and the travel is included in the price you see, before you book anything.</p>
 <!-- /CITY:hero -->
+      <!-- Founding member offer: hidden unless /api/founding-spots says it is open (js/founding.js). -->
+      <p class="h-founding" data-founding hidden>Founding member offer: <span data-founding-pct></span>% off your first haul. <span data-founding-left></span> of <span data-founding-spots></span> <span data-founding-noun></span> left.</p>
       <ul class="h-proof">
         <li>Price before you book</li>
         <li>We do the lifting</li>
@@ -435,6 +437,7 @@
   </div>
 </footer>
 <script src="js/junk-toss.js" defer></script>
+<script src="js/founding.js" defer></script>
 <script src="js/analytics.js" defer></script>
 <script src="js/maintenance-banner.js" defer></script>
 <script src="js/preview-nav.js" defer></script>

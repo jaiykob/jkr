@@ -267,3 +267,6 @@
 .zone-places a { color: #fff; text-decoration: underline; text-decoration-color: rgba(255,210,63,.6); text-underline-offset: 3px; }
 .zone-places a:hover { color: var(--tan); }
 .zones li.is-hit .zone-places a { color: var(--rg); text-decoration-color: var(--rg); }
+
+/* Founding member offer line in the hero (shown only while the offer is open). */
+.h-founding { margin: 0 0 14px; font-size: 1rem; font-weight: 700; color: var(--tan); }
