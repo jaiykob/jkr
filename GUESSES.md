@@ -17,6 +17,29 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 
 ## Marked in the source
 
+- [ ] `ACCOUNTS.md`: hello@example.com until
+- [ ] `ACCOUNTS.md`: not bought yet | DNS for the site and Resend's email records. | not set up |
+- [ ] `ACCOUNTS.md`: not opened yet) |
+- [ ] `ACCOUNTS.md`: card on file at Metro) |
+- [ ] `BUSINESS_PLAN.md`: is a placeholder until the founder checks it (`GUESSES.md`).
+- [ ] `BUSINESS_PLAN.md`: run as a sole proprietorship under a trade name, like Scoops Co.
+- [ ] `BUSINESS_PLAN.md`: These prices are placeholder guesses (`GUESS` in `pricing.config.mjs`).
+- [ ] `BUSINESS_PLAN.md`: The mile bands and fees are placeholder guesses (`GUESS` in `pricing.config.mjs`).
+- [ ] `BUSINESS_PLAN.md`: The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).
+- [ ] `BUSINESS_PLAN.md`: 2.5 million people in roughly 1 million households across the Oregon and Washington sides.
+- [ ] `BUSINESS_PLAN.md`: Most households need a haul once every few years; landlords need one at most unit turnovers.
+- [ ] `BUSINESS_PLAN.md`: 1-800-GOT-JUNK, College HUNKS, Junk King) | On site estimates, volume pricing, "starting at" prices online | A real price online, from a photo, before anyone visits |
+- [ ] `BUSINESS_PLAN.md`: transfer station fees alone are often $30 to $60 a trip |
+- [ ] `BUSINESS_PLAN.md`: Metro Central (Portland) and Metro South (Oregon City) on the Oregon side; GUESS* Clark County transfer stations on the Washington side.
+- [ ] `BUSINESS_PLAN.md`: one box truck or dump trailer of about 15 cubic yards (the "full truck" in the load builder is 100 units of about 0.15 cubic yards each).
+- [ ] `BUSINESS_PLAN.md`: one helper for heavy items.
+- [ ] `BUSINESS_PLAN.md`: 3 to 4 jobs a day; a day is full at the cap in `api/_lib/schedule.js`.
+- [ ] `BUSINESS_PLAN.md`: about $60 for half a truck | same |
+- [ ] `BUSINESS_PLAN.md`: about $25 | GUESS* about $45 (the travel fee covers the difference) |
+- [ ] `BUSINESS_PLAN.md`: about $60 | GUESS* about $75 |
+- [ ] `BUSINESS_PLAN.md`: insurance about $150 a month, truck payment or rental, Vercel and Supabase free tiers to start, Resend free tier.
+- [ ] `BUSINESS_PLAN.md`: about 4 to 6 half truck jobs a month covers fixed costs.
+- [ ] `BUSINESS_PLAN.md`: general liability insurance before launch; two people for heavy items |
 - [ ] `agent/skills/_shared/jkr-context.md`: the business has no name yet; "Brand Name" everywhere until it does)
 - [ ] `agent/skills/_shared/jkr-context.md`: hello@example.com (no business email yet)
 - [ ] `agent/skills/_shared/jkr-context.md`: no domain yet)
