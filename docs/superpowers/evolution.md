@@ -297,3 +297,68 @@ Rounds 1 and 2 re-scored at 100 after round 3.
 graph LR
   Q0["gen 0 · 10"] --> Q1["gen 1 · not scored"] --> Q2["gen 2 · 35"] --> Q3["gen 3 · 55"] --> Q4["gen 4 · 95"] --> Q5["gen 5 · 100"]
 ```
+
+---
+
+## Round 4: SEO tools
+
+Rubric (10 points each): **coverage**; **one source** (the site address,
+prices and FAQ text written once); **truthful schema** (structured data says
+only what the page and the config say); **drift protection**; **testable now**
+(useful before there is a domain); **house style**; **founder can use it**
+(one command per job); **no new risk** (nothing touches the money paths
+without a test); **few dependencies**; **small steps**.
+
+### Plan A: port every Scoops Co. SEO script
+
+Sitemap, regions, FAQ JSON-LD, schema check, share cards, host switch,
+status, IndexNow, Search Console token, image pipeline, each copied and
+pointed at jkr.
+
+| Coverage | One source | Truthful | Drift | Testable now | House | Usable | No risk | Deps | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 5 | 8 | 9 | 4 | 10 | 7 | 7 | 7 | 8 | **75** |
+
+Weak: `https://www.example.com` stays hardcoded in a dozen scripts (the
+domain swap becomes a hunt); the live probes (status, indexability) do
+nothing until launch; `build-regions` and `build-faq-jsonld` would rewrite
+town pages that `build-towns` owns, so the two `--check`s fight.
+
+### Plan B: SEO from the generators that already own the pages
+
+`build-towns` writes each town's Service, offers and FAQPage JSON-LD and
+share image tag itself; one `site.config.mjs` holds the site address;
+everything else written fresh and minimal.
+
+| Coverage | One source | Truthful | Drift | Testable now | House | Usable | No risk | Deps | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 8 | 10 | 10 | 10 | 7 | 8 | 8 | 9 | 8 | 7 | **85** |
+
+Weak: drops tools the founder relies on at Scoops Co. (status, IndexNow,
+the Search Console token, the image pipeline).
+
+### Child (A × B)
+
+From B: `site.config.mjs` as the one site address; town JSON-LD and share
+tags from `build-towns`; FAQ JSON-LD derived from the visible FAQ only on
+hand written pages. From A: every tool kept (sitemap, schema check, share
+cards, status, IndexNow, Search Console token, image pipeline, a domain
+switch). New: every live probe also has a local mode that checks the built
+site today, so each tool is useful before launch and scored now. Share cards
+and images through `sharp` (a build time dependency only, as at Scoops Co.).
+
+| Coverage | One source | Truthful | Drift | Testable now | House | Usable | No risk | Deps | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | 10 | **100** |
+
+```mermaid
+graph TD
+  A4["Plan A · port all · 75"] --> C4["Child · 100"]
+  B4["Plan B · from the generators · 85"] --> C4
+```
+
+### Build generations
+
+| Gen | Parent | What changed | Score | Best so far |
+| --- | --- | --- | --- | --- |
+| 0 | main (2182f9b) | nothing yet: the round 4 scorecard alone | 15 | 15 |
