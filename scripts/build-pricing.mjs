@@ -7,7 +7,7 @@
  *
  *   api/create-booking.js     server-prices                (authoritative)
  *   book/quote.html           quote-jsonld, quote-prices
- *   book/checkout.html  checkout-billing, checkout-zips
+ *   book/checkout.html  checkout-billing
  *   index.html                     home-prices, home-builder
  *   api/photo-quote.js              server-items
  *   book/quote.html                 (also) quote-builder
@@ -27,7 +27,6 @@ const J = (v) => JSON.stringify(v);
 /* Labels that start with a slash ("/visit") are escaped so Google does not read
    them as links inside a script and crawl /visit (a real 404 at Scoops Co.). */
 const Jslash = (v) => J(v).replace(/\//g, '\\u002F');
-const zipList = (zips) => zips.map((z) => `'${z}'`).join(',');
 const planKey = (c) => (c === 'oneTime' ? 'one_time' : c);
 const pad = (n) => String(n).padStart(6);
 /* A value that is still a placeholder prints red with an asterisk (css/guess.css). */
@@ -107,12 +106,8 @@ const checkoutBilling = [
   '  // A quarter is 13 weeks of service at 10% off, recurring plans only.',
   `  const WEEKS_PER_QUARTER   = ${WEEKS_PER_QUARTER};`,
   `  const QUARTERLY_DISCOUNT  = ${QUARTERLY_DISCOUNT};`,
-].join('\n');
-
-const zipCity = Object.fromEntries(ALL_ZIPS.map((z) => [z, ZIP_ZONES[z].place]));
-const checkoutZips = [
-  `  const VALID_ZIPS = new Set([${zipList(ALL_ZIPS)}]);`,
-  `  const ZIP_CITY   = ${J(zipCity).replace(/"/g, "'")};`,
+  '  // true while the load prices are placeholders: shown red with an asterisk.',
+  `  const PRICE_GUESS = ${GUESS.prices ? 'true' : 'false'};`,
 ].join('\n');
 
 /* ── homepage ─────────────────────────────────────────────────────────── */
@@ -253,7 +248,6 @@ const TARGETS = [
   ] },
   { file: 'book/checkout.html', blocks: [
     { name: 'checkout-billing', body: checkoutBilling, comment: true },
-    { name: 'checkout-zips',    body: checkoutZips,    comment: true },
   ] },
   { file: 'index.html', blocks: [
     { name: 'home-jsonld', body: homeJsonld, comment: false },

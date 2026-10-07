@@ -13,14 +13,15 @@
   function write(key, v) { try { sessionStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* private mode */ } }
 
   async function toCheckout() {
-    const { PRICES, ONE_TIME_COL, ALL_ZIPS, COLUMN_LABELS, COLUMNS } = await import('/pricing.config.mjs');
+    const { PRICES, ONE_TIME_COL, ALL_ZIPS, COLUMN_LABELS, COLUMNS, travelFor } = await import('/pricing.config.mjs');
     const c = read('quoteContact') || {};
     // Checkout sends you back to the quote without a full contact; fill the gaps.
     const contact = { ...SAMPLE_CONTACT, ...c, zip: ALL_ZIPS.includes(c.zip) ? c.zip : ALL_ZIPS[0] };
     write('quoteContact', contact);
     const p = new URLSearchParams({
       freq: COLUMN_LABELS[COLUMNS[ONE_TIME_COL]], fi: String(ONE_TIME_COL), load: '0',
-      cents: String(PRICES[0][ONE_TIME_COL]), zip: contact.zip,
+      // Load plus travel for the sample ZIP, the way the quote page sends it.
+      cents: String(PRICES[0][ONE_TIME_COL] + travelFor(contact.zip).cents), zip: contact.zip,
     });
     location.href = `/book/checkout.html?${p}`;
   }

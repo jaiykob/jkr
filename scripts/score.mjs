@@ -36,9 +36,23 @@ const read = (f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); 
 const exists = (f) => fs.existsSync(path.join(ROOT, f));
 const text = (html) => String(html || '').replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 const fmt = (c) => `$${(c / 100).toFixed(2)}`;
+/** The element with this id: its opening tag, inner HTML and text. Counts
+ *  nested tags of the same name, so a <div> full of <div> rows comes back whole. */
 function byId(dom, id) {
-  const m = String(dom || '').match(new RegExp(`<([a-z0-9]+)[^>]*\\sid="${id}"[^>]*>([\\s\\S]*?)</\\1>`, 'i'));
-  return m ? { tag: m[0].slice(0, m[0].indexOf('>') + 1), inner: m[2], text: text(m[2]) } : null;
+  const s = String(dom || '');
+  const open = s.match(new RegExp(`<([a-z0-9]+)[^>]*\\sid="${id}"[^>]*>`, 'i'));
+  if (!open) return null;
+  const tag = open[1].toLowerCase();
+  const start = open.index + open[0].length;
+  const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi');
+  re.lastIndex = start;
+  let depth = 1, m, end = s.length;
+  while ((m = re.exec(s))) {
+    depth += m[1] ? -1 : 1;
+    if (depth === 0) { end = m.index; break; }
+  }
+  const inner = s.slice(start, end);
+  return { tag: open[0], inner, text: text(inner) };
 }
 function run(cmd, cmdArgs, opts = {}) {
   // node runs as itself; npm needs a shell on Windows, so it gets one command string.
