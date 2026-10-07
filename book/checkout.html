@@ -226,6 +226,7 @@
   <!-- Needed for the pre-launch reservation capture below: the day a visitor
        picks here used to be discarded entirely while bookings are closed. -->
   <script src="../js/leads.js" defer></script>
+  <script src="../js/maintenance-banner.js" defer></script>
   <!-- Vercel Web Analytics: first-party, cookieless page views -->
   <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
   <script defer src="/_vercel/insights/script.js"></script>
@@ -957,7 +958,7 @@
     // fallback; this banner is never shown without JS anyway.
     document.addEventListener('DOMContentLoaded', () => {
       const d = document.getElementById('reopen-date');
-      if (d && window.SCOOPS_REOPEN_TEXT) d.textContent = window.SCOOPS_REOPEN_TEXT;
+      if (d && window.SITE_REOPEN_TEXT) d.textContent = window.SITE_REOPEN_TEXT;
     });
     const hide = el => { if (el) el.style.display = 'none'; };
     hide(document.getElementById('stripe-card-element')?.closest('.form-section')); // payment
