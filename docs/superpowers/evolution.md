@@ -217,3 +217,13 @@ Plan: `docs/superpowers/plans/2026-10-07-round-2-pages.md`.
 | Gen | Parent | What changed | Score | Best so far |
 | --- | --- | --- | --- | --- |
 | 0 | main (e2133dd) | nothing yet: the round 2 scorecard alone | 15 | 15 |
+| 1 | gen 0 | chrome, analytics, banner (Task 2); FAQ, privacy, terms, 404 (Task 3) | 25 | 25 |
+| 2 | gen 1 | town generator and all forty towns (Tasks 4 and 5) | 75 | 75 |
+| 3 | gen 2 | hub page, zone list linking towns, 16px labels (Task 6); docs (Task 7) | **100** | **100** |
+
+Round 1 re-scored at 100 after round 2: nothing it checks regressed.
+
+```mermaid
+graph LR
+  R0["gen 0 · 15"] --> R1["gen 1 · 25"] --> R2["gen 2 · 75"] --> R3["gen 3 · 100"]
+```
