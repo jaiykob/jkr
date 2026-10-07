@@ -72,6 +72,7 @@ function cardFor(rel) {
     'service-areas.html': { kicker: 'Where we haul', title: 'Every town we serve', sub: `${townList.length} towns in Oregon and Washington, by travel zone.` },
     'es/service-areas.html': { kicker: 'Dónde trabajamos', title: 'Todas nuestras ciudades', sub: `${townList.length} ciudades en Oregon y Washington, por zona de viaje.` },
     'blog/index.html': { kicker: 'From the blog', title: 'Junk removal, plainly explained', sub: 'Costs, what can go, and where it ends up.' },
+    'es/blog/index.html': { kicker: 'Del blog', title: 'Retiro de basura, explicado claro', sub: 'Precios, qué se puede llevar y a dónde va.' },
     'faq.html': { kicker: 'Questions', title: 'Junk removal, answered plainly', sub: 'Prices, photos, travel, and what we take.' },
     'privacy.html': { kicker: site.NAME, title: 'Privacy policy', sub: 'What we collect, and what we do with it.' },
     'terms.html': { kicker: site.NAME, title: 'Terms of service', sub: 'Prices, travel, changes on the day, and refunds.' },

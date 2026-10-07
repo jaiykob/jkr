@@ -48,10 +48,10 @@ export const T = {
     ctaQuote: 'Get my price', ctaAreas: 'Where we haul', back: 'All posts', dateFmt: 'en-US',
   },
   es: {
-    lang: 'es', dir: 'es/blog', home: 'Inicio', blog: 'Blog', blogTitle: 'Guías y respuestas sobre retiro de cosas',
+    lang: 'es', dir: 'es/blog', home: 'Inicio', blog: 'Blog', blogTitle: 'Guías y respuestas sobre el retiro de basura',
     blogLede: 'Respuestas claras para vaciar una casa, un garaje o una vivienda de renta en el área de Portland: cuánto cuesta, qué se puede llevar y a dónde va.',
-    indexTitle: 'Blog de Retiro de Cosas: Guías | Brand Name',
-    indexDesc: 'Guías claras sobre el retiro de cosas en el área de Portland: precios, qué se puede llevar, colchones, refrigeradores y limpieza de garajes y casas.',
+    indexTitle: 'Blog de Retiro de Basura: Guías | Brand Name',
+    indexDesc: 'Guías claras sobre el retiro de basura en el área de Portland: precios, qué se puede llevar, colchones, refrigeradores y limpieza de garajes y casas.',
     read: (n) => `${n} minutos de lectura`, ctaTitle: 'Listos cuando tú lo estés', ctaText: 'Toma una foto. Ve tu precio con el viaje incluido. Nosotros cargamos.',
     ctaQuote: 'Ver mi precio', ctaAreas: 'Dónde trabajamos', back: 'Todas las publicaciones', dateFmt: 'es-US',
   },
