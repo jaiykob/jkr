@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- TODO: replace "Brand Name" and example.com everywhere (one find and replace). -->
+  <!-- CITY:head: a town page (scripts/build-towns.mjs) swaps everything from here
+       to /CITY:head for its own title, description, canonical and JSON-LD. -->
+  <!-- CITY:head -->
   <title>Junk Removal in Portland and Gresham | Brand Name</title>
   <meta name="description" content="Junk removal across the Portland metro, based in Gresham. Tap what you have, see your price with travel, and we haul it away. Furniture, appliances and more." />
   <link rel="canonical" href="https://www.example.com/" />
@@ -77,6 +80,7 @@
   }
   </script>
   <!-- /BUILD:home-jsonld -->
+  <!-- /CITY:head -->
   <style>
     @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(fonts/dm-sans.woff2) format('woff2'); }
     @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(fonts/bricolage.woff2) format('woff2'); }
@@ -127,9 +131,11 @@
 <section class="h-hero" aria-labelledby="hero-title">
   <div class="h-hero-in">
     <div class="h-hero-copy">
+      <!-- CITY:hero -->
       <p class="h-eyebrow">Junk removal across the Portland metro</p>
       <h1 class="h-title" id="hero-title">Fill the truck.<span>See your price.</span></h1>
       <p class="h-lede">Snap a photo of your junk and we count it for you, or tap what you have. The price you see is the price you pay, and we do all the lifting.</p>
+      <!-- /CITY:hero -->
       <ul class="h-proof">
         <li>Price before you book</li>
         <li>We do the lifting</li>
@@ -151,6 +157,10 @@
 
 <!-- HOW IT WORKS: a sticky road; the truck drives through the three stops as
      you scroll. Without JS (or with reduced motion) it is a plain list. -->
+<!-- CITY:local: a town page puts its own section here; empty on the homepage. -->
+<!-- CITY:local -->
+<!-- /CITY:local -->
+
 <section class="road" id="how-it-works" aria-labelledby="how-title">
   <div class="road-sticky">
     <div class="road-head">
@@ -328,6 +338,7 @@
   </div>
 </section>
 
+<!-- CITY:faq -->
 <section class="band is-card" aria-labelledby="faq">
   <div class="wrap-text">
     <div class="section-head center">
@@ -343,6 +354,7 @@
     </div>
   </div>
 </section>
+<!-- /CITY:faq -->
 
 <section class="closer" aria-label="Get a price">
   <div class="closer-in" data-hides-sticky>
