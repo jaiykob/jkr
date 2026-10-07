@@ -1,0 +1,54 @@
+name: Supabase keep-alive
+
+# Free tier Supabase projects pause after 7 days with no API requests. This
+# sends one tiny read a day so the database stays awake before launch, when
+# no real traffic reaches it yet. Carried over from Scoops Co.
+#
+# - Scheduled workflows only run from the default branch (main).
+# - It reads SUPABASE_URL and SUPABASE_ANON_KEY from the repository secrets
+#   (Settings, Secrets and variables, Actions). No key is written here.
+# - Until both secrets exist it skips cleanly, so a project that is not set up
+#   yet does not fail a job every day (LAUNCH-DAY.md, step 1).
+
+on:
+  schedule:
+    # Daily at 06:17 UTC: off the top of the hour, when GitHub's scheduled
+    # runs are most often delayed or skipped.
+    - cron: '17 6 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping the Supabase REST endpoint
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "SUPABASE_URL or SUPABASE_ANON_KEY is not set yet; nothing to keep awake."
+            exit 0
+          fi
+          # select=id&limit=1 reaches Postgres itself (real database activity),
+          # not only the API gateway. Retry so one blip does not fail the job.
+          url="${SUPABASE_URL}/rest/v1/leads?select=id&limit=1"
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+              "$url") || code=000
+            echo "Attempt ${attempt}: HTTP ${code}"
+            case "$code" in
+              2*) echo "Supabase is awake."; exit 0 ;;
+            esac
+            sleep 10
+          done
+          echo "::error::Supabase keep-alive failed after 3 attempts (last HTTP ${code})."
+          exit 1
