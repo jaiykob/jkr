@@ -236,7 +236,9 @@ const ROUNDS = {
         ...['api', 'api/_lib', 'js'].flatMap((d) => fs.readdirSync(path.join(ROOT, d)).filter((f) => f.endsWith('.js')).map((f) => `${d}/${f}`))]
         .filter((f) => f !== 'api/_lib/site.js' && f !== 'js/travel.js' && f !== 'api/_lib/travel.js');
       for (const f of files) {
-        const hit = (read(f) || '').split('\n').find((l) => /example\.com/.test(l.replace(/[\w.+-]+@example\.com/g, '')));
+        // Comments may name the placeholder; code may not type it.
+        const hit = (read(f) || '').split('\n').filter((l) => !/^\s*(\*|\/\/|\/\*)/.test(l))
+          .find((l) => /example\.com/.test(l.replace(/[\w.+-]+@example\.com/g, '')));
         if (hit) return `${f}: ${hit.trim().slice(0, 80)}`;
       }
       return true;

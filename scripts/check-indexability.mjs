@@ -15,7 +15,7 @@
  *   - every page's canonical is itself, on the www host
  *   - every indexable page is in the sitemap
  *
- * With no domain yet (example.com), the live check has nothing to ask, so it
+ * With no domain yet (the placeholder in api/_lib/site.js), the live check has nothing to ask, so it
  * says so and runs the local check instead. Non-zero exit if anything would
  * block indexing.
  */
@@ -28,7 +28,7 @@ import { pages, urlOf } from './build-sitemap.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const hostArg = args.includes('--host') ? args[args.indexOf('--host') + 1] : null;
-const noDomain = site.DOMAIN === 'example.com';
+const noDomain = !site.HAS_DOMAIN;
 const local = args.includes('--local') || (noDomain && !hostArg);
 const fails = [];
 const ok = (cond, msg) => { if (!cond) fails.push(msg); return cond; };
@@ -37,7 +37,7 @@ const canonicalOf = (html) => (html.match(/<link rel="canonical" href="([^"]+)"/
 const robotsOk = (txt, base) => /User-agent: \*/.test(txt) && !/^Disallow: \/\s*$/m.test(txt) && txt.includes(`Sitemap: ${base}/sitemap.xml`);
 
 if (local) {
-  if (noDomain && !args.includes('--local')) console.log('No domain yet (example.com): nothing live to check, so checking the built site instead.');
+  if (noDomain && !args.includes('--local')) console.log(`No domain yet (${site.DOMAIN}): nothing live to check, so checking the built site instead.`);
   ok(robotsOk(read('robots.txt'), site.SITE_URL), `robots.txt must allow crawling and name ${site.SITE_URL}/sitemap.xml`);
   const sm = read('sitemap.xml');
   const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);

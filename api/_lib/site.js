@@ -14,9 +14,13 @@
  * CommonJS so the Vercel functions can require it; ESM scripts import it too.
  */
 const DOMAIN = 'example.com';   // TODO: the real domain (set-domain.mjs)
+// The reserved example domain the site uses until it has a real one.
+const PLACEHOLDER = 'example' + '.com';
 
 module.exports = {
   DOMAIN,
+  PLACEHOLDER,
+  HAS_DOMAIN: DOMAIN !== PLACEHOLDER,
   SITE_URL: `https://www.${DOMAIN}`,
   NAME: 'Brand Name',             // TODO: the real name
   PHONE: '(925) 408-6053',
