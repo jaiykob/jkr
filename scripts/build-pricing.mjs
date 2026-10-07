@@ -6,7 +6,7 @@
  * by BUILD: markers in its own file:
  *
  *   api/create-booking.js     server-prices                (authoritative)
- *   book/quote.html           quote-jsonld, quote-zips, quote-prices
+ *   book/quote.html           quote-jsonld, quote-prices
  *   book/checkout.html  checkout-billing, checkout-zips
  *   index.html                     home-prices, home-builder
  *   api/photo-quote.js              server-items
@@ -66,7 +66,6 @@ const quotePrices = [
   `    const ONE_TIME_COL = ${ONE_TIME_COL};`,
 ].join('\n');
 
-const quoteZips = `    const VALID_ZIPS = new Set([${zipList(ALL_ZIPS)}]);`;
 
 const offers = [];
 LOAD_OPTIONS.forEach((o, r) => COLUMNS.forEach((c, k) => offers.push({
@@ -249,7 +248,6 @@ const TARGETS = [
   ] },
   { file: 'book/quote.html', blocks: [
     { name: 'quote-jsonld', body: quoteJsonld, comment: false },
-    { name: 'quote-zips',   body: quoteZips,   comment: true },
     { name: 'quote-prices', body: quotePrices, comment: true },
     { name: 'quote-builder', body: builderBlock('    '), comment: true },
   ] },
