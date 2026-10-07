@@ -243,6 +243,8 @@
   // ── helpers ───────────────────────────────────────────────
   const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const money = c => c==null?'N/A':'$'+(Number(c)/100).toFixed(2).replace(/\.00$/,'');
+  // "Zone 2 · 16.8 mi · $25" from the booking's travel_zone / travel_miles / travel_cents.
+  const travelText = s => !s.travel_zone ? 'N/A' : [s.travel_zone, s.travel_miles!=null?s.travel_miles+' mi':null, s.travel_cents?money(s.travel_cents):'no charge'].filter(Boolean).join(' · ');
   const dateS = s => { if(!s) return 'N/A'; const d=new Date(s); return isNaN(d)?esc(s):d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); };
   const dtS = s => { if(!s) return 'N/A'; const d=new Date(s); return isNaN(d)?esc(s):d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); };
   const fullName = o => [o.first_name,o.last_name].filter(Boolean).join(' ') || '(no name)';
@@ -353,12 +355,12 @@
     subscriptions(){
       const rows = allSubs().map(s=>`<tr>
         <td>${esc(fullName(s._cust))}</td><td>${esc(s.plan||'N/A')}</td><td>${esc(s.frequency||'N/A')}</td>
-        <td>${esc(s.load_size||'N/A')}</td><td>${esc(s.pickup_day||'N/A')}</td><td>${money(s.price_cents)}</td>
+        <td>${esc(s.load_size||'N/A')}</td><td>${esc(travelText(s))}</td><td>${esc(s.pickup_day||'N/A')}</td><td>${money(s.price_cents)}</td>
         <td>${statusDot(s.status, subStatusKind(s.status))}</td></tr>`).join('');
       return `<div class="page-head"><div><div class="page-title">Bookings</div>
         <div class="page-sub">One-time hauls and recurring pickups. Card actions are managed in Stripe.</div></div></div>
         ${DATA.spineReady?'':spineNote()}
-        ${tableHTML(['Client','Plan','Frequency','Load','Day','Price','Status'], rows, allSubs().length)}`;
+        ${tableHTML(['Client','Plan','Frequency','Load','Travel','Day','Price','Status'], rows, allSubs().length)}`;
     },
     payments(){ return stub('Payments','Charges & payouts. Reads from Stripe via webhook once payment events are wired into the spine (Phase A3).'); },
     reports(){ return stub('Reports','Revenue, churn, conversion, and route efficiency. Built on top of the spine tables.'); },
@@ -395,7 +397,7 @@
         ${kvRow('Access notes',o.access_notes)}
         ${kvRow('Stripe customer',o.stripe_customer_id)}${kvRow('Created',dtS(o.created_at))}</dl>`;
       const subs=o.subscriptions||[], vis=o.visits||[];
-      html+=`<div class="det-hd">Bookings (${subs.length})</div>`+(subs.length?subs.map(s=>`<div class="mini"><span class="mt">${esc(s.plan||'plan')}</span> · ${esc(s.load_size||'')} · ${esc(s.frequency||'')} · ${esc(s.pickup_day||'')} · ${money(s.price_cents)} · ${esc(s.status||'')}</div>`).join(''):'<div class="mini">None</div>');
+      html+=`<div class="det-hd">Bookings (${subs.length})</div>`+(subs.length?subs.map(s=>`<div class="mini"><span class="mt">${esc(s.plan||'plan')}</span> · ${esc(s.load_size||'')} · ${esc(travelText(s))} · ${esc(s.frequency||'')} · ${esc(s.pickup_day||'')} · ${money(s.price_cents)} · ${esc(s.status||'')}</div>`).join(''):'<div class="mini">None</div>');
       const sortedVis=vis.slice().sort((a,b)=>String(b.scheduled_date||'').localeCompare(String(a.scheduled_date||'')));
       html+=`<div class="det-hd">Jobs (${vis.length})</div>`+(vis.length?sortedVis.slice(0,12).map(visitRow).join(''):'<div class="mini">None scheduled</div>');
     } else {

@@ -95,7 +95,9 @@ async function upsertSubscription(fields) {
   const {
     customerId, stripeSubscriptionId, plan, frequency, freqIdx,
     pickupDay, loadSize, priceCents, status, currentPeriodEnd, startedAt, dedupeId,
+    travelZone, travelCents, travelMiles,
   } = fields;
+  const num = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
   if (!customerId) return null;
 
   const row = {
@@ -105,6 +107,11 @@ async function upsertSubscription(fields) {
     ...(Number.isFinite(Number(freqIdx)) ? { freq_idx: parseInt(freqIdx, 10) } : {}),
     pickup_day:  pickupDay || null,
     load_size:   loadSize || null,
+    // Travel zone, fee and road miles (create-booking metadata). Absent on
+    // bookings made before travel zones, so only written when present.
+    ...(travelZone ? { travel_zone: travelZone } : {}),
+    ...(num(travelCents) != null ? { travel_cents: Math.round(num(travelCents)) } : {}),
+    ...(num(travelMiles) != null ? { travel_miles: num(travelMiles) } : {}),
     ...(Number.isFinite(Number(priceCents)) ? { price_cents: parseInt(priceCents, 10) } : {}),
     status:      status || 'incomplete',
     ...(currentPeriodEnd ? { current_period_end: currentPeriodEnd } : {}),

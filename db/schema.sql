@@ -83,6 +83,9 @@ create table if not exists public.subscriptions (
   freq_idx               int,                  -- 0..5 column into the price matrix
   pickup_day             text,                 -- 'Monday'..'Friday'
   load_size              text,                 -- 'Single item' .. 'Full truck'
+  travel_zone            text,                 -- 'Home zone' .. 'Zone 4' (ZONES in pricing.config.mjs)
+  travel_cents           int,                  -- travel fee per visit, included in price_cents
+  travel_miles           numeric(5,1),         -- road miles from the base to the ZIP's center
   price_cents            int,                  -- amount charged per cycle
   status                 public.sub_status not null default 'incomplete',
   current_period_end     timestamptz,

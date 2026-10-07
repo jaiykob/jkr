@@ -7,7 +7,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "test": "node scripts/test-schedule.mjs && node scripts/test-zones.mjs && node scripts/test-booking.mjs && node scripts/test-photo-quote.mjs && node scripts/test-admin.mjs && node scripts/build-pricing.mjs --check && node scripts/check-meta.mjs && node scripts/list-guesses.mjs --check",
+    "test": "node scripts/test-schedule.mjs && node scripts/test-zones.mjs && node scripts/test-booking.mjs && node scripts/test-photo-quote.mjs && node scripts/test-ops.mjs && node scripts/test-admin.mjs && node scripts/build-pricing.mjs --check && node scripts/check-meta.mjs && node scripts/list-guesses.mjs --check",
     "build:pricing": "node scripts/build-pricing.mjs",
     "check:pricing": "node scripts/build-pricing.mjs --check",
     "check:meta": "node scripts/check-meta.mjs",
