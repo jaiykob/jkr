@@ -269,7 +269,8 @@ const ROUNDS = {
         if (!ldOf(s, 'BlogPosting')) return `${p}: no BlogPosting`;
         if (!/href="\.\.\/book\/quote\.html"/.test(body)) return `${p}: no link to the quote`;
         if (!towns().some((t) => body.includes(`href="../${t.slug}.html"`))) return `${p}: links no town page`;
-        for (const x of sentences(body)) { if (seen.has(x) && seen.get(x) !== p) return `"${x.slice(0, 40)}..." in ${seen.get(x)} and ${p}`; seen.set(x, p); }
+        // A heading or list item ends a sentence even without a period.
+        for (const x of sentences(body.replace(/<\/(h[1-6]|p|li|div)>/gi, '. '))) { if (seen.has(x) && seen.get(x) !== p) return `"${x.slice(0, 40)}..." in ${seen.get(x)} and ${p}`; seen.set(x, p); }
       }
       return true;
     } },
@@ -416,7 +417,8 @@ const ROUNDS = {
       if (run('node', ['scripts/build-sitemap.mjs', '--check']).code !== 0) return 'build-sitemap --check fails';
       const sm = read('sitemap.xml') || '';
       const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-      const want = indexable().map((f) => `https://www.example.com/${f === 'index.html' ? '' : f}`);
+      // A folder's index.html is listed as the folder (/, /blog/, /es/), like its canonical.
+      const want = indexable().map((f) => `https://www.example.com/${f.replace(/(^|\/)index\.html$/, '$1')}`);
       const missing = want.filter((u) => !locs.includes(u)), extra = locs.filter((u) => !want.includes(u));
       if (missing.length) return `sitemap misses ${missing.slice(0, 3).join(', ')}`;
       if (extra.length) return `sitemap has ${extra.slice(0, 3).join(', ')}`;

@@ -25,6 +25,7 @@ import site from '../api/_lib/site.js';
 import { GUESS, fmt } from '../pricing.config.mjs';
 import { pages } from './build-sitemap.mjs';
 import { loadTowns, townTravel } from './build-towns.mjs';
+import { loadPosts, T as BLOG } from './build-blog.mjs';
 import { openBrowser } from './lib/browser.mjs';
 import { serve } from './lib/serve.mjs';
 
@@ -34,10 +35,15 @@ const MANIFEST = path.join(OUT, 'manifest.json');
 const check = process.argv.includes('--check');
 const VERSION = 1;   // bump when the card design changes, so every card redraws
 
-/** The card's file name for a page. */
-export const cardSlug = (rel) => (rel === 'index.html' ? 'home' : rel === 'book/quote.html' ? 'quote' : path.basename(rel, '.html'));
+/** The card's file name for a page: home, faq, portland, es-portland, blog-x, es-blog-x, quote, commercial. */
+export function cardSlug(rel) {
+  if (rel === 'index.html') return 'home';
+  if (rel === 'es/index.html') return 'es-home';
+  return rel.replace(/\/index\.html$/, '').replace(/^book\//, '').replace(/\.html$/, '').replace(/\//g, '-');
+}
 
 const towns = new Map(loadTowns().map((t) => [`${t.slug}.html`, t]));
+const posts = new Map(['en', 'es'].flatMap((l) => loadPosts(l).map((p) => [`${BLOG[l].dir}/${p.slug}.html`, p])));
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /** What a page's card says. */
@@ -48,10 +54,13 @@ function cardFor(rel) {
     const fee = tr.length > 1 ? 'Travel set by your ZIP' : tr[0].cents ? `${tr[0].label}: travel +${fmt(tr[0].cents)}` : 'No travel charge';
     return { kicker: 'Junk removal', title: `${t.name}, ${t.state}`, sub: 'Snap a photo, see your price, we haul it away.', fee, guess: GUESS.zones };
   }
+  const post = posts.get(rel);
+  if (post) return { kicker: post.lang === 'es' ? 'Del blog' : 'From the blog', title: post.title, sub: post.summary, fee: null, guess: false, small: true };
   const fixed = {
     'index.html': { kicker: 'Junk removal across the Portland metro', title: 'Fill the truck. See your price.', sub: 'Snap a photo or tap what is going. We do the lifting.' },
     'book/quote.html': { kicker: 'Get a price', title: 'Snap a photo. See your price.', sub: 'Travel for your ZIP included. Book online in a minute.' },
     'service-areas.html': { kicker: 'Where we haul', title: 'Every town we serve', sub: `${towns.size} towns in Oregon and Washington, by travel zone.` },
+    'blog/index.html': { kicker: 'From the blog', title: 'Junk removal, plainly explained', sub: 'Costs, what can go, and where it ends up.' },
     'faq.html': { kicker: 'Questions', title: 'Junk removal, answered plainly', sub: 'Prices, photos, travel, and what we take.' },
     'privacy.html': { kicker: site.NAME, title: 'Privacy policy', sub: 'What we collect, and what we do with it.' },
     'terms.html': { kicker: site.NAME, title: 'Terms of service', sub: 'Prices, travel, changes on the day, and refunds.' },
@@ -74,12 +83,13 @@ body:before{content:'';position:absolute;inset:0;background:radial-gradient(60% 
 .brand{position:absolute;left:84px;top:58px;font:800 42px 'Bricolage Grotesque',Arial,sans-serif;color:#FFD23F;letter-spacing:-.01em}
 .kicker{position:absolute;left:84px;top:178px;font:800 26px 'DM Sans',Arial,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#FFD23F}
 h1{position:absolute;left:84px;right:84px;top:226px;margin:0;font:800 88px/1.02 'Bricolage Grotesque',Arial,sans-serif;letter-spacing:-.035em;color:#fff}
+h1.small{font-size:64px;line-height:1.05}
 .fee{position:absolute;left:84px;bottom:168px;font:800 36px 'DM Sans',Arial,sans-serif;color:#FFD23F}
 .fee.guess{color:#FF8A80}.fee.guess:after{content:'*'}
 .sub{position:absolute;left:84px;right:84px;bottom:112px;font:600 32px 'DM Sans',Arial,sans-serif;color:#F5F2EA}
 .foot{position:absolute;left:84px;bottom:52px;font:600 28px 'DM Sans',Arial,sans-serif;color:rgba(245,242,234,.72)}
 </style></head><body><div class="bar"></div><div class="brand">${esc(site.NAME)}</div>
-<div class="kicker">${esc(c.kicker)}</div><h1>${esc(c.title)}</h1>
+<div class="kicker">${esc(c.kicker)}</div><h1${c.small ? ' class="small"' : ''}>${esc(c.title)}</h1>
 ${c.fee ? `<div class="fee${c.guess ? ' guess' : ''}">${esc(c.fee)}</div>` : ''}
 <div class="sub">${esc(c.sub)}</div><div class="foot">${esc(site.PHONE)} · ${esc(site.DOMAIN)}</div></body></html>`;
 }
