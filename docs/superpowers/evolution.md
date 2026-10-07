@@ -118,3 +118,21 @@ graph TD
 | Gen | Parent | What changed | Score | Best so far |
 | --- | --- | --- | --- | --- |
 | 0 | main (e702c16) | nothing yet: the scorecard alone | 12 | 12 |
+| 1 | gen 0 | measured ZIP miles (Task 2) | 17 | 17 |
+| 2 | gen 1 | zones, travel module (Task 3); guess marking (Task 4) | 32 | 32 |
+| 3 | gen 2 | truck "+ travel", homepage zones and metro copy (Task 6); score moved to real 360px emulation | 50 | 50 |
+| 4 | gen 3 | quote page prices travel, far ZIP call back, 16px and 48px fixes (Task 7) | 70 | 70 |
+| 5 | gen 4 | checkout and thanks travel lines (Task 8) | 80 | 80 |
+| 6 | gen 5 | scorecard reads nested tags (the thanks page was right, the reader was not) | 85 | 85 |
+| 7 | gen 6 | Discord, email, database, dashboard (Task 9) | 95 | 95 |
+| 8 | gen 7 | photo prompt and CLAUDE.md (Task 10); GUESSES.md picked up CLAUDE.md's description of the marker | 83 | 95 |
+| 9 | gen 8 | CLAUDE.md excluded from the guess scan (it documents the convention) | **100** | **100** |
+
+Every generation scored against the same 15 checks; the only regression
+(gen 8, 95 → 83) was one stale generated list, fixed in gen 9.
+
+```mermaid
+graph LR
+  G0["gen 0 · 12"] --> G1["gen 1 · 17"] --> G2["gen 2 · 32"] --> G3["gen 3 · 50"] --> G4["gen 4 · 70"]
+  G4 --> G5["gen 5 · 80"] --> G6["gen 6 · 85"] --> G7["gen 7 · 95"] --> G8["gen 8 · 83"] --> G9["gen 9 · 100"]
+```

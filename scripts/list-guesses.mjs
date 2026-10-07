@@ -24,7 +24,8 @@ const check = process.argv.includes('--check');
 const MARK = 'GUESS' + '*';   // split so this file doesn't list itself
 
 const SKIP_DIRS = new Set(['node_modules', '.git', '.superpowers', '.vercel', '.claude', '.agents', 'data']);
-const SKIP_FILES = new Set(['GUESSES.md', 'scripts/list-guesses.mjs', 'scripts/score.mjs', 'css/guess.css']);
+// CLAUDE.md and the plans describe the convention; they are not guesses.
+const SKIP_FILES = new Set(['GUESSES.md', 'CLAUDE.md', 'scripts/list-guesses.mjs', 'scripts/score.mjs', 'css/guess.css']);
 const SKIP_PREFIX = ['docs/superpowers/'];   // plans and specs describe the convention
 const TEXT = /\.(html|js|mjs|cjs|css|md|sql|json|txt|yml)$/;
 
