@@ -362,3 +362,17 @@ graph TD
 | Gen | Parent | What changed | Score | Best so far |
 | --- | --- | --- | --- | --- |
 | 0 | main (2182f9b) | nothing yet: the round 4 scorecard alone | 15 | 15 |
+| 1 | gen 0 | one site address and the domain switch (Task 2); structured data (Task 3); not scored on their own | n/a | 15 |
+| 2 | gen 1 | sitemap, robots, llms.txt, indexability (Task 4) | 65 | 65 |
+| 3 | gen 2 | the placeholder domain named once; comments may name it | 70 | 70 |
+| 4 | gen 3 | share cards on every page (Task 5) | 80 | 80 |
+| 5 | gen 4 | the photo pipeline and its test (Task 5) | 90 | 90 |
+| 6 | gen 5 | status, IndexNow, Search Console token (Task 6) | **100** | **100** |
+
+The last check of the round 4 scorecard re-runs rounds 1 to 3: all three
+still 100.
+
+```mermaid
+graph LR
+  S0["gen 0 · 15"] --> S1["gen 1 · not scored"] --> S2["gen 2 · 65"] --> S3["gen 3 · 70"] --> S4["gen 4 · 80"] --> S5["gen 5 · 90"] --> S6["gen 6 · 100"]
+```
