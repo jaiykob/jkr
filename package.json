@@ -22,7 +22,10 @@
     "build:sitemap": "node scripts/build-sitemap.mjs",
     "build:og": "node scripts/build-og-cards.mjs",
     "build:images": "node scripts/build-images.mjs",
-    "build:seo": "node scripts/build-faq-jsonld.mjs && node scripts/build-towns.mjs && node scripts/build-sitemap.mjs && node scripts/build-og-cards.mjs && node scripts/build-images.mjs"
+    "build:seo": "node scripts/build-faq-jsonld.mjs && node scripts/build-towns.mjs && node scripts/build-sitemap.mjs && node scripts/build-og-cards.mjs && node scripts/build-images.mjs",
+    "status": "node scripts/status.mjs",
+    "indexnow": "node scripts/indexnow.mjs",
+    "gsc:token": "node scripts/set-gsc-token.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.129.0",
