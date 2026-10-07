@@ -42,15 +42,23 @@ export function cardSlug(rel) {
   return rel.replace(/\/index\.html$/, '').replace(/^book\//, '').replace(/\.html$/, '').replace(/\//g, '-');
 }
 
-const towns = new Map(loadTowns().map((t) => [`${t.slug}.html`, t]));
+const townList = loadTowns();
+// Every town page, English and Spanish: rel → [town, lang].
+const towns = new Map(townList.flatMap((t) => [[`${t.slug}.html`, [t, 'en']], ...(t.es ? [[`es/${t.slug}.html`, [t, 'es']]] : [])]));
 const posts = new Map(['en', 'es'].flatMap((l) => loadPosts(l).map((p) => [`${BLOG[l].dir}/${p.slug}.html`, p])));
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const zoneEs = (label) => String(label).replace(/^Home zone$/, 'Zona base').replace(/^Zone /, 'Zona ');
 
 /** What a page's card says. */
 function cardFor(rel) {
-  const t = towns.get(rel);
-  if (t) {
+  const hit = towns.get(rel);
+  if (hit) {
+    const [t, lang] = hit;
     const tr = townTravel(t);
+    if (lang === 'es') {
+      const fee = tr.length > 1 ? 'Viaje según tu código postal' : tr[0].cents ? `${zoneEs(tr[0].label)}: viaje +${fmt(tr[0].cents)}` : 'Sin cargo de viaje';
+      return { kicker: 'Retiro de basura', title: `${t.name}, ${t.state}`, sub: 'Toma una foto, ve tu precio y nos lo llevamos.', fee, guess: GUESS.zones };
+    }
     const fee = tr.length > 1 ? 'Travel set by your ZIP' : tr[0].cents ? `${tr[0].label}: travel +${fmt(tr[0].cents)}` : 'No travel charge';
     return { kicker: 'Junk removal', title: `${t.name}, ${t.state}`, sub: 'Snap a photo, see your price, we haul it away.', fee, guess: GUESS.zones };
   }
@@ -61,7 +69,8 @@ function cardFor(rel) {
     'es/index.html': { kicker: 'Retiro de basura en el área de Portland', title: 'Llena el camión. Ve tu precio.', sub: 'Toma una foto o toca lo que se va. Nosotros cargamos.' },
     'es/faq.html': { kicker: 'Preguntas', title: 'Retiro de basura, con respuestas claras', sub: 'Precios, fotos, viaje y lo que llevamos.' },
     'book/quote.html': { kicker: 'Get a price', title: 'Snap a photo. See your price.', sub: 'Travel for your ZIP included. Book online in a minute.' },
-    'service-areas.html': { kicker: 'Where we haul', title: 'Every town we serve', sub: `${towns.size} towns in Oregon and Washington, by travel zone.` },
+    'service-areas.html': { kicker: 'Where we haul', title: 'Every town we serve', sub: `${townList.length} towns in Oregon and Washington, by travel zone.` },
+    'es/service-areas.html': { kicker: 'Dónde trabajamos', title: 'Todas nuestras ciudades', sub: `${townList.length} ciudades en Oregon y Washington, por zona de viaje.` },
     'blog/index.html': { kicker: 'From the blog', title: 'Junk removal, plainly explained', sub: 'Costs, what can go, and where it ends up.' },
     'faq.html': { kicker: 'Questions', title: 'Junk removal, answered plainly', sub: 'Prices, photos, travel, and what we take.' },
     'privacy.html': { kicker: site.NAME, title: 'Privacy policy', sub: 'What we collect, and what we do with it.' },

@@ -41,6 +41,32 @@ A: Another answer.
 - Write each town's copy fresh. `npm test` fails if two towns share a
   sentence: town pages that say the same thing look like spam to Google.
 
+## Spanish
+
+A town with these three parts also gets a Spanish page, `es/<slug>.html`:
+
+```
+lede_es: La línea bajo el título, en español.
+
+## Local (es)
+Un párrafo sobre el trabajo en este pueblo.
+
+## FAQ (es)
+Q: ¿Una pregunta?
+A: La respuesta.
+
+Q: ¿Otra pregunta?
+A: Otra respuesta.
+```
+
+- Put `lede_es:` under `lede:` and the two Spanish sections at the end.
+- All three or none: half a translation stops the build and names the file.
+- Write to the reader with tú. Neighborhood names stay as they are; add
+  `areas_es:` only if one of them has a Spanish name.
+- The travel and ZIP code questions, headings and fees are written by the
+  build in Spanish, like the English ones. The rest of the page comes from
+  the Spanish homepage (`i18n/es.json`).
+
 ## Guesses
 
 Wrap anything we have not checked in double brackets: `[[Metro South in

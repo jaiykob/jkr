@@ -2,6 +2,7 @@ name: Tigard
 state: OR
 zips: 97223, 97224
 lede: Tigard is in our Zone 3. Enter your ZIP and travel is part of the price before you book, with no surprises on the day.
+lede_es: Tigard está en nuestra Zona 3. Escribe tu código postal y el viaje es parte del precio antes de reservar, sin sorpresas el día del retiro.
 areas: Downtown Tigard, Bull Mountain, Summerlake, Metzger, Washington Square area, Durham Road
 
 ## Local
@@ -15,3 +16,15 @@ A: Yes. The streets are steep and winding, but our truck manages them. If your d
 
 Q: Can you take a treadmill or a home gym from a Tigard bonus room?
 A: Yes. [[Large home gyms may need to be taken apart first]]; a treadmill or bike goes as is. Send a photo so we can size the load.
+
+## Local (es)
+Tigard queda a entre veintiséis y veintisiete millas por carretera de nuestra base, del otro lado del río en el suroeste, lo que la pone en la Zona 3. Trabajamos en las cuadras viejas cerca de Main Street, en las calles cerradas de Bull Mountain y en los apartamentos alrededor de Washington Square.
+
+En Tigard hay mudanzas y limpiezas de remodelación todo el tiempo. Las casas de Bull Mountain suelen tener garajes grandes y cuartos extra que se llenan de muebles viejos, juguetes y aparatos de ejercicio. Cerca del centro comercial, lo común es el cambio de inquilinos en apartamentos, muchas veces con un colchón, un sofá y unas bolsas por llevar.
+
+## FAQ (es)
+Q: ¿Trabajan en Bull Mountain?
+A: Sí. Las calles son empinadas y con curvas, pero nuestro camión puede con ellas. Si tu entrada es muy empinada, nos estacionamos en la calle y cargamos desde ahí.
+
+Q: ¿Se llevan una caminadora o un gimnasio de casa de un cuarto extra en Tigard?
+A: Sí. [[Los gimnasios de casa grandes quizás haya que desarmarlos primero]]; una caminadora o una bicicleta fija se van como están. Manda una foto para calcular la carga.

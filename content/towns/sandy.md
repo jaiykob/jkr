@@ -2,6 +2,7 @@ name: Sandy
 state: OR
 zips: 97055
 lede: Sandy is in our Zone 2, about fourteen road miles up Highway 26. Your ZIP adds the travel to the price you see.
+lede_es: Sandy está en nuestra Zona 2, a unas catorce millas por carretera subiendo por la Highway 26. Tu código postal suma el viaje al precio que ves.
 areas: Downtown Sandy, Meinig Park, Bornstedt Road, Sandy Heights, Highway 26, Ten Eyck Road
 
 ## Local
@@ -15,3 +16,15 @@ A: Yes. Pull it up and roll it if you can. Wet carpet is heavy, so [[very large 
 
 Q: Do you take fallen fencing after a storm?
 A: Yes. Stack the panels and posts and we will load them. Wire mesh should be rolled so we can carry it safely.
+
+## Local (es)
+Sandy es la entrada al monte Hood y el último pueblo de buen tamaño sobre la Highway 26 antes de la montaña. A unas catorce millas por carretera de nuestra base, cae en la Zona 2. Recogemos en los fraccionamientos nuevos junto a Bornstedt y Ten Eyck, en las casas cerca del centro y en los terrenos rurales fuera del pueblo.
+
+El invierno castiga a las casas de Sandy, así que cada año hay limpiezas por daños de tormenta: ramas caídas, cercas rotas y alfombra empapada por una gotera. El verano trae garajes por vaciar y cosas sueltas de cabañas que se vacían de bajada de la montaña.
+
+## FAQ (es)
+Q: ¿Se llevan alfombra empapada por una gotera en Sandy?
+A: Sí. Levántala y enróllala si puedes. La alfombra mojada pesa mucho, así que [[las cantidades muy grandes pueden subirte un tamaño de carga]].
+
+Q: ¿Se llevan cercas caídas después de una tormenta?
+A: Sí. Apila los paneles y los postes y nosotros los cargamos. La malla de alambre debe ir enrollada para cargarla sin peligro.

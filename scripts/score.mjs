@@ -606,7 +606,9 @@ const ROUNDS = {
     { id: 'town-pages', pts: 15, desc: 'town pages: build-towns --check, title and H1 name the town, canonical, the rest identical to the homepage, 120+ words of local copy', run() {
       if (!exists('scripts/build-towns.mjs')) return 'scripts/build-towns.mjs missing';
       if (run('node', ['scripts/build-towns.mjs', '--check']).code !== 0) return 'build-towns --check fails';
-      const home = withoutCity(read('index.html'));
+      // The language switch is each page's own (it goes to that page's Spanish twin), so it is left out of the comparison.
+      const noSwitch = (s) => s.replace(/<a class="lang-switch"[\s\S]*?<\/a>/, '');
+      const home = noSwitch(withoutCity(read('index.html')));
       const t = towns();
       if (!t.length) return 'no towns';
       for (const x of t) {
@@ -615,7 +617,7 @@ const ROUNDS = {
         const h1 = text((s.match(/<h1[^>]*>([\s\S]*?)<\/h1>/) || [])[1] || '');
         if (!title.includes(x.name) || !h1.includes(x.name)) return `${x.slug}: title or H1 does not name ${x.name}`;
         if (!s.includes(`<link rel="canonical" href="https://www.example.com/${x.slug}.html"`)) return `${x.slug}: canonical missing`;
-        if (withoutCity(s) !== home) return `${x.slug}: differs from the homepage outside its CITY regions`;
+        if (noSwitch(withoutCity(s)) !== home) return `${x.slug}: differs from the homepage outside its CITY regions`;
         if (words(cityRegion(s, 'local')) < 120) return `${x.slug}: ${words(cityRegion(s, 'local'))} words of local copy`;
       }
       return true;

@@ -2,6 +2,7 @@ name: Estacada
 state: OR
 zips: 97023
 lede: Estacada is in our Zone 2, about nineteen road miles from our base. Snap what is going and your price includes the travel.
+lede_es: Estacada está en nuestra Zona 2, a unas diecinueve millas por carretera de nuestra base. Fotografía lo que se va y tu precio incluye el viaje.
 areas: Downtown Estacada, Clackamas River, Wade Creek, Eagle Creek, Faraday Road, Highway 224
 
 ## Local
@@ -15,3 +16,15 @@ A: Yes. Send photos of each room and the outside, and tell us how the road in lo
 
 Q: Do you go up forest roads?
 A: [[We can drive maintained gravel roads in good weather.]] Rough or snowy roads may mean meeting us at the pavement, so ask first.
+
+## Local (es)
+Estacada está junto al río Clackamas, en la orilla del bosque nacional, a diecinueve millas por carretera por la Highway 224, lo que la mantiene en la Zona 2. Aquí las propiedades suelen ser más grandes, con talleres, graneros y cabañas junto al río además de las casas del pueblo.
+
+Vivir junto al río y el bosque llena los cobertizos rápido. Nos llevamos equipo de campamento viejo, muebles de jardín rotos, madera sobrante y cosas de casa de cabañas que se están vaciando o vendiendo. Si tu propiedad está por un camino forestal, avísanos y manda una foto para planear el trayecto.
+
+## FAQ (es)
+Q: ¿Pueden vaciar una cabaña cerca de Estacada?
+A: Sí. Manda fotos de cada cuarto y de afuera, y cuéntanos cómo está el camino de entrada. Cobramos toda la cabaña por tamaño de carga.
+
+Q: ¿Suben por caminos forestales?
+A: [[Podemos manejar por caminos de grava con mantenimiento cuando hace buen tiempo.]] Si el camino está muy malo o con nieve, quizás nos veamos donde empieza el pavimento, así que pregunta primero.

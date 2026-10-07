@@ -2,6 +2,7 @@ name: Hillsboro
 state: OR
 zips: 97123, 97124
 lede: Hillsboro is in our Zone 4, one of the farthest towns we price online. Your ZIP adds the travel, and the price stays fixed once you book.
+lede_es: Hillsboro está en nuestra Zona 4, de los pueblos más lejanos que cotizamos en línea. Tu código postal suma el viaje, y el precio queda fijo al reservar.
 areas: Orenco Station, Tanasbourne, Downtown Hillsboro, Witch Hazel, Amberglen, Jackson School area
 
 ## Local
@@ -15,3 +16,15 @@ A: Our trucks start in Gresham, and Hillsboro is one of the longest drives we ma
 
 Q: Can you take furniture from an Orenco Station apartment?
 A: Yes. We carry it down by elevator or stairs and load it from the street or the garage. Tell us about parking when you book.
+
+## Local (es)
+Hillsboro queda a entre treinta y tres y treinta y cinco millas por carretera de nuestra base, al otro lado de toda el área, lo que lo pone en la Zona 4. Vamos para mudanzas de apartamentos cerca de Orenco Station y Tanasbourne, casas familiares al sur del centro y granjas en la orilla del pueblo.
+
+Por la distancia, tratamos de juntar los trabajos de Hillsboro en los mismos días, y ayuda reservar con unos días de anticipación. Las cargas típicas son muebles de apartamento, lo que sobra en el garaje y las cajas que se juntan cuando la gente se muda por trabajo. [[En un día de Hillsboro, muchas veces podemos agregar una segunda parada cercana con el mismo cargo de viaje.]]
+
+## FAQ (es)
+Q: ¿Por qué Hillsboro tiene cargo de viaje?
+A: Nuestros camiones salen de Gresham, y Hillsboro es de los trayectos más largos que hacemos. El cargo de viaje cubre ese trayecto, y lo ves en tu precio antes de reservar.
+
+Q: ¿Se llevan muebles de un apartamento en Orenco Station?
+A: Sí. Los bajamos por elevador o escaleras y los cargamos desde la calle o el estacionamiento. Cuéntanos del estacionamiento al reservar.

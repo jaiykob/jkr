@@ -92,6 +92,42 @@ const faqLd = es.html.match(/"name": "([^"]+)"/g) || [];
 ok(faqLd.some((x) => /¿/.test(x)), 'the FAQ schema asks in Spanish');
 ok(es.html.includes(langSwitch('es/index.html')), 'the switch goes back to English');
 
+console.log('== Spanish town pages ==');
+{
+  const { parseTown, loadTowns, buildPage, buildHub } = await import('./build-towns.mjs');
+  const { ZIP_ZONES, ZONES } = await import('../pricing.config.mjs');
+  const z2 = Object.keys(ZIP_ZONES).find((z) => ZIP_ZONES[z].zone === ZONES[1].key);
+  const base = `name: Sample Town\nstate: OR\nzips: ${z2}\nlede: The line under the headline.\nlede_es: La línea bajo el título.\nareas: North End\n\n## Local\nFirst paragraph.\n\n## FAQ\nQ: First question?\nA: First answer.\n\nQ: Second question?\nA: Second answer.\n`;
+  const es = `\n## Local (es)\nPrimer párrafo sobre [[una suposición]].\n\nSegundo párrafo.\n\n## FAQ (es)\nQ: ¿Primera pregunta?\nA: Primera respuesta.\n\nQ: ¿Segunda pregunta?\nA: Segunda respuesta.\n`;
+  const t = parseTown(base + es, 'sample-town.md');
+  ok(t.es && t.es.lede === 'La línea bajo el título.' && t.es.local.length === 2 && t.es.faqs.length === 2, `Spanish sections parsed: ${JSON.stringify(t.es)}`);
+  ok(parseTown(base.replace(/lede_es:.*\n/, ''), 'sample-town.md').es === null, 'a town with no Spanish has es: null');
+  let threw = null;
+  try { parseTown(base + '\n## Local (es)\nSolo un párrafo.\n', 'sample-town.md'); } catch (e) { threw = e.message; }
+  ok(threw && /FAQ \(es\)/.test(threw), `half a translation is refused: ${threw}`);
+  threw = null;
+  try { parseTown(base.replace(/lede_es:.*\n/, '') + es, 'sample-town.md'); } catch (e) { threw = e.message; }
+  ok(threw && /lede_es/.test(threw), `Spanish sections without lede_es are refused: ${threw}`);
+
+  const towns = loadTowns();
+  const esIndex = toSpanish(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8')).html;
+  const p = buildPage(esIndex, t, towns, true, 'es');
+  ok(/<html lang="es"/.test(p), 'the town page is lang="es"');
+  ok(p.includes('<link rel="canonical" href="https://www.example.com/es/sample-town.html" />'), 'its canonical is its own Spanish address');
+  ok(p.includes('<title>Retiro de Basura en Sample Town, OR | Brand Name</title>'), 'the title is Spanish');
+  ok(p.includes('La línea bajo el título.') && p.includes('<span class="guess">una suposición</span>'), 'the Spanish lede and local copy, guesses red');
+  ok(p.includes('¿Primera pregunta?') && p.includes('¿Hay cargo de viaje a Sample Town?'), 'its own Spanish questions, then the travel question in Spanish');
+  ok(!/First question\?|Is there a travel charge/.test(p), 'no English questions on the Spanish page');
+  ok(/"@id": "https:\/\/www\.example\.com\/es\/sample-town\.html#faq"/.test(p), 'the FAQ schema is at the Spanish address');
+  ok(p.includes('href="../book/quote.html'), 'the quote is still one level up');
+  const en = buildPage(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), t, towns, true);
+  ok(/<html lang="en"/.test(en) && en.includes('Is there a travel charge to Sample Town?'), 'the English page is unchanged by the Spanish sections');
+
+  const hub = buildHub(esIndex, towns, true, 'es');
+  ok(/<html lang="es"/.test(hub) && hub.includes('<link rel="canonical" href="https://www.example.com/es/service-areas.html" />'), 'the Spanish hub is at its own address');
+  ok(hub.includes('Ciudades por zona de viaje') && !/Towns by travel zone/.test(hub), 'the hub reads in Spanish');
+}
+
 console.log('== the build stops on a phrase with no Spanish ==');
 const idx = path.join(ROOT, 'index.html');
 const orig = fs.readFileSync(idx, 'utf8');
