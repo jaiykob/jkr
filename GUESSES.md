@@ -47,6 +47,17 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - [ ] `agent/skills/_shared/jkr-context.md`: The mile bands and fees are placeholder guesses (`GUESS` in `pricing.config.mjs`).
 - [ ] `agent/skills/_shared/jkr-context.md`: The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).
 - [ ] `agent/skills/_shared/jkr-context.md`: not created yet (`YOUR-PROJECT.supabase.co` in the code).
+- [ ] `marketing/ad-copy/README.md`: These prices are placeholder guesses (`GUESS` in `pricing.config.mjs`).
+- [ ] `marketing/ad-copy/README.md`: The mile bands and fees are placeholder guesses (`GUESS` in `pricing.config.mjs`).
+- [ ] `marketing/ad-copy/README.md`: The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).
+- [ ] `marketing/ad-copy/README.md`: no domain yet). The quote is at `/book/quote.html`.
+- [ ] `marketing/ad-copy/README.md`: insurance is not bought yet).
+- [ ] `marketing/ad-copy/flyer-door-hanger.md`: 25 to 40 door hangers per job, on the job's street and the next one over.
+- [ ] `marketing/facebook-groups.md`: Group names change and new ones appear; search for each kind below and
+- [ ] `marketing/gbp-optimization.md`: "Junk removal service".
+- [ ] `marketing/gbp-optimization.md`: "Rubbish removal service", "Hauling service".
+- [ ] `marketing/gbp-optimization.md`: Google allows
+- [ ] `marketing/gbp-optimization.md`: Monday to Saturday, 8:00 to 18:00. Calls and texts answered in those
 
 ## Red on the pages right now
 
