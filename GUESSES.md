@@ -17,7 +17,13 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 
 ## Marked in the source
 
-None.
+- [ ] `agent/skills/_shared/jkr-context.md`: the business has no name yet; "Brand Name" everywhere until it does)
+- [ ] `agent/skills/_shared/jkr-context.md`: hello@example.com (no business email yet)
+- [ ] `agent/skills/_shared/jkr-context.md`: no domain yet)
+- [ ] `agent/skills/_shared/jkr-context.md`: These prices are placeholder guesses (`GUESS` in `pricing.config.mjs`).
+- [ ] `agent/skills/_shared/jkr-context.md`: The mile bands and fees are placeholder guesses (`GUESS` in `pricing.config.mjs`).
+- [ ] `agent/skills/_shared/jkr-context.md`: The base point (Gresham city center) are placeholder guesses (`GUESS` in `pricing.config.mjs`).
+- [ ] `agent/skills/_shared/jkr-context.md`: not created yet (`YOUR-PROJECT.supabase.co` in the code).
 
 ## Red on the pages right now
 
