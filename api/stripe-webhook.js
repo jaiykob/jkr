@@ -47,7 +47,7 @@ const PLAN_LABEL = {
 // party POSTs to (the Stripe webhook endpoint) must use the host that does NOT
 // redirect: Stripe does not follow redirects, and an endpoint on a redirecting
 // host fails every delivery silently. TODO: real domain.
-const SITE_ORIGIN = (process.env.SITE_ORIGIN || 'https://www.example.com').replace(/\/+$/, '');
+const SITE_ORIGIN = (process.env.SITE_ORIGIN || require('./_lib/site').SITE_URL).replace(/\/+$/, '');
 
 // Vercel must NOT parse the body — Stripe signature verification needs the raw bytes.
 module.exports.config = { api: { bodyParser: false } };

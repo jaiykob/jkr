@@ -32,6 +32,8 @@
  * Keep them under ~45 characters so nothing truncates on a phone.
  */
 
+const site = require('./site');
+
 const BRAND = {
   name:    'Brand Name',
   green:   '#15171A',
@@ -47,10 +49,10 @@ const BRAND = {
   // a megabyte to show a squashed, wrong-aspect thumbnail. This one is 144x96
   // (2x of the 72x48 display box), matches the mark's real 3:2 aspect, and is
   // 5.6KB. Regenerate from images/logo-mark.png if the mark ever changes.
-  logo:    'https://example.com/images/email-logo.png',
-  site:    'https://example.com',
+  logo:    `${site.SITE_URL}/images/email-logo.png`,
+  site:    site.SITE_URL,
   phone:   '(925) 408-6053',
-  email:   'hello@example.com',
+  email:   site.EMAIL,
   // CAN-SPAM requires a valid physical postal address in marketing email.
   // TODO before first marketing send: set EMAIL_MAILING_ADDRESS to a PO box or
   // the DBA/registered-agent address — do NOT leak a home address.
@@ -135,7 +137,7 @@ function layout({ preheader = '', heading, bodyHtml, marketing = false, unsubscr
         </td></tr>
       </table>
       <p style="max-width:560px;margin:16px auto 0;font-family:'DM Sans',Arial,sans-serif;font-size:11px;color:${BRAND.muted};text-align:center;">
-        © ${new Date().getFullYear()} ${BRAND.name} · <a href="${BRAND.site}" style="color:${BRAND.muted};">example.com</a>
+        © ${new Date().getFullYear()} ${BRAND.name} · <a href="${BRAND.site}" style="color:${BRAND.muted};">${site.DOMAIN}</a>
       </p>
     </td></tr>
   </table>

@@ -15,24 +15,77 @@
   <meta property="og:description" content="Junk removal in Lake Oswego, OR. Snap or tap what is going, see your price with Zone 3 travel, and we haul it away. Based in Gresham." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.example.com/lake-oswego.html" />
+  <meta property="og:image" content="https://www.example.com/images/og/lake-oswego.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#15171A" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/lake-oswego.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/lake-oswego.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Lake Oswego, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/lake-oswego.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/lake-oswego.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Lake Oswego, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "149.00",
+          "highPrice": "649.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/lake-oswego.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you help clear a Lake Oswego home after a family member moves to assisted living?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Walk through with us on the phone or send photos room by room, mark what stays, and we will take the rest. We send photos of each room when we finish."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you carry items up from a lakefront deck?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, if there is a stair or path we can walk safely. Very long carries down to the water may add time to the job, so tell us about the path when you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Lake Oswego?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Lake Oswego is in our zone 3, so travel adds $50.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Lake Oswego ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97034 and 97035. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

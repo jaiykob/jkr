@@ -15,24 +15,77 @@
   <meta property="og:description" content="Junk removal in Boring, OR. Snap or tap what is going, see your price with no travel charge, and we haul it away. Based in Gresham." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.example.com/boring.html" />
+  <meta property="og:image" content="https://www.example.com/images/og/boring.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#15171A" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/boring.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/boring.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Boring, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/boring.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/boring.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Boring, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "99.00",
+          "highPrice": "599.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/boring.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do you take an old wood stove?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, once it is cold and disconnected. Wood stoves count as a heavy item and add a flat fee because they take two people and a dolly."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you haul scrap from a Boring tree farm?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Brush, broken pallets, old irrigation pipe and similar scrap, yes. Send a photo of the pile so we can size it."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Boring?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Boring is in our home zone, close to our base in Gresham, so there is no travel charge."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Boring ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97009. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

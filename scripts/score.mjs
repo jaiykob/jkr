@@ -193,7 +193,139 @@ function copyProblem(label, s) {
   return m ? `${label}: "${t.slice(Math.max(0, m.index - 30), m.index + 30).replace(/\s+/g, ' ')}"` : null;
 }
 
+/* ── round 4 helpers: JSON-LD, sitemap, PNG size ─────────────────────────── */
+function jsonLd(html) {
+  return [...String(html || '').matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => {
+    try { return JSON.parse(m[1]); } catch { return { __bad: true }; }
+  });
+}
+const ldTypes = (html) => jsonLd(html).flatMap((b) => [b, ...(b['@graph'] || [])]).map((b) => b['@type']);
+const ldOf = (html, type) => jsonLd(html).flatMap((b) => [b, ...(b['@graph'] || [])]).find((b) => b['@type'] === type);
+function pngSize(file) {
+  try {
+    const b = fs.readFileSync(path.join(ROOT, file));
+    if (b.readUInt32BE(0) !== 0x89504e47) return null;
+    return [b.readUInt32BE(16), b.readUInt32BE(20)];
+  } catch { return null; }
+}
+/** Every page Google should index: public HTML without a noindex meta. */
+function indexable() {
+  const out = [];
+  const walk = (dir) => {
+    for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+      const rel = dir ? `${dir}/${e.name}` : e.name;
+      if (e.isDirectory()) { if (!['node_modules', '.git', '.superpowers', '.vercel', '.claude', '.agents', 'jkr', 'docs', 'api', 'scripts', 'content', 'agent', 'marketing', 'data', 'db', 'tmpchk'].includes(e.name)) walk(rel); continue; }
+      if (!e.name.endsWith('.html')) continue;
+      if (/<meta name="robots" content="noindex/.test(read(rel) || '')) continue;
+      out.push(rel);
+    }
+  };
+  walk('');
+  return out.sort();
+}
+
 const ROUNDS = {
+  4: [
+    { id: 'tests', pts: 10, desc: 'npm test passes', run() {
+      const r = run('npm', ['test']);
+      return r.code === 0 || `npm test failed: ${r.out.split('\n').filter((l) => /FAIL|Error|STALE|stale/.test(l)).slice(0, 3).join(' | ')}`;
+    } },
+    { id: 'one-source', pts: 5, desc: 'the site address lives in one file; no script, API or browser file types it', run() {
+      if (!exists('api/_lib/site.js')) return 'api/_lib/site.js missing';
+      const files = [...fs.readdirSync(path.join(ROOT, 'scripts')).filter((f) => f.endsWith('.mjs') && !/^(test-|score)/.test(f)).map((f) => `scripts/${f}`),
+        ...['api', 'api/_lib', 'js'].flatMap((d) => fs.readdirSync(path.join(ROOT, d)).filter((f) => f.endsWith('.js')).map((f) => `${d}/${f}`))]
+        .filter((f) => f !== 'api/_lib/site.js' && f !== 'js/travel.js' && f !== 'api/_lib/travel.js');
+      for (const f of files) {
+        // Comments may name the placeholder; code may not type it.
+        const hit = (read(f) || '').split('\n').filter((l) => !/^\s*(\*|\/\/|\/\*)/.test(l))
+          .find((l) => /example\.com/.test(l.replace(/[\w.+-]+@example\.com/g, '')));
+        if (hit) return `${f}: ${hit.trim().slice(0, 80)}`;
+      }
+      return true;
+    } },
+    { id: 'domain', pts: 10, desc: 'one host everywhere; a dry run domain swap leaves nothing behind', run() {
+      if (!exists('scripts/set-domain.mjs')) return 'scripts/set-domain.mjs missing';
+      if (run('node', ['scripts/set-domain.mjs', '--check']).code !== 0) return 'set-domain --check finds mixed hosts';
+      const r = run('node', ['scripts/set-domain.mjs', '--dry-run', 'junk-test.example.org']);
+      const m = r.out.match(/(\d+) files?, (\d+) left/);
+      if (r.code !== 0 || !m) return `dry run said: ${r.out.trim().slice(0, 120)}`;
+      return (+m[1] > 40 && +m[2] === 0) || `dry run: ${m[0]}`;
+    } },
+    { id: 'jsonld', pts: 15, desc: 'schema parses and is true: towns carry Service with offers and FAQPage, FAQ and homepage carry FAQPage', run() {
+      if (!exists('scripts/check-schema.mjs')) return 'scripts/check-schema.mjs missing';
+      const r = run('node', ['scripts/check-schema.mjs']);
+      if (r.code !== 0) return `check-schema: ${r.out.split('\n').filter((l) => /FAIL/.test(l)).slice(0, 2).join(' | ')}`;
+      for (const x of towns()) {
+        const s = read(`${x.slug}.html`);
+        const svc = ldOf(s, 'Service'), faq = ldOf(s, 'FAQPage');
+        if (!svc || !svc.offers || !svc.areaServed) return `${x.slug}: no Service with offers and areaServed`;
+        const visible = (cityRegion(s, 'faq').match(/<details>/g) || []).length;
+        if (!faq || faq.mainEntity.length !== visible) return `${x.slug}: FAQPage has ${faq ? faq.mainEntity.length : 0} of ${visible} questions`;
+      }
+      const f = read('faq.html'), h = read('index.html');
+      const fq = ldOf(f, 'FAQPage');
+      if (!fq || fq.mainEntity.length !== (f.match(/<summary/g) || []).length) return 'faq.html FAQPage does not match its questions';
+      if (!ldTypes(h).includes('LocalBusiness') || !ldOf(h, 'FAQPage')) return 'homepage needs LocalBusiness and FAQPage';
+      return towns().length > 0 || 'no towns';
+    } },
+    { id: 'sitemap', pts: 10, desc: 'sitemap lists exactly the indexable pages on the site address', run() {
+      if (!exists('scripts/build-sitemap.mjs')) return 'scripts/build-sitemap.mjs missing';
+      if (run('node', ['scripts/build-sitemap.mjs', '--check']).code !== 0) return 'build-sitemap --check fails';
+      const sm = read('sitemap.xml') || '';
+      const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+      const want = indexable().map((f) => `https://www.example.com/${f === 'index.html' ? '' : f}`);
+      const missing = want.filter((u) => !locs.includes(u)), extra = locs.filter((u) => !want.includes(u));
+      if (missing.length) return `sitemap misses ${missing.slice(0, 3).join(', ')}`;
+      if (extra.length) return `sitemap has ${extra.slice(0, 3).join(', ')}`;
+      return true;
+    } },
+    { id: 'robots-llms', pts: 5, desc: 'robots.txt points at the sitemap and hides the dashboard and API; llms.txt describes the business', run() {
+      const r = read('robots.txt') || '';
+      if (!/Sitemap: https:\/\/www\.example\.com\/sitemap\.xml/.test(r) || !/Disallow: \/api\//.test(r) || !/Disallow: \/jkr\//.test(r)) return 'robots.txt incomplete';
+      const l = read('llms.txt') || '';
+      if (!/Portland/.test(l) || !/408-6053/.test(l) || !/quote\.html/.test(l) || !/service-areas\.html/.test(l)) return 'llms.txt incomplete';
+      return copyProblem('llms.txt', l) || true;
+    } },
+    { id: 'indexability', pts: 10, desc: 'local indexability check: sitemap, files and canonicals agree, nothing noindexed is listed', run() {
+      if (!exists('scripts/check-indexability.mjs')) return 'scripts/check-indexability.mjs missing';
+      const r = run('node', ['scripts/check-indexability.mjs', '--local']);
+      return (r.code === 0 && /local/i.test(r.out)) || `check-indexability --local: ${r.out.split('\n').filter((l) => /FAIL|✗/.test(l)).slice(0, 2).join(' | ') || r.out.slice(0, 120)}`;
+    } },
+    { id: 'og', pts: 10, desc: 'every indexable page has a 1200x630 share card that exists and is current', run() {
+      if (!exists('scripts/build-og-cards.mjs')) return 'scripts/build-og-cards.mjs missing';
+      if (run('node', ['scripts/build-og-cards.mjs', '--check']).code !== 0) return 'build-og-cards --check fails';
+      for (const f of indexable()) {
+        const img = ((read(f) || '').match(/<meta property="og:image" content="https:\/\/www\.example\.com\/([^"]+)"/) || [])[1];
+        if (!img) return `${f}: no og:image`;
+        const sz = pngSize(img);
+        if (!sz || sz[0] !== 1200 || sz[1] !== 630) return `${f}: ${img} is ${sz ? sz.join('x') : 'missing'}`;
+      }
+      return true;
+    } },
+    { id: 'images', pts: 10, desc: 'image pipeline: makes the sizes from a source photo (test-seo) and the repo is current', run() {
+      if (!exists('scripts/build-images.mjs')) return 'scripts/build-images.mjs missing';
+      if (run('node', ['scripts/build-images.mjs', '--check']).code !== 0) return 'build-images --check fails';
+      const r = run('node', ['scripts/test-seo.mjs']);
+      return (r.code === 0 && /== images ==/.test(r.out)) || 'test-seo images section fails';
+    } },
+    { id: 'tools', pts: 10, desc: 'status, IndexNow and the Search Console token run safely today', run() {
+      const st = run('node', ['scripts/status.mjs']);
+      if (st.code !== 0 || !/no domain/i.test(st.out)) return `status: ${st.out.slice(0, 100)}`;
+      const ix = run('node', ['scripts/indexnow.mjs', '--dry-run']);
+      if (ix.code !== 0 || (ix.out.match(/^https?:\/\//gm) || []).length < 40) return 'indexnow --dry-run does not list the sitemap';
+      const key = ((read('scripts/indexnow.mjs') || '').match(/KEY = '([0-9a-f]{32})'/) || [])[1];
+      if (!key || (read(`${key}.txt`) || '').trim() !== key) return 'IndexNow key file missing';
+      return run('node', ['scripts/set-gsc-token.mjs', '--show']).code === 0 || 'set-gsc-token --show fails';
+    } },
+    { id: 'earlier', pts: 5, desc: 'rounds 1 to 3 still score 100', run() {
+      for (const n of [1, 2, 3]) {
+        const r = run('node', ['scripts/score.mjs', '--round', String(n), '--json'], { timeout: 900000 });
+        let j = null; try { j = JSON.parse(r.out.slice(r.out.indexOf('{'))); } catch { /* not json */ }
+        if (!j || j.score !== 100) return `round ${n} scores ${j ? j.score : '?'}: ${j ? j.checks.filter((c) => !c.got).map((c) => c.id).join(', ') : r.out.slice(0, 80)}`;
+      }
+      return true;
+    } },
+  ],
   3: [
     { id: 'tests', pts: 10, desc: 'npm test passes', run() {
       const r = run('npm', ['test']);

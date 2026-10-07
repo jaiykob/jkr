@@ -73,6 +73,10 @@ gates are closed.
       (`https://www.<domain>`), `CRON_SECRET` and `ADMIN_DASHBOARD_TOKEN`
       (two long random strings). Leave `BOOKINGS_OPEN` unset for now.
 - [ ] Domain: add `www.<domain>` as primary; the bare domain redirects to it.
+- [ ] Move the site to it in one command: `node scripts/set-domain.mjs <domain>`
+      (rewrites `api/_lib/site.js` and every page, then rebuilds). Commit, merge.
+- [ ] `npm run status`: the live half checks the site, the www redirect, the
+      API, the sitemap and the Resend DNS records.
 
 ## Step 5: placeholders
 
@@ -107,6 +111,12 @@ With `sk_test` keys (the gates only block live mode):
 
 ## After launch
 
+- [ ] `node scripts/check-indexability.mjs` against the live site: every
+      sitemap page answers 200, indexable, canonical to itself.
+- [ ] Google Search Console: a Domain property verified by DNS (or
+      `npm run gsc:token <token>` for a URL prefix property); submit the sitemap.
+- [ ] `npm run indexnow` after every deploy that adds or changes pages (Bing,
+      and so ChatGPT Search and Copilot).
 - [ ] Prove the monthly interval: one real monthly pickup, check the first two charges.
 - [ ] Google Business Profile (`marketing/gbp-optimization.md`).
 - [ ] A review request after every job.

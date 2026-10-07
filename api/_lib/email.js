@@ -23,6 +23,7 @@
  */
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
+const site = require('./site');
 
 /**
  * A usable Resend sender is either a bare address (`hello@example.com`) or a
@@ -53,9 +54,9 @@ function validFrom(value, fallback, varName) {
 
 function defaults() {
   return {
-    transactional: validFrom(process.env.EMAIL_FROM,           'Brand Name <hello@example.com>', 'EMAIL_FROM'),
-    marketing:     validFrom(process.env.EMAIL_FROM_MARKETING, 'Brand Name <news@example.com>',  'EMAIL_FROM_MARKETING'),
-    replyTo:       process.env.EMAIL_REPLY_TO       || 'hello@example.com',
+    transactional: validFrom(process.env.EMAIL_FROM,           `${site.NAME} <hello@${site.DOMAIN}>`, 'EMAIL_FROM'),
+    marketing:     validFrom(process.env.EMAIL_FROM_MARKETING, `${site.NAME} <news@${site.DOMAIN}>`,  'EMAIL_FROM_MARKETING'),
+    replyTo:       process.env.EMAIL_REPLY_TO       || site.EMAIL,
   };
 }
 

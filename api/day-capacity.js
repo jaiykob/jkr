@@ -17,7 +17,8 @@ const { DAILY_CAP, WEEKDAYS } = require('./_lib/schedule');
 
 module.exports = async (req, res) => {
   const origin = req.headers.origin || '';
-  const ALLOWED = ['https://example.com', 'https://www.example.com', 'http://localhost:3000', 'http://localhost:5173'];
+  const site = require('./_lib/site');
+  const ALLOWED = [`https://${site.DOMAIN}`, site.SITE_URL, 'http://localhost:3000', 'http://localhost:5173'];
   if (ALLOWED.includes(origin)) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') return res.status(204).end();

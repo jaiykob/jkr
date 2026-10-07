@@ -14,6 +14,10 @@
   <meta property="og:description" content="Junk removal across the Portland metro, based in Gresham. Tap what you have, see your price with travel, and we haul it away. Furniture, appliances and more." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.example.com/" />
+  <meta property="og:image" content="https://www.example.com/images/og/home.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#15171A" />
   <!-- GENERATED from pricing.config.mjs by `npm run build:pricing` (areaServed is every place in a zone). -->
   <!-- BUILD:home-jsonld -->
@@ -80,6 +84,58 @@
   }
   </script>
   <!-- /BUILD:home-jsonld -->
+  <!-- FAQPage from the questions in CITY:faq (scripts/build-faq-jsonld.mjs). -->
+  <!-- BUILD:faq-jsonld -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "@id": "https://www.example.com/#faq",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do you set the price?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "By how much space your stuff takes up in the truck. Tap your items above and we pick the smallest load size that holds them. That flat price covers the labor, the loading and the haul."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What if I guess the size wrong?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No problem. We look before we load. If it's clearly a different size, we tell you the new price before we lift anything, and you decide."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need to be home?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Not if the items are outside or somewhere we can reach. Leave a note in your booking and we'll text you when we're on the way."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I have to carry anything out?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. We come in, pick it up from wherever it is, and load it ourselves."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you do regular pickups?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Landlords and businesses can book a monthly pickup at a lower price per visit."
+        }
+      }
+    ]
+  }
+  </script>
+  <!-- /BUILD:faq-jsonld -->
   <!-- /CITY:head -->
   <style>
     @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(fonts/dm-sans.woff2) format('woff2'); }

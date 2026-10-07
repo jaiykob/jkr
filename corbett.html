@@ -15,24 +15,77 @@
   <meta property="og:description" content="Junk removal in Corbett, OR. Snap or tap what is going, see your price with Zone 2 travel, and we haul it away. Based in Gresham." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.example.com/corbett.html" />
+  <meta property="og:image" content="https://www.example.com/images/og/corbett.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#15171A" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/corbett.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/corbett.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Corbett, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/corbett.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/corbett.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Corbett, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "124.00",
+          "highPrice": "624.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/corbett.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Will you come up to Corbett after an east wind storm?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Right after a big storm the roads can stay blocked for a day or two, so we will book you on the first day the roads are clear."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you haul old farm equipment parts?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Smaller parts, yes, if two people can lift them. Whole machines and anything still full of fluids need a hand quote."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Corbett?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Corbett is in our zone 2, so travel adds $25.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Corbett ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97019. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

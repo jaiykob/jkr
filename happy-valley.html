@@ -15,24 +15,77 @@
   <meta property="og:description" content="Junk removal in Happy Valley, OR. Snap or tap what is going, see your price with no travel charge, and we haul it away. Based in Gresham." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.example.com/happy-valley.html" />
+  <meta property="og:image" content="https://www.example.com/images/og/happy-valley.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#15171A" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/happy-valley.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/happy-valley.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Happy Valley, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/happy-valley.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/happy-valley.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Happy Valley, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "99.00",
+          "highPrice": "599.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/happy-valley.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Will you take apart a playset in Happy Valley?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We can take apart wooden playsets and swing sets for an added charge. If it is already in pieces, it is priced like any other load."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you get up a steep Happy Valley driveway?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Our truck handles most hillside driveways. If yours is very steep or narrow, send a photo of it with your items and we will plan the carry."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Happy Valley?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Happy Valley is in our home zone, close to our base in Gresham, so there is no travel charge."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Happy Valley ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97086. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

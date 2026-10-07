@@ -10,7 +10,167 @@
   <meta property="og:description" content="Answers about our junk removal: photo quotes, prices by load size, travel zones from Gresham, what we take, being home, paying and changing your day." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.example.com/faq.html" />
+  <meta property="og:image" content="https://www.example.com/images/og/faq.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#15171A" />
+  <!-- FAQPage from the questions below (scripts/build-faq-jsonld.mjs). -->
+  <!-- BUILD:faq-jsonld -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "@id": "https://www.example.com/faq.html#faq",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do I get a price?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Send a few photos of what is going, or tap the items you have. The truck on the page fills as you go and shows the load size and price straight away. Add your ZIP and the price includes travel. No call, no visit to look at it first."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does the photo quote work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Snap up to four photos of the things you want gone. We count the items in them, put them in the truck for you, and you fix anything we got wrong with the plus and minus buttons. The count only picks the load size; the price comes from our price list, the same for everyone."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What if there is more than my photos showed?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "When we arrive we look at the job before we load anything. If there is more than the photos or taps showed, we show you the new load size and price first. You can say yes, take some items off the list, or cancel the visit at no charge. We never load first and tell you later."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How much does junk removal cost?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You pay for the space your things take in the truck, from a single item up to a full truck. Labor, loading and the haul are all in that price. The price list shows every load size, and travel is added by zone."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What is the travel charge?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "We are based in Gresham, and travel is set by your ZIP code in rings of road miles. Close to Gresham there is no travel charge; each ring farther out adds a flat amount to the visit. Type your ZIP on the homepage or in the quote to see your zone and what it adds."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you come to my area?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "We cover the whole Portland metro, from Gresham and Sandy to Hillsboro and Wilsonville, and across the river to Vancouver, Camas and Battle Ground. See every town we serve. If your ZIP is past our last travel zone, call or text and we will quote it by hand."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is there a minimum charge?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The smallest job is a single item, like one couch or one mattress, and its price is on the price list. Travel for your zone is added to it."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do I need to be home?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No. Leave the items outside, in the driveway or the garage, and tell us where to find them when you book. Your card is on file, and we send photos when the job is done. If the items are inside, someone needs to let us in."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you do all the lifting?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. We carry everything out from wherever it sits, load it, and sweep up the spot it came from. Stairs and long carries are included in the price."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How soon can you come?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You pick the day when you book. Most weeks we have a day open within two or three days. We text you an arrival window the morning of the job."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens if it rains?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "We haul in the rain. Ice, snow or a storm can push a job to the next open day, and we tell you as early as we can."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What do you take?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Furniture, mattresses and box springs, fridges, freezers, washers and dryers, TVs and electronics, carpet, boxes and bags, yard debris, hot tubs, and garage, basement and estate cleanouts. If you can point to it and we can lift it, we can usually take it."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What can't you take?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "We can't take paint, chemicals, fuel, asbestos or medical waste. If we find any of these in a load we set them aside and tell you, and we can point you to the right drop off."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Where does my junk go?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Anything still usable goes to donation. Metal, electronics and cardboard go to recycling. The rest goes to a licensed transfer station, such as Metro Central in Portland or Metro South in Oregon City."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you take fridges and freezers?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Fridges, freezers and air conditioners go to a recycler licensed to remove the refrigerant. Empty them before we come."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I pay?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "By card when you book, through Stripe. We never see or store your full card number. You get an email receipt for every charge."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I cancel or change my day?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Call, text or email us. Cancel any time before we arrive and we refund you in full; change your day with at least 24 hours notice at no cost."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you offer regular pickups?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Landlords, property managers and businesses can book a monthly pickup at a set load size. Travel for your zone is part of each visit, and you can prepay three months at a time for 10% off."
+        }
+      }
+    ]
+  }
+  </script>
+  <!-- /BUILD:faq-jsonld -->
   <style>
     @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(fonts/dm-sans.woff2) format('woff2'); }
     @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(fonts/bricolage.woff2) format('woff2'); }
