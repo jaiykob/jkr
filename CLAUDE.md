@@ -50,7 +50,10 @@ Chrome at 360px) and a round is done at 100. Every generation's score is in
 `docs/superpowers/evolution.md`.
 
 Progress: rounds 1 (travel pricing), 2 (pages) and 3 (business docs and
-follow-up) done, each scored 100; round 4 (SEO tools) next.
+follow-up) done and merged, each scored 100. Round 4 (SEO tools) IN PROGRESS on
+branch feat/seo: plan docs/superpowers/plans/2026-10-07-round-4-seo.md; tasks
+1 (scorecard, gen 0 = 15) and 2 (api/_lib/site.js, set-domain) committed; next
+is task 3 (JSON-LD). Resume: git checkout feat/seo; npm run score -- --round 4.
 
 **Pending founder decision (2026-10-07):** "30 miles might be too far for
 junk removal ... a good radius is between 22 and 24 miles max", with travel
