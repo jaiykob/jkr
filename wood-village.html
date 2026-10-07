@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/wood-village.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/wood-village.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Wood Village, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/wood-village.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/wood-village.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Wood Village, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "99.00",
+          "highPrice": "599.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/wood-village.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can a landlord book a Wood Village move out without being there?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Book online, add the unit number and how we get in, and we will send photos of the empty unit when we leave."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you take items left by a tenant who moved out?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, as long as you own the property or manage it for the owner. If the tenant left personal papers or photos, set them aside first, since we cannot get anything back once it is hauled."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Wood Village?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Wood Village is in our home zone, close to our base in Gresham, so there is no travel charge."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Wood Village ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97060. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

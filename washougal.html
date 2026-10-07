@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/washougal.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/washougal.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Washougal, WA"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/washougal.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/washougal.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Washougal, WA"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "149.00",
+          "highPrice": "649.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/washougal.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do you go up Washougal River Road?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, on maintained roads in good weather. Some upper river road properties may need a hand quote for the extra drive."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you pick up an old washer and dryer in Washougal?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Disconnect them and leave the hoses attached or bagged. Each counts as an appliance in the quote."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Washougal?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Washougal is in our zone 3, so travel adds $50.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Washougal ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 98671. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

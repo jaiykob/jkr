@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/troutdale.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/troutdale.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Troutdale, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/troutdale.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/troutdale.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Troutdale, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "99.00",
+          "highPrice": "599.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/troutdale.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you clear a Troutdale garage before an open house?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Book a day before the listing photos, send a picture of the garage, and we will empty it and sweep the floor so it photographs clean."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you take old boats or kayaks?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Kayaks, canoes and small rowboats, yes. Boats with motors or on trailers need a hand quote, so call or text us with a photo."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Troutdale?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Troutdale is in our home zone, close to our base in Gresham, so there is no travel charge."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Troutdale ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97060. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

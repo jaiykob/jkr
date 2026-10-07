@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/fairview.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/fairview.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Fairview, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/fairview.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/fairview.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Fairview, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "99.00",
+          "highPrice": "599.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/fairview.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you take old decking boards from a Fairview Lake house?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, if the boards are already pulled up and stacked. Boards with nails sticking out need to be stacked nail side down so we can carry them safely."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Will you pick up from a Fairview Village townhome with no garage?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Set the items by the front door or tell us where they are inside, and we will carry them out to the truck."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Fairview?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Fairview is in our home zone, close to our base in Gresham, so there is no travel charge."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Fairview ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97024. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

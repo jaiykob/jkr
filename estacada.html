@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/estacada.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/estacada.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Estacada, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/estacada.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/estacada.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Estacada, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "124.00",
+          "highPrice": "624.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/estacada.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you clear out a cabin near Estacada?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Send photos of each room and the outside, and tell us how the road in looks. We price the whole cabin by load size."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you go up forest roads?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We can drive maintained gravel roads in good weather. Rough or snowy roads may mean meeting us at the pavement, so ask first."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Estacada?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Estacada is in our zone 2, so travel adds $25.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Estacada ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97023. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/aloha.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/aloha.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Aloha, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/aloha.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/aloha.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Aloha, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "149.00",
+          "highPrice": "649.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/aloha.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do you take old lawn mowers?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Drain the gas and oil first, or tell us and we will set the mower aside. Push mowers and riding mowers both go."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you pick up from the curb in Aloha while I am at work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Set the items out, add a note about where they are when you book, and we will send photos when they are gone."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Aloha?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Aloha is in our zone 3, so travel adds $50.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Aloha ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97003 and 97078. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

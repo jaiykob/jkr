@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/clackamas.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/clackamas.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Clackamas, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/clackamas.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/clackamas.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Clackamas, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "99.00",
+          "highPrice": "599.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/clackamas.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you empty a storage unit near Clackamas Town Center?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Book the day, tell us the facility and unit, and meet us there or leave the gate code. We price it by load size like any other job."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you haul from apartments near the mall?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. We carry from any floor, so let us know if there is an elevator or only stairs when you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Clackamas?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Clackamas is in our home zone, close to our base in Gresham, so there is no travel charge."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Clackamas ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97015. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

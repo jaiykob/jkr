@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/ridgefield.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/ridgefield.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Ridgefield, WA"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/ridgefield.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/ridgefield.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Ridgefield, WA"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "149.00",
+          "highPrice": "649.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/ridgefield.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do you take leftovers from a new build in Ridgefield?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Small amounts of clean scrap, like trim pieces and packaging, yes. Large amounts of construction debris need a hand quote."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is Ridgefield in your service area?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. ZIP 98642 is in our Zone 3, so it prices online with travel included."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Ridgefield?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Ridgefield is in our zone 3, so travel adds $50.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Ridgefield ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 98642. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

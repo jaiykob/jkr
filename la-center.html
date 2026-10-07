@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/la-center.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/la-center.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "La Center, WA"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/la-center.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/la-center.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "La Center, WA"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "174.00",
+          "highPrice": "674.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/la-center.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you take water damaged furniture after flooding near the river?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Wet furniture and carpet go in the load. Anything soaked with fuel or sewage cannot be taken."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How soon can you come to La Center?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We plan north county days ahead, so book a few days out. Call or text if you need a sooner day."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to La Center?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. La Center is in our zone 4, so travel adds $75.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which La Center ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 98629. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

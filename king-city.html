@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/king-city.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/king-city.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "King City, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/king-city.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/king-city.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "King City, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "149.00",
+          "highPrice": "649.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/king-city.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you pick up a single recliner in King City?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. A single item is our smallest load size, and travel for your zone is added. Snap a photo of it and you will see the price."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you protect floors when carrying furniture out?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We carry rather than drag, and we lay down runners on finished floors when a large piece comes through."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to King City?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. King City is in our zone 3, so travel adds $50.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which King City ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97224. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

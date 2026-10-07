@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/yacolt.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/yacolt.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Yacolt, WA"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/yacolt.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/yacolt.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Yacolt, WA"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "174.00",
+          "highPrice": "674.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/yacolt.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can your truck reach a home off a gravel road near Yacolt?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Usually, on a maintained road in dry weather. Steep or muddy roads may mean loading at the pavement. Send a photo of the road with your items."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you take old firewood and rounds?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Dry firewood in small amounts, yes. Large rounds are heavy, so call us for a big pile."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Yacolt?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Yacolt is in our zone 4, so travel adds $75.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Yacolt ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 98675. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

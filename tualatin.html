@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/tualatin.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/tualatin.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Tualatin, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/tualatin.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/tualatin.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Tualatin, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "149.00",
+          "highPrice": "649.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/tualatin.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you clear a Tualatin home before it goes on the market?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Send photos of what is going and pick a day before your listing photos. We can usually take everything in one visit."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you take old patio furniture and umbrellas?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Metal and plastic patio sets, umbrellas and cushions all go in the load."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Tualatin?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Tualatin is in our zone 3, so travel adds $50.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Tualatin ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97062. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

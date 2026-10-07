@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/molalla.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/molalla.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Molalla, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/molalla.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/molalla.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Molalla, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "174.00",
+          "highPrice": "674.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/molalla.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you take a stripped down utility trailer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Trailer frames need a hand quote, since they are heavy steel. Send a photo and the size."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How far ahead should I book in Molalla?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A few days ahead works best, so we can plan the drive. If you need us sooner, call or text and we will see what we can do."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Molalla?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Molalla is in our zone 4, so travel adds $75.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Molalla ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97038. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

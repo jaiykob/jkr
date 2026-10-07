@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/beaverton.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/beaverton.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Beaverton, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/beaverton.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/beaverton.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Beaverton, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "149.00",
+          "highPrice": "674.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/beaverton.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do you take old computers and monitors from Beaverton?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Computers, monitors and TVs go to an electronics recycler. Wipe or remove the hard drives first if they hold anything private."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you clear a small Beaverton office?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Desks, chairs, filing cabinets and boxes are priced by load size, the same as a home. Book a day when the building allows moving."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Beaverton?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "It depends on your ZIP. Zone 3 (97005, 97006 and 97008): $50.00 per visit and Zone 4 (97007): $75.00 per visit. Your price shows it before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Beaverton ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97005, 97006, 97007 and 97008. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

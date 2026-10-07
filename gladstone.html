@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/gladstone.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/gladstone.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Gladstone, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/gladstone.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/gladstone.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Gladstone, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "124.00",
+          "highPrice": "624.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/gladstone.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you come the day after an estate sale in Gladstone?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Book that day and send photos once the sale ends, so we can bring the right size truck for what is left."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you take branches after a windstorm?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Cut them to a size two people can carry and pile them by the street or driveway. Each pile counts as a yard debris pile in the quote."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Gladstone?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Gladstone is in our zone 2, so travel adds $25.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Gladstone ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97027. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

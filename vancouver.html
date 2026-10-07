@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/vancouver.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/vancouver.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Vancouver, WA"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/vancouver.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/vancouver.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Vancouver, WA"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "124.00",
+          "highPrice": "649.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/vancouver.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do you charge sales tax on Vancouver jobs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We are confirming how Washington sales tax applies to junk removal. Until then, the price you see is the price you pay."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you take a hot tub from a Vancouver backyard?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Usually, yes. A hot tub is cut apart and carried out in pieces, which takes about two hours. Send photos of the tub and the path to the street so we can price it."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Vancouver?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "It depends on your ZIP. Zone 2 (98664, 98683 and 98684): $25.00 per visit and Zone 3 (98660, 98661, 98662, 98663, 98665, 98682, 98685 and 98686): $50.00 per visit. Your price shows it before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Vancouver ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 98660, 98661, 98662, 98663, 98664, 98665, 98682, 98683, 98684, 98685 and 98686. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

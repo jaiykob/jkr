@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/sherwood.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/sherwood.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Sherwood, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/sherwood.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/sherwood.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Sherwood, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "174.00",
+          "highPrice": "674.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/sherwood.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do you take moving boxes and packing paper?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Flatten the boxes if you can and bag the paper. Cardboard goes to recycling."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can you haul bikes and outdoor toys from a Sherwood garage?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Bikes, scooters, wagons and plastic play houses all go. Send a photo so the truck fills to the right size."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Sherwood?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Sherwood is in our zone 4, so travel adds $75.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Sherwood ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97140. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

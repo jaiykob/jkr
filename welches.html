@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/welches.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/welches.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Welches, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/welches.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/welches.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Welches, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "149.00",
+          "highPrice": "649.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/welches.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can you clear a vacation cabin in Welches when I am not there?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Leave a lockbox code, send photos of what goes, and we will send photos of each room when we finish."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you come up in winter?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, when the roads allow. If the highway needs chains, we move your job to the next clear day."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Welches?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Welches is in our zone 3, so travel adds $50.00 per visit to the load price. It is shown in your price before you book."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Welches ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97067. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->

@@ -19,20 +19,69 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "Service",
-    "@id": "https://www.example.com/damascus.html#service",
-    "serviceType": "Junk removal",
-    "url": "https://www.example.com/damascus.html",
-    "provider": {
-      "@type": "LocalBusiness",
-      "@id": "https://www.example.com/#business",
-      "name": "Brand Name",
-      "telephone": "+19254086053"
-    },
-    "areaServed": {
-      "@type": "City",
-      "name": "Damascus, OR"
-    }
+    "@graph": [
+      {
+        "@type": "Service",
+        "@id": "https://www.example.com/damascus.html#service",
+        "serviceType": "Junk removal",
+        "url": "https://www.example.com/damascus.html",
+        "provider": {
+          "@type": "LocalBusiness",
+          "@id": "https://www.example.com/#business",
+          "name": "Brand Name",
+          "telephone": "+19254086053"
+        },
+        "areaServed": {
+          "@type": "City",
+          "name": "Damascus, OR"
+        },
+        "offers": {
+          "@type": "AggregateOffer",
+          "priceCurrency": "USD",
+          "lowPrice": "99.00",
+          "highPrice": "599.00",
+          "offerCount": "5"
+        }
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.example.com/damascus.html#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Can your truck drive down a gravel road to the barn?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Usually, yes. If the drive is soft, steep or has a low gate, tell us when you book and send a photo so we know where to park."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Do you take old fencing and T posts?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Roll the wire and stack the posts if you can. Rolls of barbed wire must be tied off so we can carry them without getting cut."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is there a travel charge to Damascus?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Damascus is in our home zone, close to our base in Gresham, so there is no travel charge."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which Damascus ZIP codes do you cover?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "All of these: 97089. Type yours in the quote and the price includes travel."
+            }
+          }
+        ]
+      }
+    ]
   }
   </script>
 <!-- /CITY:head -->
