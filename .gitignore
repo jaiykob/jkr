@@ -42,3 +42,6 @@ desktop.ini
 .agents/
 .claude/skills/
 skills-lock.json
+
+# Plan execution scratch (ledgers, briefs)
+.superpowers/
