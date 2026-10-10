@@ -2,6 +2,7 @@
 // compare, and no data without the token. No network: fetch is stubbed.
 import { createRequire } from 'node:module';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
@@ -28,6 +29,16 @@ for (const file of ['api/admin-data.js', 'api/visit-update.js', 'api/visit-photo
 }
 const good = await call('api/admin-data.js', { headers: { 'x-admin-token': 'right-token' } });
 ok(good.status === 200 && Array.isArray(good.json.customers), 'right token did not return data');
+
+// The job card: the four order flow actions, each posted through the one helper that sends the token header.
+const dash = fs.readFileSync(path.join(ROOT, 'jkr/index.html'), 'utf8');
+for (const a of ['finish', 'declined', 'late-fee', 'en-route']) {
+  ok(dash.includes(`data-action="${a}"`), `jkr/index.html: no data-action="${a}" button`);
+  ok(dash.includes(`jobAction('${a}'`) || dash.includes(`action: '${a}'`) || dash.includes(`action:'${a}'`), `jkr/index.html: ${a} is never posted`);
+}
+ok(/'x-admin-token'\s*:\s*apiToken\(\)/.test(dash), 'jkr/index.html: the post helper does not send x-admin-token');
+ok(!/[?&]token=/.test(dash), 'jkr/index.html: has a ?token= URL form');
+ok(dash.includes('js/order-config.js'), 'jkr/index.html: does not load js/order-config.js');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

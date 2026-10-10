@@ -618,9 +618,9 @@ const ROUNDS = {
       const j = read('jkr/index.html') || '';
       for (const k of ['On my way', 'Finish', 'Late cancel fee', 'Customer said no']) if (!j.includes(k)) return `the dashboard has no "${k}" action`;
       for (const action of ['finish', 'declined', 'late-fee', 'en-route']) {
-        const none = await callHandler('api/visit-update.js', { method: 'POST', body: { action, visitId: 'v1' }, headers: {} });
+        const none = await callHandler('api/visit-update.js', { method: 'POST', body: { action, visitId: 'v1' }, headers: {}, env: { SUPABASE_SERVICE_ROLE_KEY: 'score-service-key' } });
         if (![401, 403].includes(none.status)) return `${action} without a token answered ${none.status}`;
-        const q = await callHandler('api/visit-update.js', { method: 'POST', url: '/api/visit-update?token=score-admin-token', body: { action, visitId: 'v1' }, headers: {} });
+        const q = await callHandler('api/visit-update.js', { method: 'POST', url: '/api/visit-update?token=score-admin-token', body: { action, visitId: 'v1' }, headers: {}, env: { SUPABASE_SERVICE_ROLE_KEY: 'score-service-key' } });
         if (![401, 403].includes(q.status)) return `${action} with ?token= answered ${q.status}`;
       }
       return true;

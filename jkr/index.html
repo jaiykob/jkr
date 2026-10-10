@@ -149,6 +149,23 @@
       .main { margin-left:0; padding:20px 16px 70px; }
       .scrim.show { display:block; position:fixed; inset:56px 0 0 0; background:rgba(0,0,0,.35); z-index:24; }
     }
+    /* job card (order flow): 16px text, 48px buttons */
+    .job { font-size:1rem; margin:8px 0; }
+    .job dl { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; }
+    .job dt { color:var(--dtan); font-weight:700; } .job dd { word-break:break-word; }
+    .jobacts { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .jobacts button, .fin button { font:inherit; font-size:1rem; min-height:48px; min-width:48px; padding:10px 14px; border:1px solid #D9D3C6; border-radius:10px; background:#fff; color:var(--rg); cursor:pointer; }
+    .jobacts .go, .fin .go { background:var(--rg); border-color:var(--rg); color:#fff; font-weight:700; }
+    .jobacts .warn, .fin .warn { border-color:var(--bad); color:var(--bad); }
+    .jobacts button:disabled, .fin button:disabled { opacity:.5; cursor:default; }
+    .fin { font-size:1rem; margin-top:10px; padding:12px; background:#fffdf4; border:1px solid var(--line); border-radius:10px; }
+    .fin select { font:inherit; font-size:1rem; min-height:48px; width:100%; margin:6px 0; padding:8px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+    .fin label.agree { display:flex; gap:10px; align-items:flex-start; min-height:48px; padding:8px 0; }
+    .fin label.agree input { width:24px; height:24px; flex-shrink:0; }
+    .fin .price { font-weight:700; margin:6px 0; }
+    .fin .err, .job .err { color:var(--bad); font-weight:600; margin-top:6px; }
+    .job .okmsg { color:var(--ok); font-weight:600; margin-top:6px; }
+    .job a { color:var(--info); font-weight:700; }
   </style>
 </head>
 <body>
@@ -233,6 +250,7 @@
   <div class="modal-panel" id="modal-panel"></div>
 </div>
 
+<script src="../js/order-config.js"></script>
 <script>
   const TOKEN_KEY = 'jkr_admin_token';
   const $ = id => document.getElementById(id);
@@ -399,7 +417,7 @@
       const subs=o.subscriptions||[], vis=o.visits||[];
       html+=`<div class="det-hd">Bookings (${subs.length})</div>`+(subs.length?subs.map(s=>`<div class="mini"><span class="mt">${esc(s.plan||'plan')}</span> · ${esc(s.load_size||'')} · ${esc(travelText(s))} · ${esc(s.frequency||'')} · ${esc(s.pickup_day||'')} · ${money(s.price_cents)} · ${esc(s.status||'')}</div>`).join(''):'<div class="mini">None</div>');
       const sortedVis=vis.slice().sort((a,b)=>String(b.scheduled_date||'').localeCompare(String(a.scheduled_date||'')));
-      html+=`<div class="det-hd">Jobs (${vis.length})</div>`+(vis.length?sortedVis.slice(0,12).map(visitRow).join(''):'<div class="mini">None scheduled</div>');
+      html+=`<div class="det-hd">Jobs (${vis.length})</div>`+(vis.length?sortedVis.slice(0,12).map(v=>visitRow(v,o.phone)).join(''):'<div class="mini">None scheduled</div>');
     } else {
       const known=['service','first_name','last_name','phone','email','zip','address','frequency','quoted_price','notes','utm','source_url','user_agent','created_at'];
       html+=`<h3>${esc(fullName(o))}</h3><div class="page-sub">${esc(o.service||'lead')}</div><dl class="kv">
@@ -416,13 +434,111 @@
 
   // ── visit rows + field actions ────────────────────────────
   function photoKinds(v){ return new Set((v.visit_photos||[]).map(p=>p.kind)); }
-  function visitRow(v){
+  // ── order flow job card ───────────────────────────────────
+  const FIN = {};      // visitId -> { final, dry, agreed, busy, err } while the finish panel is open
+  const NOTE = {};     // visitId -> { ok, text } the last result, shown after the page reloads
+  const SAYNO = {};    // visitId -> true while the "customer said no" confirm is showing
+  const PAY = { card_saved:'Card saved', paid:'Paid', payment_needed:'Payment needed', no_charge:'No charge', late_fee_paid:'Late fee paid' };
+  const sizeName = r => (window.ORDER && ORDER.SIZES[r]) ? ORDER.SIZES[r].label : 'N/A';
+  const winName = k => { const w = window.ORDER && ORDER.SCHEDULE.windows.find(w => w.key === k); return w ? w.label : (k || 'N/A'); };
+  const isNewJob = v => v.quoted_cents != null || !!v.window_key;
+  const isLate = v => !!(window.ORDER && v.window_key && v.scheduled_date && ORDER.isLateCancel(String(v.scheduled_date).slice(0,10), v.window_key, Date.now()));
+  function jobSummary(v){
+    if(!isNewJob(v)) return '';
+    const note = NOTE[v.id] ? `<div class="${NOTE[v.id].ok?'okmsg':'err'}">${esc(NOTE[v.id].text)}</div>` : '';
+    const inv = v.invoice_url ? ` · <a href="${esc(v.invoice_url)}" target="_blank" rel="noopener">Invoice</a>` : '';
+    return `<div class="job"><dl>
+      <dt>Size booked</dt><dd>${esc(sizeName(v.quoted_load_idx))}</dd>
+      <dt>Quoted total</dt><dd>${money(v.quoted_cents)}${v.travel_cents?' (travel '+money(v.travel_cents)+')':''}</dd>
+      <dt>Day and window</dt><dd>${dateS(v.scheduled_date)}, ${esc(winName(v.window_key))}</dd>
+      <dt>Payment</dt><dd>${esc(PAY[v.payment_status]||v.payment_status||'N/A')}${inv}</dd>
+      ${v.final_load_idx!=null?`<dt>Final</dt><dd>${esc(sizeName(v.final_load_idx))}, ${money(v.final_cents)}</dd>`:''}
+      ${v.en_route_at?`<dt>On our way</dt><dd>${dtS(v.en_route_at)}</dd>`:''}
+    </dl>${note}</div>`;
+  }
+  function finPanel(v){
+    const f = FIN[v.id]; if(!f) return '';
+    const d = f.dry;
+    const bigger = f.final > v.quoted_load_idx || (d && d.cents > v.quoted_cents);
+    const opts = ORDER.SIZES.map(z => `<option value="${z.row}" ${z.row===f.final?'selected':''}>${esc(z.label)}${z.row===v.quoted_load_idx?' (booked)':''}</option>`).join('');
+    const price = d ? `<div class="price">Price: ${money(d.cents)} (load ${money(d.loadCents)} plus travel ${money(d.travelCents)})</div>` : '<div class="price">Checking the price…</div>';
+    const agree = bigger ? `<label class="agree"><input type="checkbox" data-fin-agree="${esc(v.id)}" ${f.agreed?'checked':''}><span>The customer agrees to the higher price of ${d?money(d.cents):'the new size'} (booked ${money(v.quoted_cents)}).</span></label>` : '';
+    const can = d && !f.busy && (!bigger || f.agreed);
+    return `<div class="fin"><label>Final size<select data-fin-size="${esc(v.id)}">${opts}</select></label>${price}${agree}
+      ${f.err?`<div class="err">${esc(f.err)}</div>`:''}
+      <div class="jobacts"><button class="go" data-action="finish" data-visit="${esc(v.id)}" ${can?'':'disabled'}>${f.busy?'Charging…':'Charge '+(d?money(d.cents):'')}</button>
+      <button data-action="finish-cancel" data-visit="${esc(v.id)}">Back</button></div></div>`;
+  }
+  function jobButtons(v, phone){
+    const id = esc(v.id);
+    if(SAYNO[v.id]) return `<div class="fin">Close this job with no charge? The customer said no.<div class="jobacts">
+      <button class="warn" data-action="declined" data-visit="${id}">Yes, close with no charge</button>
+      <button data-action="declined-cancel" data-visit="${id}">Back</button></div></div>`;
+    return `<div class="jobacts">
+      <button data-action="en-route" data-visit="${id}" data-phone="${esc(phone||'')}">On my way</button>
+      <button class="go" data-action="finish-open" data-visit="${id}">Finish and charge</button>
+      ${isLate(v)?`<button class="warn" data-action="late-fee" data-visit="${id}">Late cancel fee</button>`:''}
+      <button class="warn" data-action="declined-ask" data-visit="${id}">Customer said no</button></div>${finPanel(v)}`;
+  }
+  // Every job action goes through adminPost, which sends x-admin-token.
+  function jobAction(action, visitId, extra){
+    return adminPost('/api/visit-update', Object.assign({ action, visitId }, extra || {}));
+  }
+  const rerender = () => { if(_openRef) openDetail(_openRef.type, _openRef.id); };
+  function findVisit(id){ for(const c of DATA.customers) for(const v of (c.visits||[])) if(v.id===id) return v; return null; }
+  async function dryRun(id){
+    const f = FIN[id]; if(!f) return; const want = f.final; f.dry = null; f.err = '';
+    try{ const r = await jobAction('finish', id, { finalLoad: want, dryRun: true });
+      if(FIN[id] && FIN[id].final === want) FIN[id].dry = r;
+    }catch(e){ if(FIN[id]) FIN[id].err = e.message; }
+    rerender();
+  }
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if(t.dataset && t.dataset.finSize){ const f = FIN[t.dataset.finSize]; if(!f) return; f.final = Number(t.value); f.agreed = false; rerender(); dryRun(t.dataset.finSize); }
+    if(t.dataset && t.dataset.finAgree){ const f = FIN[t.dataset.finAgree]; if(f){ f.agreed = t.checked; rerender(); } }
+  });
+  document.addEventListener('click', async e => {
+    const b = e.target.closest && e.target.closest('button[data-action]'); if(!b) return;
+    const id = b.dataset.visit, a = b.dataset.action;
+    const v = findVisit(id);
+    try{
+      if(a === 'en-route'){
+        if(b.dataset.phone){ const l = document.createElement('a'); l.href = 'sms:' + b.dataset.phone + '?&body=' + encodeURI('On our way, about 20 minutes'); l.click(); }
+        await jobAction('en-route', id); NOTE[id] = { ok:true, text:'Marked on our way.' }; await refreshAndReopen();
+      } else if(a === 'finish-open' && v){
+        FIN[id] = { final: v.quoted_load_idx == null ? 0 : v.quoted_load_idx, dry:null, agreed:false, busy:false, err:'' }; rerender(); dryRun(id);
+      } else if(a === 'finish-cancel'){ delete FIN[id]; rerender();
+      } else if(a === 'finish'){
+        const f = FIN[id]; if(!f) return; f.busy = true; f.err = ''; rerender();
+        try{
+          const r = await jobAction('finish', id, { finalLoad: f.final, agreed: !!f.agreed, dryRun: false });
+          NOTE[id] = r.paymentStatus === 'payment_needed'
+            ? { ok:false, text:'Payment needed: the card was declined for ' + money(r.cents) + '. The job is done and we sent the customer an invoice.' }
+            : { ok:true, text:'Charged ' + money(r.cents) + '. Paid.' };
+          delete FIN[id]; await refreshAndReopen();
+        }catch(err){ f.busy = false; f.err = err.message; rerender(); }
+      } else if(a === 'declined-ask'){ SAYNO[id] = true; rerender();
+      } else if(a === 'declined-cancel'){ delete SAYNO[id]; rerender();
+      } else if(a === 'declined'){
+        await jobAction('declined', id); delete SAYNO[id]; NOTE[id] = { ok:true, text:'Closed with no charge.' }; await refreshAndReopen();
+      } else if(a === 'late-fee'){
+        await jobAction('late-fee', id); NOTE[id] = { ok:true, text:'Late cancel fee charged.' }; await refreshAndReopen();
+      }
+    }catch(err){ NOTE[id] = { ok:false, text:err.message }; rerender(); }
+  });
+
+  function visitRow(v, phone){
     const done = v.status==='completed' || v.status==='canceled';
     const has  = photoKinds(v);
     const meta = `${statusDot(v.status||'',visitKind(v.status))}${v.completed_at?' · done '+dtS(v.completed_at):''}`;
     const started = v.status==='in_progress';
     let acts='';
-    if(!done){
+    const job = jobSummary(v);
+    if(!done && isNewJob(v)){
+      const shot=(kind,label)=>`<button onclick="uploadPhoto('${v.id}','${kind}')">${has.has(kind)?'✅':'📷'} ${label}</button>`;
+      acts=jobButtons(v, phone)+`<div class="jobacts">${shot('before','Before photo')}${shot('after','After photo')}</div>`;
+    } else if(!done){
       // Before and after photos. The "after" one goes in the job-done email.
       const shot=(kind,label)=>`<button onclick="uploadPhoto('${v.id}','${kind}')">${has.has(kind)?'✅':'📷'} ${label}</button>`;
       // Start → stop flow: a scheduled visit shows "Start job" (records started_at);
@@ -440,7 +556,7 @@
     // What the customer sent with their quote, so you see the job before you go.
     const qs=(v.visit_photos||[]).filter(p=>p.kind==='quote'&&p.url);
     const shots=qs.length?`<div class="qshots">${qs.map((p,i)=>`<a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="${esc(p.url)}" alt="Customer photo ${i+1}" loading="lazy"></a>`).join('')}</div>`:'';
-    return `<div class="mini"><span class="mt">${dateS(v.scheduled_date)}</span> · ${meta}${shots}${acts}</div>`;
+    return `<div class="mini"><span class="mt">${dateS(v.scheduled_date)}</span> · ${meta}${job}${shots}${acts}</div>`;
   }
   function apiToken(){ return sessionStorage.getItem(TOKEN_KEY); }
   async function adminPost(path,body){
