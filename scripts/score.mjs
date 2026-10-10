@@ -76,10 +76,11 @@ let C = {};
 try { C = await import(pathToFileURL(path.join(ROOT, 'pricing.config.mjs')).href + `?t=${Date.now()}`); } catch (e) { C = { error: e.message }; }
 const zipsIn = C.ZIP_ZONES ? Object.keys(C.ZIP_ZONES) : [];
 const Z2 = zipsIn.find((z) => C.ZIP_ZONES[z].cents > 0 && C.ZIP_ZONES[z].zone === (C.ZONES && C.ZONES[1] && C.ZONES[1].key));
-let FAR = '98601';
+let FAR = '98601', FAR2 = null;
 try {
   const M = (await import(pathToFileURL(path.join(ROOT, 'data/zip-miles.mjs')).href)).default;
   FAR = Object.keys(M.zips).find((z) => !C.ZIP_ZONES || !C.ZIP_ZONES[z]) || FAR;
+  FAR2 = Object.keys(M.zips).find((z) => z !== FAR && (!C.ZIP_ZONES || !C.ZIP_ZONES[z])) || null;
 } catch { /* no data yet */ }
 const LOAD_ROW = 2;
 const LOAD_CENTS = C.PRICES ? C.PRICES[LOAD_ROW][C.ONE_TIME_COL] : 0;
@@ -583,6 +584,35 @@ const ROUNDS = {
       const far = byId(await dump(ORDER_WITH_ZIP('', FAR)), 'o-zip');
       if (!far) return 'no #o-zip section on the order page';
       if (!/type="email"/i.test(far.inner) || !/call/i.test(far.text) || !/price/i.test(far.text)) return 'a ZIP past the last zone shows no call-us message with an email-a-price form inside #o-zip';
+      // The far lead never claims a price is coming when nothing was sent, and a new far ZIP
+      // starts clean (no thank you, the button live). "Thank" marks the success line.
+      const farFlow = await withPage(360, async (p) => {
+        const panel = `(function(){var f=document.getElementById('o-zip');var b=f&&f.querySelector('button');var i=f&&f.querySelector('input[type="email"]');
+return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('', FAR));
+        await p.evaluate(`window.SiteLeads=undefined;`);
+        await p.type('#o-zip input[type="email"]', SAMPLE_CONTACT.email);
+        const before = await p.evaluate(panel);
+        if (!before) return 'no far ZIP panel to send from';
+        await p.click('#o-zip button');
+        let st = await p.evaluate(panel);
+        if (st.text === before.text) return 'with no lead client the far ZIP panel says nothing after Send';
+        if (/thank/i.test(st.text)) return 'with no lead client the far ZIP panel still says thank you';
+        if (!/call/i.test(st.text) || !st.button || !st.input) return 'with no lead client the far ZIP panel does not ask them to call and keep the email box usable';
+        if (!FAR2) return true;
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('', FAR));
+        await p.evaluate(`window.__far=[];if(window.SiteLeads)window.SiteLeads.capture=function(a){window.__far.push(a);return Promise.resolve({ok:true});};`);
+        await p.type('#o-zip input[type="email"]', SAMPLE_CONTACT.email);
+        await p.click('#o-zip button');
+        st = await p.evaluate(panel);
+        const sent = await p.evaluate('window.__far.length');
+        if (sent !== 1 || !/thank/i.test(st.text)) return `the far ZIP lead was not sent once with a thank you (${sent} sent)`;
+        await p.type('#o-zip input', FAR2);
+        st = await p.evaluate(panel);
+        if (!st || /thank/i.test(st.text) || !st.button) return 'a second far ZIP still shows the thank you or a dead button';
+        return true;
+      });
+      if (farFlow !== true) return farFlow;
       resetState();
       STATE.full = true;
       const full = await withPage(360, async (p) => {

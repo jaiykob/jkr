@@ -42,6 +42,17 @@
   /* Text, red with an asterisk when it is a guess (css/guess.css). */
   function guessy(text, on) { var s = el('span', on ? 'guess' : null, text); return s; }
   function fill(node, parts) { node.textContent = ''; parts.forEach(function (p) { node.appendChild(typeof p === 'string' ? document.createTextNode(p) : p); }); }
+  /* Hand a lead to window.SiteLeads (js/leads.js, read at call time). True only
+     when capture was really called: capture itself never loses a lead (it keeps
+     a copy on the device when the insert fails), but with no client at all the
+     page must not say a lead went anywhere. */
+  function sendLead(row) {
+    try {
+      if (!window.SiteLeads || typeof window.SiteLeads.capture !== 'function') return false;
+      window.SiteLeads.capture(row);
+      return true;
+    } catch (e) { return false; }
+  }
   function say(text) { var l = $('o-live'); if (l) { l.textContent = ''; setTimeout(function () { l.textContent = text; }, 30); } }
 
   /* ── the state ───────────────────────────────────────────────────────── */
@@ -177,7 +188,7 @@
     write(STORE, { size: state.size, zip: state.zip, date: state.date, window: state.window, contact: c });
   }
   /* Any change after a reservation: the next Book saves the new details. */
-  function changed() { if (reserved) { reserved = false; $('o-reserved').hidden = true; $('o-closed').hidden = OPEN; } }
+  function changed() { $('o-pay-fail').hidden = true; if (reserved) { reserved = false; $('o-reserved').hidden = true; $('o-closed').hidden = OPEN; } }
 
   /* ── 1. size ─────────────────────────────────────────────────────────── */
   var cards = window.SizeCards ? SizeCards.mount($('o-sizes'), { onPick: function (row) { setSize(row, 'tap'); } }) : null;
@@ -227,6 +238,8 @@
     v = String(v || '').replace(/\D/g, '').slice(0, 5);
     if (zipIn.value !== v) zipIn.value = v;
     var before = state.trip;
+    // A new ZIP is a new question: the far panel's thank you, failure line and button reset.
+    if (v !== state.zip) { $('o-far-btn').disabled = false; $('o-far-ok').hidden = true; $('o-far-fail').hidden = true; }
     state.zip = v;
     state.trip = v.length === 5 ? TRAVEL.travelFor(v) : null;
     $('o-far').hidden = !(v.length === 5 && !state.trip);
@@ -262,15 +275,17 @@
     input.removeAttribute('aria-invalid');
     track('far_zip_lead', { zip: state.zip });
     var s = sizeOf(state.size);
-    if (window.SiteLeads) {
-      window.SiteLeads.capture({
-        service: 'junk', email: email, zip: state.zip,
-        first_name: FIELDS.name.el.value.trim() || null,
-        notes: 'FAR ZIP: past our travel zones, wants a price for ' + (state.zip || 'their ZIP') + (s ? ' | Size: ' + s.label : ''),
-      });
-    }
-    $('o-far-ok').hidden = false;
-    this.disabled = true;
+    var sent = sendLead({
+      service: 'junk', email: email, zip: state.zip,
+      first_name: FIELDS.name.el.value.trim() || null,
+      notes: 'FAR ZIP: past our travel zones, wants a price for ' + (state.zip || 'their ZIP') + (s ? ' | Size: ' + s.label : ''),
+    });
+    // Only a lead that went somewhere earns the thank you; otherwise the
+    // customer is told to call or text, and the box stays usable.
+    $('o-far-ok').hidden = !sent;
+    $('o-far-fail').hidden = sent;
+    this.disabled = sent;
+    say(sent ? $('o-far-ok').textContent : $('o-far-fail').textContent);
   });
 
   /* ── 3. day and window ───────────────────────────────────────────────── */
@@ -440,25 +455,30 @@
     save();
     var photos = window.PhotoQuote ? PhotoQuote.photos() : [];
     var address = [c.street.trim(), c.unit.trim()].filter(Boolean).join(', ');
-    if (window.SiteLeads) {
-      window.SiteLeads.capture({
-        service: 'junk',
-        first_name: c.name.trim().replace(/\s+/g, ' '),
-        phone: c.phone.trim(), email: c.email.trim(), zip: t.zip,
-        address: address + ', ' + t.place + ', ' + t.state + ' ' + t.zip,
-        quoted_price: tot / 100,   // leads.quoted_price is dollars
-        notes: [
-          'PRE-LAUNCH RESERVATION (bookings closed, no card)',
-          'Size: ' + s.label + ' (row ' + s.row + ', ' + fmt(s.cents) + ')',
-          'Day: ' + d.date + ' (' + d.label + ')',
-          'Window: ' + w.key + ' (' + w.label + ')',
-          'Travel: ' + t.label + ', ' + fmt(t.cents) + ', ' + t.miles + ' mi, ' + t.place + ' (' + t.market + ')',
-          'Total: ' + fmt(tot),
-          c.notes.trim() ? 'Notes: ' + c.notes.trim().slice(0, 500) : '',
-          photoItems ? 'From photos: ' + photoItems : '',
-          photos.length ? 'Photos: ' + photos.join(', ') : '',
-        ].filter(Boolean).join(' | '),
-      });
+    var sent = sendLead({
+      service: 'junk',
+      first_name: c.name.trim().replace(/\s+/g, ' '),
+      phone: c.phone.trim(), email: c.email.trim(), zip: t.zip,
+      address: address + ', ' + t.place + ', ' + t.state + ' ' + t.zip,
+      quoted_price: tot / 100,   // leads.quoted_price is dollars
+      notes: [
+        'PRE-LAUNCH RESERVATION (bookings closed, no card)',
+        'Size: ' + s.label + ' (row ' + s.row + ', ' + fmt(s.cents) + ')',
+        'Day: ' + d.date + ' (' + d.label + ')',
+        'Window: ' + w.key + ' (' + w.label + ')',
+        'Travel: ' + t.label + ', ' + fmt(t.cents) + ', ' + t.miles + ' mi, ' + t.place + ' (' + t.market + ')',
+        'Total: ' + fmt(tot),
+        c.notes.trim() ? 'Notes: ' + c.notes.trim().slice(0, 500) : '',
+        photoItems ? 'From photos: ' + photoItems : '',
+        photos.length ? 'Photos: ' + photos.join(', ') : '',
+      ].filter(Boolean).join(' | '),
+    });
+    // Never say "reserved" when nothing was saved: ask them to call or text instead.
+    $('o-pay-fail').hidden = sent;
+    if (!sent) {
+      $('o-pay-fail').scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: 'center' });
+      say($('o-pay-fail').textContent);
+      return;
     }
     track('order_reserve', { size: s.label, value: tot / 100, currency: 'USD', zone: t.zone });
     reserved = true;

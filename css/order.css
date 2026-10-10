@@ -84,7 +84,7 @@ button { font: inherit; }
 .o-hint:empty { display: none; }
 .o-more { margin: 14px 0 0; color: var(--muted); }
 /* Links inside running text: a 48px tall target without opening up the line. */
-.o-more a, .o-far p a { display: inline-block; padding: 13px 2px; margin: -13px 0; font-weight: 700; color: var(--ink); }
+.o-more a, .o-far p a, .o-msg a { display: inline-block; padding: 13px 2px; margin: -13px 0; font-weight: 700; color: var(--ink); }
 
 /* ── 1. the size cards (classes shared with the homepage, ruling R1) ── */
 .size-list { display: grid; gap: 10px; }
