@@ -204,10 +204,10 @@ async function updateVisit(visitId, patch) {
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
-/** One visit row by id (no joins). */
+/** One visit row by id, with its customer (customers(*)). */
 async function getVisit(visitId) {
   if (!visitId) return null;
-  const rows = await rest('GET', `visits?id=eq.${encodeURIComponent(visitId)}&select=*&limit=1`);
+  const rows = await rest('GET', `visits?id=eq.${encodeURIComponent(visitId)}&select=*,customers(*)&limit=1`);
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
@@ -268,6 +268,70 @@ async function scheduledVisitCountsByWeekday(fromDateStr) {
     counts[wd] = (counts[wd] || 0) + 1;
   }
   return counts;
+}
+
+// ── Windows (order flow) ─────────────────────────────────────────────────────
+
+/**
+ * Visits per day and 2 hour window for one market, canceled ones left out.
+ * @returns {Object} { 'YYYY-MM-DD': { total, w08, w10, ... } }. {} when the
+ *   database cannot be read, so the capacity API fails open.
+ */
+async function slotCounts({ market, from, to } = {}) {
+  if (!market || !from || !to) return {};
+  const rows = await rest(
+    'GET',
+    `visits?market=eq.${encodeURIComponent(market)}&status=neq.canceled` +
+      `&scheduled_date=gte.${from}&scheduled_date=lte.${to}&select=scheduled_date,window_key&limit=5000`,
+  );
+  const out = {};
+  for (const r of (Array.isArray(rows) ? rows : [])) {
+    if (!r.scheduled_date) continue;
+    const day = (out[String(r.scheduled_date).slice(0, 10)] ||= { total: 0 });
+    day.total += 1;
+    if (r.window_key) day[r.window_key] = (day[r.window_key] || 0) + 1;
+  }
+  return out;
+}
+
+/**
+ * Create the booked visit of an order (card saved, charged after the job).
+ * Idempotent on stripe_setup_intent_id: a redelivered webhook gets the existing
+ * row back. Returns the visit, or null (logged) on any failure.
+ */
+async function createBookedVisit(fields = {}) {
+  const f = fields;
+  if (!f.customerId || !f.scheduledDate || !f.windowKey || !f.stripeSetupIntentId) return null;
+  const find = () => rest('GET', `visits?stripe_setup_intent_id=eq.${encodeURIComponent(f.stripeSetupIntentId)}&select=*&limit=1`);
+  const existing = await find();
+  if (existing === null) return null;
+  if (Array.isArray(existing) && existing[0]) return existing[0];
+  const int = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
+  const rows = await rest('POST', 'visits?on_conflict=stripe_setup_intent_id', {
+    body: {
+      customer_id:              f.customerId,
+      subscription_id:          f.subscriptionId || null,
+      scheduled_date:           f.scheduledDate,
+      status:                   'scheduled',
+      window_key:               f.windowKey,
+      market:                   f.market || 'portland',
+      quoted_load_idx:          int(f.quotedLoadIdx),
+      quoted_load_cents:        int(f.quotedLoadCents),
+      quoted_cents:             int(f.quotedCents),
+      travel_cents:             int(f.travelCents),
+      payment_status:           f.paymentStatus || 'card_saved',
+      stripe_setup_intent_id:   f.stripeSetupIntentId,
+      stripe_payment_method_id: f.stripePaymentMethodId || null,
+      consent_at:               f.consentAt || null,
+      consent_version:          f.consentVersion || null,
+    },
+    prefer: 'resolution=ignore-duplicates,return=representation',
+  });
+  if (Array.isArray(rows) && rows[0]) return rows[0];
+  if (rows === null) return null;
+  // A parallel delivery won the insert: return its row.
+  const again = await find();
+  return Array.isArray(again) && again[0] ? again[0] : null;
 }
 
 // ── Visit photos + private storage ───────────────────────────────────────────
@@ -371,6 +435,8 @@ module.exports = {
   visitsDueForReminder,
   activeSubscriptionsWithVisits,
   scheduledVisitCountsByWeekday,
+  slotCounts,
+  createBookedVisit,
   recordVisitPhoto,
   visitPhotoPaths,
   signPhotoUpload,

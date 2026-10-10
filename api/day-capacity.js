@@ -1,19 +1,27 @@
 /**
  * Vercel Serverless Function — day-capacity (public, read-only)
  *
- * Tells the booking picker which route weekdays are full so it can grey them
- * out. Returns ONLY aggregate counts — no customer data ever leaves here, so it's
- * safe to call unauthenticated from the checkout page.
+ * Tells the order page which days and 2 hour windows are full so it can grey
+ * them out. Returns ONLY aggregate flags, never customer data, so it is safe to
+ * call unauthenticated from the page.
  *
- *   GET /api/day-capacity
- *   → { cap: 12, counts: { Monday: 3, Thursday: 12 }, full: ["Thursday"] }
+ *   GET /api/day-capacity?market=portland
+ *   -> { days: [{ date, label, full, windows: [{ key, label, full }] }] }
  *
- * FAIL-OPEN: if the DB/schema is unreachable, returns empty counts / no full
- * days — a capacity read must never block a sale.
+ * A window is full at its cap; a day is full when its visits reach the daily
+ * cap or every window is full. Days are the open days (Pacific time).
+ *
+ * LEGACY: without ?market the old weekday answer { cap, counts, full } is still
+ * returned for the old checkout page, until Task 4 and the new order page
+ * replace it (then this branch and DAILY_CAP go).
+ *
+ * FAIL-OPEN: if the DB/schema is unreachable, nothing is full: a capacity read
+ * must never block a sale.
  */
 
 const db = require('./_lib/db');
 const { DAILY_CAP, WEEKDAYS } = require('./_lib/schedule');
+const ORDER = require('./_lib/order-config');
 
 module.exports = async (req, res) => {
   const origin = req.headers.origin || '';
@@ -26,6 +34,28 @@ module.exports = async (req, res) => {
 
   // Never cache — capacity changes with every booking.
   res.setHeader('Cache-Control', 'no-store');
+
+  const url = new URL(req.url || '/', 'http://x');
+  const market = (req.query && req.query.market) || url.searchParams.get('market');
+  if (market) {
+    if (!/^[a-z-]{1,24}$/.test(market)) return res.status(400).json({ error: 'Unknown market' });
+    const { windows, dailyCap } = ORDER.SCHEDULE;
+    const open = ORDER.openDays(Date.now());
+    let counts = {};
+    if (open.length) {
+      try {
+        counts = (await db.slotCounts({ market, from: open[0].date, to: open[open.length - 1].date })) || {};
+      } catch (e) {
+        console.warn('[day-capacity] slot count failed, failing open:', e.message);
+      }
+    }
+    const days = open.map((d) => {
+      const c = counts[d.date] || {};
+      const ws = windows.map((w) => ({ key: w.key, label: w.label, full: (c[w.key] || 0) >= w.cap }));
+      return { date: d.date, label: d.label, full: (c.total || 0) >= dailyCap || ws.every((w) => w.full), windows: ws };
+    });
+    return res.status(200).json({ days });
+  }
 
   let counts = {};
   try {

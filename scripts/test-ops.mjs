@@ -132,5 +132,91 @@ await db.upsertSubscription({ customerId: 'c1', plan: 'one_time', loadSize: '1/2
 const before = rows.length && rows[rows.length - 1].body;
 ok(before && !('travel_zone' in before) && !('travel_cents' in before), 'a booking without travel wrote empty travel columns');
 
+console.log('== slots ==');
+// A Supabase stand-in for visits: GET filters on market, status, date range, id and stripe_setup_intent_id.
+const ORDER = require('../api/_lib/order-config.js');
+const NOW = Date.now();
+let visitRows = [], down = false, posts = [];
+const fakeVisits = (r) => { visitRows = r.map((v, i) => ({ id: v.id || `v${i}`, customer_id: 'c1', customers: { id: 'c1', email: 'jane@example.com' }, ...v })); down = false; };
+const dbDown = () => { down = true; };
+globalThis.fetch = async (url, init = {}) => {
+  if (down) throw new Error('database unreachable');
+  const u = new URL(url);
+  const q = u.searchParams;
+  if (!u.pathname.endsWith('/visits')) return { ok: true, status: 200, json: async () => [], text: async () => '' };
+  if ((init.method || 'GET') === 'POST') {
+    const b = JSON.parse(init.body); posts.push(b);
+    const row = { id: `new${posts.length}`, ...b }; visitRows.push(row);
+    return { ok: true, status: 201, json: async () => [row], text: async () => '' };
+  }
+  let out = visitRows;
+  const eq = (k) => (q.get(k) || '').startsWith('eq.') ? q.get(k).slice(3) : null;
+  const neq = (k) => (q.get(k) || '').startsWith('neq.') ? q.get(k).slice(4) : null;
+  if (eq('market')) out = out.filter((v) => v.market === eq('market'));
+  if (neq('status')) out = out.filter((v) => v.status !== neq('status'));
+  if (eq('id')) out = out.filter((v) => v.id === eq('id'));
+  if (eq('stripe_setup_intent_id')) out = out.filter((v) => v.stripe_setup_intent_id === eq('stripe_setup_intent_id'));
+  for (const [k, v] of u.searchParams.entries()) {
+    if (k === 'scheduled_date' && v.startsWith('gte.')) out = out.filter((r) => r.scheduled_date >= v.slice(4));
+    if (k === 'scheduled_date' && v.startsWith('lte.')) out = out.filter((r) => r.scheduled_date <= v.slice(4));
+  }
+  if ((q.get('select') || '').includes('customers(')) out = out.map((r) => ({ ...r, customers: r.customers || { id: r.customer_id, email: 'jane@example.com' } }));
+  return { ok: true, status: 200, json: async () => out, text: async () => '' };
+};
+async function callCapacity(qs) {
+  const handler = require('../api/day-capacity.js');
+  let status = 0, json = null; const headers = {};
+  const res = { setHeader(k, v) { headers[k] = v; }, status(s) { status = s; return this; }, json(j) { json = j; return this; }, end() { return this; } };
+  await handler({ method: 'GET', url: '/api/day-capacity' + qs, headers: {}, query: Object.fromEntries(new URLSearchParams(qs)) }, res);
+  return { status, json, headers };
+}
+const first = ORDER.openDays(NOW)[0].date;
+const v = (window_key, status = 'scheduled') => ({ scheduled_date: first, window_key, market: 'portland', status });
+const threeScheduledIn = (k) => [v(k), v(k), v(k)];
+// two scheduled and one canceled in w08, cap 2: the canceled one is not counted, so w08 is full only by the two
+fakeVisits([v('w08'), v('w08'), v('w08', 'canceled')]);
+let cap = await callCapacity('?market=portland');
+let d0 = cap.json.days.find((d) => d.date === first);
+ok(cap.status === 200 && cap.headers['Cache-Control'] === 'no-store', 'capacity is not sent no-store');
+ok(d0.windows.find((w) => w.key === 'w08').full === true, 'two scheduled visits at cap 2 did not fill the window');
+ok(d0.windows.find((w) => w.key === 'w10').full === false, 'an empty window was flagged full');
+fakeVisits([v('w08'), v('w08', 'canceled'), v('w08', 'canceled')]);
+cap = await callCapacity('?market=portland');
+ok(cap.json.days[0].windows[0].full === false, 'a canceled visit counted');
+fakeVisits([...threeScheduledIn('w08')]);
+ok((await callCapacity('?market=portland')).json.days[0].windows[0].full === true, 'full window not flagged');
+// another market's visits do not count
+fakeVisits([{ ...v('w08'), market: 'sacramento' }, { ...v('w08'), market: 'sacramento' }]);
+ok((await callCapacity('?market=portland')).json.days[0].windows[0].full === false, 'another market filled this market');
+// a day is full when its total reaches the daily cap, or every window is full
+fakeVisits([v('w08'), v('w08'), v('w10'), v('w10'), v('w12'), v('w12')]);
+d0 = (await callCapacity('?market=portland')).json.days[0];
+ok(d0.full === true, 'a day at the daily cap is not full');
+fakeVisits([v('w08'), v('w08'), v('w10'), v('w10'), v('w12'), v('w12'), v('w14'), v('w14')]);
+ok((await callCapacity('?market=portland')).json.days[0].full === true, 'a day with every window full is not full');
+fakeVisits([v('w08')]);
+ok((await callCapacity('?market=portland')).json.days[0].full === false, 'a quiet day is full');
+ok(!JSON.stringify((await callCapacity('?market=portland')).json).includes('jane'), 'capacity leaks customer data');
+// slotCounts shape
+fakeVisits([v('w08'), v('w10')]);
+const sc = await db.slotCounts({ market: 'portland', from: first, to: first });
+ok(sc[first] && sc[first].total === 2 && sc[first].w08 === 1 && sc[first].w10 === 1, `slotCounts is ${JSON.stringify(sc)}`);
+// createBookedVisit is idempotent on the setup intent, and getVisit carries the customer
+fakeVisits([]); posts = [];
+const f1 = { customerId: 'c1', scheduledDate: first, windowKey: 'w08', market: 'portland', stripeSetupIntentId: 'seti_1', quotedCents: 34900, travelCents: 0 };
+const b1 = await db.createBookedVisit(f1);
+const b2 = await db.createBookedVisit(f1);
+ok(b1 && b2 && b1.id === b2.id && posts.length === 1, `createBookedVisit wrote ${posts.length} rows for one setup intent`);
+ok(posts[0] && posts[0].window_key === 'w08' && posts[0].stripe_setup_intent_id === 'seti_1' && posts[0].quoted_cents === 34900 && posts[0].status === 'scheduled', `visit row is ${JSON.stringify(posts[0])}`);
+const gv = await db.getVisit(b1.id);
+ok(gv && gv.customers && gv.customers.email === 'jane@example.com', 'getVisit has no customer');
+// fail soft
+dbDown();
+ok((await db.createBookedVisit(f1)) === null, 'createBookedVisit threw or returned a row with the database down');
+dbDown();
+ok(Object.keys(await db.slotCounts({ market: 'portland', from: first, to: first })).length === 0, 'slotCounts is not empty with the database down');
+dbDown();
+ok((await callCapacity('?market=portland')).json.days.every((d) => !d.full && d.windows.every((w) => !w.full)), 'capacity must fail open');
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
