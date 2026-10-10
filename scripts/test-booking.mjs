@@ -130,14 +130,35 @@ ok(ph.status === 200 && lastSetupIntent().metadata.photos === okPath, `photo pat
 
 console.log('== idempotency ==');
 const idem = () => calls.filter(([k]) => k === 'customer' || k === 'si').map(([, , o]) => o && o.idempotencyKey);
-await call(good());
+// The same booking sent twice a moment apart: same params but consent_at, so
+// the first key is reused with other params, Stripe says idempotency error,
+// and the handler retries once with a fresh key. Both calls succeed.
+const r1 = await call(good());
 const keysA = idem();
-await call(good());
-ok(keysA.length === 2 && keysA.every(Boolean) && JSON.stringify(keysA) === JSON.stringify(idem()), 'a retry of the same booking got different idempotency keys');
+await new Promise((r) => setTimeout(r, 5));
+const r2 = await call(good());
+ok(r1.status === 200 && r2.status === 200 && r2.json.setupIntentClientSecret, 'a retry differing only by consent_at failed');
+ok(calls.filter(([k]) => k === 'customer').length === 2, 'the fallback did not retry the customer with a fresh key');
+ok(keysA.every(Boolean) && keysA[0].split(':').length === 2 && idem()[1].split(':').length === 3, 'the fallback key is not the first key plus a suffix');
+// Truly identical params (the clock fixed) get the original objects back, no error.
+const RealDate = Date, FIXED = 1790000000000;
+globalThis.Date = class extends RealDate { constructor(...a) { super(...(a.length ? a : [FIXED])); } static now() { return FIXED; } };
+const sameDay = ORDER.openDays(FIXED)[0].date;
+const i1 = await call(good({ attemptId: 'att_same', date: sameDay }));
+const i2 = await call(good({ attemptId: 'att_same', date: sameDay }));
+globalThis.Date = RealDate;
+ok(i1.status === 200 && i2.status === 200 && i1.json.customerId === i2.json.customerId && calls.length === 2
+  && idem()[0].split(':').length === 2 && idem()[1].split(':').length === 2, 'an identical retry did not get the original objects');
 await call(good({ attemptId: 'att_2' }));
 ok(idem()[0] !== keysA[0], 'a new attempt reused the old idempotency key');
-await call(good({ window: 'w14' }));
-ok(idem()[1] !== keysA[1], 'a changed booking on the same attempt reused the key (Stripe would refuse it)');
+// An edited resubmit under the same attempt succeeds: other phone, address, notes.
+const e1 = await call(good({ attemptId: 'att_edit' }));
+const e2 = await call(good({ attemptId: 'att_edit', phone: '5035550199', metadata: { address: `2 Elm St, Gresham ${zip}`, notes: 'gate code 1' } }));
+ok(e1.status === 200 && e2.status === 200 && e2.json.setupIntentClientSecret, 'an edited resubmit under the same attempt failed');
+ok(lastSetupIntent().metadata.address.startsWith('2 Elm St') && calls.find(([k]) => k === 'customer')[1].phone === '5035550199', 'the edited resubmit did not use the edited details');
+ok(idem().every((k) => k.split(':').length === 2), 'an edited resubmit needed the fallback key: its key should differ from the first');
+const w2 = await call(good({ attemptId: 'att_edit', window: 'w14' }));
+ok(w2.status === 200, 'a changed window under the same attempt failed');
 
 console.log('== travel ==');
 // A ZIP in the second zone (a real fee), and one measured but past the last zone.

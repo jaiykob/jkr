@@ -81,6 +81,11 @@ ok(cust1 && cust1[1].metadata.founding === 'true', 'the customer is not stamped 
 ok(r.json.founding && r.json.founding.discountCents === off, 'the response does not report the discount');
 ok(!calls.some((c) => c[0] === 'pi' || c[0] === 'sub' || c[0] === 'coupon'), 'a founding booking created a charge or a coupon');
 
+// A customer stamped founding whose card was never saved uses no spot.
+state.claimed = 3; state.abandoned = 7; founding._resetCache();
+ok((await spots({ STRIPE_SECRET_KEY: 'sk_test_x' })).left === founding.FOUNDING.spots - 3, 'abandoned founding bookings used spots');
+state.abandoned = 0;
+
 console.log('== the last spot just went ==');
 state.claimed = founding.FOUNDING.spots;
 founding._resetCache();

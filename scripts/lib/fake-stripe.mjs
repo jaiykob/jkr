@@ -7,7 +7,7 @@
  *
  * opts.decline: 'card_declined' | 'authentication_required' makes an
  * off_session paymentIntents.create throw a StripeCardError with that code.
- * state.claimed is how many founding customers "exist" (customers.search).
+ * state.claimed is how many founding customers with a saved card "exist" (customers.search); state.abandoned, founding customers without one.
  */
 import { createRequire } from 'node:module';
 
@@ -22,18 +22,42 @@ class FakeStripe {
   constructor() {
     const { calls, state, opts } = ctx;
     const next = (p) => `${p}_${++seq}`;
+    // Real Stripe: the same idempotency key with other params is an error; with the same params, the original object.
+    const seen = ctx.seen;
+    const idem = async (o, p, make) => {
+      const key = o && o.idempotencyKey;
+      if (!key) return make();
+      const sig = JSON.stringify(p);
+      if (seen.has(key)) {
+        const prev = seen.get(key);
+        if (prev.sig !== sig) {
+          const e = new Error('Keys for idempotent requests can only be used with the same parameters they were first used with.');
+          e.type = 'StripeIdempotencyError';
+          throw e;
+        }
+        return prev.result;
+      }
+      const result = await make();
+      seen.set(key, { sig, result });
+      return result;
+    };
     this.customers = {
-      create: async (p, o) => { calls.push(['customer', p, o]); return { id: 'cus_1', ...p }; },
+      create: async (p, o) => { calls.push(['customer', p, o]); return idem(o, p, async () => ({ id: next('cus'), ...p })); },
       update: async (id, p) => { calls.push(['customer-update', { id, ...p }]); return { id, ...p }; },
       retrieve: async (id) => ({ id, metadata: {}, invoice_settings: {} }),
-      search: async () => ({ data: Array.from({ length: state.claimed }, () => ({ metadata: { founding: 'true' } })), has_more: false }),
+      search: async () => ({ data: [
+        ...Array.from({ length: state.claimed }, () => ({ metadata: { founding: 'true' }, invoice_settings: { default_payment_method: 'pm_1' } })),
+        ...Array.from({ length: state.abandoned || 0 }, () => ({ metadata: { founding: 'true' }, invoice_settings: { default_payment_method: null } })),
+      ], has_more: false }),
     };
     this.setupIntents = {
       create: async (p, o) => {
         calls.push(['si', p, o]);
-        const si = { id: next('seti'), client_secret: 'seti_secret', status: 'requires_payment_method', customer: p.customer, metadata: p.metadata || {}, payment_method: null };
-        state.setupIntents[si.id] = si;
-        return si;
+        return idem(o, p, async () => {
+          const si = { id: next('seti'), client_secret: 'seti_secret', status: 'requires_payment_method', customer: p.customer, metadata: p.metadata || {}, payment_method: null };
+          state.setupIntents[si.id] = si;
+          return si;
+        });
       },
       retrieve: async (id) => state.setupIntents[id] || { id, status: 'succeeded', metadata: {}, payment_method: 'pm_1' },
     };
@@ -72,7 +96,7 @@ class FakeStripe {
 
 /** Install (or re-install with new options) the fake. Returns { calls, state }. */
 export function installFakeStripe(opts = {}) {
-  ctx = { calls: [], state: { claimed: 0, setupIntents: {} }, opts };
+  ctx = { seen: new Map(), calls: [], state: { claimed: 0, abandoned: 0, setupIntents: {} }, opts };
   if (!installed) {
     const load = Module._load;
     Module._load = function (req, ...rest) { return req === 'stripe' ? FakeStripe : load.call(this, req, ...rest); };

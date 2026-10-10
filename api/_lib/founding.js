@@ -19,8 +19,8 @@
  *
  * WHERE THE COUNT LIVES: in Stripe, on the customer. A booking that gets the
  * offer stamps founding: 'true' in its customer's metadata, counted with
- * customers.search (SetupIntents cannot be searched). A spot is claimed at
- * booking. To give a spot back (a test booking, a cancellation), change that
+ * customers.search (SetupIntents cannot be searched). A spot is claimed once
+ * the card is saved (the customer has a default payment method). To give a spot back (a test booking, a cancellation), change that
  * customer's founding metadata to 'released' in the Stripe dashboard. The
  * count can overshoot by one in a race for the last spot; it never refuses
  * someone who was shown the offer unless the server can prove the spots are
@@ -69,7 +69,10 @@ async function countSearch(resource, query, keep) {
  * stamp: create-booking sets founding: 'true' in the customer's metadata.
  */
 async function claimedSpots(stripe) {
-  return countSearch(stripe.customers, "metadata['founding']:'true'", () => true);
+  // Only customers whose card was saved: the webhook sets the default payment
+  // method on setup_intent.succeeded, so an abandoned booking uses no spot.
+  return countSearch(stripe.customers, "metadata['founding']:'true'",
+    (c) => !!(c.invoice_settings && c.invoice_settings.default_payment_method));
 }
 
 // The public counter is read on every homepage view; a short in-memory cache

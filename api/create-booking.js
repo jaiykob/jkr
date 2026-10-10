@@ -192,28 +192,47 @@ module.exports = async (req, res) => {
     ? { founding: 'true', founding_discount_cents: String(foundingCents) }
     : { founding: 'false', founding_discount_cents: '0' });
 
-  // Idempotency anchor: a network retry of the SAME booking reuses these keys
-  // (Stripe returns the original objects), while a changed booking made with
-  // the same attempt gets new keys instead of a Stripe parameter mismatch.
-  const idemBase = crypto.createHash('sha256')
-    .update([attemptId, email, totalCents, row, date, windowKey, foundingCents].join('|'))
-    .digest('hex').slice(0, 40);
+  // Idempotency: each key is the hash of the exact params sent, EXCLUDING
+  // consent_at (the server clock, different on every attempt). So a network
+  // retry of the same booking reuses the key and Stripe returns the original
+  // object, while an edited resubmit (new phone, address, notes) gets a new key.
+  // A retry that differs only by consent_at reuses a key with other params:
+  // Stripe answers StripeIdempotencyError, and createOnce below retries once
+  // with a fresh key. A duplicate customer or an unconfirmed SetupIntent is
+  // harmless: no money moves at booking and the page confirms only the
+  // SetupIntent it was handed.
+  const canon = (v) => (Array.isArray(v) ? '[' + v.map(canon).join(',') + ']'
+    : v && typeof v === 'object' ? '{' + Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}'
+    : JSON.stringify(v));
+  const keyFor = (kind, params) => {
+    const q = { ...params, metadata: { ...params.metadata } };
+    delete q.metadata.consent_at;
+    return crypto.createHash('sha256').update(attemptId + '|' + kind + '|' + canon(q)).digest('hex').slice(0, 40);
+  };
+  const createOnce = async (kind, create, params) => {
+    const key = `${keyFor(kind, params)}:${kind}`;
+    try { return await create(params, { idempotencyKey: key }); }
+    catch (e) {
+      if (!(e && e.type === 'StripeIdempotencyError')) throw e;
+      return create(params, { idempotencyKey: `${key}:${crypto.randomBytes(6).toString('hex')}` });
+    }
+  };
 
   try {
-    const customer = await stripe.customers.create({
+    const customer = await createOnce('cust', (q, o) => stripe.customers.create(q, o), {
       email,
       name:  name  || undefined,
       phone: phone || undefined,
       metadata: { ...metadata, ...serverMeta },
-    }, { idempotencyKey: `${idemBase}:cust` });
+    });
 
-    const setupIntent = await stripe.setupIntents.create({
+    const setupIntent = await createOnce('si', (q, o) => stripe.setupIntents.create(q, o), {
       customer: customer.id,
       usage: 'off_session',
       automatic_payment_methods: { enabled: true },
       description: `${site.NAME}: ${ORDER.SIZES[row].label} haul, ${trip.label}, ${date}`,
       metadata: { ...metadata, ...serverMeta },
-    }, { idempotencyKey: `${idemBase}:si` });
+    });
 
     return res.status(200).json({
       customerId:              customer.id,
