@@ -44,6 +44,8 @@ const { GUESS } = await import(pathToFileURL(path.join(ROOT, 'pricing.config.mjs
 const FLAG_NOTES = {
   prices: 'The load prices (`PRICE_TABLE` in `pricing.config.mjs`): every load size, one-time and monthly.',
   zones:  'The travel zones (`ZONES` in `pricing.config.mjs`): the mile bands and the fee for each zone. **Founder note (2026-10-07):** 30 miles may be too far for junk removal; a max radius of 22 to 24 road miles, with every fee covering its drive. At 24 miles about 19 of the 40 town files fall outside and `npm run build` names them.',
+  schedule: 'The hours (`SCHEDULE` in `pricing.config.mjs`): the open days, the arrival windows and how many jobs fit in each window and each day.',
+  policy: 'The cancel and fee policy (`POLICY` in `pricing.config.mjs`): free cancel hours before a window, the late cancel fee and the refusal fee.',
   base:   'The base point (`BASE` in `pricing.config.mjs`): Gresham city center, not the real yard. Moving it means re-running `node scripts/measure-zips.mjs`.',
 };
 

@@ -552,3 +552,4 @@ graph TD
 | Gen | Parent | What changed | Score | Best so far |
 | --- | --- | --- | --- | --- |
 | 0 | feat/order-flow (1b7afac) | nothing yet: the round 6 scorecard alone (shared fake Stripe, real API routes and a Stripe.js stub in the score server, click and type helpers in the browser driver); only `tests` and `earlier` pass | 10 | 10 |
+| 1 | gen 0 | Task 2: `SCHEDULE`, `POLICY` and `photo` in the config, the order module written whole to `api/_lib/order-config.js` and `js/order-config.js`, `market` on `travelFor`, `test-order-config` in `npm test`; `one-source` still fails only because later tasks' files (js/order.js, js/size-cards.js) do not exist yet | 10 | 10 |

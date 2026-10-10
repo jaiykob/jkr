@@ -14,6 +14,8 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - [ ] **prices** (`GUESS.prices`): The load prices (`PRICE_TABLE` in `pricing.config.mjs`): every load size, one-time and monthly.
 - [ ] **zones** (`GUESS.zones`): The travel zones (`ZONES` in `pricing.config.mjs`): the mile bands and the fee for each zone. **Founder note (2026-10-07):** 30 miles may be too far for junk removal; a max radius of 22 to 24 road miles, with every fee covering its drive. At 24 miles about 19 of the 40 town files fall outside and `npm run build` names them.
 - [ ] **base** (`GUESS.base`): The base point (`BASE` in `pricing.config.mjs`): Gresham city center, not the real yard. Moving it means re-running `node scripts/measure-zips.mjs`.
+- [ ] **schedule** (`GUESS.schedule`): The hours (`SCHEDULE` in `pricing.config.mjs`): the open days, the arrival windows and how many jobs fit in each window and each day.
+- [ ] **policy** (`GUESS.policy`): The cancel and fee policy (`POLICY` in `pricing.config.mjs`): free cancel hours before a window, the late cancel fee and the refusal fee.
 
 ## Marked in the source
 
@@ -59,6 +61,8 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - [ ] `marketing/gbp-optimization.md`: "Rubbish removal service", "Hauling service".
 - [ ] `marketing/gbp-optimization.md`: Google allows
 - [ ] `marketing/gbp-optimization.md`: Monday to Saturday, 8:00 to 18:00. Calls and texts answered in those
+- [ ] `pricing.config.mjs`: the hours, windows and caps (GUESS.schedule): the founder sets the
+- [ ] `pricing.config.mjs`: the cancel window and fees (GUESS.policy). Dollars here, cents in the module.
 
 ## Red on the pages right now
 

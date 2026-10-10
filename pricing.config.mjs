@@ -57,11 +57,11 @@ export const PRICE_TABLE = [
  * "6+ dogs").
  */
 export const LOADS = {
-  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance', fits: 15 },
-  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner',     fits: 25 },
-  half:    { label: '1/2 truck',    note: 'A small room or a garage corner',   fits: 50 },
-  three:   { label: '3/4 truck',    note: 'A full room or a small garage',     fits: 75 },
-  full:    { label: 'Full truck',   note: 'A garage, basement or estate',      fits: 100 },
+  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance', fits: 15, photo: '/images/placeholder.svg' },
+  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner',     fits: 25, photo: '/images/placeholder.svg' },
+  half:    { label: '1/2 truck',    note: 'A small room or a garage corner',   fits: 50, photo: '/images/placeholder.svg' },
+  three:   { label: '3/4 truck',    note: 'A full room or a small garage',     fits: 75, photo: '/images/placeholder.svg' },
+  full:    { label: 'Full truck',   note: 'A garage, basement or estate',      fits: 100, photo: '/images/placeholder.svg' },
 };
 
 /**
@@ -175,7 +175,56 @@ export const GUESS = {
   prices: true,   // PRICE_TABLE: placeholder prices
   zones:  true,   // ZONES: the mile bands and the travel fees
   base:   true,   // BASE: Gresham city center, not the real yard
+  schedule: true, // SCHEDULE: the hours, windows and caps
+  policy:   true, // POLICY: the cancel window and the fees
 };
+
+/**
+ * GUESS* the hours, windows and caps (GUESS.schedule): the founder sets the
+ * real ones before launch. Every date is Pacific time (timeZone), never the
+ * host's clock. Window `start` is 24 hour HH:MM; `cap` is jobs per window;
+ * `dailyCap` is jobs per day across all windows.
+ */
+export const SCHEDULE = {
+  timeZone: 'America/Los_Angeles',
+  daysAhead: 14,            // day chips shown
+  leadDays: 1,              // earliest bookable day = today (Pacific) + leadDays
+  closedWeekdays: [0],      // 0 = Sunday
+  windows: [
+    { key: 'w08', label: '8 to 10 am',     start: '08:00', cap: 2 },
+    { key: 'w10', label: '10 am to 12 pm', start: '10:00', cap: 2 },
+    { key: 'w12', label: '12 to 2 pm',     start: '12:00', cap: 2 },
+    { key: 'w14', label: '2 to 4 pm',      start: '14:00', cap: 2 },
+  ],
+  dailyCap: 6,
+};
+
+/** GUESS* the cancel window and fees (GUESS.policy). Dollars here, cents in the module. */
+export const POLICY = {
+  cancelHours: 24,          // free to cancel or move until this many hours before the window starts
+  lateFee: 50,              // dollars, charged by the dashboard's Late cancel fee action
+  refusalFee: 0,            // dollars, when the customer says no on site
+  consentVersion: '2026-10-10',
+};
+
+/** Fails the build on a schedule that would misbook a day. */
+function assertSchedule(sc) {
+  const fail = (msg) => { throw new Error(`pricing.config.mjs: ${msg}
+Fix SCHEDULE, then re-run npm run build:pricing.`); };
+  const keys = new Set();
+  let biggest = 0;
+  for (const w of sc.windows) {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(w.start)) fail(`window ${w.key}: start "${w.start}" is not HH:MM`);
+    if (keys.has(w.key)) fail(`window key "${w.key}" is used twice`);
+    keys.add(w.key);
+    if (!(Number.isInteger(w.cap) && w.cap >= 1)) fail(`window ${w.key}: cap must be a whole number, 1 or more`);
+    biggest = Math.max(biggest, w.cap);
+  }
+  if (!(Number.isInteger(sc.dailyCap) && sc.dailyCap >= 1)) fail('dailyCap must be 1 or more');
+  if (sc.dailyCap < biggest) fail(`dailyCap ${sc.dailyCap} is under the largest window cap ${biggest}`);
+  return sc;
+}
+assertSchedule(SCHEDULE);
 
 /**
  * ┌─── TRAVEL ZONES: the second table you edit ─────────────────────────┐
@@ -256,7 +305,7 @@ export const PLACES_BY_ZONE = Object.fromEntries(ZONES.map((z) => [z.key,
 export function travelFor(zip) {
   const z = String(zip == null ? '' : zip).trim();
   const r = /^\d{5}$/.test(z) ? ZIP_ZONES[z] : null;
-  return r ? { zip: z, zone: r.zone, label: r.label, cents: r.cents, miles: r.miles, place: r.place, state: r.state } : null;
+  return r ? { zip: z, zone: r.zone, label: r.label, cents: r.cents, miles: r.miles, place: r.place, state: r.state, market: 'portland' } : null;
 }
 
 /** The headline number: the cheapest one-time haul. */
