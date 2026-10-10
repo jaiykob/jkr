@@ -18,6 +18,7 @@
 const db = require('./_lib/db');
 const { sendEmail } = require('./_lib/email');
 const tpl = require('./_lib/email-templates');
+const ORDER = require('./_lib/order-config');
 const { nextVisitDate, firstVisitDate, toDateStr } = require('./_lib/schedule');
 
 function authorized(req) {
@@ -61,6 +62,7 @@ module.exports = async (req, res) => {
         name:      cust.first_name,
         visitDate: fmtDate(v.scheduled_date),
         pickupDay: (v.subscriptions && v.subscriptions.pickup_day) || null,
+        windowLabel: (ORDER.SCHEDULE.windows.find((w) => w.key === v.window_key) || {}).label || null,
       });
       const r = await sendEmail({ to: cust.email, kind: 'transactional', idempotencyKey: `visit:${v.id}:reminder`, ...msg });
       // Dry-run (no RESEND_API_KEY / EMAIL_DISABLED=1): don't stamp reminder_sent_at,

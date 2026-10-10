@@ -33,6 +33,7 @@
  */
 
 const site = require('./site');
+const ORDER = require('./order-config');
 
 const BRAND = {
   name:    'Brand Name',
@@ -182,6 +183,37 @@ function bookingConfirmation(ctx = {}) {
   };
 }
 
+// 1b. Booked: fires when the card is saved (setup_intent.succeeded). Nothing is
+// charged yet, so it says so, with the day and the arrival window.
+function bookedConfirmation(ctx = {}) {
+  const { name, dayLabel, windowLabel, address, load, travel, total } = ctx;
+  const cancelHours = ctx.cancelHours || ORDER.POLICY.cancelHours;
+  const heading = `You're booked${name ? ', ' + name : ''}!`;
+  const rows = [
+    detail('Day', dayLabel),
+    detail('Window', windowLabel),
+    detail('Address', address),
+    detail('Size', load),
+    detail('Travel', travel),
+    detail('Total if the size is right', total),
+  ].join('');
+  const rule = `Nothing is charged today. After the job we charge this card for the size you actually have. If it is bigger or smaller than ${load ? 'a ' + load : 'the size we quoted'}, the crew shows you the new price before loading, and you can say no. Free to cancel or move until ${cancelHours} hours before.`;
+  const consent = 'You agreed to this card being charged after the job.';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Thanks for booking with ${BRAND.name}. Your haul is confirmed, and here are the details:</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
+    <p style="margin:12px 0;"><strong>${escapeHtml(rule)}</strong></p>
+    <p style="margin:12px 0;">${escapeHtml(consent)}</p>
+    <p style="margin:12px 0;">We do all the lifting and loading. Anything still usable goes to donation, metal and electronics go to recycling, and the rest goes to the transfer station.</p>
+    <p style="margin:12px 0;">Questions? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  const when = [dayLabel, windowLabel].filter(Boolean).join(', ');
+  return {
+    subject: when ? `You're booked for ${when}` : "You're booked",
+    html: layout({ preheader: 'Your haul is confirmed. Nothing is charged today.', heading, bodyHtml }),
+    text: `You're booked${name ? ', ' + name : ''}!\n\nDay: ${dayLabel || ''}\nWindow: ${windowLabel || ''}\nAddress: ${address || ''}${load ? `\nSize: ${load}` : ''}${travel ? `\nTravel: ${travel}` : ''}\nTotal if the size is right: ${total || ''}\n\n${rule}\n${consent}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+  };
+}
+
 // 2. Payment failed: fires off invoice.payment_failed (renewals only).
 function paymentFailed(ctx = {}) {
   const { name, amount, updateUrl } = ctx;
@@ -258,17 +290,18 @@ function leadRecapture(ctx = {}) {
 
 // 6. Visit reminder: the day before (email until SMS clears A2P).
 function visitReminder(ctx = {}) {
-  const { name, visitDate, pickupDay, unsubscribeUrl } = ctx;
+  const { name, visitDate, pickupDay, unsubscribeUrl, windowLabel } = ctx;
   const heading = 'We are coming by soon';
   const when = visitDate || pickupDay || 'your next scheduled day';
+  const arrival = windowLabel ? ` in the window of <strong>${escapeHtml(windowLabel)}</strong>` : '';
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, this is a reminder that ${BRAND.name} is scheduled to come on <strong>${escapeHtml(when)}</strong>.</p>
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, this is a reminder that ${BRAND.name} is scheduled to come on <strong>${escapeHtml(when)}</strong>${arrival}.</p>
     <p style="margin:12px 0;">To help us get in and out: please make sure the items are easy to reach and there is room for the truck to park. We will text you an arrival window.</p>
     <p style="margin:12px 0;">Need a different day? Reply here or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: `We're hauling ${when}`,
     html: layout({ preheader: 'Please make sure the items are easy to reach.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
-    text: `Hi${name ? ' ' + name : ''}, a reminder: ${BRAND.name} comes ${when}.\nPlease make sure the items are easy to reach and there is room to park.\nNeed a different day? Reply or call ${BRAND.phone}.\n${BRAND.name}`,
+    text: `Hi${name ? ' ' + name : ''}, a reminder: ${BRAND.name} comes ${when}${windowLabel ? `, ${windowLabel}` : ''}.\nPlease make sure the items are easy to reach and there is room to park.\nNeed a different day? Reply or call ${BRAND.phone}.\n${BRAND.name}`,
   };
 }
 
@@ -294,7 +327,7 @@ function winBack(ctx = {}) {
 // ping, so the two alerts fail independently (a dead Discord webhook used to
 // mean no alert at all; Scoops Co. punch list). Plain and scannable.
 function ownerBooking(ctx = {}) {
-  const { name, phone, email, amount, plan, load, travel, address, pickupDay, items, photoCount, dashboardUrl, stripeUrl } = ctx;
+  const { name, phone, email, amount, plan, load, travel, address, pickupDay, items, photoCount, dashboardUrl, stripeUrl, amountLabel } = ctx;
   const heading = `New booking: ${load || 'a haul'}${pickupDay ? `, ${pickupDay}` : ''}`;
   const rows = [
     detail('Customer', name),
@@ -307,7 +340,7 @@ function ownerBooking(ctx = {}) {
     detail('Travel', travel),
     detail('Items', items),
     detail('Photos', photoCount ? `${photoCount} sent with the quote (open the dashboard to see them)` : null),
-    detail('Charged', amount),
+    detail(amountLabel || 'Charged', amount),
   ].join('');
   const bodyHtml = `
     <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:4px 0 12px;">${rows}</table>
@@ -316,7 +349,7 @@ function ownerBooking(ctx = {}) {
   return {
     subject: `New booking: ${amount || 'paid'}, ${load || 'haul'}${pickupDay ? `, ${pickupDay}` : ''}`,
     html: layout({ preheader: `${name || 'A customer'} booked ${load || 'a haul'}.`, heading, bodyHtml }),
-    text: `New booking\n\nCustomer: ${name || ''}\nPhone: ${phone || ''}\nEmail: ${email || ''}\nAddress: ${address || ''}\nDay: ${pickupDay || ''}\nPlan: ${plan || ''}\nLoad: ${load || ''}\nTravel: ${travel || ''}\nItems: ${items || ''}\nPhotos: ${photoCount || 0}\nCharged: ${amount || ''}\n\nDashboard: ${dashboardUrl || ''}`,
+    text: `New booking\n\nCustomer: ${name || ''}\nPhone: ${phone || ''}\nEmail: ${email || ''}\nAddress: ${address || ''}\nDay: ${pickupDay || ''}\nPlan: ${plan || ''}\nLoad: ${load || ''}\nTravel: ${travel || ''}\nItems: ${items || ''}\nPhotos: ${photoCount || 0}\n${amountLabel || 'Charged'}: ${amount || ''}\n\nDashboard: ${dashboardUrl || ''}`,
   };
 }
 
@@ -326,6 +359,7 @@ module.exports = {
   layout,
   // transactional
   bookingConfirmation,
+  bookedConfirmation,
   paymentFailed,
   serviceComplete,
   // marketing

@@ -25,6 +25,7 @@
  *              customer.subscription.deleted
  *              payment_intent.succeeded
  *              payment_intent.payment_failed
+ *              setup_intent.succeeded   (a saved card books the job)
  *   Copy the signing secret (whsec_...) into STRIPE_WEBHOOK_SECRET.
  */
 
@@ -33,6 +34,7 @@ const { sendEmail } = require('./_lib/email');
 const tpl = require('./_lib/email-templates');
 const db  = require('./_lib/db');
 const { firstVisitDate } = require('./_lib/schedule');
+const ORDER = require('./_lib/order-config');
 
 // Display label per plan key. MUST cover every value PLAN_KEYS can produce in
 // api/create-booking.js plus 'quarterly'. A missing key prints the raw
@@ -383,7 +385,7 @@ async function keepQuotePhotos(m, customerId, visit) {
  * (not renewals, not declines). Keyed by event id, so a Stripe redelivery
  * sends nothing new. Fail-soft: an error is logged, never thrown.
  */
-async function emailOwner(ctx, event, payload) {
+async function emailOwner(ctx, event, payload, amountLabel) {
   const to = process.env.OPS_EMAIL;
   if (!to || !payload || payload.kind !== 'signup_or_payment' || !/New booking/.test(payload.title || '')) return;
   const m = ctx.metadata || {};
@@ -392,6 +394,7 @@ async function emailOwner(ctx, event, payload) {
     phone:       ctx.phone,
     email:       ctx.email,
     amount:      fmtAmount(payload.amount),
+    amountLabel,
     plan:        PLAN_LABEL[m.plan] || m.plan,
     load:        m.load,
     travel:      travelLine(m),
@@ -514,6 +517,88 @@ async function persistSpine(ctx, event) {
   }
 }
 
+/**
+ * A saved card books the job (round 6). Fires on setup_intent.succeeded whose
+ * OWN metadata.kind is 'booking' (create-booking stamps it). Never branch on
+ * ctx.metadata here: it merges the customer's metadata, and a final charge's
+ * customer carries booking fields.
+ *
+ *   1. the saved card becomes the customer's default payment method (the
+ *      after-job charge and the founding count both read it)
+ *   2. the customer and the visit (day, window, quote) go to the database,
+ *      idempotent on the SetupIntent; a database error is logged and the rest
+ *      still runs (fail soft: an error never loses a booking)
+ *   3. quote photos, the Discord ping, the owner email, the confirmation
+ *
+ * A redelivery finds the visit already there and pings nothing new (the two
+ * emails are keyed by event id).
+ */
+function dayLabel(date) {
+  const d = new Date(`${String(date || '').slice(0, 10)}T12:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || '').slice(0, 10)) || Number.isNaN(d.getTime())) return null;
+  return `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getUTCDay()]} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+async function handleBooked(stripe, event) {
+  const si  = event.data.object || {};
+  const own = si.metadata || {};
+  const ctx = await gatherContext(stripe, event);
+  const pm  = typeof si.payment_method === 'string' ? si.payment_method : (si.payment_method && si.payment_method.id) || null;
+
+  if (ctx.customerId && pm) {
+    try { await stripe.customers.update(ctx.customerId, { invoice_settings: { default_payment_method: pm } }); }
+    catch (e) { console.error('[stripe-webhook] default payment method failed:', e.message); }
+  }
+
+  const windowDef = ORDER.SCHEDULE.windows.find((w) => w.key === own.window) || null;
+  const size      = ORDER.SIZES[Number(own.load_idx)] || null;
+  const day       = dayLabel(own.date);
+  const m = {
+    ...ctx.metadata,
+    pickup_day: [day, windowDef && windowDef.label].filter(Boolean).join(', ') || undefined,
+    load: size ? size.label : ctx.metadata.load,
+  };
+  ctx.metadata = m;
+
+  let visit = null;
+  try {
+    const customer = await db.upsertCustomer({
+      stripeCustomerId: ctx.customerId,
+      name: ctx.name, email: ctx.email, phone: ctx.phone,
+      address: m.address, zip: own.zip || zipFromAddress(m.address),
+    });
+    if (customer) {
+      visit = await db.createBookedVisit({
+        customerId: customer.id, scheduledDate: own.date, windowKey: own.window, market: own.market,
+        quotedLoadIdx: own.load_idx, quotedLoadCents: own.load_cents, quotedCents: own.total_cents, travelCents: own.travel_cents,
+        stripeSetupIntentId: si.id, stripePaymentMethodId: pm,
+        consentAt: own.consent_at, consentVersion: own.consent_version,
+      });
+      await keepQuotePhotos(own, customer.id, visit);
+    }
+  } catch (e) {
+    console.error('[stripe-webhook] booked visit failed:', e.message);
+  }
+
+  const total = own.total_cents != null && own.total_cents !== '' ? Number(own.total_cents) : null;
+  const payload = {
+    kind: 'signup_or_payment', title: '🎉 New booking', eventType: event.type,
+    amount: total, receiptUrl: null,
+  };
+  // visit.existing: a redelivery. The Discord ping has no key of its own, so skip it.
+  if (!(visit && visit.existing)) await notifyOps(ctx, payload);
+  await emailOwner(ctx, event, payload, 'Total (card saved, not charged)');
+
+  if (ctx.email) {
+    const msg = tpl.bookedConfirmation({
+      name: ctx.name, dayLabel: day, windowLabel: windowDef && windowDef.label,
+      address: m.address, load: size && size.label, travel: travelLine(m),
+      total: fmtAmount(total), cancelHours: ORDER.POLICY.cancelHours,
+    });
+    await sendEmail({ to: ctx.email, kind: 'transactional', idempotencyKey: `${event.id}:cust`, ...msg });
+  }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -536,6 +621,20 @@ module.exports = async (req, res) => {
   }
 
   const obj = event.data.object || {};
+
+  // A card saved for a booking: the SetupIntent's OWN kind decides, never the
+  // customer metadata merged into the context. Any other kind is not ours.
+  if (event.type === 'setup_intent.succeeded') {
+    if (obj.metadata && obj.metadata.kind === 'booking') await handleBooked(stripe, event);
+    else console.log('[stripe-webhook] setup_intent.succeeded is not a booking, ignored');
+    return res.status(200).json({ received: true });
+  }
+
+  // After the job charges (Task 6 handles them): never read as a booking.
+  if (event.type.startsWith('payment_intent.') && obj.metadata && (obj.metadata.kind === 'final_charge' || obj.metadata.kind === 'late_fee')) {
+    console.log('[stripe-webhook] after the job charge, not a booking:', obj.metadata.kind);
+    return res.status(200).json({ received: true });
+  }
 
   const OPS_GOOD = new Set([
     'customer.subscription.created',

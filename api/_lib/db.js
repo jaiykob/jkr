@@ -305,7 +305,7 @@ async function createBookedVisit(fields = {}) {
   const find = () => rest('GET', `visits?stripe_setup_intent_id=eq.${encodeURIComponent(f.stripeSetupIntentId)}&select=*&limit=1`);
   const existing = await find();
   if (existing === null) return null;
-  if (Array.isArray(existing) && existing[0]) return existing[0];
+  if (Array.isArray(existing) && existing[0]) return { ...existing[0], existing: true };
   const int = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
   const rows = await rest('POST', 'visits?on_conflict=stripe_setup_intent_id', {
     body: {
@@ -331,7 +331,7 @@ async function createBookedVisit(fields = {}) {
   if (rows === null) return null;
   // A parallel delivery won the insert: return its row.
   const again = await find();
-  return Array.isArray(again) && again[0] ? again[0] : null;
+  return Array.isArray(again) && again[0] ? { ...again[0], existing: true } : null;
 }
 
 // ── Visit photos + private storage ───────────────────────────────────────────

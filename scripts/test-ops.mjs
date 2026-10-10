@@ -11,10 +11,11 @@ delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 // Fake Stripe (the event is the request body) and a sendEmail that records.
 const sent = [];
 let customerMeta = {};
+const customerUpdates = [];
 class FakeStripe {
   constructor() {
     this.webhooks = { constructEvent: (raw) => JSON.parse(raw.toString('utf8')) };
-    this.customers = { retrieve: async (id) => ({ id, name: 'Jane Smith', email: 'jane@example.com', phone: '5035550100', metadata: customerMeta }) };
+    this.customers = { update: async (id, p) => { customerUpdates.push({ id, ...p }); return { id, ...p }; }, retrieve: async (id) => ({ id, name: 'Jane Smith', email: 'jane@example.com', phone: '5035550100', metadata: customerMeta }) };
     this.subscriptions = { retrieve: async (id) => ({ id, status: 'active', items: { data: [] }, metadata: {} }) };
   }
 }
@@ -137,12 +138,15 @@ console.log('== slots ==');
 const ORDER = require('../api/_lib/order-config.js');
 const NOW = Date.now();
 let visitRows = [], down = false, posts = [];
+const pings = [];
 const fakeVisits = (r) => { visitRows = r.map((v, i) => ({ id: v.id || `v${i}`, customer_id: 'c1', customers: { id: 'c1', email: 'jane@example.com' }, ...v })); down = false; };
 const dbDown = () => { down = true; };
 globalThis.fetch = async (url, init = {}) => {
-  if (down) throw new Error('database unreachable');
   const u = new URL(url);
+  if (u.hostname === 'discord.invalid') { pings.push(JSON.parse(init.body)); return { ok: true, status: 204, text: async () => '' }; }
+  if (down) throw new Error('database unreachable');
   const q = u.searchParams;
+  if (u.pathname.endsWith('/customers') && (init.method || 'GET') === 'POST') return { ok: true, status: 201, json: async () => [{ id: 'c1' }], text: async () => '' };
   if (!u.pathname.endsWith('/visits')) return { ok: true, status: 200, json: async () => [], text: async () => '' };
   if ((init.method || 'GET') === 'POST') {
     const b = JSON.parse(init.body); posts.push(b);
@@ -217,6 +221,53 @@ dbDown();
 ok(Object.keys(await db.slotCounts({ market: 'portland', from: first, to: first })).length === 0, 'slotCounts is not empty with the database down');
 dbDown();
 ok((await callCapacity('?market=portland')).json.days.every((d) => !d.full && d.windows.every((w) => !w.full)), 'capacity must fail open');
+
+
+console.log('== booked ==');
+const day = first;
+const createdVisits = () => posts;
+const sentEmails = () => sent;
+const discordPings = () => pings;
+const setupIntentSucceeded = (meta, id = 'evt_si_1') => ({
+  id, type: 'setup_intent.succeeded', livemode: false,
+  data: { object: { id: 'seti_9', object: 'setup_intent', customer: 'cus_1', payment_method: 'pm_9', status: 'succeeded', metadata: meta } },
+});
+const bookEnv = { OPS_EMAIL: 'owner@example.com', OPS_WEBHOOK_URL: 'https://discord.invalid/hook' };
+customerMeta = { address: '9 Elm St, Portland 97202', plan: 'one_time' };
+fakeVisits([]); posts = []; pings.length = 0; customerUpdates.length = 0;
+const ev = setupIntentSucceeded({ kind: 'booking', date: day, window: 'w10', total_cents: '37400', travel_cents: '2500', load_idx: '2', zone_label: 'Zone 2' });
+await deliver(ev, bookEnv);
+ok(createdVisits().length === 1 && createdVisits()[0].window_key === 'w10' && createdVisits()[0].payment_status === 'card_saved', 'visit not written');
+ok(createdVisits()[0] && createdVisits()[0].stripe_payment_method_id === 'pm_9' && createdVisits()[0].travel_cents === 2500, `visit row is ${JSON.stringify(createdVisits()[0])}`);
+ok(customerUpdates.some((u) => u.id === 'cus_1' && u.invoice_settings && u.invoice_settings.default_payment_method === 'pm_9'), 'the saved card is not the customer default payment method');
+const conf = sentEmails().find((e) => e.to === 'jane@example.com');
+ok(sentEmails().some((e) => /Nothing is charged today/.test(e.html) && /10 am to 12 pm/.test(e.html)), 'confirmation lacks the window or the rule');
+ok(conf && /\$374\.00/.test(conf.html) && /Zone 2/.test(conf.html) && /\$25\.00/.test(conf.html) && /charged after the job/.test(conf.html), 'confirmation lacks the total, the travel line or the consent');
+ok(conf && /Nothing is charged today/.test(conf.text), 'confirmation text lacks the rule');
+ok(sentEmails().some((e) => e.to === 'owner@example.com'), 'no owner email');
+ok(discordPings().length === 1 && /New booking/.test(discordPings()[0].embeds[0].title), 'no Discord ping');
+await deliver(ev, bookEnv);
+ok(createdVisits().length === 1, 'a redelivered event wrote a second visit');
+ok(discordPings().length === 1, 'a redelivered event pinged Discord again');
+await deliver(setupIntentSucceeded({ kind: 'something_else' }, 'evt_si_2'), bookEnv);
+ok(createdVisits().length === 1 && discordPings().length === 1, 'a setup intent that is not a booking wrote a visit or pinged');
+ok(sentEmails().length === 0, 'a setup intent that is not a booking sent email');
+// The customer's merged metadata must not make a final charge a booking.
+customerMeta = { plan: 'one_time', kind: 'booking', date: day, window: 'w10' };
+await deliver({ id: 'evt_fc_1', type: 'payment_intent.succeeded', livemode: false,
+  data: { object: { id: 'pi_fc', customer: 'cus_1', amount_received: 37400, metadata: { kind: 'final_charge', visit_id: 'v1' } } } }, bookEnv);
+ok(createdVisits().length === 1 && discordPings().length === 1 && !sentEmails().length, 'a final charge was read as a booking');
+customerMeta = { address: '9 Elm St, Portland 97202' };
+fakeVisits([]); posts = []; pings.length = 0; customerUpdates.length = 0;
+dbDown();
+await deliver(setupIntentSucceeded({ kind: 'booking', date: day, window: 'w12', total_cents: '34900', travel_cents: '0' }, 'evt_si_3'), bookEnv);
+ok(sentEmails().some((e) => e.to === 'jane@example.com' && /12 to 2 pm/.test(e.html)), 'a database error lost the confirmation (fail soft)');
+ok(sentEmails().length >= 2 && discordPings().length === 1, 'a database error lost the owner email or the ping (fail soft)');
+// Reminders show the window.
+const rem = tpl.visitReminder({ name: 'Jane', visitDate: 'Tue Oct 14', windowLabel: '10 am to 12 pm' });
+ok(/10 am to 12 pm/.test(rem.html) && /10 am to 12 pm/.test(rem.text), 'the reminder does not show the window');
+const rem0 = tpl.visitReminder({ name: 'Jane', visitDate: 'Tue Oct 14' });
+ok(!/undefined/.test(rem0.html + rem0.text), 'a reminder without a window prints undefined');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
