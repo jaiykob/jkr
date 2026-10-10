@@ -355,12 +355,16 @@ const rectOf = (sel) => `(function(){var e=document.querySelector(${JSON.stringi
 return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,w:r.width,h:r.height,display:c.display,visibility:c.visibility,opacity:c.opacity,position:c.position};})()`;
 const shown = (r) => !!r && r.display !== 'none' && r.visibility !== 'hidden' && r.w > 0 && r.h > 0;
 /** Walk the order page's sections the way a customer does. Returns null, or the step that failed. */
-async function fillOrder(p, { wallet = false, zip = Z2, contact = true } = {}) {
+async function fillOrder(p, { wallet = false, zip = Z2, contact = true, picked = {} } = {}) {
   const step = async (name, fn) => { try { await fn(); return null; } catch (e) { return `${name}: ${e.message}`; } };
   let bad = null;
   bad = bad || await step('ZIP', () => p.type('#o-zip input', zip));
-  bad = bad || await step('day chip', () => p.click('#o-when [data-date]:not([disabled]):not([aria-disabled="true"])'));
-  bad = bad || await step('window', () => p.click('#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)'));
+  const DAY = '#o-when [data-date]:not([disabled]):not([aria-disabled="true"])', WIN = '#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)';
+  const attr = (sel, a) => p.evaluate(`(function(){var e=document.querySelector(${JSON.stringify(sel)});return e?e.getAttribute(${JSON.stringify(a)}):null;})()`);
+  picked.date = await attr(DAY, 'data-date');
+  bad = bad || await step('day chip', () => p.click(DAY));
+  picked.window = await attr(WIN, 'data-window');
+  bad = bad || await step('window', () => p.click(WIN));
   if (contact) {
     bad = bad || await step('name', () => p.type('#o-you input[autocomplete="name"]', SAMPLE_CONTACT.name));
     bad = bad || await step('phone', () => p.type('#o-you input[autocomplete="tel"]', SAMPLE_CONTACT.phone));
@@ -377,12 +381,12 @@ async function fillOrder(p, { wallet = false, zip = Z2, contact = true } = {}) {
 async function bookingJourney(width, wallet) {
   resetState();
   return withPage(width, async (p) => {
+    try {
     await p.goto(`${ORIGIN}/index.html?__fakepay=1&__open=1&__sticky=1`, 1200);
     const tagged = await p.evaluate(`(function(){var cs=[].slice.call(document.querySelectorAll('.size-card'));
 var c=cs.filter(function(e){return (e.querySelector('.size-price')||e).textContent.indexOf(${JSON.stringify(fmt(LOAD_CENTS).replace(/\.00$/, ''))})>-1;})[0];
 if(!c)return false;c.setAttribute('data-score-pick','1');return true;})()`);
     if (!tagged) return 'no homepage size card shows the half truck price';
-    try {
       await p.click('[data-score-pick]', 1800);
       let bad = await fillOrder(p, { wallet });
       if (bad) return `could not fill the order page, ${bad}`;
@@ -569,8 +573,9 @@ const ROUNDS = {
     } },
     { id: 'failures-ui', pts: 4, desc: 'far ZIP lead; a full window greyed and labelled "Full"; the stale quote message; gates closed saves a reservation lead and calls no Stripe', async run() {
       if (!Z2) return 'no zone 2 ZIP in the config';
-      const far = await dump(ORDER_WITH_ZIP('', FAR));
-      if (!/call|email you a price|email us/i.test(text(byId(far, 'o-zip') ? byId(far, 'o-zip').inner : far))) return 'a ZIP past the last zone gets no call or email a price answer';
+      const far = byId(await dump(ORDER_WITH_ZIP('', FAR)), 'o-zip');
+      if (!far) return 'no #o-zip section on the order page';
+      if (!/type="email"/i.test(far.inner) || !/call/i.test(far.text) || !/price/i.test(far.text)) return 'a ZIP past the last zone shows no call-us message with an email-a-price form inside #o-zip';
       resetState();
       STATE.full = true;
       const full = await withPage(360, async (p) => {
@@ -594,12 +599,18 @@ const ROUNDS = {
       return withPage(360, async (p) => {
         await p.goto(ORIGIN + ORDER_WITH_ZIP('__fakepay=1'));
         await p.evaluate(`window.__leads=[];if(window.SiteLeads)window.SiteLeads.capture=function(a){window.__leads.push(a);return Promise.resolve({});};`);
-        const bad = await fillOrder(p, { zip: Z2 });
+        const picked = {};
+        const bad = await fillOrder(p, { zip: Z2, picked });
         if (bad) return `could not fill the order page, ${bad}`;
+        if (!picked.date || !picked.window) return 'the day or window chip has no data-date or data-window to check';
         await p.click('#o-book', 1500);
         const leads = JSON.stringify(await p.evaluate('window.__leads'));
         if (!leads || leads === '[]') return 'with the gates closed Book saved no reservation lead';
-        for (const [what, re] of [['ZIP', new RegExp(Z2)], ['date', /\d{4}-\d{2}-\d{2}/], ['window', /w\d\d|am|pm/], ['phone', /555.?0100/], ['email', /probe@example\.com/], ['size', /1\/2|half|"?size"?/i]]) if (!re.test(leads)) return `the reservation lead has no ${what}`;
+        const sizeLabel = Object.values(C.LOADS)[LOAD_ROW].label;
+        const has = (v) => leads.toLowerCase().includes(String(v).toLowerCase());
+        const wanted = [['ZIP', Z2], ['date', picked.date], ['window', picked.window], ['phone', SAMPLE_CONTACT.phone.replace(/\D/g, '').slice(-7)], ['email', SAMPLE_CONTACT.email], ['name', SAMPLE_CONTACT.name], ['street', SAMPLE_CONTACT.addr]];
+        for (const [what, v] of wanted) if (!has(v) && !(what === 'phone' && /555.?0100/.test(leads))) return `the reservation lead has no ${what} (${v})`;
+        if (!has(sizeLabel) && !new RegExp(`"size"\\s*:\\s*"?${LOAD_ROW}\\b`).test(leads)) return `the reservation lead has no size (${sizeLabel} or row ${LOAD_ROW})`;
         return (STATE.bookingHits === 0 && fakeStripe.calls.length === 0) || 'a closed-gate Book still reached create-booking or Stripe';
       });
     } },
