@@ -4,6 +4,7 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { installFakeStripe } from './lib/fake-stripe.mjs';
 import { PRICES, ONE_TIME_COL, COLUMNS, BILLING, ALL_ZIPS, ZIP_ZONES } from '../pricing.config.mjs';
 
 const require = createRequire(import.meta.url);
@@ -11,29 +12,8 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) pass++; else { fail++; console.log('  FAIL: ' + m); } };
 
-// Fake Stripe: `claimed` founding bookings so far; records every create.
-let claimed = 0;
-const calls = [];
-class FakeStripe {
-  constructor() {
-    this.customers = { create: async (p) => { calls.push(['customer', p]); return { id: 'cus_1' }; } };
-    this.paymentIntents = {
-      create: async (p) => { calls.push(['pi', p]); return { client_secret: 'pi_secret', amount: p.amount }; },
-      search: async () => ({ data: [], has_more: false }),
-    };
-    this.subscriptions = {
-      create: async (p) => { calls.push(['sub', p]); return { id: 'sub_1', latest_invoice: { amount_due: p.items[0].price_data.unit_amount, payment_intent: { client_secret: 'inv' } } }; },
-      search: async () => ({ data: Array.from({ length: claimed }, () => ({ status: 'active' })), has_more: false }),
-    };
-    this.coupons = {
-      retrieve: async () => { const e = new Error('none'); e.code = 'resource_missing'; throw e; },
-      create: async (p) => { calls.push(['coupon', p]); return { id: p.id }; },
-    };
-  }
-}
-const Module = require('node:module');
-const load = Module._load;
-Module._load = function (req, ...rest) { return req === 'stripe' ? FakeStripe : load.call(this, req, ...rest); };
+// Fake Stripe (scripts/lib/fake-stripe.mjs): state.claimed is the founding bookings so far.
+const { calls, state } = installFakeStripe();
 delete process.env.SUPABASE_URL;
 
 const founding = require(path.join(ROOT, 'api/_lib/founding.js'));
@@ -82,7 +62,7 @@ ok((await spots()).open === false, 'founding-spots without Stripe is not closed'
 console.log('== booking with the offer ==');
 founding.FOUNDING.open = true;
 founding._resetCache();
-claimed = 3;
+state.claimed = 3;
 ok((await spots({ STRIPE_SECRET_KEY: 'sk_test_x' })).left === founding.FOUNDING.spots - 3, 'spots left miscounted');
 r = await call(good({ founding: true }));
 const pi1 = calls.find((c) => c[0] === 'pi');
@@ -96,7 +76,7 @@ const sub = calls.find((c) => c[0] === 'sub'), coupon = calls.find((c) => c[0] =
 ok(r.status === 200 && sub && sub[1].discounts && coupon && coupon[1].duration_in_months === 1, 'a monthly pickup did not get a one month coupon');
 
 console.log('== the last spot just went ==');
-claimed = founding.FOUNDING.spots;
+state.claimed = founding.FOUNDING.spots;
 founding._resetCache();
 r = await call(good({ founding: true }));
 ok(r.status === 409 && r.json.code === 'founding_closed', `shown the offer after the last spot went: ${r.status} ${JSON.stringify(r.json)}`);

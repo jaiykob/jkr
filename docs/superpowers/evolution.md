@@ -546,3 +546,9 @@ graph TD
   A6["Plan A · in place · 81"] --> C6["Child · 94"]
   B6["Plan B · module beside · 84"] --> C6
 ```
+
+### Build generations
+
+| Gen | Parent | What changed | Score | Best so far |
+| --- | --- | --- | --- | --- |
+| 0 | feat/order-flow (1b7afac) | nothing yet: the round 6 scorecard alone (shared fake Stripe, real API routes and a Stripe.js stub in the score server, click and type helpers in the browser driver); only `tests` and `earlier` pass | 10 | 10 |

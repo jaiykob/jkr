@@ -1,0 +1,82 @@
+/**
+ * A fake Stripe for the tests and the score server. It is installed in the
+ * require cache, so the real API handlers (api/*.js) run against it without
+ * network. Every call is recorded as [kind, params] in `calls`.
+ *
+ *   const { calls, state } = installFakeStripe({ decline: 'card_declined' });
+ *
+ * opts.decline: 'card_declined' | 'authentication_required' makes an
+ * off_session paymentIntents.create throw a StripeCardError with that code.
+ * state.claimed is how many founding subscriptions "exist" (subscriptions.search).
+ */
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const Module = require('node:module');
+
+let ctx = null;
+let installed = false;
+let seq = 0;
+
+class FakeStripe {
+  constructor() {
+    const { calls, state, opts } = ctx;
+    const next = (p) => `${p}_${++seq}`;
+    this.customers = {
+      create: async (p) => { calls.push(['customer', p]); return { id: 'cus_1', ...p }; },
+      update: async (id, p) => { calls.push(['customer-update', { id, ...p }]); return { id, ...p }; },
+      retrieve: async (id) => ({ id, metadata: {}, invoice_settings: {} }),
+      search: async () => ({ data: [], has_more: false }),
+    };
+    this.setupIntents = {
+      create: async (p) => {
+        calls.push(['si', p]);
+        const si = { id: next('seti'), client_secret: 'seti_secret', status: 'requires_payment_method', customer: p.customer, metadata: p.metadata || {}, payment_method: null };
+        state.setupIntents[si.id] = si;
+        return si;
+      },
+      retrieve: async (id) => state.setupIntents[id] || { id, status: 'succeeded', metadata: {}, payment_method: 'pm_1' },
+    };
+    this.paymentIntents = {
+      create: async (p) => {
+        calls.push(['pi', p]);
+        if (opts.decline && p.off_session) {
+          const e = new Error(opts.decline === 'authentication_required' ? 'Authentication required' : 'Your card was declined.');
+          e.type = 'StripeCardError';
+          e.code = opts.decline;
+          throw e;
+        }
+        return { id: next('pi'), client_secret: 'pi_secret', amount: p.amount, status: 'succeeded', metadata: p.metadata || {} };
+      },
+      search: async () => ({ data: [], has_more: false }),
+    };
+    this.invoiceItems = { create: async (p) => { calls.push(['invoice-item', p]); return { id: next('ii'), ...p }; } };
+    this.invoices = {
+      create: async (p) => { calls.push(['invoice', p]); return { id: next('in'), ...p }; },
+      finalizeInvoice: async (id) => { calls.push(['finalize', { id }]); return { id, hosted_invoice_url: `https://invoice.example/${id}` }; },
+      sendInvoice: async (id) => { calls.push(['send-invoice', { id }]); return { id, hosted_invoice_url: `https://invoice.example/${id}` }; },
+    };
+    this.subscriptions = {
+      create: async (p) => {
+        calls.push(['sub', p]);
+        return { id: 'sub_1', latest_invoice: { amount_due: p.items[0].price_data.unit_amount, payment_intent: { client_secret: 'inv_secret' } } };
+      },
+      search: async () => ({ data: Array.from({ length: state.claimed }, () => ({ status: 'active' })), has_more: false }),
+    };
+    this.coupons = {
+      retrieve: async () => { const e = new Error('none'); e.code = 'resource_missing'; throw e; },
+      create: async (p) => { calls.push(['coupon', p]); return { id: p.id }; },
+    };
+  }
+}
+
+/** Install (or re-install with new options) the fake. Returns { calls, state }. */
+export function installFakeStripe(opts = {}) {
+  ctx = { calls: [], state: { claimed: 0, setupIntents: {} }, opts };
+  if (!installed) {
+    const load = Module._load;
+    Module._load = function (req, ...rest) { return req === 'stripe' ? FakeStripe : load.call(this, req, ...rest); };
+    installed = true;
+  }
+  return { calls: ctx.calls, state: ctx.state };
+}

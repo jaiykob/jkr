@@ -6,25 +6,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PRICES, ONE_TIME_COL, COLUMNS, BILLING, ALL_ZIPS, ZIP_ZONES, ZONES } from '../pricing.config.mjs';
 import ZIP_MILES from '../data/zip-miles.mjs';
+import { installFakeStripe } from './lib/fake-stripe.mjs';
 
 const require = createRequire(import.meta.url);
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // Fake Stripe, installed in the require cache before the handler loads.
-const calls = [];
-class FakeStripe {
-  constructor() {
-    this.customers = { create: async (p) => { calls.push(['customer', p]); return { id: 'cus_1' }; } };
-    this.paymentIntents = { create: async (p) => { calls.push(['pi', p]); return { client_secret: 'pi_secret', amount: p.amount }; } };
-    this.subscriptions = { create: async (p) => {
-      calls.push(['sub', p]);
-      return { id: 'sub_1', latest_invoice: { amount_due: p.items[0].price_data.unit_amount, payment_intent: { client_secret: 'inv_secret' } } };
-    } };
-  }
-}
-const Module = require('node:module');
-const load = Module._load;
-Module._load = function (req, ...rest) { return req === 'stripe' ? FakeStripe : load.call(this, req, ...rest); };
+const { calls } = installFakeStripe();
 // No Supabase configured: db calls must fail open.
 delete process.env.SUPABASE_URL;
 const handler = require(path.join(ROOT, 'api/create-booking.js'));
