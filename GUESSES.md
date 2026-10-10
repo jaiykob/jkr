@@ -14,8 +14,8 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - [ ] **prices** (`GUESS.prices`): The load prices (`PRICE_TABLE` in `pricing.config.mjs`): every load size, one-time and monthly.
 - [ ] **zones** (`GUESS.zones`): The travel zones (`ZONES` in `pricing.config.mjs`): the mile bands and the fee for each zone. **Founder note (2026-10-07):** 30 miles may be too far for junk removal; a max radius of 22 to 24 road miles, with every fee covering its drive. At 24 miles about 19 of the 40 town files fall outside and `npm run build` names them.
 - [ ] **base** (`GUESS.base`): The base point (`BASE` in `pricing.config.mjs`): Gresham city center, not the real yard. Moving it means re-running `node scripts/measure-zips.mjs`.
-- [ ] **schedule** (`GUESS.schedule`): The hours (`SCHEDULE` in `pricing.config.mjs`): the open days, the arrival windows and how many jobs fit in each window and each day.
-- [ ] **policy** (`GUESS.policy`): The cancel and fee policy (`POLICY` in `pricing.config.mjs`): free cancel hours before a window, the late cancel fee and the refusal fee.
+- [ ] **schedule** (`GUESS.schedule`): The schedule (`SCHEDULE` in `pricing.config.mjs`): the arrival windows and their hours, the cap per window, the daily cap, days ahead (how many day chips show), lead days (how soon the first bookable day is) and the closed days (Sunday).
+- [ ] **policy** (`GUESS.policy`): The cancel and fee policy (`POLICY` in `pricing.config.mjs`): cancel hours (free to cancel or move until this long before a window starts), the late fee, the refusal fee when the customer says no on site, and the consent version.
 
 ## Marked in the source
 
