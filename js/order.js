@@ -17,8 +17,18 @@
    details stay in this tab (sessionStorage orderState), never in a URL.
 
    With the booking gates closed (BOOKINGS_OPEN_CLIENT in the page), Book saves
-   a reservation lead (size, ZIP, day, window, contact) and calls no payment
-   API; the card form and the booking API come with the pay step.          */
+   a reservation lead (size, ZIP, day, window, contact), shows no card form
+   and loads no Stripe.js.
+
+   With them open, the pay step loads Stripe.js and mounts one Elements group
+   in setup mode (the card is saved now and charged after the job): Apple Pay
+   or Google Pay (Express Checkout Element) above the card form (Payment
+   Element). One box, "I agree to the terms, and to this card being charged
+   after the job", gates both. Book, or the wallet sheet: elements.submit(),
+   POST /api/create-booking (the server reprices, checks the window and the
+   consent, and returns a SetupIntent), stripe.confirmSetup(), thanks.html.
+   The booking summary rides to thanks.html in sessionStorage (bookingSummary),
+   never in the URL.                                                       */
 (function () {
   'use strict';
   var ORDER = window.ORDER, TRAVEL = window.TRAVEL;
@@ -62,13 +72,23 @@
   };
   var days = null;          // day-capacity answer: [{ date, label, full, windows: [{ key, label, full }] }]
   var daysMarket = null;    // the market those days are for
+  var refused = {};         // 'date|window' the server just called full: stays full until a fresh read agrees
   var reserved = false;
+  var busy = false;         // a booking is on its way: a second tap must not start a second one
+  var override = null;      // { size, zip, cents }: the server's total after a stale quote
   var photoItems = '';      // what the photos showed, for the lead
+  // The number people call, read from the page header (this file types none).
+  var PHONE = ((document.querySelector('.o-head-num') || {}).textContent || '').trim();
+  var CALL_US = PHONE ? 'call or text ' + PHONE : 'call or text us';
 
   var SIZES = ORDER.SIZES;
   var sizeOf = function (row) { return row == null ? null : SIZES[row] || null; };
   var load = function () { var s = sizeOf(state.size); return s ? s.cents : 0; };
-  var total = function () { return state.trip && state.size != null ? ORDER.totalFor(state.size, state.trip.cents) : null; };
+  var total = function () {
+    if (!state.trip || state.size == null) return null;
+    if (override && override.size === state.size && override.zip === state.trip.zip) return override.cents;
+    return ORDER.totalFor(state.size, state.trip.cents);
+  };
   var dayOf = function (date) { return (days || []).filter(function (d) { return d.date === date; })[0] || null; };
   var winOf = function (date, key) { var d = dayOf(date); return d ? d.windows.filter(function (w) { return w.key === key; })[0] || null : null; };
   var windowFree = function (date, key) { var d = dayOf(date), w = winOf(date, key); return !!(d && w && !d.full && !w.full); };
@@ -157,7 +177,9 @@
     // The Book button carries the amount.
     var book = $('o-book');
     var verb = OPEN ? 'Book ' : 'Reserve ';
+    book.setAttribute('aria-busy', String(busy));
     if (reserved) book.textContent = 'Reserved';
+    else if (busy) book.textContent = 'Booking your pickup…';
     else if (!s) book.textContent = OPEN ? 'Book' : 'Reserve';
     else if (!t) fill(book, [verb, guessy(fmt(s.cents), PRICE_GUESS), ' + travel']);
     else fill(book, [verb, guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)]);
@@ -177,6 +199,8 @@
     document.querySelectorAll('a[data-wa]').forEach(function (a) { a.href = a.getAttribute('data-wa') + '?text=' + encodeURIComponent(msg); });
 
     var opened = layout();
+    // Bookings open: the card form loads the first time the pay step opens.
+    if (OPEN && $('o-pay').classList.contains('is-open')) mountPay();
     save();
     return opened;
   }
@@ -187,8 +211,20 @@
     c.unit = OPTIONAL.unit.value; c.notes = OPTIONAL.notes.value;
     write(STORE, { size: state.size, zip: state.zip, date: state.date, window: state.window, contact: c });
   }
-  /* Any change after a reservation: the next Book saves the new details. */
-  function changed() { $('o-pay-fail').hidden = true; if (reserved) { reserved = false; $('o-reserved').hidden = true; $('o-closed').hidden = OPEN; } }
+  /* Any change to the order (size, ZIP, day, window, contact): an old failure
+     or price note no longer applies, and after a reservation the next Book
+     saves the new details. */
+  function changed() {
+    $('o-pay-fail').hidden = true;
+    payMsg('');
+    if (reserved) { reserved = false; $('o-reserved').hidden = true; $('o-closed').hidden = OPEN; }
+  }
+  /* The line under the pay step: kind is 'err' (red) or 'note'. */
+  function payMsg(text, kind) {
+    var m = $('o-pay-msg');
+    m.textContent = text || '';
+    m.className = 'o-msg' + (text && kind ? ' is-' + kind : '');
+  }
 
   /* ── 1. size ─────────────────────────────────────────────────────────── */
   var cards = window.SizeCards ? SizeCards.mount($('o-sizes'), { onPick: function (row) { setSize(row, 'tap'); } }) : null;
@@ -297,30 +333,58 @@
     });
   }
   var loading = null;
+  /* The capacity answer for a market: its days, or null when it cannot be had. */
+  function fetchDays(market) {
+    return fetch('../api/day-capacity?market=' + encodeURIComponent(market), { headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; })
+      .then(function (j) { return j && Array.isArray(j.days) && j.days.length ? j.days : null; });
+  }
+  /* A window the booking API just refused as full stays full here, even if
+     the capacity read lags behind it. */
+  function markRefused(list) {
+    (list || []).forEach(function (d) {
+      d.windows.forEach(function (w) { if (refused[d.date + '|' + w.key]) w.full = true; });
+      if (d.windows.every(function (w) { return w.full; })) d.full = true;
+    });
+    return list;
+  }
   function loadDays(market) {
     if (daysMarket === market && (days || loading)) return;
     if (daysMarket !== market) days = null;
     daysMarket = market;
-    var mine = loading = fetch('../api/day-capacity?market=' + encodeURIComponent(market), { headers: { Accept: 'application/json' } })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .catch(function () { return null; })
-      .then(function (j) {
-        if (mine !== loading) return;
-        loading = null;
-        days = j && Array.isArray(j.days) && j.days.length ? j.days : openDaysFallback();
-        settleDay();
-        drawWhen();
-        render();
-      });
+    var mine = loading = fetchDays(market).then(function (list) {
+      if (mine !== loading) return;
+      loading = null;
+      days = markRefused(list || openDaysFallback());
+      settleDay();
+      drawWhen();
+      render();
+    });
     drawWhen();
   }
+  /* Read the days again after the booking API said a window or day is gone,
+     keeping what is on screen until the answer comes. */
+  function refreshDays() {
+    var market = daysMarket;
+    if (!market) return;
+    fetchDays(market).then(function (list) {
+      if (!list || market !== daysMarket) return;
+      days = markRefused(list);
+      settleDay();
+      drawWhen();
+      render();
+    });
+  }
   /* Keep the picked day and window while they are still free; otherwise the
-     soonest day with room is picked for them (the window stays theirs to pick). */
+     soonest day with room is picked for them (the window stays theirs to pick,
+     so a window never moves to another day on its own). */
   function settleDay() {
     if (!days) return;
     var d = dayOf(state.date);
     if (!d || d.full) {
       var first = days.filter(function (x) { return !x.full; })[0];
+      if (state.date && (!first || first.date !== state.date)) state.window = null;
       state.date = first ? first.date : null;
     }
     if (state.window && !windowFree(state.date, state.window)) state.window = null;
@@ -437,9 +501,10 @@
   }
   $('o-book').addEventListener('click', function () {
     if (reserved) { showReserved(); return; }
+    if (busy) return;
     var m = missing();
     if (m) { guide(m); return; }
-    reserve();
+    if (OPEN) bookByCard(); else reserve();
   });
   form.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -454,12 +519,11 @@
     var c = state.contact, tot = total();
     save();
     var photos = window.PhotoQuote ? PhotoQuote.photos() : [];
-    var address = [c.street.trim(), c.unit.trim()].filter(Boolean).join(', ');
     var sent = sendLead({
       service: 'junk',
       first_name: c.name.trim().replace(/\s+/g, ' '),
       phone: c.phone.trim(), email: c.email.trim(), zip: t.zip,
-      address: address + ', ' + t.place + ', ' + t.state + ' ' + t.zip,
+      address: fullAddress(),
       quoted_price: tot / 100,   // leads.quoted_price is dollars
       notes: [
         'PRE-LAUNCH RESERVATION (bookings closed, no card)',
@@ -485,6 +549,12 @@
     render();
     showReserved();
   }
+  /* The job address: street, unit, then the city and ZIP the ZIP step found
+     (the ZIP last, where the booking API reads it). */
+  function fullAddress() {
+    var c = state.contact, t = state.trip;
+    return [c.street.trim(), c.unit.trim()].filter(Boolean).join(', ') + ', ' + t.place + ', ' + t.state + ' ' + t.zip;
+  }
   function showReserved() {
     var s = sizeOf(state.size), d = dayOf(state.date), w = winOf(state.date, state.window), box = $('o-reserved');
     box.textContent = '';
@@ -499,11 +569,233 @@
     say('Your day is reserved.');
   }
 
+  /* ── 6. pay, bookings open: the card is saved now, charged after the job ── */
+  var stripe = null, elements = null, payMounted = false, payBroken = false;
+  var WALLETS = { apple_pay: 'Apple Pay', google_pay: 'Google Pay', link: 'Link' };
+  // One id per page visit. The booking API keys its Stripe calls on it, so a
+  // network retry of the same booking gets the same SetupIntent back.
+  var ATTEMPT = 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  var LOAD_FAIL = 'The card form did not load. Please ' + CALL_US + ' and we will book it with you.';
+  var consentBox = $('o-consent');
+
+  function cardErr(text) { $('o-card-err').textContent = text || ''; }
+  function consentErr(text) {
+    $('o-consent-err').textContent = text || '';
+    $('o-consent-box').classList.toggle('is-invalid', !!text);
+    if (text) consentBox.setAttribute('aria-invalid', 'true'); else consentBox.removeAttribute('aria-invalid');
+  }
+  consentBox.addEventListener('change', function () { if (consentBox.checked) consentErr(''); });
+  function needConsent() {
+    consentErr('Tick the box to agree to the terms and the charge after the job.');
+    say($('o-consent-err').textContent);
+    consentBox.focus({ preventScroll: true });
+    consentBox.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: 'center' });
+    track('order_missing', { step: 'consent' });
+  }
+
+  /* Stripe.js loads only once bookings are open and the pay step opens. */
+  function loadStripe() {
+    if (window.Stripe) return Promise.resolve(window.Stripe);
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://js.stripe.com/v3/';
+      s.async = true;
+      s.onload = function () { if (window.Stripe) resolve(window.Stripe); else reject(new Error('no Stripe')); };
+      s.onerror = function () { reject(new Error('Stripe.js did not load')); };
+      document.head.appendChild(s);
+    });
+  }
+  function mountPay() {
+    if (!OPEN || payMounted) return;
+    payMounted = true;
+    $('o-paybox').hidden = false;
+    loadStripe().then(function (StripeJs) {
+      stripe = StripeJs(window.STRIPE_PUBLISHABLE_KEY);
+      // Setup mode: nothing is charged at booking; the server makes a SetupIntent.
+      elements = stripe.elements({
+        mode: 'setup', currency: 'usd',
+        appearance: { theme: 'stripe', variables: { colorPrimary: '#15171A', colorText: '#2B2F36', colorDanger: '#B42318', fontSizeBase: '16px', borderRadius: '12px' } },
+      });
+      // Apple Pay and Google Pay above the card form. A wallet that cannot be
+      // built costs the wallet row, never the card form.
+      try {
+        var express = elements.create('expressCheckout', {
+          emailRequired: true, phoneNumberRequired: true, buttonHeight: 48,
+          buttonType: { applePay: 'book', googlePay: 'book' },
+          paymentMethods: { applePay: 'always', googlePay: 'always', link: 'never', paypal: 'never', amazonPay: 'never', klarna: 'never' },
+        });
+        express.on('ready', function (e) {
+          var a = (e && e.availablePaymentMethods) || {};
+          $('o-wallet').hidden = !Object.keys(a).some(function (k) { return a[k]; });
+        });
+        express.on('loaderror', function () { $('o-wallet').hidden = true; });
+        express.on('click', walletClick);
+        express.on('confirm', walletConfirm);
+        express.mount('#o-express');
+      } catch (e) { $('o-wallet').hidden = true; }
+      // The card form. Name, email and phone come from the contact step and
+      // are passed at confirm, so nobody types them twice.
+      var payment = elements.create('payment', {
+        fields: { billingDetails: { name: 'never', email: 'never', phone: 'never' } },
+        wallets: { applePay: 'never', googlePay: 'never' },
+      });
+      payment.on('change', function () { cardErr(''); });
+      payment.on('loaderror', function () { payBroken = true; cardErr(LOAD_FAIL); });
+      // The bar never sits over the card form while it is being typed in.
+      payment.on('focus', function () { document.body.classList.add('o-typing'); });
+      payment.on('blur', function () { document.body.classList.remove('o-typing'); });
+      payment.mount('#o-card');
+    }).catch(function () { payBroken = true; $('o-wallet').hidden = true; cardErr(LOAD_FAIL); });
+  }
+
+  /* Everything a booking needs, or the first thing missing (said, never a silent no). */
+  function readyToBook() {
+    var m = missing();
+    if (m) { guide(m); return false; }
+    if (!consentBox.checked) { needConsent(); return false; }
+    if (!elements) { cardErr(payBroken ? LOAD_FAIL : 'The card form is still loading. Try again in a moment.'); say($('o-card-err').textContent); return false; }
+    return true;
+  }
+  function bookByCard() { if (readyToBook()) startBooking('card', null); }
+  /* The wallet sheet opens only once resolve() is called: no box, no sheet. */
+  function walletClick(ev) {
+    if (busy || !readyToBook()) return;
+    ev.resolve({ emailRequired: true, phoneNumberRequired: true });
+  }
+  /* Checked again on confirm: the consent rule holds on the wallet path too. */
+  function walletConfirm(ev) {
+    if (busy) { walletFailed(ev); return; }
+    if (!readyToBook()) { walletFailed(ev); return; }
+    startBooking(ev.expressPaymentType || 'wallet', ev);
+  }
+  function walletFailed(ev) { try { if (ev && ev.paymentFailed) ev.paymentFailed({ reason: 'fail' }); } catch (e) { /* the sheet is already closed */ } }
+
+  function bookingBody() {
+    var s = sizeOf(state.size), t = state.trip, c = state.contact;
+    var photos = window.PhotoQuote ? PhotoQuote.photos() : [];
+    var notes = c.notes.trim();
+    return {
+      email: c.email.trim(), name: c.name.trim().replace(/\s+/g, ' '), phone: c.phone.trim(),
+      size: s.row, zip: t.zip, date: state.date, window: state.window,
+      quotedCents: total(),
+      consent: { agreed: true, version: ORDER.POLICY.consentVersion },
+      attemptId: ATTEMPT,
+      metadata: {
+        address: fullAddress(), unit: c.unit.trim().slice(0, 100), notes: notes.slice(0, 480), photos: photos.join(',').slice(0, 480),
+        // What the crew should know, where the booking ping shows it.
+        items: [photoItems ? 'From photos: ' + photoItems : '', notes ? 'Notes: ' + notes : ''].filter(Boolean).join(' | ').slice(0, 480),
+      },
+    };
+  }
+  /* Billing details for the saved card: the contact step's (the wallet's as a fallback). */
+  function billing(ev) {
+    var c = state.contact, w = (ev && ev.billingDetails) || {};
+    return { name: c.name.trim() || w.name || '', email: c.email.trim() || w.email || '', phone: c.phone.trim() || w.phone || '' };
+  }
+  function writeSummary(data, source) {
+    var s = sizeOf(state.size), t = state.trip, d = dayOf(state.date), w = winOf(state.date, state.window), c = state.contact;
+    var num = function (v, dflt) { return typeof v === 'number' && isFinite(v) ? v : dflt; };
+    var names = c.name.trim().split(/\s+/);
+    write('bookingSummary', {
+      size: s.label, loadCents: num(data.loadCents, s.cents), travelCents: num(data.travelCents, t.cents), totalCents: num(data.totalCents, total()),
+      travel: t.label + ', ' + t.place, travelGuess: TRAVEL_GUESS,
+      date: d.date, dayLabel: d.label, window: w.key, windowLabel: w.label,
+      address: fullAddress(), phone: c.phone.trim(), email: c.email.trim(), zip: t.zip,
+      firstName: names[0] || null, lastName: names.slice(1).join(' ') || null,
+      customerId: data.customerId || null, wallet: WALLETS[source] || null,
+    });
+  }
+
+  /* Book: check the card form, ask the server for a SetupIntent (it reprices,
+     checks the window and the consent), then save the card with Stripe. */
+  function startBooking(source, walletEv) {
+    busy = true;
+    payMsg(''); cardErr('');
+    render();
+    track('booking_attempt', { method: source });
+    var data = null;
+    elements.submit().then(function (r) {
+      if (r && r.error) throw { where: 'card', text: r.error.message };
+      return fetch('../api/create-booking', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingBody()) })
+        .catch(function () { throw { where: 'pay', text: 'We could not reach our booking system. Check your connection and try again, or ' + CALL_US + '.' }; });
+    }).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (j) {
+        if (!res.ok || !j.setupIntentClientSecret) throw refusal(res.status, j);
+        data = j;
+        // Written before the card is confirmed: a card that needs a bank's own
+        // page comes back to thanks.html with the summary already there.
+        writeSummary(data, source);
+        return stripe.confirmSetup({
+          elements: elements, clientSecret: j.setupIntentClientSecret, redirect: 'if_required',
+          confirmParams: { return_url: new URL('thanks.html', location.href).href, payment_method_data: { billing_details: billing(walletEv) } },
+        });
+      });
+    }).then(function (c) {
+      if (c && c.error) throw { where: 'card', text: c.error.message || 'Your card was not saved. Try again, or use another card.' };
+      var st = c && c.setupIntent && c.setupIntent.status;
+      if (st && st !== 'succeeded' && st !== 'processing') throw { where: 'card', text: 'Your card was not saved. Try again, or use another card.' };
+      booked(data, source);
+    }).catch(function (e) {
+      busy = false;
+      walletFailed(walletEv);
+      showFailure(e && e.where ? e : { where: 'pay', text: 'Something went wrong. Please try again, or ' + CALL_US + '.' });
+    });
+  }
+  /* What the booking API's refusal means for the page. */
+  function refusal(status, j) {
+    var code = j && j.code;
+    if (code === 'stale_quote' && typeof j.totalCents === 'number') {
+      // The server's price wins: the page shows it, and the next Book sends it.
+      override = { size: state.size, zip: state.trip.zip, cents: j.totalCents };
+      return { where: 'pay', kind: 'note', text: 'The price has changed since this page loaded. Your new total is ' + fmt(j.totalCents) + '. Check it, then tap Book again.' };
+    }
+    if (code === 'window_full') {
+      refused[state.date + '|' + state.window] = true;
+      markRefused(days);
+      state.window = null;
+      refreshDays();
+      return { where: 'o-when', text: 'That arrival window just filled up. Pick another one.' };
+    }
+    if (code === 'closed_day') {
+      days = (days || []).filter(function (d) { return d.date !== state.date; });
+      settleDay();
+      state.window = null;
+      refreshDays();
+      return { where: 'o-when', text: 'We are not booking that day any more. Pick another day and window.' };
+    }
+    if (code === 'outside_area') return { where: 'o-zip', text: 'We do not book that address online. Please ' + CALL_US + ' for a price.' };
+    if (code === 'consent_required') return consentBox.checked ? { where: 'pay', text: 'This page is out of date. Reload it, then book again.' } : { where: 'consent' };
+    if (status === 503) return { where: 'pay', text: 'We are not taking online bookings just yet. Please ' + CALL_US + ' and we will get you on the schedule.' };
+    return { where: 'pay', text: 'We could not book that just now. Please try again, or ' + CALL_US + '.' };
+  }
+  function showFailure(f) {
+    drawWhen(); render();   // a refused window or day, or a new price, shows at once
+    if (f.where === 'consent') { needConsent(); return; }
+    var at = f.where === 'card' ? $('o-card-err') : f.where === 'o-when' ? $('o-when-msg') : f.where === 'o-zip' ? zipMsg : $('o-pay-msg');
+    if (f.where === 'card') cardErr(f.text);
+    else if (at === $('o-pay-msg')) payMsg(f.text, f.kind || 'err');
+    else { at.textContent = f.text; at.className = 'o-msg is-err'; }
+    say(f.text);
+    var target = f.where === 'o-when' || f.where === 'o-zip' ? $(f.where) : at;
+    target.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: f.where === 'o-when' || f.where === 'o-zip' ? 'start' : 'center' });
+    track('booking_refused', { reason: f.kind === 'note' ? 'stale_quote' : f.where });
+  }
+  function booked(data, source) {
+    var s = sizeOf(state.size), t = state.trip, c = state.contact;
+    track('order_booked', { size: s.label, value: (data.totalCents || total()) / 100, currency: 'USD', zone: t.zone, method: source });
+    // The contact stays for next time in this tab; the day and window do not,
+    // so going back from the thanks page cannot book the same slot twice.
+    write(STORE, { size: state.size, zip: state.zip, date: null, window: null, contact: c });
+    location.href = 'thanks.html';
+  }
+
   /* ── the policy, from ORDER (red while guessed) ──────────────────────── */
   var P = ORDER.POLICY;
   document.querySelectorAll('[data-o="cancel"]').forEach(function (n) { fill(n, [guessy(P.cancelHours + ' hours', !!G.policy)]); });
   document.querySelectorAll('[data-o="late-fee"]').forEach(function (n) { fill(n, [guessy(fmt(P.lateFeeCents), !!G.policy)]); });
   $('o-closed').hidden = OPEN;
+  // A launch date, once the founder names one, lives in js/maintenance-banner.js only.
+  if (!OPEN && window.SITE_REOPEN_TEXT) $('o-closed').textContent = 'We start hauling ' + window.SITE_REOPEN_TEXT + '. ' + $('o-closed').textContent;
 
   /* ── start: the URL, then this tab's earlier visit ───────────────────── */
   var q = new URLSearchParams(location.search);

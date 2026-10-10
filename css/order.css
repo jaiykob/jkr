@@ -193,6 +193,32 @@ button { font: inherit; }
 .o-reserved:focus { outline: none; }
 .o-reserved p { margin: 0; }
 .o-reserved-h { font: 800 20px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; color: var(--ink); margin-bottom: 4px !important; }
+.o-msg.is-note { padding: 12px 14px; border-radius: 12px; background: var(--yel-50); border-left: 5px solid var(--ink); color: var(--ink); font-weight: 700; }
+
+/* ── 5. pay, bookings open: one box, the wallets, then the boxed card form ── */
+.o-paybox { margin-top: 14px; }
+.o-consent {
+  display: flex; align-items: flex-start; gap: 12px; min-height: 48px; padding: 12px 14px; cursor: pointer;
+  background: var(--card); border: 1.5px solid var(--line-2); border-radius: 14px; color: var(--ink); font-weight: 600;
+  transition: border-color .15s, background .15s;
+}
+.o-consent input { flex: none; width: 24px; height: 24px; margin: 0; accent-color: var(--ink); cursor: pointer; }
+.o-consent:has(input:checked) { border-color: var(--ink); background: var(--yel-50); }
+.o-consent.is-invalid { border-color: var(--err); box-shadow: 0 0 0 3px rgba(180,35,24,.12); }
+.o-consent a, .o-pay-help a { display: inline-block; padding: 13px 0; margin: -13px 0; font-weight: 700; color: var(--ink); }
+.o-wallet { margin-top: 16px; }
+.o-express { min-height: 48px; }
+.o-or { display: flex; align-items: center; gap: 12px; margin: 14px 0; color: var(--muted); }
+.o-or::before, .o-or::after { content: ''; flex: 1; height: 1px; background: var(--line-2); }
+.o-wallet[hidden] + .o-card-box { margin-top: 16px; }
+.o-card-box { padding: 14px; border-radius: 16px; background: var(--soft); border: 1.5px solid var(--line-2); }
+.o-card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; margin: 0 0 10px; }
+.o-card-t { font-weight: 800; color: var(--ink); }
+.o-secure { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.o-secure svg { width: 18px; height: 18px; flex: none; }
+.o-card { min-height: 48px; }
+.o-pay-help { margin: 14px 0 0; color: var(--muted); }
+#o-book[aria-busy="true"] { cursor: progress; }
 
 /* ── the Book button (in the bar on a phone, the summary on a desktop) ── */
 .o-book {

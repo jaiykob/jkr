@@ -2,10 +2,10 @@
  * Brand Name — visit scheduling math (pure functions, no I/O).
  *
  * Turns a booking's cadence (freq_idx + chosen weekday) into concrete visit
- * dates. Every plan is anchored on the customer's chosen pickup weekday — the
- * whole route model depends on it (DAILY_CAP is counted per weekday and the
- * booking picker greys out full weekdays), so no cadence here is allowed to
- * drift a customer off the day they were promised.
+ * dates. Every recurring plan is anchored on the customer's pickup weekday,
+ * so no cadence here is allowed to drift a customer off the day they were
+ * promised. (One time hauls book a date and a window on the order page;
+ * capacity is per window: SCHEDULE in pricing.config.mjs.)
  *
  * freq_idx columns (mirror COLUMNS in pricing.config.mjs and PRICES in
  * create-booking.js):
@@ -14,11 +14,6 @@
  */
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-// Max customers we can physically service on a single route day (solo operator).
-// A weekday at this count is "full" — the booking picker greys it out and the
-// server refuses a new recurring booking on it. Raise this when capacity grows.
-const DAILY_CAP = 12;
 
 /**
  * Cadence by freq_idx. `days` steps a fixed number of days; `months` steps a
@@ -132,7 +127,6 @@ function nextVisitDate({ freqIdx, afterDate }) {
 
 module.exports = {
   WEEKDAYS,
-  DAILY_CAP,
   CADENCE,
   intervalDays,
   isRecurring,

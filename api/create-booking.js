@@ -70,7 +70,7 @@ module.exports = async (req, res) => {
   // Three gates must all be open to take a live booking, same as Scoops Co.:
   //   1. BOOKINGS_OPEN_SERVER below (in code, deploys from `main`)
   //   2. BOOKINGS_OPEN=true in Vercel env vars
-  //   3. BOOKINGS_OPEN_CLIENT in book/checkout.html (UI only)
+  //   3. BOOKINGS_OPEN_CLIENT in book/quote.html (UI only)
   // Only LIVE mode (sk_live) is gated, so test-mode runs keep working.
   // EMERGENCY BRAKE: flip this to false and merge. It stands alone.
   const BOOKINGS_OPEN_SERVER = false;   // CLOSED until launch

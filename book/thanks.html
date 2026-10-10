@@ -4,213 +4,124 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Welcome to Brand Name | You're Booked</title>
-  <meta name="description" content="Your Brand Name service is confirmed. Watch a quick welcome and learn what happens next." />
+  <meta name="description" content="Your Brand Name pickup is booked. Your day, your arrival window, and what happens before and after the job." />
   <meta name="robots" content="noindex" />
-  <!-- Self-hosted fonts (fonts/). The Google Fonts stylesheet was render-blocking:
-       the browser had to fetch Google's CSS before it learned which fonts to get. -->
+  <!-- Self-hosted fonts (fonts/), declared inline: no render-blocking font CSS. -->
   <style>
     @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(../fonts/dm-sans.woff2) format('woff2'); }
     @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(../fonts/bricolage.woff2) format('woff2'); }
-    
   </style>
+  <!-- The order page's look (header, footer, colours, type), then guess.css
+       so a red guess wins. The few rules below are this page's own. -->
+  <link rel="stylesheet" href="../css/order.css">
+  <link rel="stylesheet" href="../css/guess.css">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --rg: #15171A; --tan: #FFD23F; --dtan: #7A5A00;
-      --page: #F5F2EA; --card: #FFFFFF; --surf: #ECE7DC;
-      --tx: #15171A; --txm: rgba(21,23,26,.8); --txd: rgba(21,23,26,.74);
-      --bdr: rgba(21,23,26,.12); --bdrt: rgba(255,210,63,.42);
+    .t-main { max-width: 720px; }
+    .t-head { margin: 4px 0 16px; }
+    .t-badge { display: grid; place-items: center; width: 52px; height: 52px; margin: 0 0 12px; border-radius: 50%; background: var(--yellow); }
+    .t-badge svg { width: 28px; height: 28px; color: var(--ink); }
+    .t-head h1 { margin: 0; font: 800 clamp(32px, 8vw, 48px)/1.05 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.03em; color: var(--ink); }
+    .t-head h1 em { font-style: normal; }
+    .t-lede { margin: 8px 0 0; font-size: 17px; color: var(--ink-2); }
+    .t-fail { margin: 14px 0 0; padding: 14px 16px; border-radius: 14px; background: #FDECEA; border-left: 5px solid var(--err); color: var(--ink); }
+    .t-card { margin-top: 14px; padding: 18px 16px; border-radius: 20px; background: var(--card); border: 1px solid var(--line); }
+    .t-card h2 { margin: 0 0 8px; font: 800 22px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; color: var(--ink); }
+    .t-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .t-k { flex: none; color: var(--muted); }
+    .t-v { min-width: 0; text-align: right; font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+    .t-row-total { border-bottom: 0; padding-top: 14px; }
+    .t-row-total .t-k { flex: 0 1 auto; color: var(--ink); font-weight: 700; }
+    .t-row-total .t-v { font: 800 28px/1.1 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; white-space: nowrap; }
+    .t-nowrap { white-space: nowrap; }
+    .t-rule { margin: 12px 0 0; padding: 12px 14px; border-radius: 14px; background: var(--yel-50); border: 1px solid #EBD98F; color: var(--ink-2); }
+    .t-steps { display: grid; gap: 14px; margin: 6px 0 0; padding: 0; list-style: none; counter-reset: step; }
+    .t-steps li { position: relative; padding-left: 44px; counter-increment: step; overflow-wrap: anywhere; }
+    .t-steps li::before { content: counter(step); position: absolute; left: 0; top: -1px; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--yellow); font: 800 16px/30px 'Bricolage Grotesque', sans-serif; text-align: center; }
+    .t-steps strong { color: var(--ink); }
+    .t-move { margin: 16px 0 0; color: var(--muted); }
+    .t-move a, .t-fail a { display: inline-block; padding: 13px 2px; margin: -13px 0; font-weight: 700; color: var(--ink); }
+    /* How did you hear about us: chips, a tap each, asked once the booking is done. */
+    .ref-ask { margin: 0 0 12px; color: var(--muted); }
+    .ref-opts { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ref-opt { min-height: 48px; min-width: 48px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--line-2); background: var(--card); color: var(--ink); font-weight: 600; cursor: pointer; }
+    .ref-opt:hover { border-color: var(--ink); }
+    .ref-opt[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .ref-other { margin-top: 12px; }
+    .ref-other label { display: block; margin-bottom: 6px; font-weight: 700; color: var(--ink); }
+    .ref-other input { width: 100%; min-height: 52px; padding: 0 14px; font: inherit; color: var(--ink-2); background: var(--card); border: 1.5px solid var(--line-2); border-radius: 12px; }
+    .ref-other input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(21,23,26,.16); }
+    .ref-send { margin-top: 14px; min-height: 48px; padding: 0 22px; border: 0; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 700; cursor: pointer; }
+    .ref-send:disabled { opacity: .45; cursor: default; }
+    .ref-done { margin: 8px 0 0; color: var(--ink); font-weight: 600; }
+    .t-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .t-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 22px; border-radius: 14px; background: var(--yellow); color: var(--ink); text-decoration: none; font: 800 18px/1.1 'Bricolage Grotesque', 'DM Sans', sans-serif; box-shadow: 0 4px 0 var(--ink); }
+    .t-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+    @media (min-width: 900px) {
+      .t-main { padding-top: 40px; }
+      .t-card { padding: 22px 24px; }
     }
-    body {
-      font-family: 'DM Sans', sans-serif; background: var(--page); color: var(--tx);
-      min-height: 100vh; line-height: 1.7;
-    }
-
-    nav {
-      background: var(--rg); padding: 18px 32px;
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid rgba(255,210,63,.18);
-    }
-    nav a.brand { display: inline-flex; align-items: center; color: var(--tan); text-decoration: none; }
-    .nav-logo, nav a.brand, nav > a { display: inline-flex !important; align-items: center; gap: 12px; }
-    .nav-wordmark { font-family: 'Bricolage Grotesque', serif; font-weight: 500; font-size: clamp(20px, 2vw, 24px); letter-spacing: .04em; color: var(--tan); line-height: 1; white-space: nowrap; }
-    nav a.brand img { display: block; height: 44px; width: auto; }
-
-    main { max-width: 800px; margin: 0 auto; padding: 56px 24px 96px; }
-
-    .header { text-align: center; margin-bottom: 36px; }
-    .eyebrow {
-      font-size: 11px; font-weight: 700; letter-spacing: .26em;
-      text-transform: uppercase; color: var(--dtan); margin-bottom: 10px;
-    }
-    h1 {
-      font-family: 'Bricolage Grotesque', serif; font-weight: 400;
-      font-size: clamp(38px, 5vw, 54px); line-height: 1.08;
-      color: var(--rg); margin-bottom: 14px;
-    }
-    h1 em { font-style: normal; color: var(--dtan); }
-    .sub { font-size: 16px; color: var(--txm); max-width: 560px; margin: 0 auto; }
-
-    /* Booking summary card */
-    .summary-card {
-      background: var(--card); border: 1px solid var(--bdrt);
-      border-radius: 18px; padding: 28px 32px;
-      box-shadow: 0 14px 40px rgba(21,23,26,.08);
-      margin-bottom: 32px;
-    }
-    .summary-card h2 {
-      font-family: 'Bricolage Grotesque', serif; font-weight: 500;
-      font-size: 20px; color: var(--rg); margin-bottom: 18px;
-    }
-    .summary-rows .row {
-      display: flex; justify-content: space-between;
-      padding: 10px 0; border-bottom: 1px solid var(--bdr);
-      font-size: 14px;
-    }
-    .summary-rows .row:last-child { border-bottom: none; }
-    .summary-rows .label { color: var(--txm); }
-    .summary-rows .value { color: var(--rg); font-weight: 600; text-align: right; }
-
-    /* What's next */
-    .next-steps {
-      background: var(--surf); border: 1px solid var(--bdr);
-      border-radius: 16px; padding: 26px 28px; margin-bottom: 32px;
-    }
-    .next-steps h2 {
-      font-family: 'Bricolage Grotesque', serif; font-weight: 500;
-      font-size: 20px; color: var(--rg); margin-bottom: 18px;
-    }
-    .next-steps ol { padding-left: 20px; font-size: 14.5px; line-height: 1.85; color: var(--txm); }
-    .next-steps li { margin-bottom: 6px; }
-    .next-steps li::marker { color: var(--tan); font-weight: 700; }
-    .next-steps strong { color: var(--rg); }
-
-    /* Action buttons */
-    .actions {
-      display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
-      margin-bottom: 28px;
-    }
-    .btn {
-      padding: 14px 28px; border-radius: 12px; text-decoration: none;
-      font-size: 13px; font-weight: 700; letter-spacing: .06em;
-      transition: transform .2s, background .2s, border-color .2s;
-    }
-    .btn-primary { background: var(--rg); color: var(--tan); }
-    .btn-primary:hover { background: #254a25; transform: translateY(-2px); }
-    .btn-ghost { background: none; border: 1.5px solid var(--bdr); color: var(--txm); }
-    .btn-ghost:hover { border-color: var(--tan); color: var(--rg); }
-
-    .signoff {
-      text-align: center; font-size: 13px; color: var(--txd);
-      font-family: 'Bricolage Grotesque', serif; font-style: normal;
-      margin-top: 12px;
-    }
-
-    /* Referral question — moved here from the checkout form on 2026-08-31.
-       Asked once the booking is paid for, so it costs nobody a conversion. */
-    .referral {
-      background: var(--card); border: 1px solid var(--bdrt);
-      border-radius: 18px; padding: 26px 28px; margin-bottom: 32px;
-      box-shadow: 0 14px 40px rgba(21,23,26,.08);
-    }
-    .referral h2 {
-      font-family: 'Bricolage Grotesque', serif; font-weight: 500;
-      font-size: 20px; color: var(--rg); margin-bottom: 6px;
-    }
-    .referral .ask { font-size: 14px; color: var(--txm); margin-bottom: 18px; }
-    /* Chips, not a <select>: eight options is a tap each instead of a tap, a
-       scroll and a tap through a native picker. */
-    .ref-opts { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 4px; }
-    .ref-opt {
-      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
-      padding: 11px 16px; border-radius: 999px; cursor: pointer;
-      background: var(--surf); border: 1.5px solid var(--bdr); color: var(--rg);
-      transition: background .18s, border-color .18s, color .18s;
-    }
-    .ref-opt:hover { border-color: var(--bdrt); }
-    .ref-opt[aria-pressed="true"] { background: var(--rg); border-color: var(--rg); color: var(--tan); }
-    .ref-other { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; }
-    .ref-other label {
-      font-size: 10px; font-weight: 700; letter-spacing: .16em;
-      text-transform: uppercase; color: var(--dtan);
-    }
-    .ref-other input {
-      padding: 13px 14px; background: var(--surf);
-      border: 1.5px solid var(--bdr); border-radius: 8px;
-      font-family: 'DM Sans', sans-serif; font-size: 16px; color: var(--tx);
-      outline: none; transition: border-color .2s, background .2s;
-    }
-    .ref-other input:focus { border-color: var(--tan); background: #fdf8f0; }
-    .ref-send {
-      margin-top: 18px; border: none; cursor: pointer;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .ref-send:disabled { opacity: .4; cursor: default; transform: none; }
-    .ref-done { margin-top: 4px; font-size: 14px; color: var(--txm); }
-
-    @media (max-width: 600px) {
-      main { padding: 40px 18px 72px; }
-      .referral { padding: 22px 18px; }
-      .ref-send { width: 100%; }
-    }
-      .lang-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--tan) !important; border: 1px solid rgba(255,210,63,.45); border-radius: 100px; padding: 5px 13px; text-decoration: none; white-space: nowrap; }
-    .lang-switch:hover { background: rgba(255,210,63,.14); }
-    .crumb { display: inline-flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-    nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-</style>
+  </style>
 
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
   <script>
     window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
     gtag('js',new Date());gtag('config','G-XXXXXXXXXX');
-    // Query string stripped: thanks.html is same-origin with the checkout, so
-    // document.referrer is the FULL previous URL — which used to include the
-    // customer's name and phone. The checkout no longer leaves those in its
-    // URL, but reporting a bare path here means a stale tab can't leak them
-    // either.
-    gtag('event','conversion_thanks',{ source: (document.referrer || '').split('?')[0] });
   </script>
   <!-- Files the referral answer below into public.leads. -->
   <script src="../js/leads.js" defer></script>
   <!-- Vercel Web Analytics: first-party, cookieless page views -->
   <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
   <script defer src="/_vercel/insights/script.js"></script>
-  <style>
-    /* 2026-09-28 redesign: bold display type, the logo mark, and the
-       hi-vis button the homepage and quote use. */
-    .brand span, .brand-name { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif !important; font-weight: 800 !important; }
-    h1, .q-title, .pay-title { font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; font-weight: 800; letter-spacing: -.03em; }
-    .btn-primary, .book-btn { background: #FFD23F !important; color: #15171A !important; box-shadow: 0 5px 0 #15171A !important; }
-    .btn-primary:hover, .book-btn:hover { background: #F5C400 !important; }
-    .btn-primary:active, .book-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #15171A !important; }
-    .book-btn:disabled { opacity: .5; }
-  </style>
-  <!-- Red with an asterisk = a placeholder guess (css/guess.css, npm run guesses). -->
-  <link rel="stylesheet" href="../css/guess.css">
 </head>
-<body>
+<body class="o-page">
 
-<nav>
-  <a class="brand" href="../index.html" aria-label="Brand Name"><span class="nav-wordmark">Brand Name</span></a></nav>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6.6 3h2.6l1.3 4.2-1.9 1.3a12 12 0 0 0 5.9 5.9l1.3-1.9 4.2 1.3v2.6a2.6 2.6 0 0 1-2.6 2.6A14.4 14.4 0 0 1 4 5.6 2.6 2.6 0 0 1 6.6 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
 
-<main>
+<header class="o-header">
+  <div class="o-header-in">
+    <a class="o-brand" href="../index.html"><span class="o-mark" aria-hidden="true"></span><span>Brand Name</span><span class="sr-only">, back to the home page</span></a>
+    <a class="o-head-call" href="tel:+19254086053"><svg aria-hidden="true"><use href="#i-phone"/></svg><span class="o-head-num">(925) 408-6053</span><span class="sr-only o-head-sr">Call us</span></a>
+  </div>
+</header>
 
-  <header class="header">
-    <h1 id="welcome-heading">Booked</h1>
-  </header>
+<main class="o-main t-main">
+  <div class="t-head">
+    <p class="t-badge" aria-hidden="true"><svg><use href="#i-check"/></svg></p>
+    <h1 id="welcome-heading">You're booked</h1>
+    <p class="t-lede" id="t-lede">Nothing is charged today. Your card is charged after the job, for the size you actually have.</p>
+    <!-- A card that went to its bank's own page and came back refused. -->
+    <p class="t-fail" id="t-fail" role="alert" hidden>Your card was not saved, so this pickup is not booked yet. <a href="quote.html">Go back to your order</a> and try again, or call or text <a href="tel:+19254086053">(925) 408-6053</a>.</p>
+  </div>
 
-  <!-- Booking summary, populated from sessionStorage by the script below -->
-  <section class="summary-card" id="summary-card" hidden>
-    <h2>Booking</h2>
-    <div class="summary-rows" id="summary-rows"></div>
+  <!-- The booking, from sessionStorage (bookingSummary, written by js/order.js). -->
+  <section class="t-card" id="summary-card" aria-labelledby="t-sum-h" hidden>
+    <h2 id="t-sum-h">Your pickup</h2>
+    <div class="t-rows" id="summary-rows"></div>
+    <p class="t-rule"><strong>Charged after the job</strong>, for the size you actually have. If it is bigger or smaller than you booked, the crew shows you the new price before loading, and you can say no.</p>
   </section>
 
-  <!-- Referral question. It used to be step 1 of checkout, between someone's
-       address and their card; it's attribution we want, not something we need
-       in order to do the job, so it's asked here instead — after the money
-       has already cleared. Entirely optional: skipping it does nothing. -->
-  <section class="referral" id="referral">
-    <h2>How Did You Hear About Us?</h2>
+  <section class="t-card" id="t-next" aria-labelledby="t-next-h">
+    <h2 id="t-next-h">What happens next</h2>
+    <ol class="t-steps">
+      <li><strong>Now.</strong> We email your confirmation<span id="t-email"></span>.</li>
+      <li><strong>The day before.</strong> We send a reminder with your arrival window.</li>
+      <li><strong>On the day.</strong> We text <span id="t-phone" class="t-nowrap">you</span> when the crew is on the way.</li>
+      <li><strong>Before loading.</strong> The crew checks the size with you. A different size means a different price, shown to you first.</li>
+      <li><strong>After the job.</strong> We charge your card once and email you the receipt.</li>
+    </ol>
+    <p class="t-move">Need to move or cancel? Call or text <a href="tel:+19254086053">(925) 408-6053</a>. It is free until <span data-o="cancel"></span> before your window.</p>
+  </section>
+
+  <!-- Referral question: attribution we want, not something we need to do the
+       job, so it is asked here, after the booking. Entirely optional. -->
+  <section class="t-card referral" id="referral" aria-labelledby="t-ref-h">
+    <h2 id="t-ref-h">How did you hear about us?</h2>
+    <p class="ref-ask">Optional, one tap.</p>
     <div class="ref-opts" id="ref-opts">
       <button type="button" class="ref-opt" aria-pressed="false" data-val="Friend / Word of Mouth">Friend or word of mouth</button>
       <button type="button" class="ref-opt" aria-pressed="false" data-val="Neighbor / Saw your truck">Neighbor or saw your truck</button>
@@ -225,139 +136,149 @@
       <label for="ref-other-input">Where exactly?</label>
       <input type="text" id="ref-other-input" placeholder="Optional" maxlength="120" />
     </div>
-    <button class="btn btn-primary ref-send" id="ref-send" disabled>Send</button>
+    <button type="button" class="ref-send" id="ref-send" disabled>Send</button>
     <p class="ref-done" id="ref-done" hidden></p>
   </section>
 
-  <!-- What happens next -->
-  <section class="next-steps">
-    <h2>What Happens Next</h2>
-  </section>
-
-  <div class="actions">
-    <a class="btn btn-primary" href="../index.html">Home</a>
-    <a class="btn btn-ghost" href="tel:+19254086053">(925) 408-6053</a>
+  <div class="t-actions">
+    <a class="t-btn" href="../index.html">Back to the home page</a>
   </div>
-
 </main>
 
+<footer class="o-foot">
+  <p>© Brand Name</p>
+  <p class="o-foot-links"><a href="tel:+19254086053">(925) 408-6053</a><a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a></p>
+</footer>
+
+<!-- window.ORDER: the cancel hours and which numbers are still guesses (red). -->
+<script src="../js/order-config.js"></script>
 <script>
-  // Populate the booking summary from sessionStorage (set by checkout.html before redirect).
-  (function renderSummary() {
-    let raw;
-    try { raw = sessionStorage.getItem('bookingSummary'); } catch (e) { return; }
-    if (!raw) return;
-    let s;
-    try { s = JSON.parse(raw); } catch (e) { return; }
+  (function thanks() {
+    'use strict';
+    var ORDER = window.ORDER || null;
+    var G = (ORDER && ORDER.GUESS) || {};
+    var $ = function (id) { return document.getElementById(id); };
+    var fmt = function (c) { return '$' + (c / 100).toFixed(2); };
+    var num = function (v) { return typeof v === 'number' && isFinite(v) ? v : null; };
+    function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+    /* Text, red with an asterisk when it is a guess (css/guess.css). */
+    function guessy(text, on) { return el('span', on ? 'guess' : null, text); }
+    function fill(node, parts) { node.textContent = ''; parts.forEach(function (p) { if (p != null && p !== '') node.appendChild(typeof p === 'string' ? document.createTextNode(p) : p); }); }
 
-    // Two decimals, always — same rule as fmt() in checkout.html. Prices
-    // carry cents as of 2026-08-13, and toFixed(0) here printed "Charged Today
-    // $24" against a $24.13 charge on the FINAL confirmation screen. The
-    // checkout page was fixed at the reprice; this copy was missed until
-    // 2026-08-14.
-    const fmt = c => (c == null ? 'N/A' : (c === 0 ? 'Free' : `$${(c / 100).toFixed(2)}`));
-    // Everything below goes through innerHTML, and these values started life as
-    // free-text form input (name, address). Same-origin sessionStorage written
-    // by our own checkout, so this is self-XSS at worst — escaped anyway,
-    // because a summary row is not worth a markup-injection footgun.
-    const esc = v => String(v).replace(/[&<>"']/g, c => (
-      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-    ));
-    const rows = [];
-    // `cadence` is resolved by checkout.html, which knows the frequency.
-    // Fall back to the bare weekday for a summary saved before that field
-    // existed — never re-guess the cadence, which is how this row spent its
-    // life telling weekly customers they were on every-other-week service.
-    if (s.cadence)    rows.push({ l: 'Schedule',       v: s.cadence });
-    else if (s.day)   rows.push({ l: 'Day',            v: s.day });
-    if (s.address)    rows.push({ l: 'Address',        v: s.address });
-    if (s.last4)      rows.push({ l: 'Card on File',   v: `•••• ${s.last4}` });
-    if (s.plan)       rows.push({ l: 'Plan',           v: s.plan });
-    if (s.travel)     rows.push({ l: 'Travel',         v: s.travel });
-    if (s.amountCents != null) rows.push({ l: 'Charged Today', v: fmt(s.amountCents) });
-    if (s.phone)      rows.push({ l: 'Confirmation to', v: s.phone });
+    // The cancel window, from the order module (red while it is a guess).
+    if (ORDER) document.querySelectorAll('[data-o="cancel"]').forEach(function (n) { fill(n, [guessy(ORDER.POLICY.cancelHours + ' hours', !!G.policy)]); });
 
-    if (rows.length === 0) return;
+    // Back from a bank's own page (Stripe's return_url): the Stripe ids leave
+    // the address bar, and a refused card says so instead of "booked".
+    var q = new URLSearchParams(location.search);
+    var status = q.get('redirect_status');
+    if (q.has('setup_intent') || status) { try { history.replaceState(null, '', location.pathname); } catch (e) { /* old browser */ } }
+    if (status && status !== 'succeeded' && status !== 'processing') {
+      $('welcome-heading').textContent = 'Not booked yet';
+      $('t-lede').hidden = true;
+      $('t-fail').hidden = false;
+      $('t-next').hidden = true;
+      $('referral').hidden = true;
+      return;
+    }
+    // The document path only: a stale tab can never report an address with details in it.
+    if (typeof gtag === 'function') gtag('event', 'conversion_thanks', { source: (document.referrer || '').split('?')[0] });
 
-    document.getElementById('summary-rows').innerHTML = rows
-      .map(r => `<div class="row"><span class="label">${esc(r.l)}</span><span class="value">${esc(r.v)}</span></div>`).join('');
-    document.getElementById('summary-card').hidden = false;
+    var s = null;
+    try { s = JSON.parse(sessionStorage.getItem('bookingSummary') || 'null'); } catch (e) { s = null; }
+    if (!s) return;
 
-    // Personalise the heading if we have a first name
+    var priceGuess = !!G.prices, travelGuess = !!s.travelGuess;
+    var load = num(s.loadCents), trip = num(s.travelCents);
+    var tot = num(s.totalCents) != null ? num(s.totalCents) : num(s.amountCents);   // amountCents: a summary in the old shape
+    var rows = [];
+    var size = s.size || s.plan;
+    if (size) rows.push(['Size', [size, load != null ? ', ' : '', load != null ? guessy(fmt(load), priceGuess) : '']]);
+    if (s.travel) rows.push(['Travel', [s.travel, trip != null ? ': ' : '', trip != null ? guessy(trip ? fmt(trip) : 'no charge', travelGuess) : '']]);
+    if (s.dayLabel) rows.push(['Day and time', [s.dayLabel, s.windowLabel ? ', ' : '', s.windowLabel ? guessy(s.windowLabel, !!G.schedule) : '']]);
+    else if (s.cadence || s.day) rows.push(['Day', [s.cadence || s.day]]);
+    if (s.address) rows.push(['Address', [s.address]]);
+    if (s.wallet || s.last4 || s.dayLabel) rows.push(['Card', [(s.wallet ? s.wallet + ', saved' : 'Saved') + ', charged after the job']]);
+    if (s.phone) rows.push(['Texts go to', [s.phone]]);
+    if (tot != null) rows.push(['Total if the size is right', [guessy(fmt(tot), priceGuess || travelGuess)], 't-row-total']);
+    if (!rows.length) return;
+
+    var box = $('summary-rows');
+    rows.forEach(function (r) {
+      var p = el('p', 't-row' + (r[2] ? ' ' + r[2] : ''));
+      p.appendChild(el('span', 't-k', r[0]));
+      var v = el('span', 't-v');
+      fill(v, r[1]);
+      p.appendChild(v);
+      box.appendChild(p);
+    });
+    $('summary-card').hidden = false;
+    if (s.email) $('t-email').textContent = ' to ' + s.email;
+    if (s.phone) $('t-phone').textContent = s.phone;
     if (s.firstName) {
-      const h = document.getElementById('welcome-heading');
-      h.innerHTML = `Welcome, <em>${esc(s.firstName)}.</em>`;
+      var h = $('welcome-heading');
+      fill(h, ["You're booked, ", el('em', null, s.firstName), '.']);
     }
   })();
 
   /**
-   * Referral capture.
-   *
-   * Files one row in public.leads via SiteLeads, tagged `referral`, carrying
-   * the Stripe customer id from the booking so the answer can be tied back to a
-   * real subscription. Deliberately fail-soft in both directions: the booking is
-   * already paid for, so nothing here may show the customer an error or block
-   * anything, and a missing sessionStorage summary (bookmarked page, second
-   * device, cleared storage) just means the row lands without the ids.
+   * Referral capture: one row in public.leads via SiteLeads, tagged
+   * `referral`, with the Stripe customer id from the booking so the answer
+   * ties back to a real booking. Fail soft both ways: the booking is done, so
+   * nothing here shows an error or blocks anything, and a missing summary
+   * (bookmarked page, second device) just means the row lands without ids.
    */
   (function referral() {
-    const card    = document.getElementById('referral');
-    const optsEl  = document.getElementById('ref-opts');
-    const otherEl = document.getElementById('ref-other');
-    const otherIn = document.getElementById('ref-other-input');
-    const sendBtn = document.getElementById('ref-send');
-    const doneEl  = document.getElementById('ref-done');
+    var card = document.getElementById('referral');
+    var optsEl = document.getElementById('ref-opts');
+    var otherEl = document.getElementById('ref-other');
+    var otherIn = document.getElementById('ref-other-input');
+    var sendBtn = document.getElementById('ref-send');
+    var doneEl = document.getElementById('ref-done');
     if (!card) return;
+    var chosen = null;
 
-    let chosen = null;
-
-    optsEl.addEventListener('click', e => {
-      const btn = e.target.closest('.ref-opt');
+    optsEl.addEventListener('click', function (e) {
+      var btn = e.target.closest('.ref-opt');
       if (!btn) return;
-      optsEl.querySelectorAll('.ref-opt').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
-      chosen = btn.dataset.val;
+      optsEl.querySelectorAll('.ref-opt').forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+      chosen = btn.getAttribute('data-val');
       otherEl.hidden = chosen !== 'Other';
       sendBtn.disabled = false;
       if (chosen === 'Other') otherIn.focus();
     });
 
-    sendBtn.addEventListener('click', async () => {
+    sendBtn.addEventListener('click', function () {
       if (!chosen) return;
       sendBtn.disabled = true;
       sendBtn.textContent = 'Sending…';
-
-      // Same key the checkout wrote — may legitimately be absent.
-      let s = {};
-      try { s = JSON.parse(sessionStorage.getItem('bookingSummary') || '{}'); } catch (e) { /* no summary, no ids */ }
-
-      const detail = chosen === 'Other' ? (otherIn.value || '').trim().slice(0, 120) : '';
-      const answer = detail ? `Other: ${detail}` : chosen;
-
+      var s = {};
+      try { s = JSON.parse(sessionStorage.getItem('bookingSummary') || '{}') || {}; } catch (e) { /* no summary, no ids */ }
+      var detail = chosen === 'Other' ? (otherIn.value || '').trim().slice(0, 120) : '';
+      var answer = detail ? 'Other: ' + detail : chosen;
       try {
         if (window.SiteLeads) {
-          await window.SiteLeads.capture({
-            service:    'referral',
+          window.SiteLeads.capture({
+            service: 'referral',
             first_name: s.firstName || null,
-            last_name:  s.lastName  || null,
-            email:      s.email     || null,
-            phone:      s.phone     || null,
-            zip:        s.zip       || null,
-            address:    s.address   || null,
+            last_name: s.lastName || null,
+            email: s.email || null,
+            phone: s.phone || null,
+            zip: s.zip || null,
+            address: s.address || null,
             notes: [
-              `HEARD VIA: ${answer}`,
-              `Stripe customer: ${s.customerId || 'unknown'}`,
-              `Plan: ${s.plan || 'N/A'}`,
-              `Schedule: ${s.cadence || s.day || 'N/A'}`
-            ].join(' | ')
+              'HEARD VIA: ' + answer,
+              'Stripe customer: ' + (s.customerId || 'unknown'),
+              'Size: ' + (s.size || s.plan || 'N/A'),
+              'Day: ' + ([s.dayLabel, s.windowLabel].filter(Boolean).join(', ') || s.cadence || s.day || 'N/A'),
+            ].join(' | '),
           });
         }
         if (typeof gtag === 'function') gtag('event', 'referral_source', { source: answer });
-      } catch (e) { /* fail-soft: the booking is already paid for */ }
-
-      // Shown whether or not the write landed. The answer is a nice-to-have and
-      // SiteLeads keeps a localStorage copy either way; telling a paying
-      // customer their optional survey failed would be worse than losing it.
-      optsEl.hidden  = true;
+      } catch (e) { /* fail soft: the booking is already done */ }
+      // Shown whether or not the write landed: SiteLeads keeps a copy on the
+      // device either way, and an optional question is not worth an error.
+      optsEl.hidden = true;
       otherEl.hidden = true;
       sendBtn.hidden = true;
       doneEl.textContent = 'Thanks.';

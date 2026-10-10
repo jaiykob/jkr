@@ -324,6 +324,7 @@
     <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 5h16v11H9.5L5 19.5V16H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
     <symbol id="i-wa" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.1 7.9h.9l1 2.3-.8 1a6 6 0 0 0 2.6 2.6l1-.8 2.3 1v.9c0 .7-.6 1.3-1.3 1.3A6.8 6.8 0 0 1 7.8 9.2c0-.7.6-1.3 1.3-1.3z" fill="currentColor"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
   </defs>
 </svg>
 
@@ -493,6 +494,28 @@
             <p><strong>Nothing is charged today.</strong> Your card is charged after the job, for the size you actually have. If it is bigger or smaller than <span data-o="size-a">your pick</span>, the crew shows you the new price before loading, and you can say no.</p>
             <p>Free to cancel or move until <span data-o="cancel"></span> before your window. After that, a <span data-o="late-fee"></span> late cancel fee.</p>
           </div>
+          <!-- Bookings open (BOOKINGS_OPEN_CLIENT): one box under the rule,
+               then Apple Pay or Google Pay above the card form (Stripe's
+               Express Checkout and Payment Elements, mounted by js/order.js
+               when this step opens). The box gates both ways to pay, and the
+               server refuses a booking without it. Closed: none of this shows. -->
+          <div class="o-paybox" id="o-paybox" hidden>
+            <label class="o-consent" id="o-consent-box">
+              <input type="checkbox" id="o-consent" name="consent" aria-describedby="o-consent-err">
+              <span>I agree to the <a href="../terms.html" target="_blank" rel="noopener">terms</a>, and to this card being charged after the job.</span>
+            </label>
+            <p class="o-err" id="o-consent-err" aria-live="polite"></p>
+            <div class="o-wallet" id="o-wallet">
+              <div class="o-express" id="o-express"></div>
+              <p class="o-or" aria-hidden="true"><span>or pay by card</span></p>
+            </div>
+            <div class="o-card-box">
+              <p class="o-card-head"><span class="o-card-t">Card</span><span class="o-secure"><svg aria-hidden="true"><use href="#i-lock"/></svg>Secured by Stripe</span></p>
+              <div class="o-card" id="o-card"></div>
+            </div>
+            <p class="o-err" id="o-card-err" role="alert"></p>
+            <p class="o-pay-help">Questions before you book? Call or text <a href="tel:+19254086053">(925) 408-6053</a>.</p>
+          </div>
           <p class="o-closed" id="o-closed" hidden>We are not taking cards yet. Reserve your day now and we will text you to confirm it. Nothing is charged.</p>
           <div class="o-reserved" id="o-reserved" role="status" tabindex="-1" hidden></div>
           <p class="o-msg is-err" id="o-pay-fail" hidden>We could not save your reservation just now. Please call or text <a href="tel:+19254086053">(925) 408-6053</a> and we will book it with you.</p>
@@ -553,9 +576,13 @@
 
 <script>
   // Booking gate 3 of 3 (CLAUDE.md), UI only: false shows the reservation
-  // path (Book saves a lead, no card, no Stripe call). The server gates
-  // (BOOKINGS_OPEN_SERVER, the BOOKINGS_OPEN env var) are what stop a charge.
+  // path (Book saves a lead, no card form, no Stripe call). true shows the
+  // pay step: js/order.js loads Stripe.js only then. The server gates
+  // (BOOKINGS_OPEN_SERVER, the BOOKINGS_OPEN env var) are what stop a booking.
   var BOOKINGS_OPEN_CLIENT = false;   // CLOSED until launch
+  // Stripe publishable key. Safe to expose; the secret key lives in Vercel as
+  // STRIPE_SECRET_KEY. Replace before launch (npm run status lists it).
+  window.STRIPE_PUBLISHABLE_KEY = 'pk_test_REPLACE_ME';
 </script>
 <script src="../js/travel.js" defer></script>
 <script src="../js/order-config.js" defer></script>

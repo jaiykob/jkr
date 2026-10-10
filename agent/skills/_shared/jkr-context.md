@@ -14,7 +14,7 @@ blocks are written by `npm run build` from `pricing.config.mjs` and
 - **Email:** GUESS* hello@example.com (no business email yet)
 - **Site:** `https://www.example.com` (GUESS* no domain yet)
 - **Base:** Gresham, Oregon. The truck starts there every day.
-- **Stage:** not live. The three booking gates are closed; checkout reserves a day without a card.
+- **Stage:** not live. The three booking gates are closed; the order page reserves a day without a card.
 
 ### Service area
 

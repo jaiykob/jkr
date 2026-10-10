@@ -244,32 +244,6 @@ async function activeSubscriptionsWithVisits() {
   return Array.isArray(rows) ? rows : [];
 }
 
-/**
- * Count upcoming scheduled visits grouped by weekday name. Because each active
- * recurring subscription self-heals to keep exactly one future 'scheduled' visit
- * at a time, this is a live proxy for how many customers already own each route
- * day — the signal behind the day-capacity cap.
- *
- * @returns {Object} { Monday: n, Thursday: n, ... } (weekdays with 0 omitted).
- *   Returns {} when the DB/schema is unreachable so callers can fail open.
- */
-async function scheduledVisitCountsByWeekday(fromDateStr) {
-  const today = fromDateStr || new Date().toISOString().slice(0, 10);
-  const rows = await rest(
-    'GET',
-    `visits?status=eq.scheduled&scheduled_date=gte.${today}&select=scheduled_date`,
-  );
-  const NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const counts = {};
-  for (const r of (Array.isArray(rows) ? rows : [])) {
-    if (!r.scheduled_date) continue;
-    // Bare DATE → noon UTC so the weekday never shifts across timezones.
-    const wd = NAMES[new Date(`${String(r.scheduled_date).slice(0, 10)}T12:00:00Z`).getUTCDay()];
-    counts[wd] = (counts[wd] || 0) + 1;
-  }
-  return counts;
-}
-
 // ── Windows (order flow) ─────────────────────────────────────────────────────
 
 /**
@@ -434,7 +408,6 @@ module.exports = {
   getVisitContext,
   visitsDueForReminder,
   activeSubscriptionsWithVisits,
-  scheduledVisitCountsByWeekday,
   slotCounts,
   createBookedVisit,
   recordVisitPhoto,

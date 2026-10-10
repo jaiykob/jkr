@@ -43,7 +43,7 @@ gates are closed.
 ## Step 2: Stripe (money)
 
 - [ ] One product, "Junk removal": its id is `STRIPE_PRODUCT_ID`.
-- [ ] The publishable key into `book/checkout.html` (replacing `pk_test_REPLACE_ME`).
+- [ ] The publishable key into `book/quote.html` (replacing `pk_test_REPLACE_ME`).
 - [ ] The webhook endpoint at `https://www.<domain>/api/stripe-webhook`, on the
       host that does **not** redirect (Stripe does not follow redirects; an
       endpoint on a redirecting host fails every delivery silently). Events:
@@ -81,8 +81,7 @@ gates are closed.
 ## Step 5: placeholders
 
 - [ ] `G-XXXXXXXXXX`: the GA4 measurement ID in `js/analytics.js` and the
-      inline snippets in `book/quote.html`, `book/checkout.html` and
-      `book/thanks.html`.
+      inline snippets in `book/quote.html` and `book/thanks.html`.
 - [ ] `images/placeholder.svg`: real photos of real loads.
 - [ ] Every `TODO` (`grep -rn TODO`).
 - [ ] `npm test` and `npm run score -- --round 1` (and 2, 3) still pass.
@@ -103,7 +102,7 @@ With `sk_test` keys (the gates only block live mode):
 
 - [ ] `BOOKINGS_OPEN_SERVER = true` in `api/create-booking.js`, merge to `main`.
 - [ ] `BOOKINGS_OPEN=true` in Vercel, redeploy.
-- [ ] `BOOKINGS_OPEN_CLIENT = true` in `book/checkout.html`, merge.
+- [ ] `BOOKINGS_OPEN_CLIENT = true` in `book/quote.html`, merge.
 - [ ] `SHOW = false` in `js/maintenance-banner.js`, merge.
 - [ ] Live keys (`sk_live`, live publishable key, live webhook secret).
 - [ ] One real booking on your own card, check every surface, refund it.

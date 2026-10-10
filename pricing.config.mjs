@@ -12,17 +12,17 @@
  * regenerates, in place, everything between BUILD: markers in:
  *
  *   index.html                 the crawlable price list, the zone list
- *   book/quote.html            the estimator's PRICES matrix, JSON-LD offers
- *   book/checkout.html         the checkout billing table
- *   api/create-booking.js      the server PRICES matrix (authoritative)
+ *   book/quote.html            the order page's size cards, JSON-LD offers
  *
- * and writes the travel module whole, twice: api/_lib/travel.js (server) and
- * js/travel.js (pages). The two are byte identical; every ZIP check and
+ * and writes two modules whole, twice each: the travel module,
+ * api/_lib/travel.js (server) and js/travel.js (pages), and the order module,
+ * api/_lib/order-config.js (create-booking reads it, authoritative) and
+ * js/order-config.js (pages). Each pair is byte identical; every ZIP check and
  * travel fee on the site comes from them.
  *
  * WHY THIS MATTERS: the server recomputes each booking's price from its own
  * matrix and rejects any quote that doesn't match ("Quote is out of date").
- * If the client and server copies drift, every checkout 400s.
+ * If the client and server copies drift, every booking 400s.
  *
  * TODO: every price below is a placeholder (GUESS.prices). Set real ones
  * before launch.

@@ -11,16 +11,14 @@
  * A window is full at its cap; a day is full when its visits reach the daily
  * cap or every window is full. Days are the open days (Pacific time).
  *
- * LEGACY: without ?market the old weekday answer { cap, counts, full } is still
- * returned for the old checkout page, until Task 4 and the new order page
- * replace it (then this branch and DAILY_CAP go).
+ * The market is required (each market has its own crew and caps): without
+ * one the answer is 400.
  *
  * FAIL-OPEN: if the DB/schema is unreachable, nothing is full: a capacity read
  * must never block a sale.
  */
 
 const db = require('./_lib/db');
-const { DAILY_CAP, WEEKDAYS } = require('./_lib/schedule');
 const ORDER = require('./_lib/order-config');
 
 module.exports = async (req, res) => {
@@ -37,33 +35,22 @@ module.exports = async (req, res) => {
 
   const url = new URL(req.url || '/', 'http://x');
   const market = (req.query && req.query.market) || url.searchParams.get('market');
-  if (market) {
-    if (!/^[a-z-]{1,24}$/.test(market)) return res.status(400).json({ error: 'Unknown market' });
-    const { windows, dailyCap } = ORDER.SCHEDULE;
-    const open = ORDER.openDays(Date.now());
-    let counts = {};
-    if (open.length) {
-      try {
-        counts = (await db.slotCounts({ market, from: open[0].date, to: open[open.length - 1].date })) || {};
-      } catch (e) {
-        console.warn('[day-capacity] slot count failed, failing open:', e.message);
-      }
-    }
-    const days = open.map((d) => {
-      const c = counts[d.date] || {};
-      const ws = windows.map((w) => ({ key: w.key, label: w.label, full: (c[w.key] || 0) >= w.cap }));
-      return { date: d.date, label: d.label, full: (c.total || 0) >= dailyCap || ws.every((w) => w.full), windows: ws };
-    });
-    return res.status(200).json({ days });
-  }
+  if (!market || !/^[a-z-]{1,24}$/.test(market)) return res.status(400).json({ error: 'Unknown market' });
 
+  const { windows, dailyCap } = ORDER.SCHEDULE;
+  const open = ORDER.openDays(Date.now());
   let counts = {};
-  try {
-    counts = await db.scheduledVisitCountsByWeekday();
-  } catch (e) {
-    console.warn('[day-capacity] count failed, failing open:', e.message);
+  if (open.length) {
+    try {
+      counts = (await db.slotCounts({ market, from: open[0].date, to: open[open.length - 1].date })) || {};
+    } catch (e) {
+      console.warn('[day-capacity] slot count failed, failing open:', e.message);
+    }
   }
-
-  const full = WEEKDAYS.filter((d) => (counts[d] || 0) >= DAILY_CAP);
-  return res.status(200).json({ cap: DAILY_CAP, counts, full });
+  const days = open.map((d) => {
+    const c = counts[d.date] || {};
+    const ws = windows.map((w) => ({ key: w.key, label: w.label, full: (c[w.key] || 0) >= w.cap }));
+    return { date: d.date, label: d.label, full: (c.total || 0) >= dailyCap || ws.every((w) => w.full), windows: ws };
+  });
+  return res.status(200).json({ days });
 };

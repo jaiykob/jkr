@@ -19,8 +19,8 @@
  *                     window width, and any text under 16px inside the
  *                     elements this round added.
  *   /__seed.html      writes sessionStorage keys, then opens the real page,
- *                     so checkout and thanks can be checked with a booking
- *                     in progress.
+ *                     so the order page and thanks can be checked with a
+ *                     booking in progress.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -93,8 +93,9 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 // ?__probe=<round>: which parts of the page each round measures for small
 // text, and (from round 2) which links and buttons must be 48px tall.
 const PROBE_SETS = {
-  // Round 1's travel text; since round 6 the order page shows it in the ZIP answer, the total, the travel line and the size cards.
-  1: { text: ['.lb-travel', '.lb-unit', '#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut', '#o-zip-msg', '.o-total', '.o-travel', '.size-price', '.size-travel'], taps: [] },
+  // Round 1's travel text; since round 6 the order page shows it in the ZIP answer, the total, the travel line and the size cards,
+  // and its pay step (#o-pay) took over the checkout's summary and card form.
+  1: { text: ['.lb-travel', '.lb-unit', '#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut', '#o-zip-msg', '.o-total', '.o-travel', '.size-price', '.size-travel', '#o-pay'], taps: [] },
   2: { text: ['main .prose', 'main .faq-list', '.town-local', '.town-zones', '#zoneList', 'footer', '#maint-banner'],
        taps: ['.site-nav a', '.site-nav button', 'footer a', '.town-nearby a', '.hub-towns a'] },
   5: { text: ['.article p', '.article li', '.article h2', '.post-meta', '.lb-travel', '#zipOut', '.commercial-form label', '.commercial-form input', '.commercial-form textarea', 'footer'],
@@ -102,8 +103,10 @@ const PROBE_SETS = {
 };
 PROBE_SETS[6] = { text: ['.size-card', '#order label', '#order input', '#o-bar', '#o-summary', '.o-total', '.o-travel', 'footer'],
   taps: ['.size-card', '#order button', '#o-bar a', '#o-bar button', '#o-summary a', '#o-summary button', '.site-nav a', '.site-nav button'] };
-const PROBE = `<script>(function(){setTimeout(function(){try{
-var SETS=${JSON.stringify(PROBE_SETS)};var set=SETS[new URLSearchParams(location.search).get('__probe')]||SETS[1];
+/* The probe as one function of the set id, returning { sw, vw, small, taps }. PROBE runs it once the
+   page settles; probeNow(set) runs it now, for a page measured after a scripted walk (the pay step). */
+const PROBE_FN = `function(id){
+var SETS=${JSON.stringify(PROBE_SETS)};var set=SETS[id]||SETS[1];
 var small=[],taps=[];
 set.text.forEach(function(s){document.querySelectorAll(s).forEach(function(n){[n].concat([].slice.call(n.querySelectorAll('*'))).forEach(function(e){
 var t=(e.childNodes.length&&[].some.call(e.childNodes,function(c){return c.nodeType===3&&c.textContent.trim();}));
@@ -111,8 +114,11 @@ var r=e.getBoundingClientRect();if(!t||!r.width||!r.height)return;var fs=parseFl
 if(fs<16)small.push(s+' '+e.tagName.toLowerCase()+'.'+e.className+' '+fs+'px');});});});
 set.taps.forEach(function(s){document.querySelectorAll(s).forEach(function(e){var r=e.getBoundingClientRect();
 if(!r.width||!r.height||getComputedStyle(e).visibility==='hidden')return;if(r.height<47.5||r.width<47.5)taps.push(s+' "'+(e.textContent||'').trim().slice(0,20)+'" '+Math.round(r.width)+'x'+Math.round(r.height));});});
-document.documentElement.setAttribute('data-probe',JSON.stringify({sw:document.documentElement.scrollWidth,vw:window.innerWidth,small:small,taps:taps}));
+return {sw:document.documentElement.scrollWidth,vw:window.innerWidth,small:small,taps:taps};}`;
+const PROBE = `<script>(function(){setTimeout(function(){try{
+document.documentElement.setAttribute('data-probe',JSON.stringify((${PROBE_FN})(new URLSearchParams(location.search).get('__probe'))));
 }catch(e){document.documentElement.setAttribute('data-probe',JSON.stringify({error:String(e)}));}},1500);})();</script>`;
+const probeNow = (id) => `(function(){try{return (${PROBE_FN})(${JSON.stringify(String(id))});}catch(e){return {error:String(e)};}})()`;
 const SEED = `<!doctype html><meta charset="utf-8"><script>
 var q=new URLSearchParams(location.search);var s=JSON.parse(q.get('s')||'{}');
 Object.keys(s).forEach(function(k){sessionStorage.setItem(k,typeof s[k]==='string'?s[k]:JSON.stringify(s[k]));});location.replace(q.get('to'));</script>`;
@@ -357,7 +363,7 @@ const rectOf = (sel) => `(function(){var e=document.querySelector(${JSON.stringi
 return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,w:r.width,h:r.height,display:c.display,visibility:c.visibility,opacity:c.opacity,position:c.position};})()`;
 const shown = (r) => !!r && r.display !== 'none' && r.visibility !== 'hidden' && r.w > 0 && r.h > 0;
 /** Walk the order page's sections the way a customer does. Returns null, or the step that failed. */
-async function fillOrder(p, { wallet = false, zip = Z2, contact = true, picked = {} } = {}) {
+async function fillOrder(p, { wallet = false, zip = Z2, contact = true, picked = {}, open = true } = {}) {
   const step = async (name, fn) => { try { await fn(); return null; } catch (e) { return `${name}: ${e.message}`; } };
   let bad = null;
   bad = bad || await step('ZIP', () => p.type('#o-zip input', zip));
@@ -373,10 +379,19 @@ async function fillOrder(p, { wallet = false, zip = Z2, contact = true, picked =
     bad = bad || await step('email', () => p.type('#o-you input[autocomplete="email"]', SAMPLE_CONTACT.email));
     bad = bad || await step('street', () => p.type('#o-you input[autocomplete="street-address"]', SAMPLE_CONTACT.addr));
   }
-  if (!wallet) {
-    bad = bad || await step('card', () => p.type('#o-pay .fake-card', '4242424242424242'));
-    bad = bad || await step('consent', () => p.click('#o-pay input[type="checkbox"]'));
+  // The pay step (ruling R15). Gates open: the card form and the consent box show, and both
+  // ways to pay need the box (the wallet too, Review Focus 5). Gates closed: neither shows.
+  const CARD = '#o-pay .fake-card', BOX = '#o-pay input[type="checkbox"]';
+  const seen = (sel) => p.evaluate(`[].some.call(document.querySelectorAll(${JSON.stringify(sel)}),function(e){var r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden';})`);
+  if (!open) {
+    if (!bad && contact && ((await seen(CARD)) || (await seen(BOX)))) bad = 'pay: the gates are closed but the pay step shows a card form or a consent box';
+    // Nothing to tick: the keyboard closes (not a tap) and the bar with Book comes back.
+    await p.evaluate('document.activeElement && document.activeElement.blur && document.activeElement.blur()');
+    await new Promise((r) => setTimeout(r, 400));
+    return bad;
   }
+  if (!wallet) bad = bad || await step('card', () => p.type(CARD, '4242424242424242'));
+  bad = bad || await step('consent', () => p.click(BOX));
   return bad;
 }
 /** Homepage card to thanks.html. Returns { taps, hits } or a reason. */
@@ -579,7 +594,7 @@ const ROUNDS = {
       if (fd.windows.slice(1).some((w) => w.full && fd.windows.length > 1 && !fd.full)) return 'a window under its cap is flagged full';
       return true;
     } },
-    { id: 'failures-ui', pts: 4, desc: 'far ZIP lead; a full window greyed and labelled "Full"; the stale quote message; gates closed saves a reservation lead and calls no Stripe', async run() {
+    { id: 'failures-ui', pts: 4, desc: 'far ZIP lead; a full window greyed and labelled "Full"; the stale quote message; no booking call without the consent box (card or wallet); gates closed saves a reservation lead, shows no card form and calls no Stripe', async run() {
       if (!Z2) return 'no zone 2 ZIP in the config';
       const far = byId(await dump(ORDER_WITH_ZIP('', FAR)), 'o-zip');
       if (!far) return 'no #o-zip section on the order page';
@@ -633,11 +648,28 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       });
       resetState();
       if (stale !== true) return stale;
+      // Consent (Review Focus 5): with the box unticked neither Book nor the wallet button reaches
+      // create-booking; the page says what is missing and stays on the order page.
+      const consent = await withPage(360, async (p) => {
+        await p.goto(`${ORIGIN}${ORDER_WITH_ZIP('__fakepay=1&__open=1')}`);
+        const bad = await fillOrder(p, { zip: Z2 });
+        if (bad) return `could not fill the order page, ${bad}`;
+        await p.click('#o-pay input[type="checkbox"]');
+        if (await p.evaluate(`document.querySelector('#o-pay input[type="checkbox"]').checked`)) return 'the consent box does not untick';
+        await p.click('#o-book', 800);
+        await p.click('.fake-wallet', 800);
+        if (STATE.bookingHits !== 0) return `with the consent box unticked, ${STATE.bookingHits} create-booking call(s)`;
+        if (/thanks\.html/.test(await p.evaluate('location.pathname'))) return 'with the consent box unticked the page went to thanks.html';
+        const t = await p.evaluate(`document.getElementById('o-pay').innerText`);
+        return /\btick\b|check the box|agree first|before (you )?book/i.test(t) || 'with the consent box unticked the pay step does not say the box is needed';
+      });
+      resetState();
+      if (consent !== true) return consent;
       return withPage(360, async (p) => {
         await p.goto(ORIGIN + ORDER_WITH_ZIP('__fakepay=1'));
         await p.evaluate(`window.__leads=[];if(window.SiteLeads)window.SiteLeads.capture=function(a){window.__leads.push(a);return Promise.resolve({});};`);
         const picked = {};
-        const bad = await fillOrder(p, { zip: Z2, picked });
+        const bad = await fillOrder(p, { zip: Z2, picked, open: false });
         if (bad) return `could not fill the order page, ${bad}`;
         if (!picked.date || !picked.window) return 'the day or window chip has no data-date or data-window to check';
         await p.click('#o-book', 1500);
@@ -1166,7 +1198,7 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       }
       return true;
     } },
-    { id: 'site-js', pts: 5, desc: 'analytics on every public page, the maintenance banner loaded, checkout reads SITE_REOPEN_TEXT', run() {
+    { id: 'site-js', pts: 5, desc: 'analytics on every public page, the maintenance banner loaded, the booking page reads SITE_REOPEN_TEXT', run() {
       if (!/G-XXXXXXXXXX/.test(read('js/analytics.js') || '')) return 'js/analytics.js missing';
       if (!exists('js/maintenance-banner.js')) return 'js/maintenance-banner.js missing';
       for (const f of round2Pages()) {
@@ -1174,8 +1206,12 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
         if (!/analytics\.js/.test(s) && !/gtag\/js\?id=/.test(s)) return `${f} has no analytics`;
         if (f !== '404.html' && !/maintenance-banner\.js/.test(s)) return `${f} does not load the banner`;
       }
-      const co = read('book/checkout.html') || '';
-      return (/SITE_REOPEN_TEXT/.test(co) && !/SCOOPS_REOPEN_TEXT/.test(co)) || 'checkout still reads SCOOPS_REOPEN_TEXT';
+      // The checkout's closed notice read SITE_REOPEN_TEXT; since round 6 checkout is a redirect and
+      // the order page's closed note reads it (js/order.js, run after the banner sets it).
+      const q = read('book/quote.html') || '', oj = read('js/order.js') || '', co = read('book/checkout.html') || '';
+      if (!/maintenance-banner\.js/.test(q) || !/js\/order\.js/.test(q)) return 'the order page does not load the banner and js/order.js';
+      if (/SCOOPS_REOPEN_TEXT/.test(q + oj + co)) return 'a booking page still reads SCOOPS_REOPEN_TEXT';
+      return /SITE_REOPEN_TEXT/.test(oj) || 'the order page does not read SITE_REOPEN_TEXT';
     } },
   ],
   1: [
@@ -1245,13 +1281,34 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       if (!/\+ travel/.test(js)) return 'load builder never says "+ travel"';
       return true;
     } },
-    { id: 'checkout', pts: 10, desc: 'checkout: a Travel row, and the headline is load plus travel', async run() {
+    // Round 6 made book/checkout.html a redirect: paying is the order page's pay step. The old
+    // checkout link (its query) lands there with the same size and ZIP; the summary has a Travel
+    // row, the summary and the bar both total load plus travel, and with the gates open the pay
+    // step shows the card form and Book carries that total.
+    { id: 'checkout', pts: 10, desc: 'checkout (since round 6 the order page\'s pay step): the old link lands there; a Travel row, and the total is load plus travel', async run() {
       if (!Z2) return 'no zone 2 ZIP';
-      const dom = await dump(CHECKOUT_URL());
-      const rows = byId(dom, 'sum-rows'), big = byId(dom, 'sum-big');
-      if (!rows || !/Travel/.test(rows.text)) return `summary rows: "${rows && rows.text.slice(0, 120)}"`;
-      if (!big || !big.text.includes(fmt(TOTAL))) return `headline "${big && big.text}", want ${fmt(TOTAL)}`;
-      return true;
+      const landed = await withPage(360, async (p) => {
+        await p.goto(ORIGIN + CHECKOUT_URL());
+        const at = await p.evaluate('location.pathname + location.search');
+        const q = new URLSearchParams(at.split('?')[1] || '');
+        if (!at.startsWith('/book/quote.html') || q.get('zip') !== Z2 || q.get('load') !== String(LOAD_ROW)) return `the old checkout link landed on ${at}`;
+        const dom = await p.html();
+        const rows = byId(dom, 'o-summary');
+        if (!rows || !/Travel/.test(rows.text)) return `summary rows: "${rows && rows.text.slice(0, 120)}"`;
+        for (const id of ['o-summary', 'o-bar']) {
+          const b = byId(dom, id);
+          if (!b || !b.text.includes(fmt(TOTAL))) return `#${id} reads "${b && b.text.slice(0, 80)}", want ${fmt(TOTAL)}`;
+        }
+        return true;
+      });
+      if (landed !== true) return landed;
+      return withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('__fakepay=1&__open=1'));
+        const bad = await fillOrder(p, {});
+        if (bad) return `could not reach the pay step: ${bad}`;
+        const book = await p.evaluate(`(document.querySelector('#o-book')||{}).textContent||''`);
+        return book.includes(fmt(TOTAL)) || `Book reads "${text(book)}" at the pay step, want ${fmt(TOTAL)}`;
+      });
     } },
     { id: 'thanks', pts: 5, desc: 'thanks page: a Travel row', async run() {
       const dom = await dump(seeded('/book/thanks.html', { bookingSummary: { plan: 'One-time haul', amountCents: TOTAL || 37400, travel: 'Zone 2: $25.00', address: '1 Probe St' } }));
@@ -1271,21 +1328,38 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
     { id: 'guesses', pts: 5, desc: 'guesses red with an asterisk, linked everywhere, listed', run() {
       const css = read('css/guess.css') || '';
       if (!/color:\s*#C62828/i.test(css) || !/content:\s*"\*"/.test(css)) return 'css/guess.css missing red or asterisk';
-      for (const f of ['index.html', 'book/quote.html', 'book/checkout.html', 'book/thanks.html']) if (!/guess\.css/.test(read(f) || '')) return `${f} does not link guess.css`;
+      // Every page that prints a price links guess.css. Since round 6 book/checkout.html prints none:
+      // it must then be the redirect to the order page (a refresh to quote.html, no price on it).
+      for (const f of ['index.html', 'book/quote.html', 'book/thanks.html']) if (!/guess\.css/.test(read(f) || '')) return `${f} does not link guess.css`;
+      const co = read('book/checkout.html') || '';
+      if (!/guess\.css/.test(co) && !(/http-equiv="refresh"[^>]+quote\.html/i.test(co) && !/\$\d/.test(visibleText(co)))) return 'book/checkout.html does not link guess.css';
       if (C.GUESS && C.GUESS.prices && !/class="tier-price guess"/.test(read('index.html') || '')) return 'homepage prices are not marked';
       return run('node', ['scripts/list-guesses.mjs', '--check']).code === 0 || 'npm run guesses --check fails';
     } },
-    { id: 'mobile', pts: 5, desc: 'no sideways scroll at 360px and no new text under 16px (home, quote, checkout)', async run() {
+    // Since round 6 the checkout link lands on the order page, and the checkout's job (summary,
+    // card form) is the order page's pay step: measured with the gates open after a scripted walk.
+    { id: 'mobile', pts: 5, desc: 'no sideways scroll at 360px and no new text under 16px (home, quote, the checkout link, the pay step with the card form)', async run() {
       if (!CHROME) return 'no Chrome to measure with';
-      for (const [name, url] of [['home', '/index.html?__probe=1'], ['quote', QUOTE_URL()], ['checkout', CHECKOUT_URL()]]) {
-        const p = probeOf(await dump(url));
+      const bad = (name, p) => {
         if (!p) return `${name}: page did not report`;
         if (p.error) return `${name}: ${p.error}`;
         if (p.vw !== 360) return `${name}: measured at ${p.vw}px, not 360px`;
         if (p.sw > p.vw) return `${name}: ${p.sw}px wide in a ${p.vw}px window`;
         if (p.small.length) return `${name}: small text ${p.small.slice(0, 2).join('; ')}`;
+        return null;
+      };
+      for (const [name, url] of [['home', '/index.html?__probe=1'], ['quote', QUOTE_URL()], ['checkout link', CHECKOUT_URL()]]) {
+        const why = bad(name, probeOf(await dump(url)));
+        if (why) return why;
       }
-      return true;
+      const pay = await withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('__fakepay=1&__open=1'));
+        const walk = await fillOrder(p, {});
+        if (walk) return { error: `could not reach the pay step, ${walk}` };
+        await p.evaluate(`document.querySelector('#o-pay').scrollIntoView({block:'start'})`);
+        return p.evaluate(probeNow(1));
+      });
+      return bad('pay step', typeof pay === 'string' ? { error: pay } : pay) || true;
     } },
     { id: 'photo', pts: 3, desc: 'photo prompt says Portland metro', run() {
       const s = read('api/photo-quote.js') || '';

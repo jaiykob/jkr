@@ -81,7 +81,6 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - `blog/what-junk-removal-costs.html` (1): Loose soil, concrete and roofing shingles are priced by hand
 - `blog/where-hauled-junk-goes.html` (3): We drop donations at charity thrift stores in the metro on our way to recycling, Metro Central in northwest Portland or Metro South in Oregon City, a Clark County transfer station in Vancouver
 - `blog/yard-debris-after-a-storm.html` (2): Most garbage haulers in the metro limit what goes in the cart and may take extra bundles for a fee, Many transfer stations and landscape suppliers in the metro accept yard debris for composting
-- `book/checkout.html` (1): ${text}
 - `book/commercial.html` (3): one business day, in small amounts
 - `book/quote.html` (5): $99.00, $199.00, $349.00, $479.00, $599.00
 - `boring.html` (25): no travel charge, $99.00, $89.00, $199.00, $179.00, $349.00, $319.00, $479.00, $439.00, $599.00, $549.00, no charge, 10 road miles, +$75.00, 40 miles, No travel charge, Up to 10 road miles from Gresham, +$25.00 per visit, 10 to 20 road miles, +$50.00 per visit, 20 to 30 road miles, +$75.00 per visit, 30 to 40 road miles, Wood stoves count as a heavy item and add a flat fee

@@ -7,7 +7,6 @@
  *
  *   (api/create-booking.js reads api/_lib/order-config.js, written whole below)
  *   book/quote.html           quote-jsonld, order-sizes (the five size cards)
- *   book/checkout.html  checkout-billing
  *   index.html                     home-prices, home-builder
  *   api/photo-quote.js              server-items
  */
@@ -16,8 +15,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import site from '../api/_lib/site.js';
 import {
-  PRICES, COLUMNS, COLUMN_LABELS, BILLING, BILLING_BY_COL, ONE_TIME_COL, LOAD_OPTIONS,
-  ZIP_ZONES, ALL_ZIPS, ZONE_LIST, PLACES_BY_ZONE, GUESS, BASE, ITEMS, WEEKS_PER_QUARTER, QUARTERLY_DISCOUNT, STARTING_AT, fmt, SCHEDULE, POLICY,
+  PRICES, COLUMNS, COLUMN_LABELS, BILLING, ONE_TIME_COL, LOAD_OPTIONS,
+  ZIP_ZONES, ALL_ZIPS, ZONE_LIST, PLACES_BY_ZONE, GUESS, BASE, ITEMS, STARTING_AT, fmt, SCHEDULE, POLICY,
 } from '../pricing.config.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -77,23 +76,6 @@ const jsonld = {
   },
 };
 const quoteJsonld = `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 2)}\n</script>`;
-
-/* ── checkout ─────────────────────────────────────────────────────────── */
-const checkoutBilling = [
-  `  const FREQ_LABELS  = ${J(COLUMNS.map((c) => COLUMN_LABELS[c]))};`,
-  `  const FREQ_EVERY   = ${J(COLUMNS.map((c) => BILLING[c].every))};`,
-  '  // Period length in weeks; null for a one-time column.',
-  `  const FREQ_WEEKS   = ${J(BILLING_BY_COL.map((b) => (b.weeks ? +b.weeks.toFixed(6) : null)))};`,
-  `  const ONE_TIME_COL = ${ONE_TIME_COL};`,
-  '  // Recurrence per column, in Stripe\'s vocabulary (Apple Pay uses the same).',
-  `  const FREQ_STRIPE  = ${J(BILLING_BY_COL.map((b) => b.stripe))};`,
-  `  const LOAD_LABELS  = ${J(LOAD_OPTIONS.map((o) => o.label))};`,
-  '  // A quarter is 13 weeks of service at 10% off, recurring plans only.',
-  `  const WEEKS_PER_QUARTER   = ${WEEKS_PER_QUARTER};`,
-  `  const QUARTERLY_DISCOUNT  = ${QUARTERLY_DISCOUNT};`,
-  '  // true while the load prices are placeholders: shown red with an asterisk.',
-  `  const PRICE_GUESS = ${GUESS.prices ? 'true' : 'false'};`,
-].join('\n');
 
 /* ── homepage ─────────────────────────────────────────────────────────── */
 const recurringCol = COLUMNS.findIndex((c) => BILLING[c].stripe);
@@ -295,9 +277,6 @@ const TARGETS = [
   { file: 'book/quote.html', blocks: [
     { name: 'quote-jsonld', body: quoteJsonld, comment: false },
     { name: 'order-sizes', body: orderSizes, comment: false },
-  ] },
-  { file: 'book/checkout.html', blocks: [
-    { name: 'checkout-billing', body: checkoutBilling, comment: true },
   ] },
   { file: 'index.html', blocks: [
     { name: 'home-jsonld', body: homeJsonld, comment: false },
