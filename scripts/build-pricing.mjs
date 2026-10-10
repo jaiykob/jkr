@@ -5,7 +5,7 @@
  * Same job as Scoops Co.'s scripts/build-pricing.mjs. Targets, each delimited
  * by BUILD: markers in its own file:
  *
- *   api/create-booking.js     server-prices                (authoritative)
+ *   (api/create-booking.js reads api/_lib/order-config.js, written whole below)
  *   book/quote.html           quote-jsonld, quote-prices
  *   book/checkout.html  checkout-billing
  *   index.html                     home-prices, home-builder
@@ -35,23 +35,6 @@ const guessed = (html, on) => (on ? `<span class="guess">${html}</span>` : html)
 
 /* Every place with a ZIP in a zone, once each, nearest first ("Vancouver, WA"). */
 const AREA_SERVED = [...new Set(ALL_ZIPS.map((z) => `${ZIP_ZONES[z].place}, ${ZIP_ZONES[z].state}`))];
-
-/* ── server ───────────────────────────────────────────────────────────── */
-const serverPrices = [
-  'const PRICES = [',
-  ...PRICES.map((r, i) => `  /* ${LOAD_OPTIONS[i].label.padEnd(12)} */ [${r.map(pad).join(',')}],`),
-  '];',
-  '// How each column bills. `stripe` goes straight to price_data.recurring;',
-  '// null marks a one-time column (PaymentIntent, not a subscription).',
-  'const BILLING_BY_COL = [',
-  ...COLUMNS.map((c) => `  /* ${COLUMN_LABELS[c].padEnd(16)} */ ${J({ weeks: BILLING[c].weeks, stripe: BILLING[c].stripe })},`),
-  '];',
-  '// Column key by index: what goes in Stripe/db metadata as the plan name.',
-  `const PLAN_KEYS = ${J(COLUMNS.map(planKey))};`,
-  '// Load size by row index, for metadata and the confirmation email.',
-  `const LOAD_LABELS = ${J(LOAD_OPTIONS.map((o) => o.label))};`,
-].join('\n');
-
 
 /* ── estimator ────────────────────────────────────────────────────────── */
 const quotePrices = [
@@ -305,9 +288,6 @@ function splice(src, name, body, comment, file) {
 }
 
 const TARGETS = [
-  { file: 'api/create-booking.js', blocks: [
-    { name: 'server-prices', body: serverPrices, comment: true },
-  ] },
   { file: 'api/photo-quote.js', blocks: [
     { name: 'server-items', body: serverItems, comment: true },
   ] },

@@ -7,7 +7,7 @@
  *
  * opts.decline: 'card_declined' | 'authentication_required' makes an
  * off_session paymentIntents.create throw a StripeCardError with that code.
- * state.claimed is how many founding subscriptions "exist" (subscriptions.search).
+ * state.claimed is how many founding customers "exist" (customers.search).
  */
 import { createRequire } from 'node:module';
 
@@ -23,14 +23,14 @@ class FakeStripe {
     const { calls, state, opts } = ctx;
     const next = (p) => `${p}_${++seq}`;
     this.customers = {
-      create: async (p) => { calls.push(['customer', p]); return { id: 'cus_1', ...p }; },
+      create: async (p, o) => { calls.push(['customer', p, o]); return { id: 'cus_1', ...p }; },
       update: async (id, p) => { calls.push(['customer-update', { id, ...p }]); return { id, ...p }; },
       retrieve: async (id) => ({ id, metadata: {}, invoice_settings: {} }),
-      search: async () => ({ data: [], has_more: false }),
+      search: async () => ({ data: Array.from({ length: state.claimed }, () => ({ metadata: { founding: 'true' } })), has_more: false }),
     };
     this.setupIntents = {
-      create: async (p) => {
-        calls.push(['si', p]);
+      create: async (p, o) => {
+        calls.push(['si', p, o]);
         const si = { id: next('seti'), client_secret: 'seti_secret', status: 'requires_payment_method', customer: p.customer, metadata: p.metadata || {}, payment_method: null };
         state.setupIntents[si.id] = si;
         return si;
