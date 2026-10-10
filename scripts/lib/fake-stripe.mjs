@@ -72,12 +72,13 @@ class FakeStripe {
         }
         return { id: next('pi'), client_secret: 'pi_secret', amount: p.amount, status: 'succeeded', metadata: p.metadata || {} };
       },
+      update: async (id, p) => { calls.push(['pi-update', { id, ...p }]); return { id, ...p }; },
       search: async () => ({ data: [], has_more: false }),
     };
     this.invoiceItems = { create: async (p) => { calls.push(['invoice-item', p]); return { id: next('ii'), ...p }; } };
     this.invoices = {
       create: async (p) => { calls.push(['invoice', p]); return { id: next('in'), ...p }; },
-      finalizeInvoice: async (id) => { calls.push(['finalize', { id }]); return { id, hosted_invoice_url: `https://invoice.example/${id}` }; },
+      finalizeInvoice: async (id) => { calls.push(['finalize', { id }]); return { id, payment_intent: `pi_for_${id}`, hosted_invoice_url: `https://invoice.example/${id}` }; },
       sendInvoice: async (id) => { calls.push(['send-invoice', { id }]); return { id, hosted_invoice_url: `https://invoice.example/${id}` }; },
     };
     this.subscriptions = {

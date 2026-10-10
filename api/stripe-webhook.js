@@ -618,18 +618,41 @@ async function handleBooked(stripe, event) {
 // none of these is ever read as a booking: no visit written, no "New booking".
 const AFTER_JOB_KINDS = new Set(['final_charge', 'late_fee']);
 
-function afterJobKind(event) {
+/**
+ * Is this event an after the job payment? Returns { kind, meta } to handle it,
+ * { ignore: true } for an event that must never reach the booking path, or null
+ * (not ours). The event object's OWN metadata decides; a PaymentIntent that
+ * belongs to an invoice is judged by that invoice's metadata (Stripe does not
+ * copy it onto the PaymentIntent).
+ */
+async function resolveAfterJob(stripe, event) {
   const o = event.data.object || {};
-  const k = o.metadata && o.metadata.kind;
-  if (!AFTER_JOB_KINDS.has(k)) return null;
   const t = event.type;
-  if (t.startsWith('payment_intent.') || t === 'invoice.paid' || t === 'invoice.payment_succeeded' || t === 'invoice.payment_failed') return k;
+  const own = o.metadata && o.metadata.kind;
+  if (t.startsWith('payment_intent.')) {
+    if (AFTER_JOB_KINDS.has(own)) {
+      // Only a success or a decline means anything; created, requires_action, processing, canceled are noise.
+      return t === 'payment_intent.succeeded' || t === 'payment_intent.payment_failed' ? { kind: own, meta: o.metadata } : { ignore: true };
+    }
+    if (o.invoice) {
+      const invId = typeof o.invoice === 'string' ? o.invoice : o.invoice.id;
+      let meta = typeof o.invoice === 'object' ? o.invoice.metadata : null;
+      if (!(meta && AFTER_JOB_KINDS.has(meta.kind))) {
+        try { const inv = await stripe.invoices.retrieve(invId); meta = inv && inv.metadata; }
+        catch (e) { console.error('[stripe-webhook] invoice retrieve failed:', e.message); meta = null; }
+      }
+      if (meta && AFTER_JOB_KINDS.has(meta.kind) && (t === 'payment_intent.succeeded' || t === 'payment_intent.payment_failed')) return { kind: meta.kind, meta };
+      return { ignore: true };   // an invoice payment is never a booking
+    }
+    return null;
+  }
+  if (AFTER_JOB_KINDS.has(own) && (t === 'invoice.paid' || t === 'invoice.payment_succeeded' || t === 'invoice.payment_failed')) return { kind: own, meta: o.metadata };
   return null;
 }
 
-async function handleAfterJob(event, kind) {
+async function handleAfterJob(event, kind, meta) {
   const o = event.data.object || {};
-  const visitId = o.metadata && o.metadata.visit_id;
+  const visitId = meta && meta.visit_id;
   if (!visitId) { console.error('[stripe-webhook] after the job event without a visit_id:', event.id); return; }
   let visit = null;
   try { visit = await db.getVisit(visitId); } catch (e) { console.error('[stripe-webhook] visit read failed:', e.message); }
@@ -663,7 +686,7 @@ async function handleAfterJob(event, kind) {
   }
   if (!cust.email) return;
   const when = visit && visit.scheduled_date ? dayLabel(visit.scheduled_date) : undefined;
-  const size = visit && ORDER.SIZES[Number(visit.final_load_idx != null ? visit.final_load_idx : o.metadata.final_load_idx)];
+  const size = visit && ORDER.SIZES[Number(visit.final_load_idx != null ? visit.final_load_idx : (meta || {}).final_load_idx)];
   const msg = kind === 'late_fee'
     ? tpl.lateFee({ name: cust.first_name, amount: fmtAmount(cents), dayLabel: when, windowLabel: (ORDER.SCHEDULE.windows.find((w) => w.key === (visit && visit.window_key)) || {}).label, cancelHours: ORDER.POLICY.cancelHours })
     : tpl.receipt({ name: cust.first_name, amount: fmtAmount(cents), load: size ? size.label : undefined, dayLabel: when });
@@ -704,9 +727,9 @@ module.exports = async (req, res) => {
   }
 
   // After the job charges, and the hosted invoice for a declined one: never a booking.
-  const afterKind = afterJobKind(event);
-  if (afterKind) {
-    await handleAfterJob(event, afterKind);
+  const after = await resolveAfterJob(stripe, event);
+  if (after) {
+    if (!after.ignore) await handleAfterJob(event, after.kind, after.meta);
     return res.status(200).json({ received: true });
   }
 

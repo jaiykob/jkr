@@ -86,6 +86,7 @@ r = await act({ action: 'finish', visitId: v.id, finalLoad: 3, agreed: true });
 ok(r.status === 200 && piCalls().length === 1 && piCalls()[0].off_session === true && piCalls()[0].metadata.kind === 'final_charge', `final charge ${r.status} ${JSON.stringify(r.json)}`);
 const p0 = piCalls()[0];
 ok(p0.amount === ORDER.SIZES[3].cents + 2500 && p0.customer === 'cus_1' && p0.payment_method === 'pm_saved' && p0.confirm === true && p0.currency === 'usd', `charge params ${JSON.stringify(p0)}`);
+ok(p0.automatic_payment_methods && p0.automatic_payment_methods.allow_redirects === 'never' && p0.automatic_payment_methods.enabled === true, 'final charge lacks automatic_payment_methods with allow_redirects never');
 ok(p0.metadata.visit_id === v.id && p0.metadata.final_load_idx === '3', 'charge metadata');
 ok(r.json.charged === true && r.json.paymentStatus === 'paid' && r.json.cents === p0.amount, 'finish answer');
 ok(rows.get(v.id).payment_status === 'paid' && rows.get(v.id).final_load_idx === 3 && rows.get(v.id).final_cents === p0.amount && rows.get(v.id).stripe_payment_intent_id, 'visit not marked paid');
@@ -115,7 +116,10 @@ ok(calls.some(([k, p]) => k === 'invoice' && p.collection_method === 'send_invoi
 ok(calls.some(([k, p]) => k === 'invoice-item' && p.amount === 19900), 'invoice item amount');
 ok(rows.get(v2.id).payment_status === 'payment_needed' && /^https:\/\/invoice\.example\//.test(rows.get(v2.id).invoice_url || ''), 'invoice url not stored');
 ok(sent.some((e) => e.to === 'owner@example.com') && sent.some((e) => e.to === 'jane@example.com'), 'owner or customer not told');
-ok(rows.get(v2.id).status !== 'completed', 'a declined visit was completed as paid');
+ok(rows.get(v2.id).status === 'completed' && rows.get(v2.id).payment_status === 'payment_needed' && rows.get(v2.id).invoice_url, 'a declined visit was not completed with payment_needed kept');
+ok(sent.some((e) => /All done/i.test(e.subject)), 'a declined visit sent no all done email');
+ok(calls.some(([k, p]) => k === 'pi-update' && p.metadata.kind === 'final_charge' && p.metadata.visit_id === v2.id), 'the invoice payment intent was not stamped with kind and visit_id');
+ok(piCalls()[0].automatic_payment_methods && piCalls()[0].automatic_payment_methods.enabled === true && piCalls()[0].automatic_payment_methods.allow_redirects === 'never', 'charge lacks automatic_payment_methods never redirect');
 // a retry with another size after the decline must not create a second charge or invoice
 r = await act({ action: 'finish', visitId: v2.id, finalLoad: 2, agreed: true });
 ok(r.status === 409 && calls.length === 0 && alerts().length === 0, 'retry after a decline charged or invoiced again');
@@ -124,6 +128,15 @@ reinstall({ decline: 'card_declined' });
 const v2b = fakeVisit({ quoted_load_idx: 1, quoted_load_cents: 19900, quoted_cents: 19900, travel_cents: 0 });
 r = await act({ action: 'finish', visitId: v2b.id, finalLoad: 1 });
 ok(r.json.paymentStatus === 'payment_needed' && invoiceSent(), 'card_declined not invoiced');
+// the webhook's payment_failed lands first and marks payment_needed: the customer still gets one payment needed email
+const v2c = fakeVisit({ quoted_load_idx: 1, quoted_load_cents: 19900, quoted_cents: 19900, travel_cents: 0 });
+const realGet = db.getVisit; let reads = 0;
+db.getVisit = async (id) => { const row = await realGet(id); reads++; if (reads === 2 && row) row.payment_status = 'payment_needed'; return row; };
+r = await act({ action: 'finish', visitId: v2c.id, finalLoad: 1 });
+db.getVisit = realGet;
+const pnMails = sent.filter((e) => e.to === 'jane@example.com' && /invoice/i.test(e.subject));
+ok(r.json.paymentStatus === 'payment_needed' && pnMails.length === 1 && /invoice\.example/.test(pnMails[0].html), `customer payment needed emails: ${pnMails.length}`);
+ok(alerts().length === 0, 'the owner was alerted twice');
 reinstall();
 console.log('== said no and late fee ==');
 const v3 = fakeVisit({ payment_status: 'card_saved' });
@@ -134,7 +147,7 @@ const early = fakeVisit({ scheduled_date: farDay, window_key: 'w10', payment_sta
 ok((await act({ action: 'late-fee', visitId: early.id })).status === 400 && calls.length === 0, 'late fee outside the window');
 const late = fakeVisit({ scheduled_date: today, window_key: 'w14', payment_status: 'card_saved' });
 r = await act({ action: 'late-fee', visitId: late.id });
-ok(r.status === 200 && piCalls().at(-1).amount === ORDER.POLICY.lateFeeCents && piCalls().at(-1).metadata.kind === 'late_fee' && piCalls().at(-1).off_session === true, `late fee ${r.status}`);
+ok(r.status === 200 && piCalls().at(-1).amount === ORDER.POLICY.lateFeeCents && piCalls().at(-1).metadata.kind === 'late_fee' && piCalls().at(-1).off_session === true && piCalls().at(-1).automatic_payment_methods && piCalls().at(-1).automatic_payment_methods.allow_redirects === 'never', `late fee ${r.status}`);
 ok(rows.get(late.id).payment_status === 'late_fee_paid' && sent.some((e) => e.to === 'jane@example.com'), 'late fee not recorded or told');
 ok((await act({ action: 'late-fee', visitId: late.id })).status === 409 && calls.length === 0, 'late fee charged twice');
 const er = fakeVisit();

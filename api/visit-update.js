@@ -120,7 +120,7 @@ async function chargeSavedCard(stripe, visit, { amount, kind, finalLoad, key, de
   const cust = visit.customers || {};
   const pi = await stripe.paymentIntents.create({
     amount, currency: 'usd', customer: cust.stripe_customer_id, payment_method: visit.stripe_payment_method_id,
-    off_session: true, confirm: true, description,
+    off_session: true, confirm: true, automatic_payment_methods: { enabled: true, allow_redirects: 'never' }, description,
     metadata: { kind, visit_id: String(visit.id), ...(finalLoad !== undefined ? { final_load_idx: String(finalLoad) } : {}) },
   }, { idempotencyKey: key });
   if (!pi || pi.status !== 'succeeded') {
@@ -148,6 +148,11 @@ async function invoiceInstead(stripe, visit, { amount, kind, finalLoad, keyBase,
     customer: cust.stripe_customer_id, invoice: inv.id, amount, currency: 'usd', description: desc, metadata,
   }, { idempotencyKey: `${keyBase}:invoice-item` });
   const fin = await stripe.invoices.finalizeInvoice(inv.id);
+  // Stripe does not copy invoice metadata onto the invoice's PaymentIntent; stamp it so the webhook knows it is not a booking.
+  if (fin && fin.payment_intent) {
+    try { await stripe.paymentIntents.update(typeof fin.payment_intent === 'string' ? fin.payment_intent : fin.payment_intent.id, { metadata }); }
+    catch (e) { console.error('[visit-update] could not stamp the invoice payment intent:', e.message); }
+  }
   const sentInv = await stripe.invoices.sendInvoice(inv.id);
   const invoiceUrl = (sentInv && sentInv.hosted_invoice_url) || (fin && fin.hosted_invoice_url) || null;
 
@@ -157,10 +162,13 @@ async function invoiceInstead(stripe, visit, { amount, kind, finalLoad, keyBase,
   if (!row) console.error('[visit-update] could not store the invoice on visit', visit.id);
   if (!alreadyAlerted) {
     await alertPaymentNeeded(visit, { cents: amount, kind, invoiceUrl, reason, sendEmail });
-    if (cust.email) {
+  }
+  // The customer always hears from the path that has the invoice link (the webhook never sends this one).
+  if (cust.email) {
+    try {
       const msg = tpl.paymentNeeded({ name: cust.first_name, amount: money(amount), invoiceUrl });
       await sendEmail({ to: cust.email, kind: 'transactional', idempotencyKey: `${keyBase}:payment-needed`, ...msg });
-    }
+    } catch (e) { console.error('[visit-update] payment needed email failed:', e.message); }
   }
   return invoiceUrl;
 }
@@ -214,7 +222,13 @@ async function finishVisit(body, visit, notePatch, now) {
     }
     try {
       const invoiceUrl = await invoiceInstead(stripe, visit, { amount: p.cents, kind: 'final_charge', finalLoad, keyBase: key, patch, reason: e.message });
-      return [200, { ...answer, paymentStatus: 'payment_needed', invoiceUrl, declined: e.code || 'declined' }];
+      // The job is done whether or not the card worked: complete it (status done, the all done email).
+      const out = { ...answer, paymentStatus: 'payment_needed', invoiceUrl, declined: e.code || 'declined' };
+      try {
+        const [code, done] = await completeVisit(visit.id, notePatch, now);
+        out.completed = code === 200; out.visit = done.visit; out.nextDate = done.nextDate;
+      } catch (e3) { console.error('[visit-update] declined, and complete failed:', e3.message); out.completed = false; }
+      return [200, out];
     } catch (e2) {
       console.error('[visit-update] invoice failed:', e2.message);
       return [502, { error: 'The card was declined and the invoice could not be sent. Send one from Stripe.' }];

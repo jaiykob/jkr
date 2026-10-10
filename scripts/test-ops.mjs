@@ -11,11 +11,13 @@ delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 // Fake Stripe (the event is the request body) and a sendEmail that records.
 const sent = [];
 let customerMeta = {};
+let invoiceMeta = {};
 const customerUpdates = [];
 class FakeStripe {
   constructor() {
     this.webhooks = { constructEvent: (raw) => JSON.parse(raw.toString('utf8')) };
     this.customers = { update: async (id, p) => { customerUpdates.push({ id, ...p }); return { id, ...p }; }, retrieve: async (id) => ({ id, name: 'Jane Smith', email: 'jane@example.com', phone: '5035550100', metadata: customerMeta }) };
+    this.invoices = { retrieve: async (id) => ({ id, metadata: invoiceMeta }) };
     this.subscriptions = { retrieve: async (id) => ({ id, status: 'active', items: { data: [] }, metadata: {} }) };
   }
 }
@@ -327,6 +329,24 @@ ok(discordPings().length === 0 && !sentEmails().length && patches.length === 0, 
 fcVisit(); visitRows[0].payment_status = 'paid';
 await deliver(piEvent('payment_intent.payment_failed', 'final_charge', {}, 'evt_fc_f4'), fcEnv);
 ok(visitRows[0].payment_status === 'paid' && discordPings().length === 0, 'a late failure event unpaid a paid visit');
+// payment intents of other types with our own kind: ignored, never paid, never a booking
+for (const type of ['payment_intent.created', 'payment_intent.canceled', 'payment_intent.requires_action', 'payment_intent.processing']) {
+  fcVisit();
+  await deliver(piEvent(type, 'final_charge', {}, 'evt_' + type), fcEnv);
+  ok(visitRows[0].payment_status === 'card_saved' && !sentEmails().length && posts.length === 0 && discordPings().length === 0, `${type} marked paid, sent mail or read as a booking`);
+}
+// the hosted invoice's own PaymentIntent has no kind: the invoice decides, the customer metadata does not
+customerMeta = { plan: 'one_time', kind: 'booking', date: day, window: 'w10' };
+invoiceMeta = { kind: 'final_charge', visit_id: 'v1' };
+fcVisit(); visitRows[0].payment_status = 'payment_needed';
+await deliver({ id: 'evt_inv_pi', type: 'payment_intent.succeeded', livemode: false,
+  data: { object: { id: 'pi_inv', customer: 'cus_1', invoice: 'in_fc', amount: 37400, amount_received: 37400, metadata: {} } } }, fcEnv);
+ok(visitRows[0].payment_status === 'paid' && posts.length === 0 && discordPings().length === 0 && !sentEmails().some((e) => /booked|New booking/i.test(e.subject || '')), `an invoice PaymentIntent: ${visitRows[0].payment_status}`);
+invoiceMeta = {};   // an invoice that is not ours
+fcVisit();
+await deliver({ id: 'evt_inv_pi2', type: 'payment_intent.succeeded', livemode: false,
+  data: { object: { id: 'pi_other', customer: 'cus_1', invoice: 'in_other', amount: 37400, metadata: {} } } }, fcEnv);
+ok(posts.length === 0 && discordPings().length === 0 && !sentEmails().length && visitRows[0].payment_status === 'card_saved', 'an unknown invoice PaymentIntent was read as a booking');
 customerMeta = { address: '9 Elm St, Portland 97202' };
 for (const k of ['receipt', 'paymentNeeded', 'lateFee']) ok(typeof tpl[k] === 'function', `template ${k} missing`);
 const lf = tpl.lateFee({ name: 'Jane', amount: '$50.00', dayLabel: 'Tue Oct 14', windowLabel: '10 am to 12 pm', cancelHours: 24 });
