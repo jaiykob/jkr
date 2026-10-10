@@ -230,6 +230,9 @@ dbDown();
 ok(Object.keys(await db.slotCounts({ market: 'portland', from: first, to: first })).length === 0, 'slotCounts is not empty with the database down');
 dbDown();
 ok((await callCapacity('?market=portland')).json.days.every((d) => !d.full && d.windows.every((w) => !w.full)), 'capacity must fail open');
+// The old weekday answer (no market) is gone with the old checkout: a market is required.
+const noMarket = await callCapacity('');
+ok(noMarket.status === 400 && !(noMarket.json && ('counts' in noMarket.json || 'cap' in noMarket.json)), `capacity without a market answered ${noMarket.status} ${JSON.stringify(noMarket.json)}`);
 
 
 console.log('== booked ==');
