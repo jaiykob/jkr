@@ -38,6 +38,18 @@ for (const a of ['finish', 'declined', 'late-fee', 'en-route']) {
 }
 ok(/'x-admin-token'\s*:\s*apiToken\(\)/.test(dash), 'jkr/index.html: the post helper does not send x-admin-token');
 ok(!/[?&]token=/.test(dash), 'jkr/index.html: has a ?token= URL form');
+{
+  const fn = dash.match(/function smsLink\(phone\)\{[\s\S]*?\n  \}/);
+  ok(!!fn, 'jkr/index.html: no smsLink function');
+  if (fn) {
+    const smsLink = new Function(fn[0] + '; return smsLink;')();
+    const body = '?&body=' + encodeURI('On our way, about 20 minutes');
+    ok(smsLink('5035550100?&body=x,15550001111') === 'sms:5035550100' + body, 'smsLink did not strip a hostile phone');
+    ok(smsLink('(503) 555-0100') === 'sms:5035550100' + body, 'smsLink mangled a normal phone');
+    ok(smsLink('+1 503 555 0100;5') === 'sms:+15035550100' + body, 'smsLink kept a stray separator');
+    ok(smsLink('555') === null && smsLink(null) === null, 'smsLink built a link from a short phone');
+  }
+}
 ok(dash.includes('js/order-config.js'), 'jkr/index.html: does not load js/order-config.js');
 
 console.log(`\n${pass} passed, ${fail} failed`);

@@ -484,6 +484,12 @@
   function jobAction(action, visitId, extra){
     return adminPost('/api/visit-update', Object.assign({ action, visitId }, extra || {}));
   }
+  // The phone comes from a public form: keep digits and one leading +, nothing else, so it cannot add recipients or change the text.
+  function smsLink(phone){
+    const p = String(phone||'').split(/[^\d\s().+-]/)[0].replace(/[^\d+]/g,'').replace(/(?!^)\+/g,'');
+    if(p.replace(/\D/g,'').length < 10) return null;
+    return 'sms:' + p + '?&body=' + encodeURI('On our way, about 20 minutes');
+  }
   const rerender = () => { if(_openRef) openDetail(_openRef.type, _openRef.id); };
   function findVisit(id){ for(const c of DATA.customers) for(const v of (c.visits||[])) if(v.id===id) return v; return null; }
   async function dryRun(id){
@@ -504,8 +510,11 @@
     const v = findVisit(id);
     try{
       if(a === 'en-route'){
-        if(b.dataset.phone){ const l = document.createElement('a'); l.href = 'sms:' + b.dataset.phone + '?&body=' + encodeURI('On our way, about 20 minutes'); l.click(); }
-        await jobAction('en-route', id); NOTE[id] = { ok:true, text:'Marked on our way.' }; await refreshAndReopen();
+        const link = smsLink(b.dataset.phone);
+        if(link){ const l = document.createElement('a'); l.href = link; l.click(); }
+        await jobAction('en-route', id);
+        NOTE[id] = link ? { ok:true, text:'Marked on our way.' } : { ok:false, text:'Marked on our way, but the phone number could not be used for the text.' };
+        await refreshAndReopen();
       } else if(a === 'finish-open' && v){
         FIN[id] = { final: v.quoted_load_idx == null ? 0 : v.quoted_load_idx, dry:null, agreed:false, busy:false, err:'' }; rerender(); dryRun(id);
       } else if(a === 'finish-cancel'){ delete FIN[id]; rerender();
