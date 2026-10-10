@@ -406,7 +406,7 @@ async function emailOwner(ctx, event, payload, amountLabel) {
     stripeUrl:   ctx.customerId ? `${stripeDashboardBase(ctx.livemode)}/customers/${ctx.customerId}` : null,
   });
   try {
-    await sendEmail({ to, kind: 'transactional', idempotencyKey: `${event.id}:owner`, ...msg });
+    await sendEmail({ to, kind: 'transactional', idempotencyKey: `${payload.keyBase || event.id}:owner`, ...msg });
   } catch (e) {
     console.error('[stripe-webhook] owner email failed:', e.message);
   }
@@ -530,8 +530,10 @@ async function persistSpine(ctx, event) {
  *      still runs (fail soft: an error never loses a booking)
  *   3. quote photos, the Discord ping, the owner email, the confirmation
  *
- * A redelivery finds the visit already there and pings nothing new (the two
- * emails are keyed by event id).
+ * The visit's booking_notified_at is stamped once the confirmation, the owner
+ * email and the ping have all gone out. A redelivery of a stamped visit sends
+ * nothing; an unstamped one (the first try died part way) sends all three, the
+ * emails keyed by the SetupIntent id so they dedupe on Resend's side too.
  */
 function dayLabel(date) {
   const d = new Date(`${String(date || '').slice(0, 10)}T12:00:00Z`);
@@ -585,8 +587,12 @@ async function handleBooked(stripe, event) {
     kind: 'signup_or_payment', title: '🎉 New booking', eventType: event.type,
     amount: total, receiptUrl: null,
   };
-  // visit.existing: a redelivery. The Discord ping has no key of its own, so skip it.
-  if (!(visit && visit.existing)) await notifyOps(ctx, payload);
+  // Already announced (the visit carries the stamp): a redelivery sends nothing.
+  // A visit without the stamp (the first delivery died part way) sends all
+  // three again; the emails are keyed by the SetupIntent so they dedupe too.
+  if (visit && visit.booking_notified_at) return;
+  payload.keyBase = si.id;
+  await notifyOps(ctx, payload);
   await emailOwner(ctx, event, payload, 'Total (card saved, not charged)');
 
   if (ctx.email) {
@@ -595,7 +601,13 @@ async function handleBooked(stripe, event) {
       address: m.address, load: size && size.label, travel: travelLine(m),
       total: fmtAmount(total), cancelHours: ORDER.POLICY.cancelHours,
     });
-    await sendEmail({ to: ctx.email, kind: 'transactional', idempotencyKey: `${event.id}:cust`, ...msg });
+    await sendEmail({ to: ctx.email, kind: 'transactional', idempotencyKey: `${si.id}:cust`, ...msg });
+  }
+  if (visit && visit.id) {
+    try {
+      const row = await db.updateVisit(visit.id, { booking_notified_at: new Date().toISOString() });
+      if (!row) console.error('[stripe-webhook] could not stamp booking_notified_at on visit', visit.id);
+    } catch (e) { console.error('[stripe-webhook] stamp failed:', e.message); }
   }
 }
 

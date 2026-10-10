@@ -138,7 +138,8 @@ console.log('== slots ==');
 const ORDER = require('../api/_lib/order-config.js');
 const NOW = Date.now();
 let visitRows = [], down = false, posts = [];
-const pings = [];
+const pings = [], patches = [];
+const eqId = (q) => (q.get('id') || '').replace(/^eq\./, '');
 const fakeVisits = (r) => { visitRows = r.map((v, i) => ({ id: v.id || `v${i}`, customer_id: 'c1', customers: { id: 'c1', email: 'jane@example.com' }, ...v })); down = false; };
 const dbDown = () => { down = true; };
 globalThis.fetch = async (url, init = {}) => {
@@ -148,6 +149,12 @@ globalThis.fetch = async (url, init = {}) => {
   const q = u.searchParams;
   if (u.pathname.endsWith('/customers') && (init.method || 'GET') === 'POST') return { ok: true, status: 201, json: async () => [{ id: 'c1' }], text: async () => '' };
   if (!u.pathname.endsWith('/visits')) return { ok: true, status: 200, json: async () => [], text: async () => '' };
+  if (init.method === 'PATCH') {
+    const row = visitRows.find((r) => r.id === eqId(q));
+    if (!row) return { ok: true, status: 200, json: async () => [], text: async () => '' };
+    Object.assign(row, JSON.parse(init.body)); patches.push({ id: row.id, ...JSON.parse(init.body) });
+    return { ok: true, status: 200, json: async () => [row], text: async () => '' };
+  }
   if ((init.method || 'GET') === 'POST') {
     const b = JSON.parse(init.body); posts.push(b);
     const row = { id: `new${posts.length}`, ...b }; visitRows.push(row);
@@ -246,9 +253,22 @@ ok(conf && /\$374\.00/.test(conf.html) && /Zone 2/.test(conf.html) && /\$25\.00/
 ok(conf && /Nothing is charged today/.test(conf.text), 'confirmation text lacks the rule');
 ok(sentEmails().some((e) => e.to === 'owner@example.com'), 'no owner email');
 ok(discordPings().length === 1 && /New booking/.test(discordPings()[0].embeds[0].title), 'no Discord ping');
+ok(sentEmails().every((e) => /^seti_9:(cust|owner)$/.test(e.idempotencyKey)), 'email keys are not SetupIntent based: ' + sentEmails().map((e) => e.idempotencyKey));
+ok(patches.length === 1 && patches[0].booking_notified_at, 'the visit was not stamped booking_notified_at after all three went out');
 await deliver(ev, bookEnv);
 ok(createdVisits().length === 1, 'a redelivered event wrote a second visit');
 ok(discordPings().length === 1, 'a redelivered event pinged Discord again');
+ok(sentEmails().length === 0, 'a redelivery after a full first delivery sent email again');
+// A different event for the same SetupIntent is also quiet.
+await deliver(setupIntentSucceeded({ kind: 'booking', date: day, window: 'w10', total_cents: '37400', travel_cents: '2500', load_idx: '2' }, 'evt_si_other'), bookEnv);
+ok(createdVisits().length === 1 && discordPings().length === 1 && sentEmails().length === 0, 'a second event for the same setup intent notified again');
+// The first try wrote the visit and died before announcing it: the retry sends all three, once, and stamps.
+visitRows.forEach((r) => { r.booking_notified_at = null; }); patches.length = 0;
+await deliver(ev, bookEnv);
+ok(createdVisits().length === 1 && discordPings().length === 2, 'the retry of an unstamped visit did not ping (or wrote a second visit)');
+ok(sentEmails().filter((e) => e.to === 'jane@example.com').length === 1 && sentEmails().filter((e) => e.to === 'owner@example.com').length === 1, 'the retry of an unstamped visit did not send the confirmation and the owner email once each');
+ok(patches.length === 1 && patches[0].booking_notified_at, 'the retry did not stamp the visit');
+ pings.splice(1);
 await deliver(setupIntentSucceeded({ kind: 'something_else' }, 'evt_si_2'), bookEnv);
 ok(createdVisits().length === 1 && discordPings().length === 1, 'a setup intent that is not a booking wrote a visit or pinged');
 ok(sentEmails().length === 0, 'a setup intent that is not a booking sent email');

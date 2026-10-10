@@ -141,6 +141,7 @@ alter table public.visits add column if not exists invoice_url text;
 alter table public.visits add column if not exists consent_at timestamptz;
 alter table public.visits add column if not exists consent_version text;
 alter table public.visits add column if not exists en_route_at timestamptz;
+alter table public.visits add column if not exists booking_notified_at timestamptz;
 -- One visit per saved card setup: a redelivered webhook cannot duplicate it.
 create unique index if not exists visits_setup_intent_uidx on public.visits(stripe_setup_intent_id);
 create index if not exists visits_slot_idx on public.visits(market, scheduled_date, window_key);
