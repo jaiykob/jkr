@@ -92,7 +92,8 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 // ?__probe=<round>: which parts of the page each round measures for small
 // text, and (from round 2) which links and buttons must be 48px tall.
 const PROBE_SETS = {
-  1: { text: ['.lb-travel', '.lb-unit', '#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut'], taps: [] },
+  // Round 1's travel text; since round 6 the order page shows it in the ZIP answer, the total, the travel line and the size cards.
+  1: { text: ['.lb-travel', '.lb-unit', '#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut', '#o-zip-msg', '.o-total', '.o-travel', '.size-price', '.size-travel'], taps: [] },
   2: { text: ['main .prose', 'main .faq-list', '.town-local', '.town-zones', '#zoneList', 'footer', '#maint-banner'],
        taps: ['.site-nav a', '.site-nav button', 'footer a', '.town-nearby a', '.hub-towns a'] },
   5: { text: ['.article p', '.article li', '.article h2', '.post-meta', '.lb-travel', '#zipOut', '.commercial-form label', '.commercial-form input', '.commercial-form textarea', 'footer'],
@@ -479,7 +480,13 @@ const ROUNDS = {
         if (!barText.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `bar does not show the total ${fmt(TOTAL)}: "${text(barText).slice(0, 80)}"`;
         const book = await p.evaluate(`(document.querySelector('#o-book')||{}).textContent`);
         if (!book || !book.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `Book button reads "${text(book)}", want the amount`;
-        await p.evaluate(`(function(){var i=document.querySelector('#o-you input');if(i){i.scrollIntoView({block:'center'});i.focus();}})()`);
+        // Sections open in turn (spec): the contact fields open once a day and a window are picked.
+        try {
+          await p.click('#o-when [data-date]:not([disabled]):not([aria-disabled="true"])');
+          await p.click('#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)');
+        } catch (e) { return `could not reach the contact fields: ${e.message}`; }
+        const typing = await p.evaluate(`(function(){var i=document.querySelector('#o-you input');if(!i)return false;i.scrollIntoView({block:'center'});i.focus();return document.activeElement===i;})()`);
+        if (!typing) return 'no contact field in #o-you takes the focus';
         await new Promise((r) => setTimeout(r, 500));
         const hid = await p.evaluate(rectOf('#o-bar'));
         if (shown(hid) && hid.opacity !== '0' && hid.top < 900) return 'the bar stays over the field being typed in';
@@ -1173,19 +1180,26 @@ const ROUNDS = {
       if (!/== travel ==/.test(r.out)) return 'test-booking has no travel section';
       return r.code === 0 || 'test-booking fails';
     } },
-    { id: 'quote-zone', pts: 10, desc: 'quote page: zone and travel in the ZIP answer and the load summary', async run() {
+    // Round 6 rebuilt the quote as the order page: the ZIP answer is #o-zip-msg and the load
+    // summary is the order summary and the phone bar (both must carry load plus travel). The
+    // old homepage link (?load=&zip=) still opens it, so the URL is the old one on purpose.
+    { id: 'quote-zone', pts: 10, desc: 'quote page: zone and travel in the ZIP answer and the order total (summary and bar)', async run() {
       if (!Z2) return 'no zone 2 ZIP in the config';
       const dom = await dump(QUOTE_URL());
-      const hint = byId(dom, 'h-zip'), sum = byId(dom, 'pick-sum');
+      const hint = byId(dom, 'o-zip-msg');
       if (!hint || !hint.text.includes(T2.label) || !hint.text.includes('+$')) return `ZIP answer is "${hint && hint.text}"`;
-      if (!sum || !sum.text.includes(fmt(TOTAL))) return `load summary is "${sum && sum.text}", want ${fmt(TOTAL)}`;
+      for (const id of ['o-summary', 'o-bar']) {
+        const sum = byId(dom, id);
+        if (!sum || !sum.text.includes(fmt(TOTAL))) return `#${id} reads "${sum && sum.text.slice(0, 80)}", want ${fmt(TOTAL)}`;
+      }
       return true;
     } },
-    { id: 'quote-far', pts: 5, desc: 'quote page: a ZIP past the last zone asks them to call and offers a call back', async run() {
+    { id: 'quote-far', pts: 5, desc: 'quote page: a ZIP past the last zone asks them to call and offers a price by email', async run() {
       const dom = await dump(`/book/quote.html?load=${LOAD_ROW}&freq=0&edit=contact&zip=${FAR}`);
-      const err = byId(dom, 'e-zip'), wl = byId(dom, 'waitlist');
-      if (!err || !/call/i.test(err.text)) return `ZIP error is "${err && err.text}"`;
-      if (!wl || /\shidden/.test(wl.tag)) return 'no call back offer';
+      const far = byId(dom, 'o-far');
+      if (!far || /\shidden/.test(far.tag)) return 'no call back offer (#o-far hidden or missing)';
+      if (!/call/i.test(far.text)) return `far ZIP answer is "${far.text}"`;
+      if (!/<input[^>]*type="email"/.test(far.inner) || !/<button/.test(far.inner)) return 'the far ZIP offer has no email box and button';
       return true;
     } },
     { id: 'home', pts: 8, desc: 'homepage: truck says "+ travel" with no ZIP; one zone row per zone', async run() {

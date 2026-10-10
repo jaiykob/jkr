@@ -6,11 +6,10 @@
  * by BUILD: markers in its own file:
  *
  *   (api/create-booking.js reads api/_lib/order-config.js, written whole below)
- *   book/quote.html           quote-jsonld, quote-prices
+ *   book/quote.html           quote-jsonld, order-sizes (the five size cards)
  *   book/checkout.html  checkout-billing
  *   index.html                     home-prices, home-builder
  *   api/photo-quote.js              server-items
- *   book/quote.html                 (also) quote-builder
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -29,35 +28,37 @@ const J = (v) => JSON.stringify(v);
    them as links inside a script and crawl /visit (a real 404 at Scoops Co.). */
 const Jslash = (v) => J(v).replace(/\//g, '\\u002F');
 const planKey = (c) => (c === 'oneTime' ? 'one_time' : c);
-const pad = (n) => String(n).padStart(6);
 /* A value that is still a placeholder prints red with an asterisk (css/guess.css). */
 const guessed = (html, on) => (on ? `<span class="guess">${html}</span>` : html);
 
 /* Every place with a ZIP in a zone, once each, nearest first ("Vancouver, WA"). */
 const AREA_SERVED = [...new Set(ALL_ZIPS.map((z) => `${ZIP_ZONES[z].place}, ${ZIP_ZONES[z].state}`))];
 
-/* ── estimator ────────────────────────────────────────────────────────── */
-const quotePrices = [
-  '    const PRICES = [',
-  ...PRICES.map((r, i) => `      /* ${LOAD_OPTIONS[i].label.padEnd(12)} */ [${r.map(pad).join(',')}],`),
-  '    ];',
-  `    const LOAD_LABELS  = ${J(LOAD_OPTIONS.map((o) => o.label))};`,
-  `    const LOAD_NOTES   = ${J(LOAD_OPTIONS.map((o) => o.note))};`,
-  `    const FREQ_LABELS  = ${J(COLUMNS.map((c) => COLUMN_LABELS[c]))};`,
-  `    const FREQ_UNITS   = ${Jslash(COLUMNS.map((c) => BILLING[c].unit))};`,
-  `    const FREQ_EVERY   = ${J(COLUMNS.map((c) => BILLING[c].every))};`,
-  `    const ONE_TIME_COL = ${ONE_TIME_COL};`,
-].join('\n');
+/* ── the order page: the five size cards (book/quote.html) ─────────────── */
+/* One card per load size: photo, name, what fits, the one time price (red
+   while GUESS.prices) and "+ travel" until the page knows the ZIP. The class
+   names are shared with the homepage cards (round 6 ruling R1); js/size-cards.js
+   makes them pickable and writes the travel line. */
+const orderSizes = LOAD_OPTIONS.map((o, r) => [
+  `<button type="button" class="size-card" data-size="${r}" aria-pressed="false">`,
+  `  <img class="size-photo" src="${o.photo}" alt="" width="800" height="500" loading="lazy" decoding="async">`,
+  '  <span class="size-body">',
+  `    <span class="size-name">${o.label}</span>`,
+  `    <span class="size-note">${o.note}</span>`,
+  `    <span class="size-cost"><span class="size-price${GUESS.prices ? ' guess' : ''}">${fmt(PRICES[r][ONE_TIME_COL])}</span> <span class="size-travel">+ travel</span></span>`,
+  '  </span>',
+  '</button>',
+].map((l) => `          ${l}`).join('\n')).join('\n');
 
-
-const offers = [];
-LOAD_OPTIONS.forEach((o, r) => COLUMNS.forEach((c, k) => offers.push({
+/* The quote page's offers: the one time haul only (monthly pickups left the
+   online flow in round 6; they go through the commercial form). */
+const offers = LOAD_OPTIONS.map((o, r) => ({
   '@type': 'Offer',
-  name: `${o.label}, ${COLUMN_LABELS[c].toLowerCase()}`,
+  name: `${o.label}, ${COLUMN_LABELS[COLUMNS[ONE_TIME_COL]].toLowerCase()}`,
   priceCurrency: 'USD',
-  price: (PRICES[r][k] / 100).toFixed(2),
-})));
-const all = PRICES.flat();
+  price: (PRICES[r][ONE_TIME_COL] / 100).toFixed(2),
+}));
+const all = PRICES.map((r) => r[ONE_TIME_COL]);
 const jsonld = {
   '@context': 'https://schema.org',
   '@type': 'Service',
@@ -106,7 +107,7 @@ const homePrices = LOAD_OPTIONS.map((o, r) => [
   '      </a>',
 ].join('\n')).join('\n');
 
-/* The load builder's data (js/load-builder.js), for the homepage and quote. */
+/* The load builder's data (js/load-builder.js), for the homepage until round 6 Task 10. */
 const builderData = {
   prices: PRICES,
   loads: LOAD_OPTIONS.map((o) => ({ label: o.label, note: o.note, fits: o.fits })),
@@ -293,8 +294,7 @@ const TARGETS = [
   ] },
   { file: 'book/quote.html', blocks: [
     { name: 'quote-jsonld', body: quoteJsonld, comment: false },
-    { name: 'quote-prices', body: quotePrices, comment: true },
-    { name: 'quote-builder', body: builderBlock('    '), comment: true },
+    { name: 'order-sizes', body: orderSizes, comment: false },
   ] },
   { file: 'book/checkout.html', blocks: [
     { name: 'checkout-billing', body: checkoutBilling, comment: true },

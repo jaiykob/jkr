@@ -50,6 +50,7 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - [ ] `agent/skills/_shared/jkr-context.md`: The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).
 - [ ] `agent/skills/_shared/jkr-context.md`: not created yet (`YOUR-PROJECT.supabase.co` in the code).
 - [ ] `agent/skills/review-request/SKILL.md`: not set up yet).
+- [ ] `book/quote.html`: WhatsApp number: the business phone until the founder names one
 - [ ] `marketing/ad-copy/README.md`: These prices are placeholder guesses (`GUESS` in `pricing.config.mjs`).
 - [ ] `marketing/ad-copy/README.md`: The mile bands and fees are placeholder guesses (`GUESS` in `pricing.config.mjs`).
 - [ ] `marketing/ad-copy/README.md`: The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).
@@ -82,6 +83,7 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - `blog/yard-debris-after-a-storm.html` (2): Most garbage haulers in the metro limit what goes in the cart and may take extra bundles for a fee, Many transfer stations and landscape suppliers in the metro accept yard debris for composting
 - `book/checkout.html` (1): ${text}
 - `book/commercial.html` (3): one business day, in small amounts
+- `book/quote.html` (5): $99.00, $199.00, $349.00, $479.00, $599.00
 - `boring.html` (25): no travel charge, $99.00, $89.00, $199.00, $179.00, $349.00, $319.00, $479.00, $439.00, $599.00, $549.00, no charge, 10 road miles, +$75.00, 40 miles, No travel charge, Up to 10 road miles from Gresham, +$25.00 per visit, 10 to 20 road miles, +$50.00 per visit, 20 to 30 road miles, +$75.00 per visit, 30 to 40 road miles, Wood stoves count as a heavy item and add a flat fee
 - `brush-prairie.html` (25): $50.00 per visit, $99.00, $89.00, $199.00, $179.00, $349.00, $319.00, $479.00, $439.00, $599.00, $549.00, no charge, 10 road miles, +$75.00, 40 miles, No travel charge, Up to 10 road miles from Gresham, +$25.00 per visit, 10 to 20 road miles, +$50.00 per visit, 20 to 30 road miles, +$75.00 per visit, 30 to 40 road miles, Dry hay bales and broken feeders, yes.
 - `camas.html` (24): $50.00 per visit, $99.00, $89.00, $199.00, $179.00, $349.00, $319.00, $479.00, $439.00, $599.00, $549.00, no charge, 10 road miles, +$75.00, 40 miles, No travel charge, Up to 10 road miles from Gresham, +$25.00 per visit, 10 to 20 road miles, +$50.00 per visit, 20 to 30 road miles, +$75.00 per visit, 30 to 40 road miles

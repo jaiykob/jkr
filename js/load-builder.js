@@ -20,35 +20,22 @@
   var COLS = 10, ROWS = 10;                // 100 cells = one full truck
   var BED = { x: 22, y: 34, w: 250, h: 136 };
   var KEY = 'loadBuild';   // sessionStorage: the tapped items, in order
-  // sessionStorage: the stored photo paths (they ride with the booking), small
-  // thumbnails to show again, and the last read-back line.
-  var PHOTOS_KEY = 'quotePhotos', THUMBS_KEY = 'quoteThumbs', NOTE_KEY = 'quotePhotoNote';
+  // The last read back line of a photo quote, kept apart from the order page's.
+  var NOTE_KEY = 'quotePhotoNote';
   // sessionStorage: the last ZIP typed on any page (a plain string).
   var ZIP_KEY = 'quoteZip';
-  var MAX_PHOTOS = 4;
-  function readStore(k, d) { try { var v = JSON.parse(sessionStorage.getItem(k) || 'null'); return v == null ? d : v; } catch (e) { return d; } }
-  function writeStore(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* full or private: the photos still went up */ } }
-
-  /* A photo (File or data URL) redrawn as a JPEG no wider or taller than
-     `max`, as a data URL. Phones shoot 4000px and several MB; the server only
-     needs enough to count a couch. */
-  function shrink(src, max, q) {
-    return new Promise(function (resolve) {
-      var img = new Image();
-      var url = typeof src === 'string' ? src : URL.createObjectURL(src);
-      img.onload = function () {
-        var k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-        var c = document.createElement('canvas');
-        c.width = Math.max(1, Math.round(img.naturalWidth * k));
-        c.height = Math.max(1, Math.round(img.naturalHeight * k));
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        if (typeof src !== 'string') URL.revokeObjectURL(url);
-        resolve(c.toDataURL('image/jpeg', q));
-      };
-      img.onerror = function () { if (typeof src !== 'string') URL.revokeObjectURL(url); resolve(null); };
-      img.src = url;
-    });
+  // The photo quote itself (shrink, upload, thumbnails, the stored photo paths)
+  // lives in js/photo-quote.js, shared with the order page; it is loaded from
+  // next to this file when a page asks for photos.
+  var SELF = document.currentScript && document.currentScript.src;
+  function withPhotoQuote(fn) {
+    if (window.PhotoQuote) return fn(window.PhotoQuote);
+    var s = document.createElement('script');
+    s.src = SELF ? SELF.replace(/[^/]*$/, 'photo-quote.js') : '/js/photo-quote.js';
+    s.onload = function () { if (window.PhotoQuote) fn(window.PhotoQuote); };
+    document.head.appendChild(s);
   }
+
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* Words, by <html lang>: the Spanish pages (es/) get Spanish. Item and load
@@ -210,7 +197,7 @@
         try {
           var k = 'quoteContact', prev = JSON.parse(sessionStorage.getItem(k) || '{}') || {};
           prev.items = describe();
-          prev.photos = readStore(PHOTOS_KEY, []);
+          prev.photos = window.PhotoQuote ? window.PhotoQuote.photos() : [];
           sessionStorage.setItem(k, JSON.stringify(prev));
         } catch (err) { /* private mode: the items note is a nicety */ }
       });
@@ -378,82 +365,29 @@
 
     function photoPanel() {
       var wrap = h('div', 'lb-photo');
-      var pick = h('label', 'lb-snap');
-      var input = document.createElement('input');
-      input.type = 'file'; input.accept = 'image/*'; input.multiple = true; input.className = 'lb-file';
-      var icon = document.createElementNS(NS, 'svg');
-      icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('aria-hidden', 'true'); icon.setAttribute('class', 'lb-cam');
-      icon.innerHTML = '<path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/>';
-      var words = h('span', 'lb-snap-words');
-      words.appendChild(h('strong', null, S.snap));
-      words.appendChild(h('small', null, S.sendUpTo(MAX_PHOTOS)));
-      pick.appendChild(input); pick.appendChild(icon); pick.appendChild(words);
-      var thumbs = h('div', 'lb-thumbs');
-      var msg = h('p', 'lb-ai');
-      msg.setAttribute('aria-live', 'polite');
-      var or = h('p', 'lb-or', S.or);
-      wrap.appendChild(pick); wrap.appendChild(thumbs); wrap.appendChild(msg); wrap.appendChild(or);
       root.appendChild(wrap);
-
-      function showThumbs(list, busy) {
-        thumbs.innerHTML = '';
-        list.forEach(function (src) {
-          var f = h('span', 'lb-thumb' + (busy ? ' is-busy' : ''));
-          var img = document.createElement('img'); img.src = src; img.alt = '';
-          f.appendChild(img); thumbs.appendChild(f);
+      withPhotoQuote(function (PQ) {
+        PQ.mount(wrap, {
+          endpoint: opts.photos.endpoint, cls: 'lb', noteKey: NOTE_KEY,
+          text: { snap: S.snap, sendUpTo: S.sendUpTo, getting: S.getting, cantOpen: S.cantOpen, looking: S.looking, cantRead: S.cantRead },
+          onBusy: function (on) { host.classList.toggle('is-reading', on); },
+          onResult: function (j) {
+            var found = j.items || {};
+            var names = D.items.filter(function (it) { return found[it.key]; })
+              .map(function (it) { return it.label + (found[it.key] > 1 ? ' x' + found[it.key] : ''); });
+            // Claude writes its note in English; a Spanish page uses its own words.
+            var notes = ES ? '' : j.notes;
+            if (!names.length || j.unsure) {
+              if (names.length) setItems(found);
+              return { text: (notes ? notes + ' ' : '') + S.tapBelow, kind: 'err' };
+            }
+            setItems(found);
+            // Claude's own note already says what it saw; the bare list is
+            // the fallback when it left none.
+            return { text: (notes || S.weCount + names.join(', ') + '.') + S.lookRight, kind: 'done' };
+          },
         });
-      }
-      function say(text, kind) { msg.textContent = text; msg.className = 'lb-ai' + (kind ? ' is-' + kind : ''); }
-
-      // Coming back to the page: show what they already sent.
-      var kept = readStore(THUMBS_KEY, []);
-      if (kept.length) { showThumbs(kept, false); say(readStore(NOTE_KEY, ''), 'done'); }
-
-      input.addEventListener('change', function () {
-        var files = Array.prototype.slice.call(input.files || [], 0, MAX_PHOTOS);
-        input.value = '';
-        if (!files.length) return;
-        say(S.getting, 'busy');
-        Promise.all(files.map(function (f) { return shrink(f, 1280, 0.78); })).then(function (big) {
-          big = big.filter(Boolean);
-          if (!big.length) { say(S.cantOpen, 'err'); return; }
-          return Promise.all(big.map(function (d) { return shrink(d, 160, 0.7); })).then(function (small) {
-            showThumbs(small, true);
-            host.classList.add('is-reading');
-            say(S.looking, 'busy');
-            return fetch(opts.photos.endpoint, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ photos: big.map(function (d) { return d.split(',')[1]; }) }),
-            }).then(function (r) {
-              return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; });
-            }).then(function (res) {
-              var j = res.j || {};
-              if (Array.isArray(j.photos)) writeStore(PHOTOS_KEY, j.photos);
-              writeStore(THUMBS_KEY, small);
-              showThumbs(small, false);
-              if (!res.ok) throw new Error(j.error || 'failed');
-              var found = j.items || {};
-              var names = D.items.filter(function (it) { return found[it.key]; })
-                .map(function (it) { return it.label + (found[it.key] > 1 ? ' x' + found[it.key] : ''); });
-              // Claude writes its note in English; a Spanish page uses its own words.
-              var notes = ES ? '' : j.notes;
-              if (!names.length || j.unsure) {
-                var t = (notes ? notes + ' ' : '') + S.tapBelow;
-                say(t, 'err'); writeStore(NOTE_KEY, t);
-                if (names.length) setItems(found);
-                return;
-              }
-              setItems(found);
-              // Claude's own note already says what it saw; the bare list is
-              // the fallback when it left none.
-              var note = (notes || S.weCount + names.join(', ') + '.') + S.lookRight;
-              say(note, 'done'); writeStore(NOTE_KEY, note);
-            });
-          });
-        }).catch(function () {
-          showThumbs(readStore(THUMBS_KEY, []), false);
-          say(S.cantRead, 'err');
-        }).then(function () { host.classList.remove('is-reading'); });
+        wrap.appendChild(h('p', 'lb-or', S.or));
       });
     }
 
