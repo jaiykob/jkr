@@ -26,6 +26,7 @@
  *              payment_intent.succeeded
  *              payment_intent.payment_failed
  *              setup_intent.succeeded   (a saved card books the job)
+ *              invoice.paid             (a hosted invoice for a declined final charge)
  *   Copy the signing secret (whsec_...) into STRIPE_WEBHOOK_SECRET.
  */
 
@@ -35,6 +36,7 @@ const tpl = require('./_lib/email-templates');
 const db  = require('./_lib/db');
 const { firstVisitDate } = require('./_lib/schedule');
 const ORDER = require('./_lib/order-config');
+const { alertPaymentNeeded } = require('./_lib/charge-alerts');
 
 // Display label per plan key. MUST cover every value PLAN_KEYS can produce in
 // api/create-booking.js plus 'quarterly'. A missing key prints the raw
@@ -611,6 +613,65 @@ async function handleBooked(stripe, event) {
   }
 }
 
+// After the job: the final charge and the late fee. The event object's OWN
+// metadata.kind decides (never the customer metadata merged into a context), so
+// none of these is ever read as a booking: no visit written, no "New booking".
+const AFTER_JOB_KINDS = new Set(['final_charge', 'late_fee']);
+
+function afterJobKind(event) {
+  const o = event.data.object || {};
+  const k = o.metadata && o.metadata.kind;
+  if (!AFTER_JOB_KINDS.has(k)) return null;
+  const t = event.type;
+  if (t.startsWith('payment_intent.') || t === 'invoice.paid' || t === 'invoice.payment_succeeded' || t === 'invoice.payment_failed') return k;
+  return null;
+}
+
+async function handleAfterJob(event, kind) {
+  const o = event.data.object || {};
+  const visitId = o.metadata && o.metadata.visit_id;
+  if (!visitId) { console.error('[stripe-webhook] after the job event without a visit_id:', event.id); return; }
+  let visit = null;
+  try { visit = await db.getVisit(visitId); } catch (e) { console.error('[stripe-webhook] visit read failed:', e.message); }
+  const cust = (visit && visit.customers) || {};
+  const paidStatus = kind === 'late_fee' ? 'late_fee_paid' : 'paid';
+  const failed = event.type === 'payment_intent.payment_failed' || event.type === 'invoice.payment_failed';
+
+  if (failed) {
+    // An invoice that has not been paid yet is the plan, not news; only the card decline matters.
+    if (event.type !== 'payment_intent.payment_failed') return;
+    // The charge call usually handled this decline already (and alerted once). Alert only if nobody has.
+    if (!visit || ['payment_needed', 'paid', 'late_fee_paid', 'no_charge'].includes(visit.payment_status)) return;
+    try { await db.updateVisit(visitId, { payment_status: 'payment_needed' }); }
+    catch (e) { console.error('[stripe-webhook] payment_needed mark failed:', e.message); }
+    await alertPaymentNeeded(visit, { cents: o.amount, kind, reason: o.last_payment_error && o.last_payment_error.message, sendEmail });
+    return;
+  }
+
+  // Paid: a PaymentIntent, or the hosted invoice that replaced a declined charge.
+  const isInvoice = event.type.startsWith('invoice.');
+  const piId = isInvoice ? (typeof o.payment_intent === 'string' ? o.payment_intent : (o.payment_intent && o.payment_intent.id) || null) : o.id;
+  const cents = isInvoice ? o.amount_paid : (o.amount_received != null ? o.amount_received : o.amount);
+  if (visit) {
+    const patch = { payment_status: paidStatus };
+    if (piId) patch.stripe_payment_intent_id = piId;
+    if (visit.final_cents == null && cents != null) patch.final_cents = cents;
+    try {
+      const row = await db.updateVisit(visitId, patch);
+      if (!row) console.error('[stripe-webhook] could not mark visit paid:', visitId);
+    } catch (e) { console.error('[stripe-webhook] mark paid failed:', e.message); }
+  }
+  if (!cust.email) return;
+  const when = visit && visit.scheduled_date ? dayLabel(visit.scheduled_date) : undefined;
+  const size = visit && ORDER.SIZES[Number(visit.final_load_idx != null ? visit.final_load_idx : o.metadata.final_load_idx)];
+  const msg = kind === 'late_fee'
+    ? tpl.lateFee({ name: cust.first_name, amount: fmtAmount(cents), dayLabel: when, windowLabel: (ORDER.SCHEDULE.windows.find((w) => w.key === (visit && visit.window_key)) || {}).label, cancelHours: ORDER.POLICY.cancelHours })
+    : tpl.receipt({ name: cust.first_name, amount: fmtAmount(cents), load: size ? size.label : undefined, dayLabel: when });
+  try {
+    await sendEmail({ to: cust.email, kind: 'transactional', idempotencyKey: `${piId || event.id}:receipt`, ...msg });
+  } catch (e) { console.error('[stripe-webhook] receipt failed:', e.message); }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -642,9 +703,10 @@ module.exports = async (req, res) => {
     return res.status(200).json({ received: true });
   }
 
-  // After the job charges (Task 6 handles them): never read as a booking.
-  if (event.type.startsWith('payment_intent.') && obj.metadata && (obj.metadata.kind === 'final_charge' || obj.metadata.kind === 'late_fee')) {
-    console.log('[stripe-webhook] after the job charge, not a booking:', obj.metadata.kind);
+  // After the job charges, and the hosted invoice for a declined one: never a booking.
+  const afterKind = afterJobKind(event);
+  if (afterKind) {
+    await handleAfterJob(event, afterKind);
     return res.status(200).json({ received: true });
   }
 

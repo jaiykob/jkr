@@ -283,6 +283,57 @@ dbDown();
 await deliver(setupIntentSucceeded({ kind: 'booking', date: day, window: 'w12', total_cents: '34900', travel_cents: '0' }, 'evt_si_3'), bookEnv);
 ok(sentEmails().some((e) => e.to === 'jane@example.com' && /12 to 2 pm/.test(e.html)), 'a database error lost the confirmation (fail soft)');
 ok(sentEmails().length >= 2 && discordPings().length === 1, 'a database error lost the owner email or the ping (fail soft)');
+console.log('== final charge ==');
+const fcEnv = { OPS_EMAIL: 'owner@example.com', OPS_WEBHOOK_URL: 'https://discord.invalid/hook' };
+const fcVisit = () => { fakeVisits([{ id: 'v1', scheduled_date: day, window_key: 'w10', market: 'portland', status: 'in_progress', payment_status: 'card_saved', final_cents: 37400 }]); posts = []; pings.length = 0; patches.length = 0; };
+const piEvent = (type, kind, over = {}, id = 'evt_fc_a') => ({ id, type, livemode: false,
+  data: { object: { id: 'pi_fc', customer: 'cus_1', amount: 37400, amount_received: 37400, metadata: { kind, visit_id: 'v1', final_load_idx: '2' }, ...over } } });
+customerMeta = { plan: 'one_time', kind: 'booking', date: day, window: 'w10' };   // merged customer metadata must not win
+fcVisit();
+let fst = await deliver(piEvent('payment_intent.succeeded', 'final_charge'), fcEnv);
+ok(fst === 200, `final charge answered ${fst}`);
+ok(visitRows[0].payment_status === 'paid' && visitRows[0].stripe_payment_intent_id === 'pi_fc', `visit is ${JSON.stringify(visitRows[0])}`);
+ok(posts.length === 0, 'a final charge wrote a visit');
+ok(discordPings().length === 0, 'a final charge sent a Discord ping');
+ok(!sentEmails().some((e) => /New booking/.test(e.subject || '')), 'a final charge sent a New booking email');
+const rec = sentEmails().find((e) => e.to === 'jane@example.com');
+ok(rec && /receipt/i.test(rec.subject) && /\$374\.00/.test(rec.html), 'no receipt for the final charge');
+ok(rec && rec.idempotencyKey === 'pi_fc:receipt', `receipt key is ${rec && rec.idempotencyKey}`);
+fcVisit();
+await deliver(piEvent('payment_intent.succeeded', 'late_fee', { amount_received: 5000, amount: 5000 }), fcEnv);
+ok(visitRows[0].payment_status === 'late_fee_paid' && posts.length === 0 && discordPings().length === 0, 'a late fee was not recorded as late_fee_paid, or read as a booking');
+ok(sentEmails().some((e) => e.to === 'jane@example.com' && /\$50\.00/.test(e.html)), 'no late fee email');
+// a hosted invoice for a declined charge: invoice.paid and invoice.payment_succeeded, never a booking
+for (const type of ['invoice.paid', 'invoice.payment_succeeded']) {
+  fcVisit(); visitRows[0].payment_status = 'payment_needed';
+  await deliver({ id: 'evt_inv_' + type, type, livemode: false, data: { object: { id: 'in_fc', customer: 'cus_1', payment_intent: 'pi_inv', amount_paid: 37400, metadata: { kind: 'final_charge', visit_id: 'v1' } } } }, fcEnv);
+  ok(visitRows[0].payment_status === 'paid' && visitRows[0].stripe_payment_intent_id === 'pi_inv', `${type}: visit is ${JSON.stringify(visitRows[0])}`);
+  ok(posts.length === 0 && discordPings().length === 0 && !sentEmails().some((e) => /New booking/.test(e.subject || '')), `${type} read as a booking`);
+  ok(sentEmails().some((e) => e.to === 'jane@example.com' && /receipt/i.test(e.subject)), `${type}: no receipt`);
+}
+// a decline: marks payment_needed and alerts once, however many events say so
+fcVisit();
+await deliver(piEvent('payment_intent.payment_failed', 'final_charge', {}, 'evt_fc_f1'), fcEnv);
+ok(visitRows[0].payment_status === 'payment_needed', 'a failed final charge did not mark payment_needed');
+ok(discordPings().length === 1 && /Payment needed/i.test(discordPings()[0].embeds[0].title), 'no payment needed ping');
+ok(!/New booking/.test(JSON.stringify(discordPings())) && posts.length === 0, 'a failed final charge read as a booking');
+await deliver(piEvent('payment_intent.payment_failed', 'final_charge', {}, 'evt_fc_f2'), fcEnv);
+ok(discordPings().length === 1, 'the second decline event alerted again');
+// the synchronous path already alerted and invoiced: the webhook adds nothing
+fcVisit(); visitRows[0].payment_status = 'payment_needed'; visitRows[0].invoice_url = 'https://invoice.example/in_1';
+await deliver(piEvent('payment_intent.payment_failed', 'final_charge', {}, 'evt_fc_f3'), fcEnv);
+ok(discordPings().length === 0 && !sentEmails().length && patches.length === 0, 'the webhook alerted a decline the charge call already handled');
+// a paid visit is not pulled back to payment_needed by a late failure event
+fcVisit(); visitRows[0].payment_status = 'paid';
+await deliver(piEvent('payment_intent.payment_failed', 'final_charge', {}, 'evt_fc_f4'), fcEnv);
+ok(visitRows[0].payment_status === 'paid' && discordPings().length === 0, 'a late failure event unpaid a paid visit');
+customerMeta = { address: '9 Elm St, Portland 97202' };
+for (const k of ['receipt', 'paymentNeeded', 'lateFee']) ok(typeof tpl[k] === 'function', `template ${k} missing`);
+const lf = tpl.lateFee({ name: 'Jane', amount: '$50.00', dayLabel: 'Tue Oct 14', windowLabel: '10 am to 12 pm', cancelHours: 24 });
+ok(/\$50\.00/.test(lf.html) && /24 hours/.test(lf.html), 'late fee email lacks the amount or the rule');
+const pn = tpl.paymentNeeded({ name: 'Jane', amount: '$374.00', invoiceUrl: 'https://invoice.example/in_1' });
+ok(/\$374\.00/.test(pn.html) && /invoice\.example\/in_1/.test(pn.html), 'payment needed email lacks the amount or the link');
+
 // Reminders show the window.
 const rem = tpl.visitReminder({ name: 'Jane', visitDate: 'Tue Oct 14', windowLabel: '10 am to 12 pm' });
 ok(/10 am to 12 pm/.test(rem.html) && /10 am to 12 pm/.test(rem.text), 'the reminder does not show the window');

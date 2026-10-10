@@ -254,6 +254,61 @@ function serviceComplete(ctx = {}) {
   };
 }
 
+// 3b. Receipt: the card on file was charged after the job (final_charge).
+function receipt(ctx = {}) {
+  const { name, amount, load, travel, discount, dayLabel } = ctx;
+  const heading = 'Paid, thank you';
+  const rows = [
+    detail('Day', dayLabel),
+    detail('Size', load),
+    detail('Travel', travel),
+    detail('Founding discount', discount),
+    detail('Charged', amount),
+  ].join('');
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we charged the card you saved when you booked. Here is your receipt:</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
+    <p style="margin:12px 0;">Questions about the charge? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  return {
+    subject: amount ? `Receipt: ${amount} paid` : 'Receipt: paid',
+    html: layout({ preheader: 'We charged your saved card. Here is your receipt.', heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}, we charged the card you saved when you booked.\n\n${dayLabel ? `Day: ${dayLabel}\n` : ''}${load ? `Size: ${load}\n` : ''}${travel ? `Travel: ${travel}\n` : ''}${discount ? `Founding discount: ${discount}\n` : ''}Charged: ${amount || ''}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+  };
+}
+
+// 3c. Payment needed: the saved card was declined after the job; a hosted invoice is the way to pay.
+function paymentNeeded(ctx = {}) {
+  const { name, amount, invoiceUrl } = ctx;
+  const heading = 'We could not charge your card';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, thank you for having us out. Your bank did not accept the charge${amount ? ` of <strong>${escapeHtml(amount)}</strong>` : ''}, so we sent an invoice instead. You can pay it with any card in a minute:</p>
+    ${button('Pay the invoice', invoiceUrl)}
+    <p style="margin:12px 0;">If you would rather sort it out by phone, reply here or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  return {
+    subject: amount ? `Please pay your ${amount} invoice` : 'Please pay your invoice',
+    html: layout({ preheader: 'Your bank did not accept the charge. Here is the invoice.', heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}, your bank did not accept the charge${amount ? ` of ${amount}` : ''}, so we sent an invoice.\nPay it here: ${invoiceUrl || BRAND.site}\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+  };
+}
+
+// 3d. Late fee: charged to the saved card when a booking is canceled or moved inside the free window.
+function lateFee(ctx = {}) {
+  const { name, amount, dayLabel, windowLabel } = ctx;
+  const cancelHours = ctx.cancelHours || ORDER.POLICY.cancelHours;
+  const when = [dayLabel, windowLabel].filter(Boolean).join(', ');
+  const heading = 'Late cancel fee';
+  const rule = `Canceling or moving is free until ${cancelHours} hours before the arrival window. You agreed to this when you booked.`;
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we charged the card you saved a late cancel fee${amount ? ` of <strong>${escapeHtml(amount)}</strong>` : ''}${when ? ` for your booking on ${escapeHtml(when)}` : ''}.</p>
+    <p style="margin:12px 0;">${escapeHtml(rule)}</p>
+    <p style="margin:12px 0;">If you think this is a mistake, reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  return {
+    subject: amount ? `Late cancel fee: ${amount}` : 'Late cancel fee',
+    html: layout({ preheader: 'We charged a late cancel fee to your saved card.', heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}, we charged the card you saved a late cancel fee${amount ? ` of ${amount}` : ''}${when ? ` for your booking on ${when}` : ''}.\n${rule}\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+  };
+}
+
 /* ─────────────────────────  MARKETING  ───────────────────────── */
 
 // 4. Review request: after a finished job; Google reviews are the biggest growth lever.
@@ -362,6 +417,9 @@ module.exports = {
   bookedConfirmation,
   paymentFailed,
   serviceComplete,
+  receipt,
+  paymentNeeded,
+  lateFee,
   // marketing
   reviewRequest,
   leadRecapture,
