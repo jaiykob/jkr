@@ -470,3 +470,79 @@ graph LR
 
 Next: Part 2, the walkthrough with the founder, then Part 3, the photo first
 quote with the on site upcharge (its own spec).
+
+## Round 6: the order flow (no truck, paid after the job)
+
+Spec: `docs/superpowers/specs/2026-10-10-order-flow-design.md`. Rubric: the
+round 1 criteria, with **clear to the customer** meaning the total, the travel
+line and the "charged after the job" rule wherever a price shows, on a phone
+and a desktop, and **failure handling** meaning stale quote, full window,
+outside the area, declined final charge, bookings closed reservation,
+customer says no and late cancel.
+
+### Plan A: rebuild in place
+
+Rewrite `book/quote.html`, `api/create-booking.js` (SetupIntent),
+`api/stripe-webhook.js` and `api/visit-update.js` (after job actions) where
+they stand; prices for the final charge in a second BUILD block.
+
+| Coverage | Authority | One source | Copies | Testable | Style | Clear | Guesses | Failures | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 9 | 8 | 5 | 8 | 9 | 9 | 9 | 9 | 6 | **81** |
+
+Open day logic lives in the page and in `schedule.js` separately; big files
+rewritten whole.
+
+### Plan B: a new order module beside the old flow, then one switch
+
+New `book/order.html`, `api/book.js`, `api/charge-job.js`, `api/windows.js`,
+and one generated order module; the old flow retired in one task at the end.
+
+| Coverage | Authority | One source | Copies | Testable | Style | Clear | Guesses | Failures | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 10 | 9 | 7 | 9 | 8 | 9 | 9 | 8 | 6 | **84** |
+
+Two booking APIs, two capacity endpoints and two order pages side by side
+for nine tasks, 13 functions mid round, and a large risky switch commit.
+
+### Child (A × B), plan to be written as `docs/superpowers/plans/2026-10-10-round-6-order-flow.md`
+
+From B: one generated order module written twice byte identical
+(`api/_lib/order-config.js`, `js/order-config.js`: sizes, `ITEMS` units,
+`sizeForUnits`, windows, caps, `openDays` in Pacific time, `totalFor`, cancel
+terms, consent version), the `travel.js` pattern; size card HTML generated
+into BUILD blocks (crawlable, translated by build-es); page logic in
+`js/order.js`, `js/size-cards.js`, `css/order.css`; the webhook branches on
+the event object's own `metadata.kind` so a final charge never reads as a
+new booking; the town files and post that say "tap items" rewritten;
+`terms.html` on paying and late cancels.
+
+From A: the server rebuilt in place: `create-booking.js` makes the
+SetupIntent and `day-capacity.js` answers dates and windows (no second
+booking API; functions stay at 10, under Vercel Hobby's 12); the after job
+actions (finish with a dry run price preview, late fee, customer said no, on
+my way) in `visit-update.js` behind the admin token, priced from the order
+module; a shared `scripts/lib/fake-stripe.mjs` for the tests and the score
+server, which runs the real API functions; `quote.html` rewritten in place in
+two tasks (no card yet, then pay), each mergeable because the gates are
+closed.
+
+Both accept: the last window race fails open; the dashboard shows a window
+over its cap.
+
+| Coverage | Authority | One source | Copies | Testable | Style | Clear | Guesses | Failures | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 10 | 10 | 9 | 10 | 10 | 9 | 9 | 9 | 8 | **94** |
+
+Clear 9: a wallet sheet in setup mode may not show the amount on every
+device. Failures 9: the last slot race is accepted. Steps 8:
+`create-booking.js` and `quote.html` still change whole, behind closed gates.
+
+Open founder question: the scroll road truck and the Junk Toss game stay
+unless the founder says otherwise.
+
+```mermaid
+graph TD
+  A6["Plan A · in place · 81"] --> C6["Child · 94"]
+  B6["Plan B · module beside · 84"] --> C6
+```
