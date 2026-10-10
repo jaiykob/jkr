@@ -70,7 +70,11 @@ works).** One page, sections open in turn, English only (as today):
 3. **Day and window.** Chips for the next open days with real dates
    ("Tue Oct 14"), then window buttons for that day. Full ones show greyed and
    say "Full". How many days ahead, the earliest day, the windows and the caps
-   are in `pricing.config.mjs` (all guesses, red).
+   are in `pricing.config.mjs` (all guesses, red). Caps are counted **per
+   market**: the founder is adding the Sacramento metro as a second service
+   area with its own base and crew (2026-10-10, round 8), so the travel lookup
+   returns the ZIP's market (`portland` only, until round 8) and a full
+   Portland window never blocks a Sacramento one.
 4. **You.** Name (one box), phone ("we text you when the crew is on the
    way"), email, street, unit (optional). City comes from the ZIP. Correct
    `autocomplete` values, so a phone fills all of them in one tap. "Anything
@@ -166,6 +170,12 @@ round 5 did for its own changes.
   this one, because they read the data this round creates (final charges,
   windows, sizes changed on site). Spec:
   `docs/superpowers/specs/2026-10-10-crm-kpis-design.md`.
+- The Sacramento metro (founder, 2026-10-10: a real second service area):
+  round 8, its own spec. Base downtown Sacramento until the founder names the
+  yard; zones and prices start as Portland's, all guesses, red. Its own town
+  pages, ZIP miles from its own base, its own crew capacity.
+- The full SEO pass and service pages for both metros, phone and desktop:
+  round 9, after Sacramento, so the service pages cover both from the start.
 - The WhatsApp booking bot.
 - "Redo all systems with the plugins": a design pass, an SEO pass, a code
   review pass, one at a time.
