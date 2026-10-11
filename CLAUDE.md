@@ -54,6 +54,20 @@ Progress: **Part 1 is done** (2026-10-07). Rounds 1 (travel pricing), 2
 commercial form, founding offer) are merged, each scored 100. Next: Part 2,
 the walkthrough with the founder; then Part 3.
 
+**Round 6 in progress (2026-10-10), branch `feat/order-flow`:** the founder
+replaced the truck with a one page order flow (size cards, ZIP, day and 2 hour
+window, pay at booking, the difference charged or refunded after the job).
+Spec `docs/superpowers/specs/2026-10-10-order-flow-design.md`, plan
+`docs/superpowers/plans/2026-10-10-round-6-order-flow.md`. Tasks 1 to 9 are
+built (round 6 scorecard 70/100, rounds 1 to 5 still 100); **resume at the
+HANDOFF in the ledger** `.superpowers/sdd/2026-10-10-round-6-order-flow/progress.md`
+(Task 9 review, Task 9b pay at booking, Task 10 homepage, Task 11 docs and
+merge). Parts of this file describing the booking flow are stale until Task 11.
+Queued after round 6, all authorized to run and merge: round 7 CRM and KPIs
+(`docs/superpowers/specs/2026-10-10-crm-kpis-design.md`), round 8 Sacramento
+metro as a second service area, round 9 SEO pass and service pages
+(`docs/superpowers/research/2026-10-10-service-pages.md`).
+
 **Pending founder decision (2026-10-07):** "30 miles might be too far for
 junk removal ... a good radius is between 22 and 24 miles max", with travel
 priced to cover the drive. Apply at the pricing review: set the last zone's
