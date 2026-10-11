@@ -1,4 +1,4 @@
-/* Homepage only: hero with the size cards, ticker, scroll road, what we
+/* Homepage only: hero with the size cards, ticker, how it works, what we
    take, price tiers, ZIP check, FAQ, closer. Tokens come from css/site.css. */
 
 .logo-mark {
@@ -105,55 +105,12 @@
 .ticker span::after { content: ''; width: 10px; height: 10px; background: var(--rg); transform: rotate(45deg); }
 @keyframes ticker { to { transform: translateX(-50%); } }
 
-/* ── ROAD (how it works) ──────────────────────────────────────────────── */
-.road { position: relative; background: var(--page); padding: var(--pad-y) var(--gutter); }
-.road-sticky { max-width: var(--w-wide); margin: 0 auto; }
-.road-head { text-align: center; margin-bottom: 36px; }
-.road-stops { list-style: none; display: grid; gap: 18px; }
-.road-stop {
-  position: relative; padding: 24px; border-radius: 20px; background: var(--card);
-  border: 1.5px solid var(--bdr); transition: transform .4s cubic-bezier(.34,1.4,.64,1), border-color .3s, box-shadow .3s, opacity .3s;
-}
-.road-stop h3 { font: 800 1.4rem/1.2 'Bricolage Grotesque', sans-serif; margin: 12px 0 6px; letter-spacing: -.02em; }
-.road-stop p { color: var(--txm); }
-.road-num {
-  display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 12px;
-  background: var(--surf); font: 800 1.2rem/1 'Bricolage Grotesque', sans-serif; transition: background .3s;
-}
-.road-lane { display: none; }
-
-/* With JS and motion allowed: a tall section, sticky frame, truck driving. */
-.road.is-live { height: 260vh; padding: 0 var(--gutter); }
-.road.is-live .road-sticky {
-  position: sticky; top: var(--nav-h); min-height: calc(100vh - var(--nav-h));
-  display: flex; flex-direction: column; justify-content: center; padding: 32px 0;
-}
-.road.is-live .road-stops { grid-template-columns: repeat(3, 1fr); }
-.road.is-live .road-stop { opacity: .45; transform: translateY(12px) scale(.97); }
-.road.is-live .road-stop.is-on { opacity: 1; transform: none; border-color: var(--rg); box-shadow: 0 8px 0 var(--rg); }
-.road.is-live .road-stop.is-on .road-num { background: var(--tan); }
-.road.is-live .road-lane {
-  display: block; position: relative; height: 150px; margin-top: 40px;
-  border-radius: 16px; background: #2B2F36; overflow: hidden;
-}
-.road-dashes {
-  position: absolute; left: 0; right: 0; top: 50%; height: 6px; margin-top: 30px;
-  background: repeating-linear-gradient(90deg, var(--tan) 0 40px, transparent 40px 80px);
-}
-.road-truck { position: absolute; bottom: 18px; left: 0; width: 180px; height: auto; will-change: transform; filter: drop-shadow(0 8px 10px rgba(0,0,0,.4)); }
-.road-cargo { transition: opacity .4s; }
-.road[data-phase="2"] .road-cargo { opacity: 1; }
-.road-wheel { transform-box: fill-box; transform-origin: center; }
-@media (max-width: 759px) {
-  .road.is-live { height: 300vh; }
-  .road.is-live .road-stops { grid-template-columns: 1fr; gap: 10px; }
-  .road.is-live .road-stop { padding: 14px 18px; display: grid; grid-template-columns: auto 1fr; gap: 0 14px; align-items: center; }
-  .road.is-live .road-stop h3 { margin: 0; font-size: 1.15rem; }
-  .road.is-live .road-stop p { grid-column: 2; font-size: 1rem; }
-  .road.is-live .road-lane { height: 110px; margin-top: 20px; }
-  .road-truck { width: 130px; }
-  .road-head { margin-bottom: 18px; }
-}
+/* ── HOW IT WORKS ─────────────────────────────────────────────────────── */
+/* The three steps, still: the numbered steps of css/site.css (a charcoal
+   disc with a yellow number), stacked on a phone, three across from 760px,
+   the headings in the homepage's heavy type. */
+.steps h3 { font-weight: 800; font-size: 1.25rem; letter-spacing: -.02em; line-height: 1.25; }
+@media (min-width: 760px) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; } }
 
 /* ── WHAT WE TAKE ─────────────────────────────────────────────────────── */
 .take-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); perspective: 900px; }

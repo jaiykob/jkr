@@ -15,7 +15,7 @@
  *
  * Not translated: scripts, styles, comments, drawings, place names and the
  * brand. The scripts take their own words from <html lang> (js/home.js,
- * js/junk-toss.js, js/founding.js).
+ * js/founding.js).
  *
  * Links: a page with a Spanish twin is linked inside /es/ (scripts/lib/twins.mjs);
  * everything else (styles, scripts, the quote, privacy, terms) is one level up.

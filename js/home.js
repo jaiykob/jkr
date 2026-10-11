@@ -1,6 +1,6 @@
-/* Homepage: the size cards' travel line, the scroll road, the card tilt, the price
-   tier fill and the ZIP check. Each piece is optional; without JS the page is
-   plain and every link still goes to the quote. */
+/* Homepage: the size cards' travel line, the card tilt, the price tier fill
+   and the ZIP check. Each piece is optional; without JS the page is plain and
+   every link still goes to the quote. */
 (function () {
   'use strict';
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -29,34 +29,6 @@
   var cardLinks = [].slice.call(document.querySelectorAll('#homeSizes a.size-card'));
   var cardHrefs = cardLinks.map(function (a) { return a.getAttribute('href'); });
   function cardsZip(zip) { cardLinks.forEach(function (a, i) { a.setAttribute('href', cardHrefs[i] + (zip ? '&zip=' + zip : '')); }); }
-
-  // How it works: the truck drives the road as the section scrolls by.
-  var road = document.querySelector('.road');
-  if (road && !reduce) {
-    road.classList.add('is-live');
-    var truck = road.querySelector('.road-truck');
-    var lane = road.querySelector('.road-lane');
-    var wheels = road.querySelectorAll('.road-wheel');
-    var stops = road.querySelectorAll('.road-stop');
-    var cargo = road.querySelector('.road-cargo');
-    var ticking = false;
-    var update = function () {
-      ticking = false;
-      var r = road.getBoundingClientRect();
-      var span = r.height - window.innerHeight;
-      var p = Math.max(0, Math.min(1, span > 0 ? -r.top / span : 0));
-      var travel = lane.clientWidth - truck.getBoundingClientRect().width;
-      truck.style.transform = 'translateX(' + (p * travel).toFixed(1) + 'px)';
-      wheels.forEach(function (w) { w.style.transform = 'rotate(' + (p * 1440).toFixed(0) + 'deg)'; });
-      var phase = p < 0.34 ? 0 : p < 0.67 ? 1 : 2;
-      stops.forEach(function (s, i) { s.classList.toggle('is-on', i <= phase); });
-      // loaded after stop one, empty (hauled) at the end
-      cargo.style.opacity = p < 0.2 ? p / 0.2 : p > 0.9 ? Math.max(0, (1 - p) / 0.1) : 1;
-    };
-    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
-    window.addEventListener('resize', update);
-    update();
-  }
 
   // What we take: cards tilt toward the pointer.
   if (!reduce && matchMedia('(hover: hover)').matches) {
