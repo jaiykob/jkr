@@ -31,4 +31,4 @@ Sofás y colchones, muebles rotos, cosas de cocina, bolsas de ropa, televisores 
 
 ## Tu precio en un minuto
 
-Toma fotos de cada cuarto en nuestra [página de cotización](/book/quote.html), y el camión de la pantalla se llena al tamaño de carga con el precio de tu zona. ¿Vas a preparar más de una unidad este mes? Cada una es su propia visita, o llámanos y planeamos un solo viaje.
+Toma fotos de cada cuarto en nuestra [página de cotización](/book/quote.html), y nosotros elegimos el tamaño de carga por ti, con el precio de tu zona. ¿Vas a preparar más de una unidad este mes? Cada una es su propia visita, o llámanos y planeamos un solo viaje.

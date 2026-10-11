@@ -15,7 +15,7 @@ Q: Do you take moving boxes and packing paper?
 A: Yes. Flatten the boxes if you can and bag the paper. Cardboard goes to recycling.
 
 Q: Can you haul bikes and outdoor toys from a Sherwood garage?
-A: Yes. Bikes, scooters, wagons and plastic play houses all go. Send a photo so the truck fills to the right size.
+A: Yes. Bikes, scooters, wagons and plastic play houses all go. Send a photo and we pick the right size.
 
 ## Local (es)
 Sherwood es un pueblo que crece en la orilla suroeste del área, a treinta y cuatro millas por carretera de nuestra base, en la Zona 4. Casi todas las casas están en fraccionamientos nuevos alrededor de Woodhaven y Cedar Creek, con unas cuantas calles viejas cerca de Old Town y tierras de cultivo justo afuera.
@@ -27,4 +27,4 @@ Q: ¿Se llevan cajas de mudanza y papel de empaque?
 A: Sí. Aplana las cajas si puedes y mete el papel en bolsas. El cartón va a reciclaje.
 
 Q: ¿Se llevan bicicletas y juguetes de exterior de un garaje en Sherwood?
-A: Sí. Bicicletas, patinetas, carritos y casitas de plástico, todo se va. Manda una foto para que el camión se llene al tamaño correcto.
+A: Sí. Bicicletas, patinetas, carritos y casitas de plástico, todo se va. Manda una foto y elegimos el tamaño correcto.

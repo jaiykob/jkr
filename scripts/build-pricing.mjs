@@ -7,7 +7,8 @@
  *
  *   (api/create-booking.js reads api/_lib/order-config.js, written whole below)
  *   book/quote.html           quote-jsonld, order-sizes (the five size cards)
- *   index.html                     home-prices, home-builder
+ *   index.html                     home-prices, home-sizes
+ *   terms.html, faq.html, es/faq.html   the data-policy spans (cancel hours, late fee, refusal fee)
  *   api/photo-quote.js              server-items
  */
 import fs from 'node:fs';
@@ -38,16 +39,22 @@ const AREA_SERVED = [...new Set(ALL_ZIPS.map((z) => `${ZIP_ZONES[z].place}, ${ZI
    while GUESS.prices) and "+ travel" until the page knows the ZIP. The class
    names are shared with the homepage cards (round 6 ruling R1); js/size-cards.js
    makes them pickable and writes the travel line. */
-const orderSizes = LOAD_OPTIONS.map((o, r) => [
-  `<button type="button" class="size-card" data-size="${r}" aria-pressed="false">`,
+const sizeCard = (r, o, tag, indent) => [
+  tag === 'a'
+    ? `<a class="size-card" data-size="${r}" href="book/quote.html?size=${r}">`
+    : `<button type="button" class="size-card" data-size="${r}" aria-pressed="false">`,
   `  <img class="size-photo" src="${o.photo}" alt="" width="800" height="500" loading="lazy" decoding="async">`,
   '  <span class="size-body">',
   `    <span class="size-name">${o.label}</span>`,
   `    <span class="size-note">${o.note}</span>`,
   `    <span class="size-cost"><span class="size-price${GUESS.prices ? ' guess' : ''}">${fmt(PRICES[r][ONE_TIME_COL])}</span> <span class="size-travel">+ travel</span></span>`,
   '  </span>',
-  '</button>',
-].map((l) => `          ${l}`).join('\n')).join('\n');
+  tag === 'a' ? '</a>' : '</button>',
+].map((l) => `${indent}${l}`).join('\n');
+const orderSizes = LOAD_OPTIONS.map((o, r) => sizeCard(r, o, 'button', '          ')).join('\n');
+/* The homepage, town pages and Spanish pages: the same cards as links to the order page
+   with that size picked (index.html, BUILD:home-sizes). */
+const homeSizes = LOAD_OPTIONS.map((o, r) => sizeCard(r, o, 'a', '        ')).join('\n');
 
 /* The quote page's offers: the one time haul only (monthly pickups left the
    online flow in round 6; they go through the commercial form). */
@@ -88,19 +95,6 @@ const homePrices = LOAD_OPTIONS.map((o, r) => [
   ...(recurringCol >= 0 ? [`        <span class="tier-sub">${guessed(fmt(PRICES[r][recurringCol]), GUESS.prices)} ${COLUMN_LABELS[COLUMNS[recurringCol]].toLowerCase()}</span>`] : []),
   '      </a>',
 ].join('\n')).join('\n');
-
-/* The load builder's data (js/load-builder.js), for the homepage until round 6 Task 10. */
-const builderData = {
-  prices: PRICES,
-  loads: LOAD_OPTIONS.map((o) => ({ label: o.label, note: o.note, fits: o.fits })),
-  items: ITEMS,
-  freqLabels: COLUMNS.map((c) => COLUMN_LABELS[c]),
-  freqUnits: COLUMNS.map((c) => BILLING[c].unit),
-  oneTimeCol: ONE_TIME_COL,
-  // Which numbers are placeholders: the builder prints them red with an asterisk.
-  guess: { prices: GUESS.prices },
-};
-const builderBlock = (indent) => `${indent}window.LOAD_BUILDER = ${Jslash(builderData)};`;
 
 /* The homepage's business card for search engines, with the whole service area. */
 const homeJsonld = [
@@ -270,7 +264,21 @@ function splice(src, name, body, comment, file) {
   return src.slice(0, a + open.length) + '\n' + body + '\n' + indent + src.slice(b);
 }
 
+/* The cancel hours, late fee and refusal fee printed in the hand written pages (terms, FAQ):
+   <span class="guess" data-policy="cancel|late|refusal">...</span> takes its text from POLICY, so the
+   pages can never disagree with the order page. Red while GUESS.policy. */
+const policyText = (key, es) => ({
+  cancel: es ? `${POLICY.cancelHours} horas` : `${POLICY.cancelHours} hours`,
+  late: fmt(POLICY.lateFee * 100),
+  refusal: fmt(POLICY.refusalFee * 100),
+})[key];
+const policySpans = (src, file) => src.replace(/<span(?: class="guess")? data-policy="(cancel|late|refusal)">[^<]*<\/span>/g,
+  (m, key) => `<span${GUESS.policy ? ' class="guess"' : ''} data-policy="${key}">${policyText(key, file.startsWith('es/'))}</span>`);
+
 const TARGETS = [
+  { file: 'terms.html', blocks: [], policy: true },
+  { file: 'faq.html', blocks: [], policy: true },
+  { file: 'es/faq.html', blocks: [], policy: true },
   { file: 'api/photo-quote.js', blocks: [
     { name: 'server-items', body: serverItems, comment: true },
   ] },
@@ -282,7 +290,7 @@ const TARGETS = [
     { name: 'home-jsonld', body: homeJsonld, comment: false },
     { name: 'home-prices', body: homePrices, comment: false },
     { name: 'home-travel-note', body: homeTravelNote, comment: false },
-    { name: 'home-builder', body: builderBlock('  '), comment: true },
+    { name: 'home-sizes', body: homeSizes, comment: false },
   ] },
 ];
 
@@ -294,6 +302,7 @@ for (const t of TARGETS) {
   const before = fs.readFileSync(abs, 'utf8');
   let out = before;
   for (const b of t.blocks) out = splice(out, b.name, b.body, b.comment, t.file);
+  if (t.policy) out = policySpans(out, t.file);
   if (eol(out) === eol(before)) continue;
   if (check) { stale.push(t.file); continue; }
   fs.writeFileSync(abs, out, 'utf8');

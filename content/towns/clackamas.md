@@ -1,8 +1,8 @@
 name: Clackamas
 state: OR
 zips: 97015
-lede: Clackamas sits right at the edge of our home zone, so there is no travel charge. Tap what you have or send a photo for a price.
-lede_es: Clackamas queda justo en la orilla de nuestra zona base, así que no hay cargo de viaje. Toca lo que tienes o manda una foto para ver el precio.
+lede: Clackamas sits right at the edge of our home zone, so there is no travel charge. Pick the size that looks like your pile or send a photo for a price.
+lede_es: Clackamas queda justo en la orilla de nuestra zona base, así que no hay cargo de viaje. Elige el tamaño que se parece a tu montón o manda una foto para ver el precio.
 areas: Clackamas Town Center, Sunnyside Road, Carver, Johnson City, Clackamas River, Mather Road
 
 ## Local

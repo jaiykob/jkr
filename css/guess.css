@@ -10,4 +10,4 @@
    5.6:1 on white; #FF8A80 is 7.5:1 on the charcoal bands. */
 .guess { color: #C62828; }
 .guess::after { content: "*"; font-weight: 700; margin-left: 1px; }
-.band.is-dark .guess, .h-hero-copy .guess, .on-dark .guess { color: #FF8A80; }
+.band.is-dark .guess, .h-hero-copy .guess, .h-contact .guess, .on-dark .guess { color: #FF8A80; }

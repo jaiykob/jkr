@@ -86,10 +86,12 @@ export async function openBrowser() {
         }
         await sleep(settleMs);
       },
-      /** A real click at the element's center (scrolled into view). Counts as one tap. */
+      /** A real click at the element's center (scrolled into view). Counts as one tap.
+       *  The scroll is instant: with the site's smooth scrolling the box read right after a
+       *  smooth scrollIntoView is where the element was before the scroll, and the click missed. */
       async click(selector, settleMs = 400) {
         const r = await evaluate(`(function(){var e=document.querySelector(${JSON.stringify(selector)});if(!e)return null;
-e.scrollIntoView({block:'center'});var b=e.getBoundingClientRect();return b.width&&b.height?{x:b.left+b.width/2,y:b.top+b.height/2}:null;})()`);
+e.scrollIntoView({block:'center',behavior:'instant'});var b=e.getBoundingClientRect();return b.width&&b.height?{x:b.left+b.width/2,y:b.top+b.height/2}:null;})()`);
         if (!r) throw new Error(`click: nothing visible at ${selector}`);
         await mouse('mouseMoved', r.x, r.y); await mouse('mousePressed', r.x, r.y); await mouse('mouseReleased', r.x, r.y);
         taps++;

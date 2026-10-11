@@ -13,8 +13,10 @@
    the photo quote (js/photo-quote.js), window.SiteLeads (js/leads.js).
 
    In: ?size=<row> (the old ?load=<row> too) picks a size; ?zip= or the last
-   ZIP typed on the site (sessionStorage quoteZip) fills the ZIP. Contact
-   details stay in this tab (sessionStorage orderState), never in a URL.
+   ZIP typed on the site (sessionStorage quoteZip) fills the ZIP; #photos
+   (the homepage's "Send us a photo") puts the photo picker in view and in
+   focus. Contact details stay in this tab (sessionStorage orderState), never
+   in a URL.
 
    With the booking gates closed (BOOKINGS_OPEN_CLIENT in the page), Book saves
    a reservation lead (size, ZIP, day, window, contact), shows no card form
@@ -837,4 +839,8 @@
   render();
   // Sections already open when the page loads count as seen, so nothing jumps.
   SECTIONS.forEach(function (id) { wasOpen[id] = $(id).classList.contains('is-open'); });
+  // "Send us a photo" on the homepage lands here (#photos): the photo picker comes
+  // into view with the focus on it, one tap from the camera or the photo library.
+  var photoPick = location.hash === '#photos' && $('o-photo-panel') && $('o-photo-panel').querySelector('input[type="file"]');
+  if (photoPick) { $('photos').scrollIntoView({ block: 'center' }); photoPick.focus({ preventScroll: true }); }
 })();

@@ -65,13 +65,13 @@ export const LOADS = {
 };
 
 /**
- * The load builder (homepage hero and quote step 1). A customer taps what they
- * have, each item drops blocks into the truck, and the smallest load size that
- * holds it all is the price. A full truck is 100 units (about 15 cubic yards,
+ * What the photo quote counts (api/photo-quote.js asks Claude for these keys).
+ * The order page adds up the units and picks the smallest load size that holds
+ * them (ORDER.sizeForUnits). A full truck is 100 units (about 15 cubic yards,
  * so one unit is roughly 0.15 cubic yards).
  *
  *   units   space the item takes, out of 100
- *   color   its block color in the truck
+ *   color   unused since round 6 (it colored the old on screen truck)
  *
  * `fits` above is each load size's ceiling in the same units. "Single item" is
  * one item of 15 units or less; anything over 100 is quoted by hand.

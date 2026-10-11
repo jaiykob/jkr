@@ -14,9 +14,8 @@
  * stops the build and is listed, so the two pages never drift apart.
  *
  * Not translated: scripts, styles, comments, drawings, place names and the
- * brand. The truck's items and load sizes (window.LOAD_BUILDER) are, and the
- * scripts take their own words from <html lang> (js/load-builder.js,
- * js/home.js, js/junk-toss.js, js/founding.js).
+ * brand. The scripts take their own words from <html lang> (js/home.js,
+ * js/junk-toss.js, js/founding.js).
  *
  * Links: a page with a Spanish twin is linked inside /es/ (scripts/lib/twins.mjs);
  * everything else (styles, scripts, the quote, privacy, terms) is one level up.
@@ -96,18 +95,6 @@ const relinkEs = (html) => html
   .replace(/(\s(?:href|src)=")([^"]*)"/g, (m, a, u) => `${a}${esHref(u)}"`)
   .replace(/url\((?!['"]?(?:[a-z]+:|\/|#))(['"]?)/gi, 'url($1../');
 
-/** The truck's data block, with its words in Spanish. */
-function translateBuilder(html, tr) {
-  return html.replace(/(window\.LOAD_BUILDER = )(\{.*\});/, (m, a, json) => {
-    const d = JSON.parse(json);
-    d.loads.forEach((l) => { l.label = tr(l.label); l.note = tr(l.note); });
-    d.items.forEach((it) => { it.label = tr(it.label); });
-    d.freqLabels = d.freqLabels.map(tr);
-    d.freqUnits = d.freqUnits.map(tr);
-    return a + JSON.stringify(d).replace(/\//g, '\\u002F') + ';';
-  });
-}
-
 /**
  * index.html (or a page built from it, at `rel` in the English site) in Spanish.
  * → { html, missing, used }
@@ -117,14 +104,8 @@ export function toSpanish(enHtml, { rel = 'index.html', map = loadMap() } = {}) 
   const opts = { places: places() };
   const missing = [], used = new Set();
   const take = (r) => { r.missing.forEach((k) => { if (!missing.includes(k)) missing.push(k); }); r.used.forEach((k) => used.add(k)); return r.html; };
-  // The truck's labels: each one through the same lookup as the page text.
-  const one = (s) => {
-    const r = translateHtml(`<p>${s}</p>`, map, opts);
-    take(r);
-    return r.html.slice(3, -4);
-  };
   // The language switch is not a phrase: it is set aside and rewritten for the Spanish page.
-  let s = translateBuilder(eol(enHtml).replace(/<a class="lang-switch"[\s\S]*?<\/a>/, '<!-- lang-switch -->'), one);
+  let s = eol(enHtml).replace(/<a class="lang-switch"[\s\S]*?<\/a>/, '<!-- lang-switch -->');
   s = take(translateHtml(s, map, opts));
   s = s.replace('<html lang="en">', '<html lang="es">');
   s = s.replace(/(<link rel="canonical" href=")[^"]*(" \/>)/, `$1${absUrl(esRel)}$2`);

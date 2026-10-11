@@ -51,7 +51,7 @@ Carpet removal · Monthly pickups for landlords and businesses
 - The truck, clean, with the magnet.
 - Before and after of three real jobs (garage, basement, yard), with permission.
 - The crew loading something big.
-- A screenshot of the photo quote filling the truck.
+- A screenshot of the photo quote picking a size.
 
 ## 8. What not to claim
 

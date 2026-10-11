@@ -21,7 +21,7 @@ it in the same commit as the change it describes.
 
 ## What exists
 
-- Homepage with the load builder (tap or snap; the truck fills; the price is live with travel).
+- Homepage with five size cards (pick a size or send a photo; the price shows with travel).
 - Quote, checkout (Stripe), thanks; the server reprices every booking.
 - Photo quotes (Claude counts the items).
 - Travel zones by ZIP from Gresham, 135 ZIPs in Oregon and Washington.

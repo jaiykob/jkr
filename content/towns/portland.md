@@ -1,8 +1,8 @@
 name: Portland
 state: OR
 zips: 97201, 97202, 97203, 97204, 97205, 97206, 97209, 97210, 97211, 97212, 97213, 97214, 97215, 97216, 97217, 97218, 97219, 97220, 97221, 97227, 97229, 97230, 97231, 97232, 97233, 97236, 97239, 97266
-lede: Most of Portland sits in our first two travel zones, and east side homes near I-205 often pay no travel at all. Snap or tap what is going and your price shows up right away.
-lede_es: Casi todo Portland está en nuestras dos primeras zonas de viaje, y las casas del lado este cerca de la I-205 muchas veces no pagan viaje. Toma una foto o toca lo que se va y tu precio aparece al instante.
+lede: Most of Portland sits in our first two travel zones, and east side homes near I-205 often pay no travel at all. Pick a size or snap a photo and your price shows up right away.
+lede_es: Casi todo Portland está en nuestras dos primeras zonas de viaje, y las casas del lado este cerca de la I-205 muchas veces no pagan viaje. Elige un tamaño o toma una foto y tu precio aparece al instante.
 areas: Parkrose, Lents, Montavilla, Foster Powell, Hollywood, Alberta, St Johns, Sellwood, Pearl District, Hillsdale
 
 ## Local

@@ -97,24 +97,18 @@
     @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(../fonts/bricolage.woff2) format('woff2'); }
   </style>
   <link rel="stylesheet" href="../css/site.css">
-  <link rel="stylesheet" href="../css/load-builder.css">
   <link rel="stylesheet" href="../css/home.css">
   <link rel="stylesheet" href="../css/junk-toss.css">
   <link rel="stylesheet" href="../css/guess.css">
-  <script>
-    /* GENERATED from pricing.config.mjs by `npm run build:pricing`. */
-    /* BUILD:home-builder */
-  window.LOAD_BUILDER = {"prices":[[9900,8900],[19900,17900],[34900,31900],[47900,43900],[59900,54900]],"loads":[{"label":"Un solo artículo","note":"Un sofá, un colchón, un electrodoméstico","fits":15},{"label":"1\u002F4 de camión","note":"Unas piezas o una esquina de un cuarto","fits":25},{"label":"1\u002F2 de camión","note":"Un cuarto pequeño o una esquina del garaje","fits":50},{"label":"3\u002F4 de camión","note":"Un cuarto lleno o un garaje pequeño","fits":75},{"label":"Camión lleno","note":"Un garaje, un sótano o una casa entera","fits":100}],"items":[{"key":"couch","label":"Sofá","units":12,"color":"#E4572E"},{"key":"mattress","label":"Colchón y base","units":10,"color":"#4C8BF5"},{"key":"fridge","label":"Refrigerador o congelador","units":8,"color":"#9AA5B1"},{"key":"washer","label":"Lavadora o secadora","units":6,"color":"#C3CBD3"},{"key":"chair","label":"Silla o sillón reclinable","units":6,"color":"#A0522D"},{"key":"dresser","label":"Cómoda o gabinete","units":7,"color":"#8B5A2B"},{"key":"table","label":"Mesa","units":7,"color":"#C68B59"},{"key":"tv","label":"TV o electrónicos","units":2,"color":"#2E3440"},{"key":"boxes","label":"5 cajas o bolsas","units":4,"color":"#D9B26F"},{"key":"yard","label":"Pila de desechos de jardín","units":20,"color":"#3FA34D"},{"key":"carpet","label":"Alfombra de un cuarto","units":8,"color":"#8E6CCF"},{"key":"misc","label":"Otra cosa","units":5,"color":"#F2A541"}],"freqLabels":["Retiro único","Recolección mensual"],"freqUnits":[" precio fijo","\u002Fvisita"],"oneTimeCol":0,"guess":{"prices":true}};
-    /* /BUILD:home-builder */
-  </script>
   <script src="../js/site.js" defer></script>
   <script src="../js/travel.js" defer></script>
-  <script src="../js/load-builder.js" defer></script>
+  <script src="../js/size-cards.js" defer></script>
   <script src="../js/home.js" defer></script>
 </head>
 <body>
 
 <a class="skip-link" href="#main">Saltar al contenido</a>
+<header class="site-header">
 <nav class="site-nav">
   <a class="nav-logo" href="index.html" aria-label="Brand Name, inicio"><span class="logo-mark" aria-hidden="true"></span><span class="nav-wordmark">Brand Name</span></a>
   <button class="nav-burger" id="navBurger" aria-label="Abrir menú" aria-expanded="false">
@@ -127,19 +121,25 @@
     <li><a href="#pricing">Precios</a></li>
     <li><a href="service-areas.html">Zonas de servicio</a></li>
     <li><a href="faq.html">Preguntas</a></li>
+    <li class="chat-item"><a href="sms:+19254086053">Mándanos un mensaje</a></li>
+    <li class="chat-item"><a href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></li>
     <li class="cta-item"><a class="nav-cta-mobile" href="../book/quote.html">Ver mi precio</a></li>
   </ul>
   <div class="nav-right">
     <a class="lang-switch" href="../molalla.html" hreflang="en" lang="en"><span class="lang-full">English</span><span class="lang-short" aria-hidden="true">EN</span></a>
     <a class="nav-phone" href="tel:+19254086053" aria-label="Llama o escribe al (925) 408-6053"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span class="nav-phone-num">(925) 408-6053</span></a>
+    <a class="nav-chat" href="sms:+19254086053" aria-label="Mándanos un mensaje"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9.5L5 19.5V16H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></a>
+    <!-- WhatsApp: the number is a guess, the business phone until the founder names one (WHATSAPP in api/_lib/site.js). -->
+    <a class="nav-chat" href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener" aria-label="Escríbenos por WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.1 7.9h.9l1 2.3-.8 1a6 6 0 0 0 2.6 2.6l1-.8 2.3 1v.9c0 .7-.6 1.3-1.3 1.3A6.8 6.8 0 0 1 7.8 9.2c0-.7.6-1.3 1.3-1.3z" fill="currentColor"/></svg></a>
     <a class="nav-cta" href="../book/quote.html">Ver mi precio</a>
   </div>
 </nav>
+</header>
 
 <main id="main">
 
-<!-- HERO: the configurator is the hero. Tap items, the truck fills, the price
-     is live, and "Book this load" carries the size into the quote. -->
+<!-- HERO: the five size cards are the hero. Each card is a link to the order
+     page (book/quote.html) with that size picked. -->
 <section class="h-hero" aria-labelledby="hero-title">
   <div class="h-hero-in">
     <div class="h-hero-copy">
@@ -156,8 +156,60 @@
         <li>Área de Portland y Vancouver</li>
       </ul>
     </div>
-    <div class="h-builder-card" data-hides-sticky>
-      <div id="heroBuilder"><p class="h-nojs">Elige un tamaño de carga abajo, o <a href="../book/quote.html">ve tu precio aquí</a>.</p></div>
+    <div class="h-order" data-hides-sticky>
+      <div class="size-list h-sizes" id="homeSizes">
+        <!-- GENERATED from pricing.config.mjs by `npm run build:pricing`. Never type prices here. -->
+        <!-- BUILD:home-sizes -->
+        <a class="size-card" data-size="0" href="../book/quote.html?size=0">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">Un solo artículo</span>
+            <span class="size-note">Un sofá, un colchón, un electrodoméstico</span>
+            <span class="size-cost"><span class="size-price guess">$99.00</span> <span class="size-travel">+ viaje</span></span>
+          </span>
+        </a>
+        <a class="size-card" data-size="1" href="../book/quote.html?size=1">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">1/4 de camión</span>
+            <span class="size-note">Unas piezas o una esquina de un cuarto</span>
+            <span class="size-cost"><span class="size-price guess">$199.00</span> <span class="size-travel">+ viaje</span></span>
+          </span>
+        </a>
+        <a class="size-card" data-size="2" href="../book/quote.html?size=2">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">1/2 de camión</span>
+            <span class="size-note">Un cuarto pequeño o una esquina del garaje</span>
+            <span class="size-cost"><span class="size-price guess">$349.00</span> <span class="size-travel">+ viaje</span></span>
+          </span>
+        </a>
+        <a class="size-card" data-size="3" href="../book/quote.html?size=3">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">3/4 de camión</span>
+            <span class="size-note">Un cuarto lleno o un garaje pequeño</span>
+            <span class="size-cost"><span class="size-price guess">$479.00</span> <span class="size-travel">+ viaje</span></span>
+          </span>
+        </a>
+        <a class="size-card" data-size="4" href="../book/quote.html?size=4">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">Camión lleno</span>
+            <span class="size-note">Un garaje, un sótano o una casa entera</span>
+            <span class="size-cost"><span class="size-price guess">$599.00</span> <span class="size-travel">+ viaje</span></span>
+          </span>
+        </a>
+        <!-- /BUILD:home-sizes -->
+      </div>
+      <p class="h-order-alt">¿No sabes cuál elegir? <a href="../book/quote.html#photos">Mándanos una foto</a> y nosotros elegimos el tamaño por ti.</p>
+      <div class="h-contact">
+        <a class="h-chip" href="tel:+19254086053"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>Llamar</a>
+        <a class="h-chip" href="sms:+19254086053"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9.5L5 19.5V16H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>Mensaje</a>
+        <!-- WhatsApp: the number is a guess (WHATSAPP in api/_lib/site.js), so the label prints red. -->
+        <a class="h-chip" href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.1 7.9h.9l1 2.3-.8 1a6 6 0 0 0 2.6 2.6l1-.8 2.3 1v.9c0 .7-.6 1.3-1.3 1.3A6.8 6.8 0 0 1 7.8 9.2c0-.7.6-1.3 1.3-1.3z" fill="currentColor"/></svg><span class="guess">WhatsApp</span></a>
+      </div>
+      <p class="h-order-alt">¿Necesitas recolecciones regulares? <a href="../book/commercial.html">Habla con nosotros sobre un horario regular</a></p>
     </div>
   </div>
 </section>
@@ -227,8 +279,8 @@
       <h2 class="section-title" id="how-title">Tres paradas. Así de sencillo.</h2>
     </div>
     <ol class="road-stops">
-      <li class="road-stop" data-stop="0"><span class="road-num">1</span><h3>Toma una foto</h3><p>Manda una foto o toca lo que se va. El camión se llena y tu precio aparece al instante.</p></li>
-      <li class="road-stop" data-stop="1"><span class="road-num">2</span><h3>Elige un día</h3><p>Escoge el día que te funcione. Paga en línea de forma segura, sin llamadas de ida y vuelta.</p></li>
+      <li class="road-stop" data-stop="0"><span class="road-num">1</span><h3>Elige tu tamaño</h3><p>Escoge el tamaño que se parece a tu montón, o manda una foto. Tu precio aparece al instante.</p></li>
+      <li class="road-stop" data-stop="1"><span class="road-num">2</span><h3>Elige un día</h3><p>Escoge un día y una ventana de llegada. Paga en línea de forma segura, sin llamadas de ida y vuelta.</p></li>
       <li class="road-stop" data-stop="2"><span class="road-num">3</span><h3>Nos lo llevamos</h3><p>Llegamos, levantamos y cargamos todo, y barremos al terminar.</p></li>
     </ol>
     <div class="road-lane" aria-hidden="true">
@@ -418,7 +470,7 @@
 <section class="closer" aria-label="Ver un precio">
   <div class="closer-in" data-hides-sticky>
     <h2>Listos cuando tú lo estés.</h2>
-    <a class="lb-cta" href="../book/quote.html">Ver mi precio</a>
+    <a class="cta-btn" href="../book/quote.html">Ver mi precio</a>
     <p>O llama o escribe al <a href="tel:+19254086053">(925) 408-6053</a></p>
   </div>
 </section>

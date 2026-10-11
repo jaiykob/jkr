@@ -95,10 +95,10 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 const PROBE_SETS = {
   // Round 1's travel text; since round 6 the order page shows it in the ZIP answer, the total, the travel line and the size cards,
   // and its pay step (#o-pay) took over the checkout's summary and card form.
-  1: { text: ['.lb-travel', '.lb-unit', '#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut', '#o-zip-msg', '.o-total', '.o-travel', '.size-price', '.size-travel', '#o-pay'], taps: [] },
+  1: { text: ['#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut', '#o-zip-msg', '.o-total', '.o-travel', '.size-price', '.size-travel', '#o-pay'], taps: [] },
   2: { text: ['main .prose', 'main .faq-list', '.town-local', '.town-zones', '#zoneList', 'footer', '#maint-banner'],
        taps: ['.site-nav a', '.site-nav button', 'footer a', '.town-nearby a', '.hub-towns a'] },
-  5: { text: ['.article p', '.article li', '.article h2', '.post-meta', '.lb-travel', '#zipOut', '.commercial-form label', '.commercial-form input', '.commercial-form textarea', 'footer'],
+  5: { text: ['.article p', '.article li', '.article h2', '.post-meta', '.size-travel', '#zipOut', '.commercial-form label', '.commercial-form input', '.commercial-form textarea', 'footer'],
        taps: ['.site-nav a', '.site-nav button', 'footer a', '.article .trail a', '.commercial-form button', '.post-list a', '.lang-switch'] },
 };
 PROBE_SETS[6] = { text: ['.size-card', '#order label', '#order input', '#o-bar', '#o-summary', '.o-total', '.o-travel', 'footer'],
@@ -335,7 +335,7 @@ function brokenLinks(files) {
   for (const f of files) {
     for (const m of (read(f) || '').matchAll(/\s(?:href|src)="([^"]+)"/g)) {
       const u = m[1].replace(/&amp;/g, '&');
-      if (/^(https?:|tel:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
+      if (/^(https?:|tel:|sms:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
       const [p0, hash] = u.split('#');
       const p = p0.split('?')[0];
       const target = !p ? f : p.startsWith('/') ? p.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(f), p));
@@ -468,7 +468,7 @@ const ROUNDS = {
         const cards = [...String(dom).matchAll(/<(?:a|button|div|li|article)\b[^>]*class="[^"]*\bsize-card\b[^"]*"[^>]*>([\s\S]*?)(?=<(?:a|button|div|li|article)\b[^>]*class="[^"]*\bsize-card\b|$)/g)];
         if (cards.length !== R6_ROWS.length) return `${url}: ${cards.length} size cards, want ${R6_ROWS.length}`;
         for (const [i, m] of cards.entries()) {
-          const price = (m[1].match(/class="[^"]*size-price[^"]*"[^>]*>([\s\S]*?)<\/[a-z]+>/) || [])[1];
+          const price = (m[1].match(/class="[^"]*\bsize-price\b[^"]*"[^>]*>([\s\S]*?)<\/[a-z]+>/) || [])[1];
           const want = `$${R6_ROWS[i] / 100}`;
           if (!price || !text(price).replace(/,/g, '').includes(want)) return `${url}: card ${i + 1} price is "${price && text(price)}", want ${want}`;
           if (C.GUESS && C.GUESS.prices && !/class="[^"]*\bguess\b/.test(m[0].slice(0, m[0].indexOf(price) + price.length))) return `${url}: card ${i + 1} price is not red`;
@@ -849,13 +849,13 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       }
       return true;
     } },
-    { id: 'spanish-js', pts: 5, desc: 'the truck and the ZIP check speak Spanish on Spanish pages', async run() {
+    { id: 'spanish-js', pts: 5, desc: 'the travel line on the size cards and the ZIP check speak Spanish on Spanish pages', async run() {
       if (!CHROME) return 'no Chrome';
       if (!exists('es/index.html')) return 'es/index.html missing';
-      const dom = await dump(seeded('/es/index.html', { quoteZip: '97211', loadBuild: ['couch', 'mattress'] }));
-      const tl = text((String(dom).match(/class="lb-travel"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || '');
+      const dom = await dump(seeded('/es/index.html', { quoteZip: '97211' }));
+      const tl = text((String(dom).match(/class="size-travel[^"]*"[^>]*>([\s\S]*?)<\/span>\s*<\/span>/) || [])[1] || '');
       const zo = byId(dom, 'zipOut');
-      if (!/viaje/i.test(tl)) return `truck travel line: "${tl}"`;
+      if (!/viaje/i.test(tl)) return `size card travel line: "${tl}"`;
       if (!zo || !/vamos/i.test(zo.text)) return `ZIP answer: "${zo && zo.text}"`;
       return true;
     } },
@@ -1199,7 +1199,7 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       for (const k of ['who we are', 'where we work', 'prices', 'paying', 'cancel', 'refund', 'responsible', 'messages']) if (!th.includes(k)) return `terms has no "${k}" section (${th.slice(0, 80)})`;
       const ph = [...priv.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => text(m[1]).toLowerCase()).join(' | ');
       for (const k of ['what we collect', 'photos', 'how we use', 'who we share', 'your choices', 'questions']) if (!ph.includes(k)) return `privacy has no "${k}" section`;
-      const rel = [...nf.matchAll(/\shref="([^"]+)"/g)].map((m) => m[1]).filter((u) => !/^(https?:|tel:|mailto:|#)/.test(u));
+      const rel = [...nf.matchAll(/\shref="([^"]+)"/g)].map((m) => m[1]).filter((u) => !/^(https?:|tel:|sms:|mailto:|#)/.test(u));
       if (rel.some((u) => !u.startsWith('/'))) return `404 has relative links: ${rel.filter((u) => !u.startsWith('/')).slice(0, 3).join(', ')}`;
       return run('node', ['scripts/check-meta.mjs']).code === 0 || 'check-meta fails';
     } },
@@ -1217,7 +1217,7 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       for (const f of round2Pages()) {
         for (const m of (read(f) || '').matchAll(/\s(?:href|src)="([^"]+)"/g)) {
           const u = m[1].replace(/&amp;/g, '&');
-          if (/^(https?:|tel:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
+          if (/^(https?:|tel:|sms:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
           const [p0, hash] = u.split('#');
           const p = p0.split('?')[0];
           const target = !p ? f : p.startsWith('/') ? p.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(f), p));
@@ -1314,17 +1314,18 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       if (!/<input[^>]*type="email"/.test(far.inner) || !/<button/.test(far.inner)) return 'the far ZIP offer has no email box and button';
       return true;
     } },
-    { id: 'home', pts: 8, desc: 'homepage: truck says "+ travel" with no ZIP; one zone row per zone', async run() {
+    { id: 'home', pts: 8, desc: 'homepage: the size cards say "+ travel" with no ZIP; one zone row per zone', async run() {
       const dom = await dump('/index.html?__probe=1');
-      const unit = (String(dom).match(/class="lb-unit[^"]*"[^>]*>([\s\S]*?)<\/span>/) || [])[1];
+      const cards = [...String(dom).matchAll(/class="size-travel[^"]*"[^>]*>([\s\S]*?)<\/span>/g)].map((m) => text(m[1]));
+      if (!cards.length) return 'no size cards (.size-travel) on the homepage';
+      const bareCard = cards.find((c) => !/\+ travel/.test(c));
+      if (bareCard !== undefined) return `a size card's travel line is "${bareCard}", want "+ travel" until a ZIP is typed`;
       const list = byId(dom, 'zoneList');
       if (!list) return 'no #zoneList';
       const rows = (list.inner.match(/data-zone=/g) || []).length;
       if (!C.ZONES || rows !== C.ZONES.length) return `${rows} zone rows`;
-      // The unit only shows once a size is picked; the empty truck shows nothing, which is fine.
-      if (unit && text(unit) && !/\+ travel/.test(text(unit))) return `price unit is "${text(unit)}"`;
-      const js = read('js/load-builder.js') || '';
-      if (!/\+ travel/.test(js)) return 'load builder never says "+ travel"';
+      const js = read('js/size-cards.js') || '';
+      if (!/setTravel/.test(js) || !/' travel'/.test(js)) return 'the size cards script never writes the travel line';
       return true;
     } },
     // Round 6 made book/checkout.html a redirect: paying is the order page's pay step. The old

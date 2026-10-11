@@ -19,6 +19,20 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && links.classList.contains('open')) { set(false); burger.focus(); } });
   }
 
+  // WhatsApp buttons (a[data-wa] holds the chat address): the message says hello and,
+  // once the visitor has given a ZIP anywhere on the site, the ZIP. The order page
+  // (js/order.js) writes its own message with the size.
+  var es = document.documentElement.lang === 'es';
+  var waLinks = [].slice.call(document.querySelectorAll('a[data-wa]'));
+  var waSync = function () {
+    var zip = '';
+    try { zip = sessionStorage.getItem('quoteZip') || ''; } catch (e) { /* private mode */ }
+    var msg = es ? 'Hola, quiero una cotización para retirar basura.' : 'Hi, I would like a junk removal quote.';
+    if (/^\d{5}$/.test(zip)) msg += es ? ' Mi código postal es ' + zip + '.' : ' My ZIP is ' + zip + '.';
+    waLinks.forEach(function (a) { a.href = a.getAttribute('data-wa') + '?text=' + encodeURIComponent(msg); });
+  };
+  if (waLinks.length) { waSync(); window.addEventListener('quotezip', waSync); }
+
   // Sticky CTA: slides in once the hero is scrolled past, and steps aside
   // while another quote button (price card, closing banner) is on screen so
   // two identical buttons are never stacked on top of each other.

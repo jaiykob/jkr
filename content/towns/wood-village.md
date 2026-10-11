@@ -1,8 +1,8 @@
 name: Wood Village
 state: OR
 zips: 97060
-lede: Wood Village is a few minutes from our base, so the price you see has no travel added. Tap the items or send a photo to start.
-lede_es: Wood Village está a unos minutos de nuestra base, así que el precio que ves no lleva viaje. Toca los artículos o manda una foto para empezar.
+lede: Wood Village is a few minutes from our base, so the price you see has no travel added. Pick a size or send a photo to start.
+lede_es: Wood Village está a unos minutos de nuestra base, así que el precio que ves no lleva viaje. Elige un tamaño o manda una foto para empezar.
 areas: Wood Village Town Center, Arata Road, Donald L. Robertson Park, Glisan Street, NE 238th Drive
 
 ## Local

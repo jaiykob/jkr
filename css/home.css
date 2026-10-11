@@ -1,4 +1,4 @@
-/* Homepage only: hero with the load builder, ticker, scroll road, what we
+/* Homepage only: hero with the size cards, ticker, scroll road, what we
    take, price tiers, ZIP check, FAQ, closer. Tokens come from css/site.css. */
 
 .logo-mark {
@@ -40,12 +40,39 @@
   border-radius: 99px; border: 1px solid rgba(255,210,63,.35); font-size: 1rem; font-weight: 600;
 }
 .h-proof li::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--tan); }
-.h-builder-card {
-  background: var(--page); color: var(--rg); border-radius: 24px; padding: 24px;
-  box-shadow: 0 30px 80px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
+/* The five size cards: links to the order page, one stacked column on a phone,
+   one row of five on a desktop. Same class names as the order page's cards. */
+.h-order { min-width: 0; }
+.h-sizes { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+.h-sizes .size-card {
+  position: relative; display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: center; gap: 12px;
+  min-height: 84px; padding: 8px 12px 8px 8px; border-radius: 16px;
+  background: var(--card); color: var(--rg); text-decoration: none;
+  border: 2px solid transparent; box-shadow: 0 10px 30px rgba(0,0,0,.28);
+  transition: transform .15s, border-color .15s;
 }
-.h-nojs { font-size: 1rem; }
-.h-nojs a { color: var(--rg); font-weight: 700; }
+.h-sizes .size-card:hover { border-color: var(--tan); transform: translateY(-2px); }
+.h-sizes .size-card:focus-visible { outline: 3px solid var(--tan); outline-offset: 3px; }
+.h-sizes .size-photo { display: block; width: 68px; height: 68px; object-fit: cover; border-radius: 10px; background: #E4E4E4; }
+.h-sizes .size-body { display: grid; gap: 1px; min-width: 0; }
+.h-sizes .size-name { font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em; }
+.h-sizes .size-note { font-size: 1rem; line-height: 1.35; color: var(--txm); }
+.h-sizes .size-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 2px; }
+.h-sizes .size-price { font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; }
+.h-sizes .size-travel { font-size: 1rem; color: var(--txm); }
+.h-order-alt { margin-top: 18px; font-size: 1.05rem; color: var(--on-dark-m); }
+.h-order-alt a { color: var(--tan); font-weight: 700; text-underline-offset: 3px; display: inline-block; padding: 12px 0; }
+.h-order-alt a:hover { color: #fff; }
+.h-contact { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.h-chip {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; min-width: 48px; padding: 0 18px; border-radius: 99px;
+  border: 1.5px solid rgba(255,210,63,.55); color: var(--tan); text-decoration: none;
+  font-size: 1rem; font-weight: 700;
+}
+.h-chip svg { width: 20px; height: 20px; flex: none; }
+.h-chip:hover { background: rgba(255,210,63,.14); }
+.h-chip:focus-visible { outline: 3px solid var(--tan); outline-offset: 2px; }
 @media (min-width: 960px) {
   .h-hero { padding: 72px var(--gutter) 88px; }
   .h-hero-in { grid-template-columns: 1fr; }
@@ -53,11 +80,19 @@
   .h-hero-copy .h-eyebrow, .h-hero-copy .h-title { grid-column: 1; }
   .h-hero-copy .h-lede { grid-column: 2; grid-row: 2; margin: 0; }
   .h-hero-copy .h-proof { grid-column: 1 / -1; }
-  .h-builder-card { padding: 32px; }
+  .h-sizes { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+  .h-sizes .size-card { grid-template-columns: 1fr; align-items: start; align-content: start; gap: 10px; padding: 10px 10px 16px; }
+  .h-sizes .size-photo { width: 100%; height: auto; aspect-ratio: 16 / 10; }
+  .h-sizes .size-body { padding: 0 4px; }
 }
 @media (max-width: 599px) {
   .h-hero { padding: 36px 16px 44px; }
-  .h-builder-card { padding: 16px; border-radius: 18px; margin: 0 -4px; }
+  /* Phones: the first size card shows on the first screen (360x760 with the
+     bookings banner up). The proof chips move down, under the contact buttons. */
+  .h-hero-in { gap: 0; }
+  .h-hero-copy { display: contents; }
+  .h-order { order: 1; margin-top: 28px; }
+  .h-proof { order: 2; margin-top: 28px; }
 }
 
 /* ── TICKER ───────────────────────────────────────────────────────────── */
@@ -212,7 +247,16 @@
 /* ── CLOSER ───────────────────────────────────────────────────────────── */
 .closer { background: var(--tan); padding: 80px var(--gutter); text-align: center; }
 .closer h2 { font: 800 clamp(2.2rem, 6vw, 4rem)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -.04em; color: var(--rg); margin-bottom: 28px; }
-.closer .lb-cta { background: var(--rg); color: var(--tan); box-shadow: 0 6px 0 rgba(0,0,0,.35); }
+.cta-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 56px; padding: 0 28px; border-radius: 14px; text-decoration: none;
+  background: var(--rg); color: var(--tan); box-shadow: 0 6px 0 rgba(0,0,0,.35);
+  font: 800 1.1rem/1 'DM Sans', system-ui, sans-serif; transition: transform .12s, box-shadow .12s;
+}
+.cta-btn::after { content: '\2192'; font-size: 1.2em; transition: transform .2s; }
+.cta-btn:hover::after { transform: translateX(4px); }
+.cta-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.cta-btn:focus-visible { outline: 3px solid #0B6BCB; outline-offset: 2px; }
 .closer p { margin-top: 20px; font-size: 1rem; color: var(--rg); }
 .closer p a { color: var(--rg); font-weight: 800; }
 

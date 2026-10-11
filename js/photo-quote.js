@@ -3,8 +3,8 @@
    counts the items. Claude only counts; the page turns the count into a size
    and the server still prices the size on its own.
 
-   Used by the order page (book/quote.html), and by the homepage hero until
-   that moves to the size cards (round 6, Task 10).
+   Used by the order page (book/quote.html). The homepage's "Send us a photo"
+   links to /book/quote.html#photos, which puts this picker in view.
 
    The stored photo paths ride with the booking (sessionStorage quotePhotos);
    small thumbnails (quoteThumbs) and the last read back line come back when

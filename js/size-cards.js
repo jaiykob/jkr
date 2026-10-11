@@ -7,9 +7,9 @@
    the homepage (cards are links to the order page with that size picked), so
    it knows nothing about either page.
 
-   SizeCards.mount(root, { onPick(row, how) }) -> {
+   SizeCards.mount(root, { onPick(row, how), words: { none, suffix } }) -> {  (words: another language)
      pick(row)            mark one card picked (aria-pressed), no callback
-     setTravel(trip)      the travel line on every card: "+ travel" until the
+     setTravel(trip, guess)  the travel line on every card: "+ travel" until the
                           ZIP is known (trip null), then the fee or "No travel charge"
      row()                the picked row, or null
    }                                                                          */
@@ -19,6 +19,7 @@
 
   function mount(root, opts) {
     opts = opts || {};
+    var W = opts.words || { none: 'No travel charge', suffix: ' travel' };
     if (!root) return null;
     var cards = [].slice.call(root.querySelectorAll('.size-card'));
     var current = null;
@@ -47,13 +48,13 @@
         if (!t) return;
         t.textContent = '';
         if (!trip) { t.textContent = plain[i]; return; }
-        if (!trip.cents) { t.textContent = 'No travel charge'; return; }
+        if (!trip.cents) { t.textContent = W.none; return; }
         var fee = document.createElement('span');
         if (guess) fee.className = 'guess';
         fee.textContent = fmt(trip.cents);
         t.appendChild(document.createTextNode('+ '));
         t.appendChild(fee);
-        t.appendChild(document.createTextNode(' travel'));
+        t.appendChild(document.createTextNode(W.suffix));
       });
     }
 
