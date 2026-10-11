@@ -144,6 +144,14 @@ URL. The webhook, not the page, writes customers and visits (a job is a
 `visit`) and sends the confirmation; it branches on the event object's own
 `metadata.kind`, never the customer metadata.
 
+Every Book makes a new PaymentIntent (the server stamps a fresh consent
+time), so the page guards against a second charge itself: it keeps the last
+PaymentIntent it tried (`lastPay` in `js/order.js`) and asks Stripe about it
+before paying again; any change to the order forgets it. Customer facing copy
+never says "you can say no" (founder, 2026-10-11): the rule is that the crew
+checks the size and charges a bigger load only if the customer agrees, and
+the refusal fee line prints only while `POLICY.refusalFee` is above $0.
+
 ## Travel pricing (2026-10-07)
 
 The service area is every ZIP inside the travel zones: the Portland metro,
