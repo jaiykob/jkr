@@ -11,7 +11,7 @@ The best answer is a clear price before anyone shows up. Be careful with "starti
 
 ## 2. What happens if there is more than I showed you?
 
-Things get missed; a basement corner or a second shed turns up on the day. A good company shows you the new price before loading anything and lets you choose. Ours does exactly that, and you can say no.
+Things get missed; a basement corner or a second shed turns up on the day. A good company shows you the new price before loading anything and lets you choose. Ours does exactly that.
 
 ## 3. Is travel extra?
 

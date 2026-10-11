@@ -340,7 +340,7 @@
 <main id="main" class="o-main">
   <div class="o-intro">
     <h1>Book a junk pickup</h1>
-    <p class="o-lede">Pick a size, add your ZIP, choose a time.<span class="o-lede-more"> You pay when you book.</span></p>
+    <p class="o-lede">Pick a size, add your ZIP, choose a time.<span class="o-lede-more" data-mode="pay"> You pay when you book.</span><span class="o-lede-more" data-mode="reserve" hidden> No card needed to reserve.</span></p>
   </div>
   <p class="sr-only" aria-live="polite" id="o-live"></p>
 
@@ -489,12 +489,17 @@
         <div class="o-sec-head"><span class="o-num" aria-hidden="true"><span>5</span><svg><use href="#i-check"/></svg></span><h2 id="o-pay-h">Pay and book</h2><p class="o-wait">Opens once your details are in.</p></div>
         <div class="o-sec-body" hidden>
           <!-- The rule in plain words, beside Book (pay at booking, founder
-               2026-10-10). The total, the size, the cancel hours and the late
-               fee are filled in from window.ORDER (red while guessed); "now"
-               reads "when you book" while bookings are closed. -->
+               2026-10-10). The total, the cancel hours and the fees are filled
+               in from window.ORDER (red while guessed). Bookings open shows the
+               pay paragraphs; closed shows the reserve ones (js/order.js), so
+               the page tells one story. The refusal fee line shows only while
+               the fee is more than $0. -->
           <div class="o-rule" id="o-rule">
-            <p><strong>You pay <span data-o="pay-total">the total</span> <span data-o="pay-when">now</span>.</strong> If your load is bigger or smaller than <span data-o="size-a">your pick</span>, the crew shows you the new price before loading: we charge or refund the difference on your card, and you can say no.</p>
-            <p>Free to cancel or move until <span data-o="cancel"></span> before your window, with a full refund. After that, we keep a <span data-o="late-fee"></span> late cancel fee and refund the rest.</p>
+            <p data-mode="pay"><strong>You pay <span data-o="pay-total">the total</span> now.</strong> Before loading, the crew checks the size. If your load is bigger, we show you the new price first and charge the difference to this card only if you agree. If it is smaller, we refund the difference.</p>
+            <p data-mode="pay" data-o="refusal" hidden>If you decide not to go ahead once the crew is there, we keep a <span data-o="refusal-fee"></span> refusal fee and refund the rest.</p>
+            <p data-mode="pay">Free to move your day, or to cancel with a full refund, until <span data-o="cancel"></span> before your arrival window. After that, a cancel keeps the <span data-o="late-fee"></span> late fee and we refund the rest.</p>
+            <p data-mode="reserve" hidden><strong>Your total is <span data-o="pay-total">the total</span>.</strong> Nothing is charged to reserve; we text you to confirm.</p>
+            <p data-mode="reserve" hidden>Before loading, the crew checks the size. A different size means a different price, shown to you first.</p>
           </div>
           <!-- Bookings open (BOOKINGS_OPEN_CLIENT): one box under the rule,
                then Apple Pay or Google Pay above the card form (Stripe's
@@ -539,7 +544,8 @@
         </div>
         <p class="o-total"><span class="o-k">Total</span><span class="o-v">Pick a size</span></p>
         <div class="o-book-slot" data-slot="summary"></div>
-        <p class="o-sum-rule">You pay when you book. A different size is charged or refunded after the job. Free to cancel or move until <span data-o="cancel"></span> before.</p>
+        <p class="o-sum-rule" data-mode="pay">You pay when you book. A different size is charged or refunded after the job. Free to move or cancel until <span data-o="cancel"></span> before your arrival window.</p>
+        <p class="o-sum-rule" data-mode="reserve" hidden>No card needed to reserve.</p>
         <div class="o-sum-contact">
           <p>Questions? Call, text or WhatsApp.</p>
           <div class="o-contact-row">

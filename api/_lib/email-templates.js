@@ -204,7 +204,11 @@ function bookedConfirmation(ctx = {}) {
     detail('Founding discount', discount),
     detail('Paid today', paid),
   ].join('');
-  const rule = `${paid ? `You paid ${paid} today. ` : ''}If your load is bigger or smaller than ${load ? 'a ' + load : 'the size you booked'}, the crew shows you the new price before loading: we charge or refund the difference on your card, and you can say no. Free to cancel or move until ${cancelHours} hours before your arrival window, with a full refund. After that, we keep a ${lateFee} late cancel fee and refund the rest.`;
+  // The refusal fee sentence only while there is a fee: a fee is never kept that was not shown.
+  const refusal = ORDER.POLICY.refusalFeeCents > 0
+    ? ` If you decide not to go ahead once the crew is there, we keep a $${(ORDER.POLICY.refusalFeeCents / 100).toFixed(2)} refusal fee and refund the rest.`
+    : '';
+  const rule = `${paid ? `You paid ${paid} today. ` : ''}Before loading, the crew checks the size. If your load is bigger, we show you the new price first and charge the difference to your card only if you agree. If it is smaller, we refund the difference.${refusal} Free to move your day, or to cancel with a full refund, until ${cancelHours} hours before your arrival window. After that, a cancel keeps the ${lateFee} late fee and we refund the rest.`;
   const consent = 'You agreed to the terms, and to this card being charged or refunded the difference if the crew finds a different size.';
   const bodyHtml = `
     <p style="margin:0 0 12px;">Thanks for booking with ${BRAND.name}. Your haul is booked and paid, and here are the details:</p>

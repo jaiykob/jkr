@@ -181,7 +181,7 @@
 
     // The Book button carries the amount: with bookings open it is paid now.
     var book = $('o-book');
-    var verb = OPEN ? 'Book and pay ' : 'Reserve ';
+    var verb = OPEN ? 'Book and pay ' : 'Reserve, no card: ';
     book.setAttribute('aria-busy', String(busy));
     if (reserved) book.textContent = 'Reserved';
     else if (busy) book.textContent = 'Booking your pickup…';
@@ -190,9 +190,8 @@
     else fill(book, [verb, guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)]);
     book.classList.toggle('is-done', reserved);
 
-    // The rule beside Book says what is paid: now (bookings open) or when you book.
+    // The rule beside Book names the total: paid now (bookings open) or the total reserved.
     document.querySelectorAll('[data-o="pay-total"]').forEach(function (n) { fill(n, tot ? [guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)] : ['the total']); });
-    document.querySelectorAll('[data-o="pay-when"]').forEach(function (n) { n.textContent = OPEN ? 'now' : 'when you book'; });
     // The card form shows the amount it pays (Apple Pay and Google Pay sheets read it too).
     if (elements && tot && tot !== payAmount) { payAmount = tot; try { elements.update({ amount: tot }); } catch (e) { /* the next Book still sends the server's total */ } }
 
@@ -201,8 +200,7 @@
     bar.hidden = !s;
     document.body.classList.toggle('o-has-bar', !!s);
 
-    // The rule names the size picked; the city line under the street comes from the ZIP.
-    document.querySelectorAll('[data-o="size-a"]').forEach(function (n) { n.textContent = s ? 'a ' + s.label : 'your pick'; });
+    // The city line under the street comes from the ZIP.
     $('o-city').textContent = t ? 'City: ' + t.place + ', ' + t.state + ' ' + t.zip + ' (from your ZIP)' : '';
 
     // WhatsApp opens a chat with the size and ZIP filled in.
@@ -604,7 +602,7 @@
   }
   consentBox.addEventListener('change', function () { if (consentBox.checked) consentErr(''); });
   function needConsent() {
-    consentErr('Tick the box to agree to the terms and to a different size being charged or refunded.');
+    consentErr('Check the box to agree to the terms and to a different size being charged or refunded.');
     say($('o-consent-err').textContent);
     consentBox.focus({ preventScroll: true });
     consentBox.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: 'center' });
@@ -846,6 +844,12 @@
   var P = ORDER.POLICY;
   document.querySelectorAll('[data-o="cancel"]').forEach(function (n) { fill(n, [guessy(P.cancelHours + ' hours', !!G.policy)]); });
   document.querySelectorAll('[data-o="late-fee"]').forEach(function (n) { fill(n, [guessy(fmt(P.lateFeeCents), !!G.policy)]); });
+  document.querySelectorAll('[data-o="refusal-fee"]').forEach(function (n) { fill(n, [guessy(fmt(P.refusalFeeCents), !!G.policy)]); });
+  // One story: bookings open shows the pay wording, closed the reserve wording.
+  document.querySelectorAll('[data-mode]').forEach(function (n) { n.hidden = n.getAttribute('data-mode') !== (OPEN ? 'pay' : 'reserve'); });
+  $('o-pay-h').textContent = OPEN ? 'Pay and book' : 'Reserve your day';
+  // The refusal fee is printed only while there is one, so a fee is never kept that was not shown.
+  document.querySelectorAll('[data-o="refusal"]').forEach(function (n) { n.hidden = !OPEN || !(P.refusalFeeCents > 0); });
   $('o-closed').hidden = OPEN;
   // A launch date, once the founder names one, lives in js/maintenance-banner.js only.
   if (!OPEN && window.SITE_REOPEN_TEXT) $('o-closed').textContent = 'We start hauling ' + window.SITE_REOPEN_TEXT + '. ' + $('o-closed').textContent;

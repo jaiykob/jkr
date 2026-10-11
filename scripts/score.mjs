@@ -560,9 +560,15 @@ const ROUNDS = {
       const total = (byId(dom, 'o-summary') || byId(dom, 'o-bar') || { text: '' }).text;
       if (!total.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `with a ZIP the total reads "${total.slice(0, 80)}", want ${fmt(TOTAL)}`;
       if (!/Travel/.test(total)) return 'no Travel line once the ZIP is known';
-      const pay = byId(dom, 'o-pay');
-      const payNow = new RegExp(`You pay ${fmt(TOTAL).replace(/[$.]/g, '\\$&')} (now|when you book)`);
-      if (!pay || !payNow.test(pay.text) || !/charge or refund the difference/i.test(pay.text) || !/Free to cancel/i.test(pay.text)) return `the pay step does not state the pay now rule beside Book: "${pay ? pay.text.slice(0, 120) : ''}"`;
+      // The pay step tells one story: gates closed (as built) the reserve wording alone, gates
+      // open the pay now rule. Read from its paragraphs that are not hidden.
+      const shown = (d) => { const sec = byId(d, 'o-pay'); return sec ? text((sec.inner.match(/<p\b[^>]*>[\s\S]*?<\/p>/gi) || []).filter((p) => !/^<p\b[^>]*\shidden/i.test(p)).join(' ')) : ''; };
+      const money = fmt(TOTAL).replace(/[$.]/g, '\\$&');
+      const closed = shown(dom);
+      if (!new RegExp(`Your total is ${money}\\. Nothing is charged to reserve`).test(closed) || /You pay|full refund/i.test(closed)) return `with the gates closed the pay step does not tell the reserve story alone: "${closed.slice(0, 160)}"`;
+      const open = shown(await dump(ORDER_WITH_ZIP('__fakepay=1&__open=1')));
+      const rule = [new RegExp(`You pay ${money} now`), /charge the difference to this card only if you agree/, /smaller, we refund the difference/, /Free to move your day, or to cancel with a full refund/];
+      if (rule.some((r) => !r.test(open)) || /say no|Nothing is charged to reserve/i.test(open)) return `the pay step does not state the pay now rule beside Book: "${open.slice(0, 200)}"`;
       const stale = /Nothing is charged today|charged after the job/i;
       if (stale.test(visibleText(dom))) return 'the order page still says nothing is charged today, or charged after the job';
       const th = await dump(seeded('/book/thanks.html', { bookingSummary: { plan: '1/2 truck', amountCents: TOTAL, travel: 'Zone 2', address: '1 Probe St' } }));
@@ -573,7 +579,7 @@ const ROUNDS = {
         mail = require(path.join(ROOT, 'api/_lib/email-templates.js')).bookedConfirmation({ name: 'Jane', load: '1/2 truck', total: fmt(TOTAL), paid: fmt(TOTAL), dayLabel: 'Tue Oct 14', windowLabel: 'a window' });
       } catch (e) { return `the confirmation email did not build: ${e.message}`; }
       const all = `${mail.subject}\n${visibleText(mail.html)}\n${mail.text}`;
-      if (!/Paid today/.test(all) || !all.includes(fmt(TOTAL)) || !/charge or refund the difference/.test(all) || stale.test(all)) return 'the confirmation email does not say what was paid today and that a different size is charged or refunded';
+      if (!/Paid today/.test(all) || !all.includes(fmt(TOTAL)) || !/charge the difference to your card only if you agree/.test(all) || !/refund the difference/.test(all) || /say no/i.test(all) || stale.test(all)) return 'the confirmation email does not say what was paid today and that a different size is charged or refunded';
       return true;
     } },
     { id: 'server', pts: 10, desc: 'booking: exactly one PaymentIntent for the quoted total with setup_future_usage off_session and no SetupIntent; stale quote, full window, outside the area, closed day and no consent refused with no Stripe object; test-booking passes', async run() {

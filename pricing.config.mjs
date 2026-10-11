@@ -204,7 +204,7 @@ export const POLICY = {
   cancelHours: 24,          // free to cancel or move until this many hours before the window starts
   lateFee: 50,              // dollars, kept from the refund when the dashboard's Cancel and refund runs inside cancelHours
   refusalFee: 0,            // dollars, kept from the refund when the customer says no on site
-  consentVersion: '2026-10-10b', // 2026-10-10b: pay at booking, the difference charged or refunded after the job
+  consentVersion: '2026-10-11', // 2026-10-10b: pay at booking, the difference charged or refunded after the job; 2026-10-11: the rule reworded (the crew checks the size, a bigger load charged only if the customer agrees)
 };
 
 /** Fails the build on a schedule that would misbook a day. */

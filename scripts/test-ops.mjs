@@ -260,11 +260,22 @@ ok(createdVisits()[0] && createdVisits()[0].paid_cents === 37400 && createdVisit
 ok(createdVisits()[0] && !('stripe_setup_intent_id' in createdVisits()[0]), 'the visit still carries a setup intent column');
 ok(customerUpdates.some((u) => u.id === 'cus_1' && u.invoice_settings && u.invoice_settings.default_payment_method === 'pm_9'), 'the saved card is not the customer default payment method');
 const conf = sentEmails().find((e) => e.to === 'jane@example.com');
-ok(conf && /10 am to 12 pm/.test(conf.html) && /charge or refund the difference/.test(conf.html), 'confirmation lacks the window or the rule');
+ok(conf && /10 am to 12 pm/.test(conf.html) && /charge the difference to your card only if you agree/.test(conf.html) && /we refund the difference/.test(conf.html) && !/say no/i.test(conf.html), 'confirmation lacks the window or the rule');
 ok(conf && /Paid today/.test(conf.html) && /\$374\.00/.test(conf.html) && /Zone 2/.test(conf.html) && /\$25\.00/.test(conf.html), 'confirmation lacks what was paid, the travel line or the total');
 ok(conf && /charged or refunded the difference/.test(conf.html), 'confirmation lacks the consent');
 ok(conf && !/Nothing is charged today/.test(conf.html + conf.text + conf.subject) && !/charged after the job/.test(conf.html + conf.text), 'the confirmation still says nothing is charged today');
-ok(conf && /charge or refund the difference/.test(conf.text) && /Paid today: \$374\.00/.test(conf.text), 'confirmation text lacks the rule or what was paid');
+ok(conf && /charge the difference to your card only if you agree/.test(conf.text) && /Paid today: \$374\.00/.test(conf.text), 'confirmation text lacks the rule or what was paid');
+// The refusal fee sentence only while there is a fee: none at $0, the fee itself once one is set.
+{
+  const realFee = ORDER.POLICY.refusalFeeCents;
+  ORDER.POLICY.refusalFeeCents = 0;
+  const none = tpl.bookedConfirmation({ name: 'Jane', total: '$374.00' });
+  ORDER.POLICY.refusalFeeCents = 2500;
+  const fee = tpl.bookedConfirmation({ name: 'Jane', total: '$374.00' });
+  ORDER.POLICY.refusalFeeCents = realFee;
+  ok(!/refusal fee/.test(none.html + none.text), 'the confirmation names a refusal fee of $0');
+  ok(/If you decide not to go ahead once the crew is there, we keep a \$25\.00 refusal fee/.test(fee.text), 'the confirmation does not name a refusal fee once one is set');
+}
 ok(sentEmails().some((e) => e.to === 'owner@example.com'), 'no owner email');
 ok(discordPings().length === 1 && /New booking/.test(discordPings()[0].embeds[0].title), 'no Discord ping');
 ok(sentEmails().every((e) => /^pi_9:(cust|owner)$/.test(e.idempotencyKey)), 'email keys are not PaymentIntent based: ' + sentEmails().map((e) => e.idempotencyKey));

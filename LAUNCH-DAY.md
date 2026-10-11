@@ -30,13 +30,19 @@ gates are closed.
       consent before a saved card is charged later. Read and approve, word
       for word, the box on `book/quote.html`: "I agree to the terms, and to
       this card being charged or refunded the difference if the crew finds a
-      different size." and the rule above it: "You pay (the total) now. If
-      your load is bigger or smaller than (the size), the crew shows you the
-      new price before loading: we charge or refund the difference on your
-      card, and you can say no. Free to cancel or move until 24 hours before
-      your window, with a full refund. After that, we keep a $50.00 late
-      cancel fee and refund the rest." Then read `terms.html` (and set its
-      "Last updated" date). If you change the wording or the rule, set a new
+      different size." and the rule above it: "You pay (the total) now.
+      Before loading, the crew checks the size. If your load is bigger, we
+      show you the new price first and charge the difference to this card
+      only if you agree. If it is smaller, we refund the difference. Free to
+      move your day, or to cancel with a full refund, until 24 hours before
+      your arrival window. After that, a cancel keeps the $50.00 late fee and
+      we refund the rest." If you set a refusal fee above $0, one more line
+      shows: "If you decide not to go ahead once the crew is there, we keep a
+      (fee) refusal fee and refund the rest." We suggest a box that also
+      says the card is kept on file: "I agree to the terms, and to my card
+      being kept on file to charge or refund the difference if the crew finds
+      a different size." Then read `terms.html` (and set its "Last updated"
+      date). If you change the wording or the rule, set a new
       `POLICY.consentVersion` and `npm run build`: every booking records the
       version it agreed to.
 - [ ] **Washington.** Before taking a job in Clark County: a Washington

@@ -122,7 +122,7 @@ ok(meta.load_idx === '2' && meta.load_cents === String(ORDER.SIZES[2].cents) && 
   'payment intent money, market or zip metadata');
 ok(meta.zone === travelFor(zip).zone && meta.zone_label === travelFor(zip).label && meta.miles === String(travelFor(zip).miles), 'payment intent zone metadata');
 ok(meta.consent_version === ORDER.POLICY.consentVersion && Math.abs(Date.parse(meta.consent_at) - Date.now()) < 60000, 'consent time not stamped by the server');
-ok(ORDER.POLICY.consentVersion === '2026-10-10b', `consent version is ${ORDER.POLICY.consentVersion}: the pay at booking wording is 2026-10-10b`);
+ok(ORDER.POLICY.consentVersion === '2026-10-11', `consent version is ${ORDER.POLICY.consentVersion}: the reworded pay at booking rule is 2026-10-11`);
 ok(meta.address === `1 Oak Ln, Gresham ${zip}`, 'the page address was not kept');
 const stamped = await call(good({ consent: { agreed: true, version: ORDER.POLICY.consentVersion, at: '2000-01-01T00:00:00Z' } }));
 ok(stamped.status === 200 && lastPI().metadata.consent_at !== '2000-01-01T00:00:00Z', 'the page chose the consent time');
