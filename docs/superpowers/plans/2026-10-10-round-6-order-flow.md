@@ -620,6 +620,89 @@ ping.
 - [ ] **Step 5:** `npm test` and rounds 1 to 5: 100. Score; log. Commit:
   `Pay with a saved card: Express Checkout and Payment Element, consent, thanks`.
 
+### Task 9b: Pay at booking (founder change, 2026-10-10)
+
+The founder: "payments have to be accepted at time of bookings so i can pay
+hauler". The spec's money section is rewritten (read it: "The money", "Pay",
+"After booking", "The dashboard"). This task switches the server, the page,
+the thanks page and the dashboard from "card saved, charged after the job" to
+"the quoted total paid at booking, card saved, the difference charged or
+refunded after the job", in one consistent change.
+
+**Files:**
+- Modify: `api/create-booking.js`, `api/stripe-webhook.js`, `api/visit-update.js`, `api/_lib/email-templates.js`, `api/_lib/db.js` (if columns change), `db/migrations/2026-10-10-order-flow.sql` and `db/schema.sql` (unapplied, edit in place), `pricing.config.mjs` (`POLICY.consentVersion` to `'2026-10-10b'`) then `npm run build:pricing`, `js/order.js`, `book/quote.html`, `book/thanks.html`, `jkr/index.html`, `scripts/lib/fake-stripe.mjs` (`refunds.create`; the Ruling R2 stub gains `stripe.confirmPayment()` → `{ paymentIntent: { status: 'succeeded' } }`), `scripts/score.mjs`, `scripts/test-booking.mjs`, `scripts/test-charge.mjs`, `scripts/test-ops.mjs`, `scripts/test-admin.mjs`
+
+**Interfaces (replace the SetupIntent ones):**
+
+```js
+// POST /api/create-booking: same body and refusals as Task 4; 200 now:
+{ customerId, paymentIntentClientSecret, totalCents, loadCents, travelCents }
+// The booking PaymentIntent: amount = total less any founding discount,
+// currency 'usd', customer, setup_future_usage: 'off_session',
+// automatic_payment_methods: { enabled: true }, metadata: the Task 4 keys with kind: 'booking'.
+// No SetupIntent at booking. Idempotency as Ruling R10.
+
+// Visit columns added: paid_cents int, refunded_cents int.
+// payment_status: 'paid' | 'payment_needed' | 'refunded' | 'late_fee_kept'
+
+// POST /api/visit-update (admin token):
+{ action: 'finish', visitId, finalLoad, agreed, dryRun }
+//  -> { cents /* final total */, paidCents, differenceCents /* >0 charge, <0 refund */,
+//       charged, refunded, paymentStatus }
+//  bigger: needs agreed === true; off session PaymentIntent for the difference,
+//    metadata kind 'difference', key visit:<id>:diff:<finalLoad>, allow_redirects 'never' (R14)
+//  smaller: stripe.refunds.create({ payment_intent: visit.stripe_payment_intent_id,
+//    amount: -differenceCents }), key visit:<id>:refund:<finalLoad>
+//  same: no Stripe call. Then today's complete path (R13: a declined difference
+//    still completes the job; invoice for the difference, payment_needed).
+{ action: 'cancel-refund', visitId }  // replaces 'late-fee': full refund before
+//    ORDER.isLateCancel, else refund paid less POLICY.lateFeeCents; status canceled
+{ action: 'declined', visitId }       // refund paid less POLICY.refusalFeeCents; status declined
+{ action: 'en-route', visitId }       // unchanged
+```
+
+- The webhook books on `payment_intent.succeeded` whose own `metadata.kind`
+  is `'booking'`: sets the customer's default payment method, writes the visit
+  with `payment_status: 'paid'`, `paid_cents` (the PaymentIntent amount),
+  `stripe_payment_intent_id`, `stripe_payment_method_id`, and keeps the
+  `booking_notified_at` dedupe (Ruling R11; email keys from the PaymentIntent
+  id). `kind: 'difference'` succeeded marks the difference paid and sends the
+  receipt; its failure marks `payment_needed` (deduped as in Task 6). The
+  `setup_intent.succeeded` booking path is removed. Founding (R12) is read
+  from the booking PaymentIntent's metadata and applied at booking.
+- The page: `stripe.elements({ mode: 'payment', amount: totalCents,
+  currency: 'usd', setupFutureUsage: 'off_session' })`, `elements.update({
+  amount })` whenever the total changes, `stripe.confirmPayment({ elements,
+  clientSecret, confirmParams: { return_url: <origin>/book/thanks.html,
+  payment_method_data: { billing_details } }, redirect: 'if_required' })`.
+  Consent text: "I agree to the terms, and to this card being charged or
+  refunded the difference if the crew finds a different size." The rule above
+  it and the copy on the button, the thanks page and the confirmation email
+  say what is paid now and that a different size is charged or refunded
+  (spec "Pay"); "Nothing is charged today" leaves the order page, the thanks
+  page and the emails (the pre-launch banner's "no card needed" while closed
+  stays true and stays).
+- The dashboard: Finish shows "Charge $X more", "Refund $X" or "No change"
+  from the dry run (agreement box only when charging more); "Cancel and
+  refund" shows the refund (full, or less the late fee when late); "Customer
+  said no" shows its refund.
+- The scorecard: `server` proves exactly one PaymentIntent with
+  `setup_future_usage: 'off_session'` and no SetupIntent at booking, refusals
+  with no Stripe object; `final-charge` runs test-charge (charge more, refund
+  less, same, decline to invoice, cancel refunds, said no refund); `clear`
+  looks for the pay now rule; `dashboard` names `finish`, `declined`,
+  `cancel-refund`, `en-route`. Points unchanged.
+
+- [ ] **Step 1:** Rewrite the tests first (test-booking, test-charge,
+  test-ops `booked` and `final charge` sections, test-admin) to the new
+  contract; run them: FAIL.
+- [ ] **Step 2:** Server: create-booking, webhook, visit-update, templates,
+  columns. Run the server tests: PASS.
+- [ ] **Step 3:** Page, thanks and dashboard; scorecard checks. Screenshots
+  of the pay step and thanks page at 360 and 1280.
+- [ ] **Step 4:** `npm test`; round 6 and rounds 1 to 5 at 100 where they
+  were; log the generation. Commit: `Pay at booking: the quoted total charged when booked, the difference charged or refunded after the job`.
+
 ### Task 10: The homepage, towns and Spanish lose the truck
 
 **Files:**

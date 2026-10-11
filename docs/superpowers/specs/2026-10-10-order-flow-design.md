@@ -1,4 +1,4 @@
-# The order flow: no truck, booked in about 10 taps, paid after the job
+# The order flow: no truck, booked and paid in about 10 taps
 
 Date: 2026-10-10. Status: the founder said "enact all changes" after the
 research summary in chat; this file records what was agreed. Built as round 6
@@ -15,9 +15,15 @@ research summary in chat; this file records what was agreed. Built as round 6
 > "enact all changes"
 
 This round is the online order flow. It also does the money half of Part 3
-of the plan (the on site adjustment): the card is charged after the job, for
-the size the crew finds, so a load bigger than the customer picked is paid
-for without a second conversation about cards.
+of the plan (the on site adjustment): the customer pays the quoted price at
+booking and the card is saved, so after the job a bigger load is charged the
+difference (with the customer's agreement) and a smaller one is refunded the
+difference, without a second conversation about cards.
+
+> **Changed 2026-10-10 (founder):** "payments have to be accepted at time of
+> bookings so i can pay hauler". The first version of this spec charged the
+> card once after the job; that is replaced throughout by payment at booking
+> plus a settled difference after the job.
 
 ## Decisions (founder, 2026-10-10)
 
@@ -27,7 +33,7 @@ for without a second conversation about cards.
 | Ways to book | **Three**: the online order flow, WhatsApp, the phone (call or text). |
 | WhatsApp | **An automatic booking bot** (WhatsApp Business API), but **later, its own project**. This round adds a WhatsApp button that opens a chat with the details filled in. |
 | How the price is set | **Pick a size from photo cards** (single item, 1/4, 1/2, 3/4, full truck), each with its price. Unsure customers send photos. |
-| When the card is charged | **Card required to book, charged once after the job for the real size** (the "in between" way of Lugg and Dumpsters.com). Recommended in chat after the research; "enact all changes" accepted it. |
+| When the card is charged | **At booking, the quoted total** (option B; founder 2026-10-10: "payments have to be accepted at time of bookings so i can pay hauler"). The card is saved; after the job a bigger size is charged the difference with the customer's agreement and a smaller size is refunded the difference. Replaces the earlier "charged once after the job". |
 | Timing | **A day plus a 2 hour arrival window**, with a text before the crew arrives (the norm at every competitor studied). |
 | Monthly pickup | **Out of the online flow.** A small "Need regular pickups?" link to the commercial form. |
 | Tap budget | **About 10**: about 8 with Apple Pay or Google Pay, about 10 by card with autofill. |
@@ -81,14 +87,14 @@ works).** One page, sections open in turn, English only (as today):
    we should know?" is a link that opens a notes box (stairs, gate code).
 5. **Pay.** Apple Pay or Google Pay on top, the card form under it (Stripe
    Express Checkout Element and Payment Element). One checkbox: "I agree to
-   the terms, and to this card being charged after the job." Above the box,
-   the rule in plain words:
-   > Nothing is charged today. After the job we charge this card for the
-   > size you actually have. If it is bigger or smaller than a 1/2 truck, the
-   > crew shows you the new price before loading, and you can say no.
-   > Free to cancel or move until 24 hours before.
-   (Wording is a starting point for the founder; the 24 hours and the late
-   fee are guesses, red.)
+   the terms, and to this card being charged or refunded the difference if
+   the crew finds a different size." Above the box, the rule in plain words:
+   > You pay $374.00 now. If your load is bigger or smaller than a 1/2 truck,
+   > the crew shows you the new price before loading: we charge or refund the
+   > difference on this card, and you can say no. Free to cancel or move
+   > until 24 hours before, with a full refund.
+   (Wording is a starting point for the founder; the 24 hours, the late fee
+   and the refusal fee are guesses, red.)
 
 **A bar fixed to the bottom of the screen** from the first tap: the total
 (load plus travel, travel as its own line once known), call and WhatsApp
@@ -109,7 +115,8 @@ first, and desktop is designed on purpose, not a stretched phone:
 - Both are checked: a real 360px phone and a 1280px desktop.
 
 **After booking:** `book/thanks.html` as now, showing the size, the total, the
-day and window, "charged after the job", and what happens next. The old
+day and window, "paid today; any difference settled after the job", and what
+happens next. The old
 `book/checkout.html` becomes a redirect to `/book/quote.html`.
 
 **Bookings closed (the gates, as today).** The page works end to end, and the
@@ -120,33 +127,42 @@ contact (no card), as `reserveSpot()` does now.
 
 - **At booking** the server recomputes the price from `PRICES` (one time
   column) plus travel, refuses a stale quote, a full window, an address outside
-  the area, and creates a Stripe customer and a **SetupIntent**
-  (`usage: off_session`). No charge. The quoted size, price, travel, date,
+  the area, and creates a Stripe customer and a **PaymentIntent for the quoted
+  total** with `setup_future_usage: 'off_session'` (the card is saved for the
+  difference). The page confirms it. The quoted size, price, travel, date,
   window and the consent (time, wording version) ride in metadata.
-- **The webhook** (`setup_intent.succeeded`) writes the customer and the visit
-  (date, window, quoted size and price), sends the confirmation email, the
-  Discord ping and the owner email. Fail soft on the database, as today.
+- **The webhook** (`payment_intent.succeeded` whose own `metadata.kind` is
+  `booking`) writes the customer and the visit (date, window, quoted size and
+  price, `payment_status: 'paid'`, the saved payment method), sends the
+  confirmation email (with what was paid), the Discord ping and the owner
+  email. Fail soft on the database, as today.
 - **After the job** the dashboard's Finish step asks for the final size,
-  defaulting to the booked one. A bigger size needs the "customer agreed to
-  the new price" box ticked. The server prices the final size plus the same
-  travel from `PRICES` (never from the page), charges the saved card off
-  session, and the webhook marks the visit paid and emails the receipt.
-- **A declined card or one needing the customer**: the visit is marked
-  "payment needed", Discord and the owner email say so, and the customer gets
-  a Stripe hosted invoice link to pay.
-- **The customer says no on site**: the job is closed with no charge (a
-  guess, red; a trip fee can be set later).
-- **Late cancel** (inside the window set in the config): a dashboard action
-  charges the late fee to the saved card. Earlier cancels cost nothing.
-- **Founding offer**: still off; when on, it comes off the final charge.
+  defaulting to the booked one. The server prices the final size plus the
+  same travel from `PRICES` (never from the page) and settles the difference
+  against what was paid: **bigger** needs the "customer agreed to the new
+  price" box and charges the difference to the saved card off session;
+  **smaller** refunds the difference (a partial refund of the booking
+  payment); **the same** settles nothing. The receipt shows paid, adjusted
+  and final.
+- **A declined difference charge**: the visit is marked "payment needed",
+  Discord and the owner email say so, and the customer gets a Stripe hosted
+  invoice link for the difference.
+- **The customer says no on site**: the booking payment is refunded, less the
+  refusal fee (a guess, red; $0 today, so a full refund).
+- **Cancels**: before the cancel window (24 hours, a guess) a full refund;
+  inside it, the late fee is kept and the rest refunded. Both are dashboard
+  actions.
+- **Founding offer**: still off; when on, it comes off the booking payment.
 
 ## The dashboard (`/jkr/`)
 
 The job card shows the booked size, the quoted total, the day and the
 window. New actions: **On my way** (opens a text to the customer on the
-owner's phone, filled in: "On our way, about 20 minutes"), **Finish and
-charge** (final size, agreement box, after photos), **Late cancel fee**, and
-**Customer said no** (closes with no charge). No SMS provider in this round.
+owner's phone, filled in: "On our way, about 20 minutes"), **Finish**
+(final size, the difference to charge or refund, agreement box when bigger,
+after photos), **Cancel and refund** (full refund before the cancel window,
+less the late fee inside it), and **Customer said no** (refund less the
+refusal fee). No SMS provider in this round.
 
 ## Contact buttons
 
@@ -186,7 +202,8 @@ round 5 did for its own changes.
 ## Testing and the scorecard
 
 `npm test` keeps passing, with the booking test rewritten for the
-SetupIntent and the after job charge against the fake Stripe. Round 6 checks,
+PaymentIntent at booking and the after job difference (charge or refund)
+against the fake Stripe. Round 6 checks,
 with points adding to 100, include at least:
 
 - No truck: no page or script references the load builder.
@@ -196,11 +213,12 @@ with points adding to 100, include at least:
   view after scrolling, no bottom bar, no sideways scroll.
 - A scripted booking in headless Chrome against a fake API counts the taps:
   10 or fewer by card with autofill, on the phone and on desktop.
-- Server: SetupIntent not PaymentIntent at booking; stale quote, full window
-  and outside the area refused; the final charge priced on the server from
-  the final size; a bigger size refused without agreement.
-- Webhook writes the visit with date and window; a failed final charge marks
-  "payment needed" and alerts.
+- Server: a PaymentIntent for the quoted total with the card saved at
+  booking; stale quote, full window and outside the area refused before any
+  Stripe object; the difference priced on the server from the final size; a
+  bigger size refused without agreement; a smaller size refunded.
+- Webhook writes the visit (paid) with date and window; a failed difference
+  charge marks "payment needed" and alerts.
 - Dashboard actions behind the admin token.
 - Guesses red and listed; generated pages current; rounds 1 to 5 still 100.
 
@@ -209,8 +227,14 @@ with points adding to 100, include at least:
 - **Stripe consent for later charges**: the checkbox, the wording and a
   stored record are what Stripe asks for. The founder should read the wording
   before launch.
-- **Unpaid jobs**: a card can fail after the work is done. The invoice link and
-  the alert are the fallback; the founder accepts this risk in exchange for not
-  charging before the job.
+- **Unpaid differences**: a card can fail when the difference is charged
+  after the job. The invoice link and the alert are the fallback; the booking
+  payment is already in hand.
+- **Refund costs**: Stripe keeps its fee on the refunded part of a smaller
+  load or a cancel (told to the founder in chat).
+- **Upfront payment and complaints**: the research found LoadUp's one star
+  reviews come from upfront charges with unclear refunds; the written rule,
+  the full refund before 24 hours and the refund of any smaller difference
+  are the answer.
 - **Big change, many files**: built in small tasks on `feat/order-flow`, each
   scored, merged only at 100.
