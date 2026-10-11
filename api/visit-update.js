@@ -208,7 +208,7 @@ const STATUS_REFUSAL = {
   canceled: 'This booking was canceled.',
   declined: 'The customer said no on this job.',
   skipped: 'This job was skipped.',
-  in_progress: 'This job is under way. Finish it instead.',
+  in_progress: 'This job is under way. Use Customer said no, or Finish.',   // cancel-refund only: said no accepts it
 };
 const PAYMENT_REFUSAL = {
   payment_needed: 'An invoice is already out for this visit. Wait for it to be paid, or void it in Stripe first.',
@@ -347,12 +347,18 @@ async function finishVisit(body, visit, notePatch, now) {
 /**
  * Cancel and refund (kind 'cancel'): a full refund before the free cancel
  * window, else what was paid less the late fee. Customer said no (kind
- * 'declined'): what was paid less the refusal fee. Both only for a booking
- * still ahead (scheduled or en route), and only what is still unrefunded (R18).
+ * 'declined'): what was paid less the refusal fee. Cancel only for a booking
+ * still ahead (scheduled or en route); Customer said no also once the job is
+ * under way (a before photo sets in_progress), unless Finish has already
+ * started settling a size. Only what is still unrefunded is refunded (R18).
  */
 async function refundBooking(kind, body, visit, notePatch, now) {
-  if (!['scheduled', 'en_route'].includes(visit.status)) return [409, { error: STATUS_REFUSAL[visit.status] || 'This booking cannot be refunded here.', status: visit.status }];
+  const open = kind === 'declined' ? ['scheduled', 'en_route', 'in_progress'] : ['scheduled', 'en_route'];
+  if (!open.includes(visit.status)) return [409, { error: STATUS_REFUSAL[visit.status] || 'This booking cannot be refunded here.', status: visit.status }];
   if (visit.payment_status !== 'paid') return refusePayment(visit);
+  // Finish writes the final size before money moves: once it has, only Finish at that size may settle.
+  const locked = intOrNull(visit.final_load_idx);
+  if (locked !== null) return [409, { error: `This job is being settled at ${sizeLabel(locked)}. Finish it at that size, or check Stripe first.`, finalLoad: locked }];
   const late = kind === 'cancel' && ORDER.isLateCancel(String(visit.scheduled_date || '').slice(0, 10), visit.window_key, Date.parse(now));
   const feeCents = kind === 'cancel' ? (late ? ORDER.POLICY.lateFeeCents : 0) : ORDER.POLICY.refusalFeeCents;
 

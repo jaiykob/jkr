@@ -17,7 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import site from '../api/_lib/site.js';
 import {
-  PRICES, COLUMNS, COLUMN_LABELS, BILLING, ONE_TIME_COL, LOAD_OPTIONS,
+  PRICES, COLUMNS, COLUMN_LABELS, ONE_TIME_COL, LOAD_OPTIONS,
   ZIP_ZONES, ALL_ZIPS, ZONE_LIST, PLACES_BY_ZONE, GUESS, BASE, ITEMS, STARTING_AT, fmt, SCHEDULE, POLICY,
 } from '../pricing.config.mjs';
 
@@ -86,14 +86,13 @@ const jsonld = {
 const quoteJsonld = `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 2)}\n</script>`;
 
 /* ── homepage ─────────────────────────────────────────────────────────── */
-const recurringCol = COLUMNS.findIndex((c) => BILLING[c].stripe);
+// One time prices only: monthly pickups left the online flow (R26), so the homepage prints no monthly price.
 const homePrices = LOAD_OPTIONS.map((o, r) => [
   `      <a class="tier" href="book/quote.html?load=${r}&amp;freq=${ONE_TIME_COL}" style="--fill:${o.fits}%">`,
   `        <span class="tier-truck" aria-hidden="true"><span class="tier-load"></span></span>`,
   `        <span class="tier-name">${o.label}</span>`,
   `        <span class="tier-note">${o.note}</span>`,
   `        <span class="tier-price${GUESS.prices ? ' guess' : ''}">${fmt(PRICES[r][ONE_TIME_COL])}</span>`,
-  ...(recurringCol >= 0 ? [`        <span class="tier-sub">${guessed(fmt(PRICES[r][recurringCol]), GUESS.prices)} ${COLUMN_LABELS[COLUMNS[recurringCol]].toLowerCase()}</span>`] : []),
   '      </a>',
 ].join('\n')).join('\n');
 

@@ -300,6 +300,34 @@ for (const status of ['completed', 'canceled']) {
   const x = fakeVisit({ status });
   ok((await act({ action: 'declined', visitId: x.id })).status === 409 && moneyCalls().length === 0, `said no on a ${status} visit refunded`);
 }
+// said no once the job is under way (a before photo sets in_progress): one refund, less the fee
+const v5 = fakeVisit({ status: 'in_progress' });
+r = await act({ action: 'declined', visitId: v5.id, dryRun: true });
+ok(r.status === 200 && r.json.refundCents === PAID - ORDER.POLICY.refusalFeeCents && moneyCalls().length === 0, `said no during a job, dry run ${JSON.stringify(r.json)}`);
+r = await act({ action: 'declined', visitId: v5.id });
+ok(r.status === 200 && refundCalls().length === 1 && moneyCalls().length === 1 && refundCalls()[0].amount === PAID - ORDER.POLICY.refusalFeeCents && refundCalls()[0].payment_intent === v5.stripe_payment_intent_id && refundCalls()[0].key === `visit:${v5.id}:declined-refund`, `said no during a job: refunds ${JSON.stringify(refundCalls())}`);
+ok(rows.get(v5.id).status === 'declined' && rows.get(v5.id).refunded_cents === PAID - ORDER.POLICY.refusalFeeCents, `said no during a job, visit ${JSON.stringify(rows.get(v5.id))}`);
+ok((await act({ action: 'declined', visitId: v5.id })).status === 409 && moneyCalls().length === 0, 'said no during a job refunded twice');
+// with a refusal fee set, the fee is kept on an in_progress visit too
+ORDER.POLICY.refusalFeeCents = 2500;
+const v6 = fakeVisit({ status: 'in_progress' });
+r = await act({ action: 'declined', visitId: v6.id });
+ORDER.POLICY.refusalFeeCents = realFee;
+ok(r.status === 200 && refundCalls().length === 1 && refundCalls()[0].amount === PAID - 2500 && r.json.keptCents === 2500 && rows.get(v6.id).status === 'declined' && rows.get(v6.id).final_cents === 2500, `said no during a job did not keep the fee ${JSON.stringify(r.json)}`);
+// the refund fails: the job stays under way, nothing recorded
+reinstall({ refundFails: true });
+const v7 = fakeVisit({ status: 'in_progress' });
+ok((await act({ action: 'declined', visitId: v7.id })).status === 502 && rows.get(v7.id).status === 'in_progress' && rows.get(v7.id).payment_status === 'paid' && rows.get(v7.id).refunded_cents === 0, `a failed said no refund still closed the job ${JSON.stringify(rows.get(v7.id))}`);
+reinstall();
+// cancel and refund still refuses a job under way, and points at the two actions that fit
+r = await act({ action: 'cancel-refund', visitId: fakeVisit({ status: 'in_progress' }).id });
+ok(r.status === 409 && moneyCalls().length === 0 && r.json.error === 'This job is under way. Use Customer said no, or Finish.', `cancel during a job: ${JSON.stringify(r.json)}`);
+// once Finish has started settling a size (money may have moved), neither refund path may run
+for (const [action, status] of [['declined', 'in_progress'], ['declined', 'scheduled'], ['cancel-refund', 'scheduled']]) {
+  const x = fakeVisit({ status, final_load_idx: 3 });
+  r = await act({ action, visitId: x.id });
+  ok(r.status === 409 && r.json.finalLoad === 3 && moneyCalls().length === 0 && rows.get(x.id).status === status, `${action} ran on a ${status} job Finish had started settling ${JSON.stringify(r.json)}`);
+}
 
 console.log('== en route ==');
 const er = fakeVisit();

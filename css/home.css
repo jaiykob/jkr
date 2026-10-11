@@ -152,7 +152,6 @@
 .tier-name { font: 800 1.3rem/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; }
 .tier-note { font-size: 1rem; color: var(--txm); line-height: 1.4; flex: 1; }
 .tier-price { margin-top: 10px; font: 800 2rem/1 'Bricolage Grotesque', sans-serif; letter-spacing: -.03em; }
-.tier-sub { font-size: 1rem; color: var(--txm); }
 .tiers-more { margin-top: 24px; text-align: center; font-size: 1rem; color: var(--txm); }
 .tiers-more a { color: var(--rg); font-weight: 700; }
 

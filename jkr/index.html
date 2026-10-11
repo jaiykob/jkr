@@ -485,7 +485,7 @@
     let text, label;
     if(a.kind === 'cancel-refund'){
       text = !d ? 'Checking the refund…'
-        : d.late ? `Cancel this booking? It is inside the free cancel window, so we keep the ${usd(d.keptCents)} late fee${d.refundCents?' and refund '+usd(d.refundCents):' and there is nothing to refund'}.`
+        : d.late ? `Cancel this booking? It is less than ${ORDER.POLICY.cancelHours} hours before the arrival window, so we keep the ${usd(d.keptCents)} late fee${d.refundCents?' and refund '+usd(d.refundCents):' and there is nothing to refund'}.`
         : `Cancel this booking and refund ${usd(d.refundCents)} in full?`;
       label = a.busy ? 'Working…' : d && d.refundCents ? 'Yes, cancel and refund ' + usd(d.refundCents) : 'Yes, cancel';
     } else {
