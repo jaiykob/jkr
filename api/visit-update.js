@@ -10,15 +10,33 @@
  * header, constant-time compare). Writes go through the service_role key in
  * api/_lib/db.js — never the browser.
  *
- * POST body: { action: 'start'|'complete'|'skip'|'cancel'|'finish'|'declined'|'late-fee'|'en-route', visitId, notes? }
- *   finish    { finalLoad, agreed, dryRun }: price the final size on the server, charge the
- *             saved card once, then run `complete`. A decline sends a hosted invoice.
- *   declined  the customer said no on site: no charge, no Stripe call.
- *   late-fee  the late cancel fee, only when ORDER.isLateCancel.
- *   en-route  stamps en_route_at.
+ * PAY AT BOOKING (founder, 2026-10-10): the customer paid the quoted total when
+ * booking (the booking PaymentIntent, visit.stripe_payment_intent_id) and the
+ * card was saved. After the job the difference is settled against what was
+ * paid (visit.paid_cents less visit.refunded_cents):
  *
- * Required env vars: ADMIN_DASHBOARD_TOKEN, SUPABASE_SERVICE_ROLE_KEY
- * (+ RESEND_API_KEY for the serviceComplete email; dry-runs without it).
+ * POST body: { action, visitId, notes? }, action one of
+ *   start | complete | skip | cancel | en-route      (skip and cancel refuse a paid booking)
+ *   finish         { finalLoad, agreed, dryRun }: price the final size on the server
+ *                  (the booked size at its quoted cents, another size at today's
+ *                  price, travel as stored, founding off as at booking) and settle:
+ *                    bigger   charge the difference to the saved card off session
+ *                             (needs agreed === true); a decline sends a hosted invoice
+ *                    smaller  refund the difference on the booking payment
+ *                    same     no Stripe call
+ *                  then run `complete` (a declined difference still completes, R13).
+ *   cancel-refund  { dryRun }: cancel a scheduled booking with a full refund, or
+ *                  less the late fee inside ORDER.POLICY.cancelHours.
+ *   declined       { dryRun }: the customer said no on site: refund less the refusal fee.
+ *
+ * Money safety (Review Focus 1, ruling R18): every Stripe call has an idempotency
+ * key per visit (and size); the final size is written BEFORE money moves, so a
+ * retry after a lost write can only repeat that size (same keys, no second
+ * charge); a finished, canceled or declined visit refuses another settlement;
+ * refunds never exceed what is still unrefunded.
+ *
+ * Required env vars: ADMIN_DASHBOARD_TOKEN, SUPABASE_SERVICE_ROLE_KEY,
+ * STRIPE_SECRET_KEY (+ RESEND_API_KEY for the emails; dry-runs without it).
  */
 
 const crypto = require('crypto');
@@ -31,6 +49,7 @@ const founding = require('./_lib/founding');
 const { alertPaymentNeeded, money } = require('./_lib/charge-alerts');
 
 const INVOICE_DAYS = 3;
+const MIN_CHARGE_CENTS = 50;   // Stripe's smallest card charge in usd: a smaller difference is waived
 
 function safeEqual(a, b) {
   const ha = crypto.createHash('sha256').update(Buffer.from(String(a))).digest();
@@ -88,58 +107,68 @@ async function completeVisit(visitId, notePatch, now) {
   return [200, { ok: !!v, visit: v, nextDate, emailed: !!cust.email, afterPhoto: !!photoUrl }];
 }
 
-/* ───────────────  AFTER THE JOB: the charge  ─────────────── */
+/* ───────────────  AFTER THE JOB: settle the difference  ─────────────── */
 
 const isDeclined = (e) => e && (e.type === 'StripeCardError' || e.code === 'card_declined' || e.code === 'authentication_required');
 const intOrNull = (n) => (n === null || n === undefined || n === '' || !Number.isFinite(Number(n)) ? null : Math.round(Number(n)));
+const sizeLabel = (i) => (ORDER.SIZES[i] ? ORDER.SIZES[i].label : 'another size');
+const windowLabel = (key) => (ORDER.SCHEDULE.windows.find((w) => w.key === key) || {}).label;
+
+function stripeClient() {
+  const Stripe = require('stripe');
+  return new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
+}
+
+function dayLabel(date) {
+  const d = date ? new Date(`${String(date).slice(0, 10)}T12:00:00Z`) : null;
+  return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }) : null;
+}
+
+/** The booking PaymentIntent (founding stamp, and what was paid if the visit lost it), or null. Throws if Stripe cannot be read. */
+async function bookingPayment(stripe, visit) {
+  return visit.stripe_payment_intent_id ? stripe.paymentIntents.retrieve(visit.stripe_payment_intent_id) : null;
+}
+
+/** What was paid at booking (plus any difference since) and refunded since, in cents. */
+function paidOf(visit, bookingPi) {
+  let paid = intOrNull(visit.paid_cents);
+  if (paid === null && bookingPi) paid = intOrNull(bookingPi.amount_received != null ? bookingPi.amount_received : bookingPi.amount);
+  const refunded = intOrNull(visit.refunded_cents) || 0;
+  return { paid, refunded, net: paid === null ? null : paid - refunded };
+}
 
 /**
- * What the final charge is, in integer cents. The booked size is charged the
- * cents quoted at booking; any other size is today's price; travel is always
- * the travel stored at booking. A founding customer (stamped on the SetupIntent
- * at booking) gets the founding percent off the whole amount.
+ * The final total and the difference, in integer cents. The booked size is
+ * priced at the cents quoted at booking; any other size at today's price;
+ * travel is always the travel stored at booking. A founding booking (stamped
+ * on the booking PaymentIntent) takes the founding percent off the final total
+ * (R19). difference = final total less what is paid and not refunded:
+ * above 0 is charged, below 0 refunded.
  */
 async function priceFinal(stripe, visit, finalLoad) {
-  const size = ORDER.SIZES[finalLoad];
   const bookedIdx = intOrNull(visit.quoted_load_idx);
   const quotedLoad = intOrNull(visit.quoted_load_cents);
-  const loadCents = finalLoad === bookedIdx && quotedLoad !== null ? quotedLoad : size.cents;
+  const loadCents = finalLoad === bookedIdx && quotedLoad !== null ? quotedLoad : ORDER.SIZES[finalLoad].cents;
   const travelCents = intOrNull(visit.travel_cents) || 0;
   const beforeDiscount = loadCents + travelCents;
-  const quotedTotal = intOrNull(visit.quoted_cents) !== null ? intOrNull(visit.quoted_cents) : (quotedLoad || 0) + travelCents;
-  let discountCents = 0;
-  if (visit.stripe_setup_intent_id) {
-    const si = await stripe.setupIntents.retrieve(visit.stripe_setup_intent_id);
-    if (si && si.metadata && si.metadata.founding === 'true') discountCents = Math.round(beforeDiscount * founding.FOUNDING.percentOff / 100);
-  }
-  return { loadCents, travelCents, beforeDiscount, quotedTotal, discountCents, cents: beforeDiscount - discountCents };
-}
-
-/** Charge the saved card off session. Throws Stripe's error; a payment that needs the customer counts as a decline. */
-async function chargeSavedCard(stripe, visit, { amount, kind, finalLoad, key, description }) {
-  const cust = visit.customers || {};
-  const pi = await stripe.paymentIntents.create({
-    amount, currency: 'usd', customer: cust.stripe_customer_id, payment_method: visit.stripe_payment_method_id,
-    off_session: true, confirm: true, automatic_payment_methods: { enabled: true, allow_redirects: 'never' }, description,
-    metadata: { kind, visit_id: String(visit.id), ...(finalLoad !== undefined ? { final_load_idx: String(finalLoad) } : {}) },
-  }, { idempotencyKey: key });
-  if (!pi || pi.status !== 'succeeded') {
-    const e = new Error(`Payment is ${pi && pi.status}`);
-    e.type = 'StripeCardError'; e.code = 'authentication_required';
-    throw e;
-  }
-  return pi;
+  const bookingPi = await bookingPayment(stripe, visit);
+  const isFounding = !!(bookingPi && bookingPi.metadata && bookingPi.metadata.founding === 'true');
+  const discountCents = isFounding ? Math.round(beforeDiscount * founding.FOUNDING.percentOff / 100) : 0;
+  const cents = beforeDiscount - discountCents;
+  const { paid, refunded, net } = paidOf(visit, bookingPi);
+  return { loadCents, travelCents, discountCents, cents, paid, refunded, net, differenceCents: net === null ? null : cents - net };
 }
 
 /**
- * The card was declined: send a hosted invoice for the same amount, remember
- * its link, and alert the owner ONCE. The webhook can see the same decline,
- * so both dedupe on the visit's payment_status.
+ * The difference could not be charged (declined, or a payment Stripe could not
+ * finish): send a hosted invoice for it, remember its link, and alert the owner
+ * ONCE. The webhook can see the same decline, so both dedupe on payment_status.
  */
-async function invoiceInstead(stripe, visit, { amount, kind, finalLoad, keyBase, patch, reason }) {
+async function invoiceInstead(stripe, visit, { amount, finalLoad, keyBase, patch, reason }) {
   const cust = visit.customers || {};
-  const metadata = { visit_id: String(visit.id), kind, ...(finalLoad !== undefined ? { final_load_idx: String(finalLoad) } : {}) };
-  const desc = kind === 'late_fee' ? 'Late cancel fee' : 'Junk removal';
+  const kind = 'difference';
+  const metadata = { visit_id: String(visit.id), kind, final_load_idx: String(finalLoad) };
+  const desc = 'Junk removal: the difference for a bigger load';
   const inv = await stripe.invoices.create({
     customer: cust.stripe_customer_id, collection_method: 'send_invoice', days_until_due: INVOICE_DAYS,
     pending_invoice_items_behavior: 'exclude', description: desc, metadata,
@@ -173,129 +202,210 @@ async function invoiceInstead(stripe, visit, { amount, kind, finalLoad, keyBase,
   return invoiceUrl;
 }
 
-const NOT_CHARGEABLE = {
-  paid: 'This visit is already paid.',
-  late_fee_paid: 'The late fee on this visit is already paid.',
-  no_charge: 'This visit was marked no charge.',
-  payment_needed: 'An invoice is already out for this visit. Wait for it to be paid, or void it in Stripe first.',
+/** Why a visit cannot be settled or refunded, by its status or payment status. */
+const STATUS_REFUSAL = {
+  completed: 'This job is already finished.',
+  canceled: 'This booking was canceled.',
+  declined: 'The customer said no on this job.',
+  skipped: 'This job was skipped.',
+  in_progress: 'This job is under way. Finish it instead.',
 };
-
-function stripeClient() {
-  const Stripe = require('stripe');
-  return new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-06-20' });
-}
-
-function dayLabel(date) {
-  const d = date ? new Date(`${String(date).slice(0, 10)}T12:00:00Z`) : null;
-  return d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }) : null;
-}
+const PAYMENT_REFUSAL = {
+  payment_needed: 'An invoice is already out for this visit. Wait for it to be paid, or void it in Stripe first.',
+  refunded: 'This booking was already refunded.',
+  late_fee_kept: 'This booking was already canceled and refunded.',
+};
+const refusePayment = (visit) => [409, {
+  error: PAYMENT_REFUSAL[visit.payment_status] || 'This visit has no booking payment to settle against.',
+  paymentStatus: visit.payment_status || null,
+}];
 
 async function finishVisit(body, visit, notePatch, now) {
-  if (NOT_CHARGEABLE[visit.payment_status]) return [409, { error: NOT_CHARGEABLE[visit.payment_status], paymentStatus: visit.payment_status }];
+  if (['completed', 'canceled', 'declined', 'skipped'].includes(visit.status)) return [409, { error: STATUS_REFUSAL[visit.status], status: visit.status }];
+  if (visit.payment_status !== 'paid') return refusePayment(visit);
   const finalLoad = body.finalLoad === undefined || body.finalLoad === null || body.finalLoad === ''
     ? intOrNull(visit.quoted_load_idx) : Number(body.finalLoad);
   if (!Number.isInteger(finalLoad) || !ORDER.SIZES[finalLoad]) return [400, { error: 'finalLoad is not a size' }];
+  // A settlement already started at one size (money may have moved) can only be retried at that size.
+  const locked = intOrNull(visit.final_load_idx);
+  if (locked !== null && locked !== finalLoad) {
+    return [409, { error: `This job is being settled at ${sizeLabel(locked)}. Finish it at that size, or check Stripe first.`, finalLoad: locked }];
+  }
   if (!process.env.STRIPE_SECRET_KEY) return [500, { error: 'STRIPE_SECRET_KEY not configured' }];
   const stripe = stripeClient();
 
   let p;
   try { p = await priceFinal(stripe, visit, finalLoad); }
-  catch (e) { console.error('[visit-update] pricing failed:', e.message); return [502, { error: 'Could not read the booking from Stripe. Nothing was charged.' }]; }
-  const answer = { cents: p.cents, loadCents: p.loadCents, travelCents: p.travelCents, discountCents: p.discountCents, charged: false, paymentStatus: visit.payment_status };
+  catch (e) { console.error('[visit-update] pricing failed:', e.message); return [502, { error: 'Could not read the booking payment from Stripe. Nothing was charged or refunded.' }]; }
+  if (p.net === null) return [400, { error: 'We do not know what was paid at booking for this visit. Check Stripe.' }];
+  const diff = p.differenceCents;
+  const answer = {
+    cents: p.cents, loadCents: p.loadCents, travelCents: p.travelCents, discountCents: p.discountCents,
+    paidCents: p.net, differenceCents: diff, agreementRequired: diff > 0,
+    charged: false, refunded: false, paymentStatus: visit.payment_status,
+  };
   if (body.dryRun) return [200, { ...answer, dryRun: true }];
 
-  if (p.beforeDiscount > p.quotedTotal && body.agreed !== true) {
-    return [400, { error: 'The new price is higher than the booked price. The customer must agree first.', code: 'agreement_required', ...answer }];
+  if (diff > 0 && body.agreed !== true) {
+    return [400, { error: 'The new price is higher than what was paid. The customer must agree first.', code: 'agreement_required', ...answer }];
   }
-  if (!visit.customers || !visit.customers.stripe_customer_id || !visit.stripe_payment_method_id) return [400, { error: 'This visit has no saved card.' }];
-  if (p.cents < 50) return [400, { error: 'The amount is too small to charge.' }];
-
-  const key = `visit:${visit.id}:final:${finalLoad}`;
-  const patch = { final_load_idx: finalLoad, final_cents: p.cents };
-  let pi;
-  try {
-    pi = await chargeSavedCard(stripe, visit, { amount: p.cents, kind: 'final_charge', finalLoad, key, description: 'Junk removal' });
-  } catch (e) {
-    if (!isDeclined(e)) {
-      console.error('[visit-update] charge failed:', e.message);
-      return [e.type === 'StripeIdempotencyError' ? 409 : 502, { error: 'The charge did not go through. Check Stripe before trying again.' }];
-    }
-    try {
-      const invoiceUrl = await invoiceInstead(stripe, visit, { amount: p.cents, kind: 'final_charge', finalLoad, keyBase: key, patch, reason: e.message });
-      // The job is done whether or not the card worked: complete it (status done, the all done email).
-      const out = { ...answer, paymentStatus: 'payment_needed', invoiceUrl, declined: e.code || 'declined' };
-      try {
-        const [code, done] = await completeVisit(visit.id, notePatch, now);
-        out.completed = code === 200; out.visit = done.visit; out.nextDate = done.nextDate;
-      } catch (e3) { console.error('[visit-update] declined, and complete failed:', e3.message); out.completed = false; }
-      return [200, out];
-    } catch (e2) {
-      console.error('[visit-update] invoice failed:', e2.message);
-      return [502, { error: 'The card was declined and the invoice could not be sent. Send one from Stripe.' }];
-    }
-  }
-
-  // Money moved. From here nothing may fail the answer.
-  const row = await db.updateVisit(visit.id, { ...patch, payment_status: 'paid', stripe_payment_intent_id: pi.id });
-  if (!row) console.error('[visit-update] CHARGED but could not mark visit paid:', visit.id, pi.id);
   const cust = visit.customers || {};
+  const charge = diff >= MIN_CHARGE_CENTS;
+  const refund = diff < 0;
+  if (charge && (!cust.stripe_customer_id || !visit.stripe_payment_method_id)) return [400, { error: 'This visit has no saved card. Charge the difference from Stripe.' }];
+  if (refund && !visit.stripe_payment_intent_id) return [400, { error: 'This visit has no booking payment to refund. Refund it from Stripe.' }];
+
+  const settled = { final_load_idx: finalLoad, final_cents: p.cents };
+  // Write the final size BEFORE any money moves: if a later write is lost, a
+  // retry can only repeat this size, and its idempotency keys stop a second charge.
+  if ((charge || refund) && locked === null) {
+    const pre = await db.updateVisit(visit.id, settled);
+    if (!pre) return [502, { error: 'Could not save the final size. Nothing was charged or refunded. Try again.' }];
+  }
+
+  let pi = null, re = null, declined = null;
+  if (charge) {
+    const key = `visit:${visit.id}:diff:${finalLoad}`;
+    try {
+      pi = await stripe.paymentIntents.create({
+        amount: diff, currency: 'usd', customer: cust.stripe_customer_id, payment_method: visit.stripe_payment_method_id,
+        off_session: true, confirm: true, automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
+        description: 'Junk removal: the difference for a bigger load',
+        metadata: { kind: 'difference', visit_id: String(visit.id), final_load_idx: String(finalLoad) },
+      }, { idempotencyKey: key });
+    } catch (e) {
+      if (!isDeclined(e)) {
+        console.error('[visit-update] difference charge failed:', e.message);
+        return [e.type === 'StripeIdempotencyError' ? 409 : 502, { error: 'The charge did not go through. Check Stripe before trying again.' }];
+      }
+      declined = { code: e.code || 'declined', message: e.message };
+    }
+    if (pi && pi.status !== 'succeeded') {
+      // R18: anything still able to take money is stopped before an invoice asks for it again.
+      if (pi.status !== 'requires_payment_method') {
+        try { await stripe.paymentIntents.cancel(pi.id); }
+        catch (e) {
+          console.error('[visit-update] could not cancel the difference payment:', pi.id, pi.status, e.message);
+          return [502, { error: `The charge for the difference is ${pi.status} in Stripe and could not be stopped. Check Stripe before trying again.` }];
+        }
+      }
+      declined = { code: pi.status, message: `The payment for the difference was ${pi.status}.` };
+    }
+    if (declined) {
+      try {
+        const invoiceUrl = await invoiceInstead(stripe, visit, { amount: diff, finalLoad, keyBase: key, patch: settled, reason: declined.message });
+        // The job is done whether or not the card worked: complete it (status done, the all done email).
+        const out = { ...answer, paymentStatus: 'payment_needed', invoiceUrl, declined: declined.code };
+        try {
+          const [code, done] = await completeVisit(visit.id, notePatch, now);
+          out.completed = code === 200; out.visit = done.visit; out.nextDate = done.nextDate;
+        } catch (e3) { console.error('[visit-update] declined, and complete failed:', e3.message); out.completed = false; }
+        return [200, out];
+      } catch (e2) {
+        console.error('[visit-update] invoice failed:', e2.message);
+        return [502, { error: 'The card was declined and the invoice could not be sent. Send one from Stripe.' }];
+      }
+    }
+  } else if (refund) {
+    try {
+      re = await stripe.refunds.create({
+        payment_intent: visit.stripe_payment_intent_id, amount: -diff,
+        metadata: { kind: 'difference_refund', visit_id: String(visit.id), final_load_idx: String(finalLoad) },
+      }, { idempotencyKey: `visit:${visit.id}:refund:${finalLoad}` });
+    } catch (e) {
+      console.error('[visit-update] difference refund failed:', e.message);
+      return [e.type === 'StripeIdempotencyError' ? 409 : 502, { error: 'The refund did not go through. Check Stripe before trying again.' }];
+    }
+  }
+
+  // Settled. From here nothing may fail the answer.
+  const patch = { ...settled, payment_status: 'paid' };
+  if (pi) patch.paid_cents = p.paid + diff;
+  if (re) patch.refunded_cents = p.refunded + (-diff);
+  const row = await db.updateVisit(visit.id, patch);
+  if (!row) console.error('[visit-update] SETTLED but could not record it on visit', visit.id, pi ? pi.id : re ? re.id : 'no money moved');
   if (cust.email) {
     try {
-      const size = ORDER.SIZES[finalLoad];
       const msg = tpl.receipt({
-        name: cust.first_name, amount: money(p.cents), load: size.label,
-        travel: p.travelCents ? money(p.travelCents) : null, discount: p.discountCents ? `-${money(p.discountCents)}` : null,
-        dayLabel: dayLabel(visit.scheduled_date),
+        name: cust.first_name, paid: money(p.net), adjust: pi ? 'charged' : re ? 'refunded' : 'none',
+        adjustment: pi || re ? money(Math.abs(diff)) : null, final: money(pi || re ? p.cents : p.net),
+        load: sizeLabel(finalLoad), travel: p.travelCents ? money(p.travelCents) : null,
+        discount: p.discountCents ? `${money(p.discountCents)} off` : null, dayLabel: dayLabel(visit.scheduled_date),
       });
-      await sendEmail({ to: cust.email, kind: 'transactional', idempotencyKey: `${pi.id}:receipt`, ...msg });
+      // The webhook's receipt for the same difference uses this key too, so the customer gets one.
+      await sendEmail({ to: cust.email, kind: 'transactional', idempotencyKey: `visit:${visit.id}:receipt:${finalLoad}`, ...msg });
     } catch (e) { console.error('[visit-update] receipt failed:', e.message); }
   }
-  const out = { ...answer, charged: true, paymentStatus: 'paid', paymentIntentId: pi.id };
+  const out = { ...answer, charged: !!pi, refunded: !!re, paymentStatus: 'paid', ...(pi ? { paymentIntentId: pi.id } : {}), ...(re ? { refundId: re.id } : {}) };
   try {
     const [code, done] = await completeVisit(visit.id, notePatch, now);
     out.completed = code === 200; out.visit = done.visit; out.nextDate = done.nextDate;
-  } catch (e) { console.error('[visit-update] charged, but complete failed:', e.message); out.completed = false; }
+  } catch (e) { console.error('[visit-update] settled, but complete failed:', e.message); out.completed = false; }
   return [200, out];
 }
 
-async function lateFeeVisit(visit, now) {
-  if (NOT_CHARGEABLE[visit.payment_status]) return [409, { error: NOT_CHARGEABLE[visit.payment_status], paymentStatus: visit.payment_status }];
-  if (!ORDER.isLateCancel(String(visit.scheduled_date || '').slice(0, 10), visit.window_key, Date.parse(now))) {
-    return [400, { error: 'This booking is still inside the free cancel window.' }];
+/**
+ * Cancel and refund (kind 'cancel'): a full refund before the free cancel
+ * window, else what was paid less the late fee. Customer said no (kind
+ * 'declined'): what was paid less the refusal fee. Both only for a booking
+ * still ahead (scheduled or en route), and only what is still unrefunded (R18).
+ */
+async function refundBooking(kind, body, visit, notePatch, now) {
+  if (!['scheduled', 'en_route'].includes(visit.status)) return [409, { error: STATUS_REFUSAL[visit.status] || 'This booking cannot be refunded here.', status: visit.status }];
+  if (visit.payment_status !== 'paid') return refusePayment(visit);
+  const late = kind === 'cancel' && ORDER.isLateCancel(String(visit.scheduled_date || '').slice(0, 10), visit.window_key, Date.parse(now));
+  const feeCents = kind === 'cancel' ? (late ? ORDER.POLICY.lateFeeCents : 0) : ORDER.POLICY.refusalFeeCents;
+
+  let stripe = null;
+  const needStripe = () => {
+    if (!process.env.STRIPE_SECRET_KEY) throw Object.assign(new Error('STRIPE_SECRET_KEY not configured'), { status: 500 });
+    return stripe || (stripe = stripeClient());
+  };
+  let paid = paidOf(visit, null);
+  if (paid.net === null) {
+    try { paid = paidOf(visit, await bookingPayment(needStripe(), visit)); }
+    catch (e) { return [e.status || 502, { error: e.status ? e.message : 'Could not read the booking payment from Stripe. Nothing was refunded.' }]; }
   }
-  const amount = ORDER.POLICY.lateFeeCents;
-  if (!(amount >= 50)) return [400, { error: 'The late fee is not set.' }];
-  if (!visit.customers || !visit.customers.stripe_customer_id || !visit.stripe_payment_method_id) return [400, { error: 'This visit has no saved card.' }];
-  if (!process.env.STRIPE_SECRET_KEY) return [500, { error: 'STRIPE_SECRET_KEY not configured' }];
-  const stripe = stripeClient();
-  const key = `visit:${visit.id}:late-fee`;
-  const patch = { status: 'canceled', final_cents: amount };
-  let pi;
-  try {
-    pi = await chargeSavedCard(stripe, visit, { amount, kind: 'late_fee', key, description: 'Late cancel fee' });
-  } catch (e) {
-    if (!isDeclined(e)) {
-      console.error('[visit-update] late fee failed:', e.message);
-      return [502, { error: 'The charge did not go through. Check Stripe before trying again.' }];
-    }
+  if (paid.net === null) return [400, { error: 'We do not know what was paid at booking for this visit. Check Stripe.' }];
+  const refundCents = Math.max(0, paid.net - feeCents);
+  const keptCents = paid.net - refundCents;
+  const answer = { refundCents, keptCents, feeCents, late, paidCents: paid.net };
+  if (body.dryRun) return [200, { ...answer, dryRun: true }];
+
+  let re = null;
+  if (refundCents > 0) {
+    if (!visit.stripe_payment_intent_id) return [400, { error: 'This visit has no booking payment to refund. Refund it from Stripe.' }];
+    let s;
+    try { s = needStripe(); } catch (e) { return [500, { error: e.message }]; }
     try {
-      const invoiceUrl = await invoiceInstead(stripe, visit, { amount, kind: 'late_fee', keyBase: key, patch, reason: e.message });
-      return [200, { cents: amount, charged: false, paymentStatus: 'payment_needed', invoiceUrl }];
-    } catch (e2) {
-      console.error('[visit-update] late fee invoice failed:', e2.message);
-      return [502, { error: 'The card was declined and the invoice could not be sent. Send one from Stripe.' }];
+      re = await s.refunds.create({
+        payment_intent: visit.stripe_payment_intent_id, amount: refundCents,
+        metadata: { kind: kind === 'cancel' ? 'cancel_refund' : 'declined_refund', visit_id: String(visit.id) },
+      }, { idempotencyKey: `visit:${visit.id}:${kind === 'cancel' ? 'cancel-refund' : 'declined-refund'}` });
+    } catch (e) {
+      console.error(`[visit-update] ${kind} refund failed:`, e.message);
+      return [e.type === 'StripeIdempotencyError' ? 409 : 502, { error: 'The refund did not go through. Nothing was changed. Check Stripe before trying again.' }];
     }
   }
-  const row = await db.updateVisit(visit.id, { ...patch, payment_status: 'late_fee_paid', stripe_payment_intent_id: pi.id });
-  if (!row) console.error('[visit-update] CHARGED late fee but could not mark visit:', visit.id, pi.id);
+
+  const status = kind === 'cancel' ? 'canceled' : 'declined';
+  const paymentStatus = kind === 'cancel' ? (late && keptCents > 0 ? 'late_fee_kept' : 'refunded') : (refundCents > 0 ? 'refunded' : 'paid');
+  const row = await db.updateVisit(visit.id, {
+    status, payment_status: paymentStatus, refunded_cents: paid.refunded + refundCents, final_cents: keptCents, ...notePatch,
+  });
+  if (!row) console.error(`[visit-update] ${kind}: refunded ${refundCents} but could not record it on visit`, visit.id, re && re.id);
   const cust = visit.customers || {};
   if (cust.email) {
     try {
-      const msg = tpl.lateFee({ name: cust.first_name, amount: money(amount), dayLabel: dayLabel(visit.scheduled_date), windowLabel: (ORDER.SCHEDULE.windows.find((w) => w.key === visit.window_key) || {}).label, cancelHours: ORDER.POLICY.cancelHours });
-      await sendEmail({ to: cust.email, kind: 'transactional', idempotencyKey: `${pi.id}:receipt`, ...msg });
-    } catch (e) { console.error('[visit-update] late fee email failed:', e.message); }
+      const msg = tpl.refundNotice({
+        name: cust.first_name, why: kind === 'cancel' ? 'canceled' : 'declined', refund: money(refundCents),
+        kept: keptCents ? money(keptCents) : null, late, dayLabel: dayLabel(visit.scheduled_date), windowLabel: windowLabel(visit.window_key),
+        cancelHours: ORDER.POLICY.cancelHours,
+      });
+      await sendEmail({ to: cust.email, kind: 'transactional', idempotencyKey: `visit:${visit.id}:${kind}-refund:email`, ...msg });
+    } catch (e) { console.error(`[visit-update] ${kind} refund email failed:`, e.message); }
   }
-  return [200, { cents: amount, charged: true, paymentStatus: 'late_fee_paid', paymentIntentId: pi.id }];
+  return [200, { ...answer, refunded: !!re, refundId: re ? re.id : null, status, paymentStatus, ok: !!row }];
 }
 
 module.exports = async (req, res) => {
@@ -324,6 +434,11 @@ module.exports = async (req, res) => {
     }
 
     if (action === 'skip' || action === 'cancel') {
+      // A booking paid at booking is closed through Cancel and refund (or Finish), never left paid and undone.
+      const visit = await db.getVisit(visitId);
+      if (visit && visit.payment_status === 'paid' && intOrNull(visit.paid_cents) !== null) {
+        return res.status(409).json({ error: 'This booking is paid. Use Cancel and refund, or Finish.' });
+      }
       const v = await db.updateVisit(visitId, { status: action === 'skip' ? 'skipped' : 'canceled', ...notePatch });
       return res.status(200).json({ ok: !!v, visit: v });
     }
@@ -338,17 +453,11 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: !!v, visit: v });
     }
 
-    if (action === 'finish' || action === 'declined' || action === 'late-fee') {
+    if (action === 'finish' || action === 'declined' || action === 'cancel-refund') {
       const visit = await db.getVisit(visitId);
       if (!visit) return res.status(404).json({ error: 'Visit not found (or schema not applied)' });
-
-      if (action === 'declined') {
-        // The customer said no on site: no Stripe call, nothing charged.
-        if (NOT_CHARGEABLE[visit.payment_status]) return res.status(409).json({ error: NOT_CHARGEABLE[visit.payment_status], paymentStatus: visit.payment_status });
-        const v = await db.updateVisit(visitId, { payment_status: 'no_charge', final_cents: 0, status: 'canceled', ...notePatch });
-        return res.status(200).json({ ok: !!v, paymentStatus: 'no_charge', visit: v });
-      }
-      const [code, json] = action === 'finish' ? await finishVisit(body, visit, notePatch, now) : await lateFeeVisit(visit, now);
+      const [code, json] = action === 'finish' ? await finishVisit(body, visit, notePatch, now)
+        : await refundBooking(action === 'cancel-refund' ? 'cancel' : 'declined', body, visit, notePatch, now);
       return res.status(code).json(json);
     }
 

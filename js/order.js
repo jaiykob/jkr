@@ -21,14 +21,17 @@
    and loads no Stripe.js.
 
    With them open, the pay step loads Stripe.js and mounts one Elements group
-   in setup mode (the card is saved now and charged after the job): Apple Pay
+   in payment mode: the quoted total is PAID now, and the card is saved
+   (setupFutureUsage off_session) so a bigger size is charged the difference
+   after the job and a smaller one refunded (founder, 2026-10-10). Apple Pay
    or Google Pay (Express Checkout Element) above the card form (Payment
-   Element). One box, "I agree to the terms, and to this card being charged
-   after the job", gates both. Book, or the wallet sheet: elements.submit(),
-   POST /api/create-booking (the server reprices, checks the window and the
-   consent, and returns a SetupIntent), stripe.confirmSetup(), thanks.html.
-   The booking summary rides to thanks.html in sessionStorage (bookingSummary),
-   never in the URL.                                                       */
+   Element); elements.update({ amount }) follows the total. One box, "I agree
+   to the terms, and to this card being charged or refunded the difference if
+   the crew finds a different size", gates both. Book, or the wallet sheet:
+   elements.submit(), POST /api/create-booking (the server reprices, checks
+   the window and the consent, and returns a PaymentIntent),
+   stripe.confirmPayment(), thanks.html. The booking summary rides to
+   thanks.html in sessionStorage (bookingSummary), never in the URL.       */
 (function () {
   'use strict';
   var ORDER = window.ORDER, TRAVEL = window.TRAVEL;
@@ -174,9 +177,9 @@
     var d = dayOf(state.date), w = winOf(state.date, state.window);
     if (whenRow) fill(whenRow, d && w && state.window ? [d.label + ', ', guessy(w.label, !!G.schedule)] : ['Not picked yet']);
 
-    // The Book button carries the amount.
+    // The Book button carries the amount: with bookings open it is paid now.
     var book = $('o-book');
-    var verb = OPEN ? 'Book ' : 'Reserve ';
+    var verb = OPEN ? 'Book and pay ' : 'Reserve ';
     book.setAttribute('aria-busy', String(busy));
     if (reserved) book.textContent = 'Reserved';
     else if (busy) book.textContent = 'Booking your pickup…';
@@ -184,6 +187,12 @@
     else if (!t) fill(book, [verb, guessy(fmt(s.cents), PRICE_GUESS), ' + travel']);
     else fill(book, [verb, guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)]);
     book.classList.toggle('is-done', reserved);
+
+    // The rule beside Book says what is paid: now (bookings open) or when you book.
+    document.querySelectorAll('[data-o="pay-total"]').forEach(function (n) { fill(n, tot ? [guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)] : ['the total']); });
+    document.querySelectorAll('[data-o="pay-when"]').forEach(function (n) { n.textContent = OPEN ? 'now' : 'when you book'; });
+    // The card form shows the amount it pays (Apple Pay and Google Pay sheets read it too).
+    if (elements && tot && tot !== payAmount) { payAmount = tot; try { elements.update({ amount: tot }); } catch (e) { /* the next Book still sends the server's total */ } }
 
     // The bar shows from the first pick.
     var bar = $('o-bar');
@@ -273,7 +282,7 @@
   function setZip(v, how) {
     v = String(v || '').replace(/\D/g, '').slice(0, 5);
     if (zipIn.value !== v) zipIn.value = v;
-    var before = state.trip;
+    var before = state.trip, edited = v !== state.zip;
     // A new ZIP is a new question: the far panel's thank you, failure line and button reset.
     if (v !== state.zip) { $('o-far-btn').disabled = false; $('o-far-ok').hidden = true; $('o-far-fail').hidden = true; }
     state.zip = v;
@@ -298,7 +307,8 @@
     } else {
       zipMsg.textContent = '';
     }
-    if ((before && before.zip) !== (state.trip && state.trip.zip)) changed();
+    // Any edit to the ZIP clears an old failure or price note (like every other field).
+    if (edited || (before && before.zip) !== (state.trip && state.trip.zip)) changed();
     return render();
   }
   zipIn.addEventListener('input', function () { setZip(zipIn.value, 'typed'); });
@@ -560,7 +570,7 @@
     box.textContent = '';
     box.appendChild(el('p', 'o-reserved-h', 'Your day is reserved.'));
     var p = el('p');
-    fill(p, [s.label + ' on ' + d.label + ', ', guessy(w.label, !!G.schedule), '. We will text ' + state.contact.phone.trim() + ' to confirm it. Nothing is charged.']);
+    fill(p, [s.label + ' on ' + d.label + ', ', guessy(w.label, !!G.schedule), '. We will text ' + state.contact.phone.trim() + ' to confirm it. No card was taken.']);
     box.appendChild(p);
     box.hidden = false;
     $('o-closed').hidden = true;
@@ -569,11 +579,11 @@
     say('Your day is reserved.');
   }
 
-  /* ── 6. pay, bookings open: the card is saved now, charged after the job ── */
-  var stripe = null, elements = null, payMounted = false, payBroken = false;
+  /* ── 6. pay, bookings open: the total paid now, the card saved for the difference ── */
+  var stripe = null, elements = null, payMounted = false, payBroken = false, payAmount = 0;
   var WALLETS = { apple_pay: 'Apple Pay', google_pay: 'Google Pay', link: 'Link' };
   // One id per page visit. The booking API keys its Stripe calls on it, so a
-  // network retry of the same booking gets the same SetupIntent back.
+  // network retry of the same booking gets the same PaymentIntent back.
   var ATTEMPT = 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   var LOAD_FAIL = 'The card form did not load. Please ' + CALL_US + ' and we will book it with you.';
   var consentBox = $('o-consent');
@@ -586,7 +596,7 @@
   }
   consentBox.addEventListener('change', function () { if (consentBox.checked) consentErr(''); });
   function needConsent() {
-    consentErr('Tick the box to agree to the terms and the charge after the job.');
+    consentErr('Tick the box to agree to the terms and to a different size being charged or refunded.');
     say($('o-consent-err').textContent);
     consentBox.focus({ preventScroll: true });
     consentBox.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: 'center' });
@@ -606,14 +616,16 @@
     });
   }
   function mountPay() {
-    if (!OPEN || payMounted) return;
+    if (!OPEN || payMounted || !(total() > 0)) return;
     payMounted = true;
     $('o-paybox').hidden = false;
     loadStripe().then(function (StripeJs) {
       stripe = StripeJs(window.STRIPE_PUBLISHABLE_KEY);
-      // Setup mode: nothing is charged at booking; the server makes a SetupIntent.
+      // Payment mode: the total is paid now, and the card is saved (off session)
+      // for the difference after the job. The server makes the PaymentIntent.
+      payAmount = total();
       elements = stripe.elements({
-        mode: 'setup', currency: 'usd',
+        mode: 'payment', amount: payAmount, currency: 'usd', setupFutureUsage: 'off_session',
         appearance: { theme: 'stripe', variables: { colorPrimary: '#15171A', colorText: '#2B2F36', colorDanger: '#B42318', fontSizeBase: '16px', borderRadius: '12px' } },
       });
       // Apple Pay and Google Pay above the card form. A wallet that cannot be
@@ -687,7 +699,7 @@
       },
     };
   }
-  /* Billing details for the saved card: the contact step's (the wallet's as a fallback). */
+  /* Billing details for the card: the contact step's (the wallet's as a fallback). */
   function billing(ev) {
     var c = state.contact, w = (ev && ev.billingDetails) || {};
     return { name: c.name.trim() || w.name || '', email: c.email.trim() || w.email || '', phone: c.phone.trim() || w.phone || '' };
@@ -696,8 +708,10 @@
     var s = sizeOf(state.size), t = state.trip, d = dayOf(state.date), w = winOf(state.date, state.window), c = state.contact;
     var num = function (v, dflt) { return typeof v === 'number' && isFinite(v) ? v : dflt; };
     var names = c.name.trim().split(/\s+/);
+    var tot = num(data.totalCents, total());
     write('bookingSummary', {
-      size: s.label, loadCents: num(data.loadCents, s.cents), travelCents: num(data.travelCents, t.cents), totalCents: num(data.totalCents, total()),
+      size: s.label, loadCents: num(data.loadCents, s.cents), travelCents: num(data.travelCents, t.cents), totalCents: tot,
+      paidCents: num(data.amountCents, tot),   // what the card pays now (the total less any founding discount)
       travel: t.label + ', ' + t.place, travelGuess: TRAVEL_GUESS,
       date: d.date, dayLabel: d.label, window: w.key, windowLabel: w.label,
       address: fullAddress(), phone: c.phone.trim(), email: c.email.trim(), zip: t.zip,
@@ -706,8 +720,9 @@
     });
   }
 
-  /* Book: check the card form, ask the server for a SetupIntent (it reprices,
-     checks the window and the consent), then save the card with Stripe. */
+  /* Book: check the card form, ask the server for the booking PaymentIntent (it
+     reprices, checks the window and the consent), then pay it with Stripe. */
+  var NOT_PAID = 'Your payment did not go through, so nothing was booked. Try again, or use another card.';
   function startBooking(source, walletEv) {
     busy = true;
     payMsg(''); cardErr('');
@@ -720,20 +735,26 @@
         .catch(function () { throw { where: 'pay', text: 'We could not reach our booking system. Check your connection and try again, or ' + CALL_US + '.' }; });
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (j) {
-        if (!res.ok || !j.setupIntentClientSecret) throw refusal(res.status, j);
+        if (!res.ok || !j.paymentIntentClientSecret) throw refusal(res.status, j);
         data = j;
-        // Written before the card is confirmed: a card that needs a bank's own
-        // page comes back to thanks.html with the summary already there.
+        // Written before the payment is confirmed: a card that needs a bank's
+        // own page comes back to thanks.html with the summary already there.
         writeSummary(data, source);
-        return stripe.confirmSetup({
-          elements: elements, clientSecret: j.setupIntentClientSecret, redirect: 'if_required',
+        // The server charges less than the page showed only with the founding
+        // offer on: the card form then shows the amount actually paid.
+        if (typeof j.amountCents === 'number' && j.amountCents > 0 && j.amountCents !== payAmount) {
+          payAmount = j.amountCents;
+          try { elements.update({ amount: j.amountCents }); } catch (e) { /* Stripe charges the PaymentIntent's own amount */ }
+        }
+        return stripe.confirmPayment({
+          elements: elements, clientSecret: j.paymentIntentClientSecret, redirect: 'if_required',
           confirmParams: { return_url: new URL('thanks.html', location.href).href, payment_method_data: { billing_details: billing(walletEv) } },
         });
       });
     }).then(function (c) {
-      if (c && c.error) throw { where: 'card', text: c.error.message || 'Your card was not saved. Try again, or use another card.' };
-      var st = c && c.setupIntent && c.setupIntent.status;
-      if (st && st !== 'succeeded' && st !== 'processing') throw { where: 'card', text: 'Your card was not saved. Try again, or use another card.' };
+      if (c && c.error) throw { where: 'card', text: c.error.message || NOT_PAID };
+      var st = c && c.paymentIntent && c.paymentIntent.status;
+      if (st && st !== 'succeeded' && st !== 'processing') throw { where: 'card', text: NOT_PAID };
       booked(data, source);
     }).catch(function (e) {
       busy = false;
@@ -782,7 +803,7 @@
   }
   function booked(data, source) {
     var s = sizeOf(state.size), t = state.trip, c = state.contact;
-    track('order_booked', { size: s.label, value: (data.totalCents || total()) / 100, currency: 'USD', zone: t.zone, method: source });
+    track('order_booked', { size: s.label, value: (data.amountCents || data.totalCents || total()) / 100, currency: 'USD', zone: t.zone, method: source });
     // The contact stays for next time in this tab; the day and window do not,
     // so going back from the thanks page cannot book the same slot twice.
     write(STORE, { size: state.size, zip: state.zip, date: null, window: null, contact: c });

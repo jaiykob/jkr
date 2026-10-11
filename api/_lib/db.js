@@ -269,19 +269,21 @@ async function slotCounts({ market, from, to } = {}) {
 }
 
 /**
- * Create the booked visit of an order (card saved, charged after the job).
- * Idempotent on stripe_setup_intent_id: a redelivered webhook gets the existing
- * row back. Returns the visit, or null (logged) on any failure.
+ * Create the booked visit of an order (pay at booking: the quoted total paid,
+ * the card saved for the difference after the job). Idempotent on
+ * stripe_payment_intent_id, the booking PaymentIntent (refunds go back to it):
+ * a redelivered webhook gets the existing row back. Returns the visit, or null
+ * (logged) on any failure.
  */
 async function createBookedVisit(fields = {}) {
   const f = fields;
-  if (!f.customerId || !f.scheduledDate || !f.windowKey || !f.stripeSetupIntentId) return null;
-  const find = () => rest('GET', `visits?stripe_setup_intent_id=eq.${encodeURIComponent(f.stripeSetupIntentId)}&select=*&limit=1`);
+  if (!f.customerId || !f.scheduledDate || !f.windowKey || !f.stripePaymentIntentId) return null;
+  const find = () => rest('GET', `visits?stripe_payment_intent_id=eq.${encodeURIComponent(f.stripePaymentIntentId)}&select=*&limit=1`);
   const existing = await find();
   if (existing === null) return null;
   if (Array.isArray(existing) && existing[0]) return { ...existing[0], existing: true };
   const int = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
-  const rows = await rest('POST', 'visits?on_conflict=stripe_setup_intent_id', {
+  const rows = await rest('POST', 'visits?on_conflict=stripe_payment_intent_id', {
     body: {
       customer_id:              f.customerId,
       subscription_id:          f.subscriptionId || null,
@@ -293,8 +295,10 @@ async function createBookedVisit(fields = {}) {
       quoted_load_cents:        int(f.quotedLoadCents),
       quoted_cents:             int(f.quotedCents),
       travel_cents:             int(f.travelCents),
-      payment_status:           f.paymentStatus || 'card_saved',
-      stripe_setup_intent_id:   f.stripeSetupIntentId,
+      payment_status:           f.paymentStatus || 'paid',
+      paid_cents:               int(f.paidCents),
+      refunded_cents:           0,
+      stripe_payment_intent_id: f.stripePaymentIntentId,
       stripe_payment_method_id: f.stripePaymentMethodId || null,
       consent_at:               f.consentAt || null,
       consent_version:          f.consentVersion || null,

@@ -13,14 +13,16 @@
  * any charge: a page that showed the offer after the last spot went gets
  * `founding_closed` and the regular price to review.
  *
- * WHAT THE OFFER IS NOW: the card is saved at booking and charged once after
- * the job, so nothing is discounted at booking. create-booking records the
- * offer (founding, founding_discount_cents) for the final charge.
+ * WHAT THE OFFER IS NOW (pay at booking): the discount comes off the booking
+ * payment. create-booking stamps founding: 'true' and founding_discount_cents
+ * on the booking PaymentIntent, and the after job difference takes the same
+ * percent off the final total (api/visit-update.js, ruling R19).
  *
  * WHERE THE COUNT LIVES: in Stripe, on the customer. A booking that gets the
  * offer stamps founding: 'true' in its customer's metadata, counted with
- * customers.search (SetupIntents cannot be searched). A spot is claimed once
- * the card is saved (the customer has a default payment method). To give a spot back (a test booking, a cancellation), change that
+ * customers.search. A spot is claimed once the booking is paid (the webhook
+ * then makes the saved card the customer's default payment method, so an
+ * abandoned checkout uses no spot). To give a spot back (a test booking, a cancellation), change that
  * customer's founding metadata to 'released' in the Stripe dashboard. The
  * count can overshoot by one in a race for the last spot; it never refuses
  * someone who was shown the offer unless the server can prove the spots are
@@ -64,13 +66,13 @@ async function countSearch(resource, query, keep) {
 }
 
 /**
- * Founding bookings so far. Throws if Stripe can't be read. A booking saves a
- * card (a SetupIntent, which Stripe cannot search), so the customer carries the
- * stamp: create-booking sets founding: 'true' in the customer's metadata.
+ * Founding bookings so far. Throws if Stripe can't be read. The customer
+ * carries the stamp: create-booking sets founding: 'true' in the customer's
+ * metadata.
  */
 async function claimedSpots(stripe) {
-  // Only customers whose card was saved: the webhook sets the default payment
-  // method on setup_intent.succeeded, so an abandoned booking uses no spot.
+  // Only customers who paid: the webhook sets the default payment method on
+  // the booking's payment_intent.succeeded, so an abandoned booking uses no spot.
   return countSearch(stripe.customers, "metadata['founding']:'true'",
     (c) => !!(c.invoice_settings && c.invoice_settings.default_payment_method));
 }

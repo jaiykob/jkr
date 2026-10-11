@@ -93,16 +93,16 @@
   <div class="t-head">
     <p class="t-badge" aria-hidden="true"><svg><use href="#i-check"/></svg></p>
     <h1 id="welcome-heading">You're booked</h1>
-    <p class="t-lede" id="t-lede">Nothing is charged today. Your card is charged after the job, for the size you actually have.</p>
+    <p class="t-lede" id="t-lede">Your pickup is paid. If the crew finds a different size, we charge or refund the difference after the job.</p>
     <!-- A card that went to its bank's own page and came back refused. -->
-    <p class="t-fail" id="t-fail" role="alert" hidden>Your card was not saved, so this pickup is not booked yet. <a href="quote.html">Go back to your order</a> and try again, or call or text <a href="tel:+19254086053">(925) 408-6053</a>.</p>
+    <p class="t-fail" id="t-fail" role="alert" hidden>Your payment did not go through, so this pickup is not booked yet. <a href="quote.html">Go back to your order</a> and try again, or call or text <a href="tel:+19254086053">(925) 408-6053</a>.</p>
   </div>
 
   <!-- The booking, from sessionStorage (bookingSummary, written by js/order.js). -->
   <section class="t-card" id="summary-card" aria-labelledby="t-sum-h" hidden>
     <h2 id="t-sum-h">Your pickup</h2>
     <div class="t-rows" id="summary-rows"></div>
-    <p class="t-rule"><strong>Charged after the job</strong>, for the size you actually have. If it is bigger or smaller than you booked, the crew shows you the new price before loading, and you can say no.</p>
+    <p class="t-rule"><strong>Paid today.</strong> Any difference is settled after the job: if your load is bigger or smaller than you booked, the crew shows you the new price before loading, and we charge or refund the difference on your card. You can say no.</p>
   </section>
 
   <section class="t-card" id="t-next" aria-labelledby="t-next-h">
@@ -112,9 +112,9 @@
       <li><strong>The day before.</strong> We send a reminder with your arrival window.</li>
       <li><strong>On the day.</strong> We text <span id="t-phone" class="t-nowrap">you</span> when the crew is on the way.</li>
       <li><strong>Before loading.</strong> The crew checks the size with you. A different size means a different price, shown to you first.</li>
-      <li><strong>After the job.</strong> We charge your card once and email you the receipt.</li>
+      <li><strong>After the job.</strong> If the size changed, we charge or refund the difference on your card. Either way we email you the receipt.</li>
     </ol>
-    <p class="t-move">Need to move or cancel? Call or text <a href="tel:+19254086053">(925) 408-6053</a>. It is free until <span data-o="cancel"></span> before your window.</p>
+    <p class="t-move">Need to move or cancel? Call or text <a href="tel:+19254086053">(925) 408-6053</a>. It is free, with a full refund, until <span data-o="cancel"></span> before your window.</p>
   </section>
 
   <!-- Referral question: attribution we want, not something we need to do the
@@ -172,7 +172,7 @@
     // the address bar, and a refused card says so instead of "booked".
     var q = new URLSearchParams(location.search);
     var status = q.get('redirect_status');
-    if (q.has('setup_intent') || status) { try { history.replaceState(null, '', location.pathname); } catch (e) { /* old browser */ } }
+    if (q.has('payment_intent') || q.has('setup_intent') || status) { try { history.replaceState(null, '', location.pathname); } catch (e) { /* old browser */ } }
     if (status && status !== 'succeeded' && status !== 'processing') {
       $('welcome-heading').textContent = 'Not booked yet';
       $('t-lede').hidden = true;
@@ -191,6 +191,7 @@
     var priceGuess = !!G.prices, travelGuess = !!s.travelGuess;
     var load = num(s.loadCents), trip = num(s.travelCents);
     var tot = num(s.totalCents) != null ? num(s.totalCents) : num(s.amountCents);   // amountCents: a summary in the old shape
+    var paid = num(s.paidCents) != null ? num(s.paidCents) : tot;                  // pay at booking: what the card paid today
     var rows = [];
     var size = s.size || s.plan;
     if (size) rows.push(['Size', [size, load != null ? ', ' : '', load != null ? guessy(fmt(load), priceGuess) : '']]);
@@ -198,9 +199,10 @@
     if (s.dayLabel) rows.push(['Day and time', [s.dayLabel, s.windowLabel ? ', ' : '', s.windowLabel ? guessy(s.windowLabel, !!G.schedule) : '']]);
     else if (s.cadence || s.day) rows.push(['Day', [s.cadence || s.day]]);
     if (s.address) rows.push(['Address', [s.address]]);
-    if (s.wallet || s.last4 || s.dayLabel) rows.push(['Card', [(s.wallet ? s.wallet + ', saved' : 'Saved') + ', charged after the job']]);
+    if (s.wallet || s.last4 || s.dayLabel) rows.push(['Card', [(s.wallet || 'Your card') + ', saved for any difference']]);
     if (s.phone) rows.push(['Texts go to', [s.phone]]);
-    if (tot != null) rows.push(['Total if the size is right', [guessy(fmt(tot), priceGuess || travelGuess)], 't-row-total']);
+    if (tot != null && paid != null && paid !== tot) rows.push(['Total', [guessy(fmt(tot), priceGuess || travelGuess)]]);
+    if (paid != null) rows.push(['Paid today', [guessy(fmt(paid), priceGuess || travelGuess)], 't-row-total']);
     if (!rows.length) return;
 
     var box = $('summary-rows');

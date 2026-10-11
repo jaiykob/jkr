@@ -273,7 +273,7 @@
     if(['past_due','canceled'].includes(s)) return 'bad'; return ''; }
   function visitKind(s){ s=String(s||'').toLowerCase();
     if(s==='completed') return 'ok'; if(['scheduled','en_route','in_progress'].includes(s)) return 'warn';
-    if(['skipped','canceled'].includes(s)) return 'bad'; return ''; }
+    if(['skipped','canceled','declined'].includes(s)) return 'bad'; return ''; }
 
   function kvRow(label,val,isMoney){
     const empty = val==null||val===''||(Array.isArray(val)&&!val.length);
@@ -435,49 +435,77 @@
   // ── visit rows + field actions ────────────────────────────
   function photoKinds(v){ return new Set((v.visit_photos||[]).map(p=>p.kind)); }
   // ── order flow job card ───────────────────────────────────
+  // Pay at booking: the customer paid the quoted total when booking. Finish settles the
+  // difference for the size the crew found (charge more, refund, or no change); Cancel and
+  // refund, and Customer said no, refund what was paid less any fee. Every money step asks in
+  // the page first (never a browser dialog), shows the server's own numbers from a dry run,
+  // and its buttons are disabled while the request is in flight (ruling R18).
   const FIN = {};      // visitId -> { final, dry, agreed, busy, err } while the finish panel is open
+  const ASK = {};      // visitId -> { kind: 'cancel-refund'|'declined', dry, busy, err } while a refund panel is open
   const NOTE = {};     // visitId -> { ok, text } the last result, shown after the page reloads
-  const SAYNO = {};    // visitId -> true while the "customer said no" confirm is showing
-  const PAY = { card_saved:'Card saved', paid:'Paid', payment_needed:'Payment needed', no_charge:'No charge', late_fee_paid:'Late fee paid' };
+  const PAY = { paid:'Paid', payment_needed:'Payment needed', refunded:'Refunded', late_fee_kept:'Canceled late, fee kept',
+                card_saved:'Card saved', no_charge:'No charge', late_fee_paid:'Late fee paid' };
+  const usd = c => c==null ? 'N/A' : '$'+(Number(c)/100).toFixed(2);
   const sizeName = r => (window.ORDER && ORDER.SIZES[r]) ? ORDER.SIZES[r].label : 'N/A';
   const winName = k => { const w = window.ORDER && ORDER.SCHEDULE.windows.find(w => w.key === k); return w ? w.label : (k || 'N/A'); };
   const isNewJob = v => v.quoted_cents != null || !!v.window_key;
-  const isLate = v => !!(window.ORDER && v.window_key && v.scheduled_date && ORDER.isLateCancel(String(v.scheduled_date).slice(0,10), v.window_key, Date.now()));
   function jobSummary(v){
     if(!isNewJob(v)) return '';
     const note = NOTE[v.id] ? `<div class="${NOTE[v.id].ok?'okmsg':'err'}">${esc(NOTE[v.id].text)}</div>` : '';
     const inv = v.invoice_url ? ` · <a href="${esc(v.invoice_url)}" target="_blank" rel="noopener">Invoice</a>` : '';
     return `<div class="job"><dl>
       <dt>Size booked</dt><dd>${esc(sizeName(v.quoted_load_idx))}</dd>
-      <dt>Quoted total</dt><dd>${money(v.quoted_cents)}${v.travel_cents?' (travel '+money(v.travel_cents)+')':''}</dd>
+      <dt>Quoted total</dt><dd>${usd(v.quoted_cents)}${v.travel_cents?' (travel '+usd(v.travel_cents)+')':''}</dd>
       <dt>Day and window</dt><dd>${dateS(v.scheduled_date)}, ${esc(winName(v.window_key))}</dd>
+      <dt>Paid</dt><dd>${usd(v.paid_cents)}${v.refunded_cents?', refunded '+usd(v.refunded_cents):''}</dd>
       <dt>Payment</dt><dd>${esc(PAY[v.payment_status]||v.payment_status||'N/A')}${inv}</dd>
-      ${v.final_load_idx!=null?`<dt>Final</dt><dd>${esc(sizeName(v.final_load_idx))}, ${money(v.final_cents)}</dd>`:''}
+      ${v.final_load_idx!=null?`<dt>Final</dt><dd>${esc(sizeName(v.final_load_idx))}, ${usd(v.final_cents)}</dd>`:''}
       ${v.en_route_at?`<dt>On our way</dt><dd>${dtS(v.en_route_at)}</dd>`:''}
     </dl>${note}</div>`;
   }
+  // Finish: the final size (the booked one first), the server's price, and what that means for the card.
   function finPanel(v){
     const f = FIN[v.id]; if(!f) return '';
-    const d = f.dry;
-    const bigger = f.final > v.quoted_load_idx || (d && d.cents > v.quoted_cents);
+    const d = f.dry, diff = d ? d.differenceCents : null, off = f.busy ? 'disabled' : '';
     const opts = ORDER.SIZES.map(z => `<option value="${z.row}" ${z.row===f.final?'selected':''}>${esc(z.label)}${z.row===v.quoted_load_idx?' (booked)':''}</option>`).join('');
-    const price = d ? `<div class="price">Price: ${money(d.cents)} (load ${money(d.loadCents)} plus travel ${money(d.travelCents)})</div>` : '<div class="price">Checking the price…</div>';
-    const agree = bigger ? `<label class="agree"><input type="checkbox" data-fin-agree="${esc(v.id)}" ${f.agreed?'checked':''}><span>The customer agrees to the higher price of ${d?money(d.cents):'the new size'} (booked ${money(v.quoted_cents)}).</span></label>` : '';
-    const can = d && !f.busy && (!bigger || f.agreed);
-    return `<div class="fin"><label>Final size<select data-fin-size="${esc(v.id)}">${opts}</select></label>${price}${agree}
+    const price = !d ? '<div class="price">Checking the price…</div>'
+      : `<div class="price">New total ${usd(d.cents)}: load ${usd(d.loadCents)} plus travel ${usd(d.travelCents)}${d.discountCents?', less '+usd(d.discountCents)+' founding':''}. Paid ${usd(d.paidCents)}.</div>
+         <div class="price">${diff>0?'Charge '+usd(diff)+' more to the saved card.':diff<0?'Refund '+usd(-diff)+' to the card.':'No change: nothing to charge or refund.'}</div>`;
+    const agree = d && diff > 0 ? `<label class="agree"><input type="checkbox" data-fin-agree="${esc(v.id)}" ${f.agreed?'checked':''} ${off}><span>The customer agrees to pay ${usd(diff)} more (new total ${usd(d.cents)}).</span></label>` : '';
+    const can = d && !f.busy && (!(diff > 0) || f.agreed);
+    const label = f.busy ? 'Working…' : !d ? 'Finish' : diff > 0 ? 'Charge ' + usd(diff) + ' more' : diff < 0 ? 'Refund ' + usd(-diff) : 'No change, finish';
+    return `<div class="fin"><label>Final size<select data-fin-size="${esc(v.id)}" ${off}>${opts}</select></label>${price}${agree}
       ${f.err?`<div class="err">${esc(f.err)}</div>`:''}
-      <div class="jobacts"><button class="go" data-action="finish" data-visit="${esc(v.id)}" ${can?'':'disabled'}>${f.busy?'Charging…':'Charge '+(d?money(d.cents):'')}</button>
-      <button data-action="finish-cancel" data-visit="${esc(v.id)}">Back</button></div></div>`;
+      <div class="jobacts"><button class="go" data-action="finish" data-visit="${esc(v.id)}" ${can?'':'disabled'}>${esc(label)}</button>
+      <button data-action="finish-back" data-visit="${esc(v.id)}" ${off}>Back</button></div></div>`;
+  }
+  // Cancel and refund, or Customer said no: the refund the server will make, asked in the page.
+  function askPanel(v){
+    const a = ASK[v.id], d = a.dry, id = esc(v.id), off = !d || a.busy ? 'disabled' : '';
+    let text, label;
+    if(a.kind === 'cancel-refund'){
+      text = !d ? 'Checking the refund…'
+        : d.late ? `Cancel this booking? It is inside the free cancel window, so we keep the ${usd(d.keptCents)} late fee${d.refundCents?' and refund '+usd(d.refundCents):' and there is nothing to refund'}.`
+        : `Cancel this booking and refund ${usd(d.refundCents)} in full?`;
+      label = a.busy ? 'Working…' : d && d.refundCents ? 'Yes, cancel and refund ' + usd(d.refundCents) : 'Yes, cancel';
+    } else {
+      text = !d ? 'Checking the refund…'
+        : `The customer said no. Close the job and refund ${usd(d.refundCents)}${d.keptCents?', keeping the '+usd(d.keptCents)+' refusal fee':' in full'}?`;
+      label = a.busy ? 'Working…' : d && d.refundCents ? 'Yes, refund ' + usd(d.refundCents) : 'Yes, close the job';
+    }
+    const go = a.kind === 'cancel-refund'
+      ? `<button class="warn" data-action="cancel-refund" data-visit="${id}" ${off}>${esc(label)}</button>`
+      : `<button class="warn" data-action="declined" data-visit="${id}" ${off}>${esc(label)}</button>`;
+    return `<div class="fin">${esc(text)}${a.err?`<div class="err">${esc(a.err)}</div>`:''}<div class="jobacts">${go}
+      <button data-action="ask-back" data-visit="${id}" ${a.busy?'disabled':''}>Back</button></div></div>`;
   }
   function jobButtons(v, phone){
     const id = esc(v.id);
-    if(SAYNO[v.id]) return `<div class="fin">Close this job with no charge? The customer said no.<div class="jobacts">
-      <button class="warn" data-action="declined" data-visit="${id}">Yes, close with no charge</button>
-      <button data-action="declined-cancel" data-visit="${id}">Back</button></div></div>`;
+    if(ASK[v.id]) return askPanel(v);
     return `<div class="jobacts">
       <button data-action="en-route" data-visit="${id}" data-phone="${esc(phone||'')}">On my way</button>
-      <button class="go" data-action="finish-open" data-visit="${id}">Finish and charge</button>
-      ${isLate(v)?`<button class="warn" data-action="late-fee" data-visit="${id}">Late cancel fee</button>`:''}
+      <button class="go" data-action="finish-open" data-visit="${id}">Finish</button>
+      <button class="warn" data-action="cancel-ask" data-visit="${id}">Cancel and refund</button>
       <button class="warn" data-action="declined-ask" data-visit="${id}">Customer said no</button></div>${finPanel(v)}`;
   }
   // Every job action goes through adminPost, which sends x-admin-token.
@@ -499,13 +527,19 @@
     }catch(e){ if(FIN[id]) FIN[id].err = e.message; }
     rerender();
   }
+  async function askDry(id){
+    const a = ASK[id]; if(!a) return; a.dry = null; a.err = '';
+    try{ const r = await jobAction(a.kind, id, { dryRun: true }); if(ASK[id] === a) a.dry = r; }
+    catch(e){ if(ASK[id] === a) a.err = e.message; }
+    rerender();
+  }
   document.addEventListener('change', e => {
     const t = e.target;
-    if(t.dataset && t.dataset.finSize){ const f = FIN[t.dataset.finSize]; if(!f) return; f.final = Number(t.value); f.agreed = false; rerender(); dryRun(t.dataset.finSize); }
-    if(t.dataset && t.dataset.finAgree){ const f = FIN[t.dataset.finAgree]; if(f){ f.agreed = t.checked; rerender(); } }
+    if(t.dataset && t.dataset.finSize){ const f = FIN[t.dataset.finSize]; if(!f || f.busy) return; f.final = Number(t.value); f.agreed = false; rerender(); dryRun(t.dataset.finSize); }
+    if(t.dataset && t.dataset.finAgree){ const f = FIN[t.dataset.finAgree]; if(f && !f.busy){ f.agreed = t.checked; rerender(); } }
   });
   document.addEventListener('click', async e => {
-    const b = e.target.closest && e.target.closest('button[data-action]'); if(!b) return;
+    const b = e.target.closest && e.target.closest('button[data-action]'); if(!b || b.disabled) return;
     const id = b.dataset.visit, a = b.dataset.action;
     const v = findVisit(id);
     try{
@@ -516,29 +550,43 @@
         NOTE[id] = link ? { ok:true, text:'Marked on our way.' } : { ok:false, text:'Marked on our way, but the phone number could not be used for the text.' };
         await refreshAndReopen();
       } else if(a === 'finish-open' && v){
-        FIN[id] = { final: v.quoted_load_idx == null ? 0 : v.quoted_load_idx, dry:null, agreed:false, busy:false, err:'' }; rerender(); dryRun(id);
-      } else if(a === 'finish-cancel'){ delete FIN[id]; rerender();
+        delete ASK[id];
+        // A settlement already started at a size (the server holds it to that size) opens on it; otherwise the booked size.
+        const start = v.final_load_idx != null ? v.final_load_idx : v.quoted_load_idx == null ? 0 : v.quoted_load_idx;
+        FIN[id] = { final: start, dry:null, agreed:false, busy:false, err:'' }; rerender(); dryRun(id);
+      } else if(a === 'finish-back'){ if(FIN[id] && !FIN[id].busy){ delete FIN[id]; rerender(); }
       } else if(a === 'finish'){
-        const f = FIN[id]; if(!f) return; f.busy = true; f.err = ''; rerender();
+        const f = FIN[id]; if(!f || f.busy || !f.dry) return;
+        f.busy = true; f.err = ''; rerender();
         try{
           const r = await jobAction('finish', id, { finalLoad: f.final, agreed: !!f.agreed, dryRun: false });
           NOTE[id] = r.paymentStatus === 'payment_needed'
-            ? { ok:false, text:'Payment needed: the card was declined for ' + money(r.cents) + '. The job is done and we sent the customer an invoice.' }
-            : { ok:true, text:'Charged ' + money(r.cents) + '. Paid.' };
+            ? { ok:false, text:'Payment needed: the card was declined for the ' + usd(r.differenceCents) + ' difference. The job is done and we sent the customer an invoice.' }
+            : { ok:true, text: r.charged ? 'Charged ' + usd(r.differenceCents) + ' more. Final total ' + usd(r.cents) + '.'
+                : r.refunded ? 'Refunded ' + usd(-r.differenceCents) + '. Final total ' + usd(r.cents) + '.'
+                : 'Finished. No change to what was paid.' };
           delete FIN[id]; await refreshAndReopen();
         }catch(err){ f.busy = false; f.err = err.message; rerender(); }
-      } else if(a === 'declined-ask'){ SAYNO[id] = true; rerender();
-      } else if(a === 'declined-cancel'){ delete SAYNO[id]; rerender();
-      } else if(a === 'declined'){
-        await jobAction('declined', id); delete SAYNO[id]; NOTE[id] = { ok:true, text:'Closed with no charge.' }; await refreshAndReopen();
-      } else if(a === 'late-fee'){
-        await jobAction('late-fee', id); NOTE[id] = { ok:true, text:'Late cancel fee charged.' }; await refreshAndReopen();
+      } else if(a === 'cancel-ask' || a === 'declined-ask'){
+        delete FIN[id];
+        ASK[id] = { kind: a === 'cancel-ask' ? 'cancel-refund' : 'declined', dry:null, busy:false, err:'' }; rerender(); askDry(id);
+      } else if(a === 'ask-back'){ if(ASK[id] && !ASK[id].busy){ delete ASK[id]; rerender(); }
+      } else if(a === 'cancel-refund' || a === 'declined'){
+        const q = ASK[id]; if(!q || q.busy || !q.dry) return;
+        q.busy = true; q.err = ''; rerender();
+        try{
+          const r = a === 'cancel-refund' ? await jobAction('cancel-refund', id) : await jobAction('declined', id);
+          delete ASK[id];
+          NOTE[id] = { ok:true, text: (a === 'cancel-refund' ? 'Canceled. ' : 'Closed: the customer said no. ')
+            + (r.refundCents ? 'Refunded ' + usd(r.refundCents) + '.' : 'Nothing to refund.') + (r.keptCents ? ' Kept ' + usd(r.keptCents) + '.' : '') };
+          await refreshAndReopen();
+        }catch(err){ q.busy = false; q.err = err.message; rerender(); }
       }
     }catch(err){ NOTE[id] = { ok:false, text:err.message }; rerender(); }
   });
 
   function visitRow(v, phone){
-    const done = v.status==='completed' || v.status==='canceled';
+    const done = v.status==='completed' || v.status==='canceled' || v.status==='declined';
     const has  = photoKinds(v);
     const meta = `${statusDot(v.status||'',visitKind(v.status))}${v.completed_at?' · done '+dtS(v.completed_at):''}`;
     const started = v.status==='in_progress';

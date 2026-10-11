@@ -69,7 +69,7 @@ module.exports = async (req, res) => {
   }
 
   const [customers, leads] = await Promise.all([
-    q('customers?select=*,subscriptions(*),visits(id,scheduled_date,status,route_date,route_seq,completed_at,window_key,quoted_load_idx,quoted_cents,travel_cents,final_load_idx,final_cents,payment_status,invoice_url,en_route_at,visit_photos(kind,storage_path))&order=created_at.desc'),
+    q('customers?select=*,subscriptions(*),visits(id,scheduled_date,status,route_date,route_seq,completed_at,window_key,quoted_load_idx,quoted_cents,travel_cents,final_load_idx,final_cents,payment_status,paid_cents,refunded_cents,invoice_url,en_route_at,visit_photos(kind,storage_path))&order=created_at.desc'),
     q('leads?select=*&order=created_at.desc'),
   ]);
 

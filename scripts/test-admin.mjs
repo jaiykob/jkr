@@ -32,9 +32,20 @@ ok(good.status === 200 && Array.isArray(good.json.customers), 'right token did n
 
 // The job card: the four order flow actions, each posted through the one helper that sends the token header.
 const dash = fs.readFileSync(path.join(ROOT, 'jkr/index.html'), 'utf8');
-for (const a of ['finish', 'declined', 'late-fee', 'en-route']) {
+for (const a of ['finish', 'declined', 'cancel-refund', 'en-route']) {
   ok(dash.includes(`data-action="${a}"`), `jkr/index.html: no data-action="${a}" button`);
   ok(dash.includes(`jobAction('${a}'`) || dash.includes(`action: '${a}'`) || dash.includes(`action:'${a}'`), `jkr/index.html: ${a} is never posted`);
+}
+ok(!dash.includes('data-action="late-fee"') && !dash.includes("jobAction('late-fee'"), 'jkr/index.html: still charges a late fee (pay at booking keeps it from the refund)');
+for (const label of ['On my way', 'Finish', 'Cancel and refund', 'Customer said no']) ok(dash.includes(label), `jkr/index.html: no "${label}" action`);
+// Ruling R18: the money buttons ask in the page, never with a browser dialog, and are disabled while a request is in flight.
+{
+  const a = dash.indexOf('// ── order flow job card'), b = dash.indexOf('function visitRow(');
+  const card = a >= 0 && b > a ? dash.slice(a, b) : '';
+  ok(card.length > 0, 'jkr/index.html: the order flow job card block is not where the test looks');
+  ok(!/\b(alert|confirm|prompt)\s*\(/.test(card), 'jkr/index.html: a job card action uses alert, confirm or prompt');
+  for (const [what, re] of [['the finish result', /Charge \$|Charge '\s*\+/], ['a refund', /Refund /], ['no change', /No change/]]) ok(re.test(card), `jkr/index.html: the finish step does not show ${what}`);
+  ok(/disabled/.test(card) && /busy/.test(card), 'jkr/index.html: the money buttons are not disabled while in flight');
 }
 ok(/'x-admin-token'\s*:\s*apiToken\(\)/.test(dash), 'jkr/index.html: the post helper does not send x-admin-token');
 ok(!/[?&]token=/.test(dash), 'jkr/index.html: has a ?token= URL form');

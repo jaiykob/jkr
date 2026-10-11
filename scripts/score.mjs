@@ -548,7 +548,10 @@ const ROUNDS = {
       }
       return true;
     } },
-    { id: 'clear', pts: 6, desc: '"+ travel" before a ZIP, then the total and a Travel line; the rule beside Book, on thanks.html and in the confirmation email', async run() {
+    // Pay at booking (founder, 2026-10-10): the rule says what is paid when booking and that a
+    // different size is charged or refunded; "nothing is charged today" is gone from the page,
+    // thanks.html and the confirmation email.
+    { id: 'clear', pts: 6, desc: '"+ travel" before a ZIP, then the total and a Travel line; the pay now rule (the total paid when booking, a different size charged or refunded) beside Book, on thanks.html and in the confirmation email', async run() {
       if (!Z2) return 'no zone 2 ZIP in the config';
       const bare = await dump(ORDER_URL());
       if (!/\+ travel/.test(text(bare))) return 'the order page never says "+ travel" before a ZIP';
@@ -557,20 +560,63 @@ const ROUNDS = {
       if (!total.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `with a ZIP the total reads "${total.slice(0, 80)}", want ${fmt(TOTAL)}`;
       if (!/Travel/.test(total)) return 'no Travel line once the ZIP is known';
       const pay = byId(dom, 'o-pay');
-      if (!pay || !/charged after the job/i.test(pay.text) || !/24 hours|Free to cancel/i.test(pay.text)) return 'the pay step does not state the rule beside Book';
+      const payNow = new RegExp(`You pay ${fmt(TOTAL).replace(/[$.]/g, '\\$&')} (now|when you book)`);
+      if (!pay || !payNow.test(pay.text) || !/charge or refund the difference/i.test(pay.text) || !/Free to cancel/i.test(pay.text)) return `the pay step does not state the pay now rule beside Book: "${pay ? pay.text.slice(0, 120) : ''}"`;
+      const stale = /Nothing is charged today|charged after the job/i;
+      if (stale.test(visibleText(dom))) return 'the order page still says nothing is charged today, or charged after the job';
       const th = await dump(seeded('/book/thanks.html', { bookingSummary: { plan: '1/2 truck', amountCents: TOTAL, travel: 'Zone 2', address: '1 Probe St' } }));
-      if (!/charged after the job/i.test(text(th))) return 'thanks.html does not say the card is charged after the job';
-      if (!/charged after the job/i.test(read('api/_lib/email-templates.js') || '')) return 'the confirmation email does not say the card is charged after the job';
+      if (!/paid today/i.test(text(th)) || !/difference/i.test(text(th)) || stale.test(text(th))) return 'thanks.html does not say the total was paid today and a difference is settled after the job';
+      let mail = null;
+      try {
+        delete require.cache[require.resolve(path.join(ROOT, 'api/_lib/email-templates.js'))];
+        mail = require(path.join(ROOT, 'api/_lib/email-templates.js')).bookedConfirmation({ name: 'Jane', load: '1/2 truck', total: fmt(TOTAL), paid: fmt(TOTAL), dayLabel: 'Tue Oct 14', windowLabel: 'a window' });
+      } catch (e) { return `the confirmation email did not build: ${e.message}`; }
+      const all = `${mail.subject}\n${visibleText(mail.html)}\n${mail.text}`;
+      if (!/Paid today/.test(all) || !all.includes(fmt(TOTAL)) || !/charge or refund the difference/.test(all) || stale.test(all)) return 'the confirmation email does not say what was paid today and that a different size is charged or refunded';
       return true;
     } },
-    { id: 'server', pts: 10, desc: 'test-booking passes: SetupIntent, never a PaymentIntent; stale quote, full window, outside the area, closed day and no consent refused with no Stripe object', run() {
+    { id: 'server', pts: 10, desc: 'booking: exactly one PaymentIntent for the quoted total with setup_future_usage off_session and no SetupIntent; stale quote, full window, outside the area, closed day and no consent refused with no Stripe object; test-booking passes', async run() {
       const src = read('scripts/test-booking.mjs') || '';
-      for (const k of ['setupIntents', 'stale_quote', 'window_full', 'outside_area', 'closed_day', 'consent_required']) if (!src.includes(k)) return `test-booking does not cover ${k}`;
+      for (const k of ['setup_future_usage', 'stale_quote', 'window_full', 'outside_area', 'closed_day', 'consent_required']) if (!src.includes(k)) return `test-booking does not cover ${k}`;
+      // Proved here as well, through the real handler and the shared fake Stripe.
+      if (!Z2 || !C.SCHEDULE) return 'no zone 2 ZIP or schedule in the config';
+      delete require.cache[require.resolve(path.join(ROOT, 'api/_lib/order-config.js'))];
+      const O = require(path.join(ROOT, 'api/_lib/order-config.js'));
+      const day = O.openDays(Date.now())[0].date, win = C.SCHEDULE.windows[0].key;
+      const good = { email: 'probe@example.com', name: 'Score Probe', phone: '5035550100', size: LOAD_ROW, zip: Z2, date: day, window: win, quotedCents: TOTAL,
+        consent: { agreed: true, version: O.POLICY.consentVersion }, attemptId: `score_${Date.now()}`, metadata: { address: `1 Probe St, Portland ${Z2}` } };
+      const book = (body) => callHandler('api/create-booking.js', { method: 'POST', body, headers: {} });
+      const refusals = [['a stale quote', { ...good, quotedCents: TOTAL + 100 }], ['an address outside the area', { ...good, zip: FAR, metadata: { address: `1 Probe St ${FAR}` } }],
+        ['a closed day', { ...good, date: '2020-01-01' }], ['no consent', { ...good, consent: { agreed: false, version: O.POLICY.consentVersion } }], ['a full window', good]];
+      const db = require(path.join(ROOT, 'api/_lib/db.js'));
+      const orig = db.slotCounts;
+      try {
+        for (const [what, body] of refusals) {
+          resetState();
+          if (what === 'a full window') db.slotCounts = async () => ({ [day]: { total: 99, [win]: 99 } });
+          const r = await book(body);
+          db.slotCounts = orig;
+          if (r.status < 400) return `${what} was booked (${r.status})`;
+          if (fakeStripe.calls.length) return `${what} created a Stripe object (${fakeStripe.calls.map((c) => c[0]).join(', ')})`;
+        }
+      } finally { db.slotCounts = orig; }
+      resetState();
+      const r = await book(good);
+      const pis = fakeStripe.calls.filter((c) => c[0] === 'pi');
+      if (r.status !== 200 || !r.json || !r.json.paymentIntentClientSecret) return `a good booking answered ${r.status} ${JSON.stringify(r.json).slice(0, 80)}`;
+      if (pis.length !== 1) return `${pis.length} PaymentIntents at booking, want exactly 1`;
+      if (fakeStripe.calls.some((c) => c[0] === 'si' || c[0] === 'sub')) return 'a SetupIntent or a subscription was created at booking';
+      const pi = pis[0][1];
+      if (pi.setup_future_usage !== 'off_session') return 'the booking PaymentIntent does not save the card (setup_future_usage off_session)';
+      if (pi.amount !== TOTAL || pi.metadata.kind !== 'booking') return `the booking PaymentIntent is ${pi.amount} (${pi.metadata.kind}), want ${TOTAL} (booking)`;
+      resetState();
       return run('node', ['scripts/test-booking.mjs']).code === 0 || 'test-booking fails';
     } },
-    { id: 'final-charge', pts: 10, desc: 'test-charge passes', run() {
+    { id: 'final-charge', pts: 10, desc: 'test-charge passes: charge more, refund less, same, decline to invoice, cancel refunds, said no refund', run() {
       if (!exists('scripts/test-charge.mjs')) return 'scripts/test-charge.mjs missing';
-      return run('node', ['scripts/test-charge.mjs']).code === 0 || 'test-charge fails';
+      const r = run('node', ['scripts/test-charge.mjs']);
+      for (const k of ['== charge more ==', '== refund less ==', '== same ==', '== decline ==', '== cancel ==', '== said no ==']) if (!r.out.includes(k)) return `test-charge has no ${k} section`;
+      return r.code === 0 || `test-charge fails: ${r.out.split('\n').filter((l) => /FAIL/.test(l)).slice(0, 2).join(' | ')}`;
     } },
     { id: 'webhook', pts: 6, desc: 'test-ops sections "booked" and "final charge" pass', run() {
       const r = run('node', ['scripts/test-ops.mjs']);
@@ -683,10 +729,10 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
         return (STATE.bookingHits === 0 && fakeStripe.calls.length === 0) || 'a closed-gate Book still reached create-booking or Stripe';
       });
     } },
-    { id: 'dashboard', pts: 3, desc: 'the four job actions show on a job; each refuses a missing token and the ?token= form', async run() {
+    { id: 'dashboard', pts: 3, desc: 'the four job actions (On my way, Finish, Cancel and refund, Customer said no) show on a job; each refuses a missing token and the ?token= form', async run() {
       const j = read('jkr/index.html') || '';
-      for (const k of ['On my way', 'Finish', 'Late cancel fee', 'Customer said no']) if (!j.includes(k)) return `the dashboard has no "${k}" action`;
-      for (const action of ['finish', 'declined', 'late-fee', 'en-route']) {
+      for (const k of ['On my way', 'Finish', 'Cancel and refund', 'Customer said no']) if (!j.includes(k)) return `the dashboard has no "${k}" action`;
+      for (const action of ['finish', 'declined', 'cancel-refund', 'en-route']) {
         const none = await callHandler('api/visit-update.js', { method: 'POST', body: { action, visitId: 'v1' }, headers: {}, env: { SUPABASE_SERVICE_ROLE_KEY: 'score-service-key' } });
         if (![401, 403].includes(none.status)) return `${action} without a token answered ${none.status}`;
         const q = await callHandler('api/visit-update.js', { method: 'POST', url: '/api/visit-update?token=score-admin-token', body: { action, visitId: 'v1' }, headers: {}, env: { SUPABASE_SERVICE_ROLE_KEY: 'score-service-key' } });

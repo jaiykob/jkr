@@ -1,13 +1,20 @@
 /**
  * A fake Stripe for the tests and the score server. It is installed in the
  * require cache, so the real API handlers (api/*.js) run against it without
- * network. Every call is recorded as [kind, params] in `calls`.
+ * network. Every call is recorded as [kind, params, options] in `calls`.
  *
  *   const { calls, state } = installFakeStripe({ decline: 'card_declined' });
  *
  * opts.decline: 'card_declined' | 'authentication_required' makes an
- * off_session paymentIntents.create throw a StripeCardError with that code.
- * state.claimed is how many founding customers with a saved card "exist" (customers.search); state.abandoned, founding customers without one.
+ *   off_session paymentIntents.create throw a StripeCardError with that code.
+ * opts.offSessionStatus: an off_session paymentIntents.create returns this
+ *   status instead of 'succeeded' ('processing', 'requires_action', ...).
+ * opts.cancelFails: paymentIntents.cancel throws (a payment Stripe cannot cancel).
+ * opts.refundFails: refunds.create throws a StripeAPIError.
+ * state.claimed is how many founding customers with a saved card "exist"
+ *   (customers.search); state.abandoned, founding customers without one.
+ * state.paymentIntents: id -> PaymentIntent, read by paymentIntents.retrieve
+ *   (a booking PaymentIntent is stored here when created; a test may add one).
  */
 import { createRequire } from 'node:module';
 
@@ -50,30 +57,48 @@ class FakeStripe {
         ...Array.from({ length: state.abandoned || 0 }, () => ({ metadata: { founding: 'true' }, invoice_settings: { default_payment_method: null } })),
       ], has_more: false }),
     };
+    // Kept so a test can prove nothing calls it (no SetupIntent at booking since pay at booking).
     this.setupIntents = {
       create: async (p, o) => {
         calls.push(['si', p, o]);
-        return idem(o, p, async () => {
-          const si = { id: next('seti'), client_secret: 'seti_secret', status: 'requires_payment_method', customer: p.customer, metadata: p.metadata || {}, payment_method: null };
-          state.setupIntents[si.id] = si;
-          return si;
-        });
+        return idem(o, p, async () => ({ id: next('seti'), client_secret: 'seti_secret', status: 'requires_payment_method', customer: p.customer, metadata: p.metadata || {}, payment_method: null }));
       },
-      retrieve: async (id) => state.setupIntents[id] || { id, status: 'succeeded', metadata: {}, payment_method: 'pm_1' },
+      retrieve: async (id) => ({ id, status: 'succeeded', metadata: {}, payment_method: 'pm_1' }),
     };
     this.paymentIntents = {
-      create: async (p) => {
-        calls.push(['pi', p]);
+      create: async (p, o) => {
+        calls.push(['pi', p, o]);
         if (opts.decline && p.off_session) {
           const e = new Error(opts.decline === 'authentication_required' ? 'Authentication required' : 'Your card was declined.');
           e.type = 'StripeCardError';
           e.code = opts.decline;
           throw e;
         }
-        return { id: next('pi'), client_secret: 'pi_secret', amount: p.amount, status: 'succeeded', metadata: p.metadata || {} };
+        return idem(o, p, async () => {
+          // Off session (after the job): confirmed on the spot. A booking: the page confirms it.
+          const status = p.off_session ? (opts.offSessionStatus || 'succeeded') : 'requires_payment_method';
+          const pi = { id: next('pi'), client_secret: `pi_secret_${seq}`, amount: p.amount, currency: p.currency, customer: p.customer,
+            status, setup_future_usage: p.setup_future_usage || null, metadata: p.metadata || {} };
+          state.paymentIntents[pi.id] = pi;
+          return pi;
+        });
       },
+      retrieve: async (id) => state.paymentIntents[id] || { id, status: 'succeeded', amount: null, amount_received: null, metadata: {} },
       update: async (id, p) => { calls.push(['pi-update', { id, ...p }]); return { id, ...p }; },
+      cancel: async (id) => {
+        calls.push(['pi-cancel', { id }]);
+        if (opts.cancelFails) { const e = new Error('This PaymentIntent could not be canceled.'); e.type = 'StripeInvalidRequestError'; throw e; }
+        if (state.paymentIntents[id]) state.paymentIntents[id].status = 'canceled';
+        return { id, status: 'canceled' };
+      },
       search: async () => ({ data: [], has_more: false }),
+    };
+    this.refunds = {
+      create: async (p, o) => {
+        calls.push(['refund', p, o]);
+        if (opts.refundFails) { const e = new Error('An error occurred with our connection to Stripe.'); e.type = 'StripeAPIError'; throw e; }
+        return idem(o, p, async () => ({ id: next('re'), amount: p.amount, payment_intent: p.payment_intent, status: 'succeeded', metadata: p.metadata || {} }));
+      },
     };
     this.invoiceItems = { create: async (p) => { calls.push(['invoice-item', p]); return { id: next('ii'), ...p }; } };
     this.invoices = {
@@ -97,7 +122,7 @@ class FakeStripe {
 
 /** Install (or re-install with new options) the fake. Returns { calls, state }. */
 export function installFakeStripe(opts = {}) {
-  ctx = { seen: new Map(), calls: [], state: { claimed: 0, abandoned: 0, setupIntents: {} }, opts };
+  ctx = { seen: new Map(), calls: [], state: { claimed: 0, abandoned: 0, paymentIntents: {} }, opts };
   if (!installed) {
     const load = Module._load;
     Module._load = function (req, ...rest) { return req === 'stripe' ? FakeStripe : load.call(this, req, ...rest); };

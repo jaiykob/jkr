@@ -10,11 +10,11 @@ const SITE_ORIGIN = (process.env.SITE_ORIGIN || require('./site').SITE_URL).repl
 
 function money(cents) { return `$${(Number(cents) / 100).toFixed(2)}`; }
 
-/** visit: the row with its customer. kind: 'final_charge' | 'late_fee'. */
+/** visit: the row with its customer. kind: 'difference' (a bigger load, charged after the job). */
 async function alertPaymentNeeded(visit, { cents, kind, invoiceUrl, reason, sendEmail } = {}) {
   const cust = (visit && visit.customers) || {};
   const name = [cust.first_name, cust.last_name].filter(Boolean).join(' ') || cust.name || '';
-  const what = kind === 'late_fee' ? 'late cancel fee' : 'final charge';
+  const what = 'difference for a bigger load';
   const url = process.env.OPS_WEBHOOK_URL;
   if (url) {
     const fields = [

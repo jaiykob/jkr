@@ -340,7 +340,7 @@
 <main id="main" class="o-main">
   <div class="o-intro">
     <h1>Book a junk pickup</h1>
-    <p class="o-lede">Pick a size, add your ZIP, choose a time.<span class="o-lede-more"> You pay after the job.</span></p>
+    <p class="o-lede">Pick a size, add your ZIP, choose a time.<span class="o-lede-more"> You pay when you book.</span></p>
   </div>
   <p class="sr-only" aria-live="polite" id="o-live"></p>
 
@@ -486,13 +486,15 @@
       </section>
 
       <section id="o-pay" class="o-sec is-locked" aria-labelledby="o-pay-h">
-        <div class="o-sec-head"><span class="o-num" aria-hidden="true"><span>5</span><svg><use href="#i-check"/></svg></span><h2 id="o-pay-h">Pay after the job</h2><p class="o-wait">Opens once your details are in.</p></div>
+        <div class="o-sec-head"><span class="o-num" aria-hidden="true"><span>5</span><svg><use href="#i-check"/></svg></span><h2 id="o-pay-h">Pay and book</h2><p class="o-wait">Opens once your details are in.</p></div>
         <div class="o-sec-body" hidden>
-          <!-- The rule in plain words, beside Book. The size, the cancel hours
-               and the late fee are filled in from window.ORDER (red while guessed). -->
+          <!-- The rule in plain words, beside Book (pay at booking, founder
+               2026-10-10). The total, the size, the cancel hours and the late
+               fee are filled in from window.ORDER (red while guessed); "now"
+               reads "when you book" while bookings are closed. -->
           <div class="o-rule" id="o-rule">
-            <p><strong>Nothing is charged today.</strong> Your card is charged after the job, for the size you actually have. If it is bigger or smaller than <span data-o="size-a">your pick</span>, the crew shows you the new price before loading, and you can say no.</p>
-            <p>Free to cancel or move until <span data-o="cancel"></span> before your window. After that, a <span data-o="late-fee"></span> late cancel fee.</p>
+            <p><strong>You pay <span data-o="pay-total">the total</span> <span data-o="pay-when">now</span>.</strong> If your load is bigger or smaller than <span data-o="size-a">your pick</span>, the crew shows you the new price before loading: we charge or refund the difference on your card, and you can say no.</p>
+            <p>Free to cancel or move until <span data-o="cancel"></span> before your window, with a full refund. After that, we keep a <span data-o="late-fee"></span> late cancel fee and refund the rest.</p>
           </div>
           <!-- Bookings open (BOOKINGS_OPEN_CLIENT): one box under the rule,
                then Apple Pay or Google Pay above the card form (Stripe's
@@ -502,7 +504,7 @@
           <div class="o-paybox" id="o-paybox" hidden>
             <label class="o-consent" id="o-consent-box">
               <input type="checkbox" id="o-consent" name="consent" aria-describedby="o-consent-err">
-              <span>I agree to the <a href="../terms.html" target="_blank" rel="noopener">terms</a>, and to this card being charged after the job.</span>
+              <span>I agree to the <a href="../terms.html" target="_blank" rel="noopener">terms</a>, and to this card being charged or refunded the difference if the crew finds a different size.</span>
             </label>
             <p class="o-err" id="o-consent-err" aria-live="polite"></p>
             <div class="o-wallet" id="o-wallet">
@@ -516,7 +518,7 @@
             <p class="o-err" id="o-card-err" role="alert"></p>
             <p class="o-pay-help">Questions before you book? Call or text <a href="tel:+19254086053">(925) 408-6053</a>.</p>
           </div>
-          <p class="o-closed" id="o-closed" hidden>We are not taking cards yet. Reserve your day now and we will text you to confirm it. Nothing is charged.</p>
+          <p class="o-closed" id="o-closed" hidden>We are not taking cards online yet. Reserve your day now, with no card, and we will text you to confirm it.</p>
           <div class="o-reserved" id="o-reserved" role="status" tabindex="-1" hidden></div>
           <p class="o-msg is-err" id="o-pay-fail" hidden>We could not save your reservation just now. Please call or text <a href="tel:+19254086053">(925) 408-6053</a> and we will book it with you.</p>
           <p class="o-msg" id="o-pay-msg" aria-live="polite"></p>
@@ -537,7 +539,7 @@
         </div>
         <p class="o-total"><span class="o-k">Total</span><span class="o-v">Pick a size</span></p>
         <div class="o-book-slot" data-slot="summary"></div>
-        <p class="o-sum-rule">Nothing is charged today. Free to cancel or move until <span data-o="cancel"></span> before.</p>
+        <p class="o-sum-rule">You pay when you book. A different size is charged or refunded after the job. Free to cancel or move until <span data-o="cancel"></span> before.</p>
         <div class="o-sum-contact">
           <p>Questions? Call, text or WhatsApp.</p>
           <div class="o-contact-row">

@@ -1,7 +1,9 @@
 // Exercises api/create-booking.js against a fake Stripe: validation, the
 // server-side total cross-check, the ZIP gate, consent, closed days, window
-// capacity, the live-mode booking gate, and the SetupIntent that saves the
-// card (setupIntents.create; never a PaymentIntent or a subscription). No network.
+// capacity, the live-mode booking gate, and the one PaymentIntent for the
+// quoted total that also saves the card (paymentIntents.create with
+// setup_future_usage 'off_session'; never a SetupIntent, a subscription or a
+// coupon). Pay at booking (founder, 2026-10-10). No network.
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +34,7 @@ async function call(body, env = {}) {
   await handler({ method: 'POST', headers: {}, body }, res);
   return { status, json };
 }
-const lastSetupIntent = () => calls.filter(([k]) => k === 'si').pop()[1];
+const lastPI = () => calls.filter(([k]) => k === 'pi').pop()[1];
 
 // db.slotCounts replaced on the loaded module (Ruling R4): no database needed.
 const realSlotCounts = async () => ({});   // nothing booked yet
@@ -99,37 +101,44 @@ db.slotCounts = realSlotCounts;
 await call(good({ quotedCents: 1 }));
 ok(calls.length === 0, 'a Stripe object was created on a refused booking');
 
-console.log('== setup intent ==');
+console.log('== payment intent ==');
 const r = await call(good());
-ok(r.status === 200 && r.json.setupIntentClientSecret, 'no client secret');
-ok(r.json.totalCents === good().quotedCents && r.json.travelCents === travelFor(zip).cents
+ok(r.status === 200 && r.json.paymentIntentClientSecret, 'no payment intent client secret');
+ok(!('setupIntentClientSecret' in r.json), 'the answer still carries a setup intent secret');
+ok(r.json.totalCents === good().quotedCents && r.json.travelCents === travelFor(zip).cents && r.json.amountCents === good().quotedCents
   && r.json.loadCents === ORDER.SIZES[2].cents && r.json.customerId, `response shape ${JSON.stringify(r.json)}`);
-ok(calls.some(([k]) => k === 'si') && !calls.some(([k]) => k === 'pi' || k === 'sub' || k === 'coupon'), 'a charge was created at booking');
-const si = lastSetupIntent();
-ok(si.usage === 'off_session' && si.customer && si.automatic_payment_methods.enabled === true, 'setup intent is not an off session setup for the customer');
-const meta = si.metadata;
-ok(meta.kind === 'booking' && meta.window === 'w10' && meta.date === day && meta.size === ORDER.SIZES[2].key, 'setup intent metadata');
+// Exactly one PaymentIntent (paymentIntents.create), and no SetupIntent, subscription or coupon.
+ok(calls.filter(([k]) => k === 'pi').length === 1, `${calls.filter(([k]) => k === 'pi').length} payment intents at booking, want exactly 1`);
+ok(!calls.some(([k]) => k === 'si' || k === 'sub' || k === 'coupon'), 'a SetupIntent, subscription or coupon was created at booking');
+const pi = lastPI();
+ok(pi.amount === good().quotedCents && pi.currency === 'usd' && pi.customer, `the booking payment is not the quoted total in usd for the customer: ${JSON.stringify(pi)}`);
+ok(pi.setup_future_usage === 'off_session', 'the card is not saved for the difference (setup_future_usage off_session)');
+ok(pi.automatic_payment_methods && pi.automatic_payment_methods.enabled === true, 'automatic payment methods not enabled');
+ok(!pi.off_session && !pi.confirm, 'the server confirmed the booking payment: the page confirms it');
+const meta = pi.metadata;
+ok(meta.kind === 'booking' && meta.window === 'w10' && meta.date === day && meta.size === ORDER.SIZES[2].key, 'payment intent metadata');
 ok(meta.load_idx === '2' && meta.load_cents === String(ORDER.SIZES[2].cents) && meta.travel_cents === String(travelFor(zip).cents)
   && meta.total_cents === String(good().quotedCents) && meta.market === 'portland' && meta.zip === zip && meta.founding === 'false',
-  'setup intent money, market or zip metadata');
-ok(meta.zone === travelFor(zip).zone && meta.zone_label === travelFor(zip).label && meta.miles === String(travelFor(zip).miles), 'setup intent zone metadata');
+  'payment intent money, market or zip metadata');
+ok(meta.zone === travelFor(zip).zone && meta.zone_label === travelFor(zip).label && meta.miles === String(travelFor(zip).miles), 'payment intent zone metadata');
 ok(meta.consent_version === ORDER.POLICY.consentVersion && Math.abs(Date.parse(meta.consent_at) - Date.now()) < 60000, 'consent time not stamped by the server');
+ok(ORDER.POLICY.consentVersion === '2026-10-10b', `consent version is ${ORDER.POLICY.consentVersion}: the pay at booking wording is 2026-10-10b`);
 ok(meta.address === `1 Oak Ln, Gresham ${zip}`, 'the page address was not kept');
 const stamped = await call(good({ consent: { agreed: true, version: ORDER.POLICY.consentVersion, at: '2000-01-01T00:00:00Z' } }));
-ok(stamped.status === 200 && lastSetupIntent().metadata.consent_at !== '2000-01-01T00:00:00Z', 'the page chose the consent time');
+ok(stamped.status === 200 && lastPI().metadata.consent_at !== '2000-01-01T00:00:00Z', 'the page chose the consent time');
 const cust = calls.find(([k]) => k === 'customer')[1];
 ok(cust.email === 'a@b.co' && cust.metadata.kind === 'booking' && !cust.payment_method, 'customer should carry metadata and no payment method yet');
-const over = await call(good({ metadata: { address: '1 Oak', kind: 'final_charge', total_cents: '1' } }));
-ok(over.status === 200 && lastSetupIntent().metadata.kind === 'booking' && lastSetupIntent().metadata.total_cents === String(good().quotedCents),
-  'the page overwrote server metadata');
+const over = await call(good({ metadata: { address: '1 Oak', kind: 'difference', total_cents: '1' }, amount: 1 }));
+ok(over.status === 200 && lastPI().metadata.kind === 'booking' && lastPI().metadata.total_cents === String(good().quotedCents)
+  && lastPI().amount === good().quotedCents, 'the page overwrote server metadata or the amount');
 
 console.log('== quote photos ==');
 const okPath = 'quotes/2026-09-28/0123456789abcdef01234567.jpg';
 const ph = await call(good({ metadata: { ...good().metadata, photos: `${okPath},1111/visit/after-1.jpg,../x.jpg` } }));
-ok(ph.status === 200 && lastSetupIntent().metadata.photos === okPath, `photo paths not filtered to server-named ones: ${lastSetupIntent().metadata.photos}`);
+ok(ph.status === 200 && lastPI().metadata.photos === okPath, `photo paths not filtered to server-named ones: ${lastPI().metadata.photos}`);
 
 console.log('== idempotency ==');
-const idem = () => calls.filter(([k]) => k === 'customer' || k === 'si').map(([, , o]) => o && o.idempotencyKey);
+const idem = () => calls.filter(([k]) => k === 'customer' || k === 'pi').map(([, , o]) => o && o.idempotencyKey);
 // The same booking sent twice a moment apart: same params but consent_at, so
 // the first key is reused with other params, Stripe says idempotency error,
 // and the handler retries once with a fresh key. Both calls succeed.
@@ -137,7 +146,7 @@ const r1 = await call(good());
 const keysA = idem();
 await new Promise((r) => setTimeout(r, 5));
 const r2 = await call(good());
-ok(r1.status === 200 && r2.status === 200 && r2.json.setupIntentClientSecret, 'a retry differing only by consent_at failed');
+ok(r1.status === 200 && r2.status === 200 && r2.json.paymentIntentClientSecret, 'a retry differing only by consent_at failed');
 ok(calls.filter(([k]) => k === 'customer').length === 2, 'the fallback did not retry the customer with a fresh key');
 ok(keysA.every(Boolean) && keysA[0].split(':').length === 2 && idem()[1].split(':').length === 3, 'the fallback key is not the first key plus a suffix');
 // Truly identical params (the clock fixed) get the original objects back, no error.
@@ -147,15 +156,15 @@ const sameDay = ORDER.openDays(FIXED)[0].date;
 const i1 = await call(good({ attemptId: 'att_same', date: sameDay }));
 const i2 = await call(good({ attemptId: 'att_same', date: sameDay }));
 globalThis.Date = RealDate;
-ok(i1.status === 200 && i2.status === 200 && i1.json.customerId === i2.json.customerId && calls.length === 2
+ok(i1.status === 200 && i2.status === 200 && i1.json.customerId === i2.json.customerId && i1.json.paymentIntentClientSecret === i2.json.paymentIntentClientSecret && calls.length === 2
   && idem()[0].split(':').length === 2 && idem()[1].split(':').length === 2, 'an identical retry did not get the original objects');
 await call(good({ attemptId: 'att_2' }));
 ok(idem()[0] !== keysA[0], 'a new attempt reused the old idempotency key');
 // An edited resubmit under the same attempt succeeds: other phone, address, notes.
 const e1 = await call(good({ attemptId: 'att_edit' }));
 const e2 = await call(good({ attemptId: 'att_edit', phone: '5035550199', metadata: { address: `2 Elm St, Gresham ${zip}`, notes: 'gate code 1' } }));
-ok(e1.status === 200 && e2.status === 200 && e2.json.setupIntentClientSecret, 'an edited resubmit under the same attempt failed');
-ok(lastSetupIntent().metadata.address.startsWith('2 Elm St') && calls.find(([k]) => k === 'customer')[1].phone === '5035550199', 'the edited resubmit did not use the edited details');
+ok(e1.status === 200 && e2.status === 200 && e2.json.paymentIntentClientSecret, 'an edited resubmit under the same attempt failed');
+ok(lastPI().metadata.address.startsWith('2 Elm St') && calls.find(([k]) => k === 'customer')[1].phone === '5035550199', 'the edited resubmit did not use the edited details');
 ok(idem().every((k) => k.split(':').length === 2), 'an edited resubmit needed the fallback key: its key should differ from the first');
 const w2 = await call(good({ attemptId: 'att_edit', window: 'w14' }));
 ok(w2.status === 200, 'a changed window under the same attempt failed');
@@ -170,7 +179,8 @@ ok(t2 > 0 && farZip, 'test setup: need a zone 2 ZIP with a fee and a ZIP past th
 const away = good({ zip: z2, quotedCents: ORDER.SIZES[2].cents + t2, metadata: { address: `9 Elm St, Portland ${z2}-1234` } });
 const tr = await call(away);
 ok(tr.status === 200 && tr.json.totalCents === ORDER.SIZES[2].cents + t2, `zone 2 booking refused: ${JSON.stringify(tr.json)}`);
-const trM = lastSetupIntent().metadata;
+const trM = lastPI().metadata;
+ok(lastPI().amount === ORDER.SIZES[2].cents + t2, 'travel not in the amount paid at booking');
 ok(trM.total_cents === String(ORDER.SIZES[2].cents + t2), 'travel not added to the total');
 ok(trM.zone === ZONES[1].key && trM.zone_label === ZONES[1].label, 'zone missing from metadata');
 ok(trM.travel_cents === String(t2) && trM.load_cents === String(ORDER.SIZES[2].cents), 'travel or load cents missing from metadata');

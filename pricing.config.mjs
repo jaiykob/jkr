@@ -202,9 +202,9 @@ export const SCHEDULE = {
 /** GUESS* the cancel window and fees (GUESS.policy). Dollars here, cents in the module. */
 export const POLICY = {
   cancelHours: 24,          // free to cancel or move until this many hours before the window starts
-  lateFee: 50,              // dollars, charged by the dashboard's Late cancel fee action
-  refusalFee: 0,            // dollars, when the customer says no on site
-  consentVersion: '2026-10-10',
+  lateFee: 50,              // dollars, kept from the refund when the dashboard's Cancel and refund runs inside cancelHours
+  refusalFee: 0,            // dollars, kept from the refund when the customer says no on site
+  consentVersion: '2026-10-10b', // 2026-10-10b: pay at booking, the difference charged or refunded after the job
 };
 
 /** Fails the build on a schedule that would misbook a day. */

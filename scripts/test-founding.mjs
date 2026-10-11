@@ -48,7 +48,7 @@ const good = (over = {}) => ({
   quotedCents: total, consent: { agreed: true, version: ORDER.POLICY.consentVersion }, attemptId: 'att_f1',
   metadata: { address: `1 Oak Ln ${zip}` }, ...over,
 });
-const lastSI = () => calls.filter((c) => c[0] === 'si').pop();
+const lastPI = () => calls.filter((c) => c[0] === 'pi').pop();
 
 console.log('== the math ==');
 const pct = founding.FOUNDING.percentOff;
@@ -59,8 +59,8 @@ ok(founding.firstMonthDiscountCents(0) === 0, 'a zero charge got a discount');
 console.log('== off by default ==');
 ok(founding.FOUNDING.open === false, 'the offer is switched on in the code');
 let r = await call(good({ founding: true }));
-const si0 = lastSI();
-ok(r.status === 200 && si0 && si0[1].metadata.founding === 'false' && si0[1].metadata.founding_discount_cents === '0' && si0[1].metadata.total_cents === String(total), 'with the offer off, a booking still got a discount');
+const si0 = lastPI();
+ok(r.status === 200 && si0 && si0[1].metadata.founding === 'false' && si0[1].metadata.founding_discount_cents === '0' && si0[1].metadata.total_cents === String(total) && si0[1].amount === total, 'with the offer off, a booking still got a discount');
 ok(r.json && r.json.founding == null, 'the offer is off but the booking says founding');
 ok((await spots({ STRIPE_SECRET_KEY: 'sk_test_x' })).open === false, 'founding-spots says open while the offer is off');
 delete process.env.STRIPE_SECRET_KEY;
@@ -72,14 +72,16 @@ founding._resetCache();
 state.claimed = 3;
 ok((await spots({ STRIPE_SECRET_KEY: 'sk_test_x' })).left === founding.FOUNDING.spots - 3, 'spots left miscounted');
 r = await call(good({ founding: true }));
-const si1 = lastSI();
+const si1 = lastPI();
 const off = Math.round(total * pct / 100);
 ok(r.status === 200 && si1 && si1[1].metadata.founding === 'true' && si1[1].metadata.founding_discount_cents === String(off), 'the booking is not stamped founding with the discount');
-ok(si1 && si1[1].metadata.total_cents === String(total), 'the quoted total changed: nothing is discounted at booking');
+ok(si1 && si1[1].metadata.total_cents === String(total), 'the quoted total in the metadata changed: it is the total before the discount');
+ok(si1 && si1[1].amount === total - off, 'the founding discount does not come off the booking payment (pay at booking)');
+ok(r.json.amountCents === total - off && r.json.totalCents === total, 'the answer does not say what is charged now and the total before the discount');
 const cust1 = calls.find((c) => c[0] === 'customer');
 ok(cust1 && cust1[1].metadata.founding === 'true', 'the customer is not stamped founding (the spot count reads it)');
 ok(r.json.founding && r.json.founding.discountCents === off, 'the response does not report the discount');
-ok(!calls.some((c) => c[0] === 'pi' || c[0] === 'sub' || c[0] === 'coupon'), 'a founding booking created a charge or a coupon');
+ok(calls.filter((c) => c[0] === 'pi').length === 1 && !calls.some((c) => c[0] === 'si' || c[0] === 'sub' || c[0] === 'coupon'), 'a founding booking made other than one PaymentIntent (a SetupIntent, subscription or coupon)');
 
 // A customer stamped founding whose card was never saved uses no spot.
 state.claimed = 3; state.abandoned = 7; founding._resetCache();
@@ -91,10 +93,10 @@ state.claimed = founding.FOUNDING.spots;
 founding._resetCache();
 r = await call(good({ founding: true }));
 ok(r.status === 409 && r.json.code === 'founding_closed', `shown the offer after the last spot went: ${r.status} ${JSON.stringify(r.json)}`);
-ok(!calls.some((c) => c[0] === 'customer' || c[0] === 'si'), 'a closed offer still created a customer or a SetupIntent');
+ok(!calls.some((c) => c[0] === 'customer' || c[0] === 'pi'), 'a closed offer still created a customer or a PaymentIntent');
 r = await call(good());
-const si2 = lastSI();
-ok(r.status === 200 && si2 && si2[1].metadata.founding === 'false' && si2[1].metadata.total_cents === String(total), 'a booking not shown the offer was refused or discounted after it closed');
+const si2 = lastPI();
+ok(r.status === 200 && si2 && si2[1].metadata.founding === 'false' && si2[1].metadata.total_cents === String(total) && si2[1].amount === total, 'a booking not shown the offer was refused or discounted after it closed');
 founding.FOUNDING.open = false;
 
 console.log(`\n${pass} passed, ${fail} failed`);

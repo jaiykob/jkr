@@ -1,15 +1,20 @@
 /**
  * Vercel Serverless Function: create-booking
  *
- * Round 6: the card is SAVED at booking and charged once after the job
- * (api/visit-update.js). This function creates a Stripe customer and a
- * SetupIntent (usage off_session, stripe.setupIntents.create) and returns its
- * client secret. It never creates a PaymentIntent, a subscription or a coupon.
+ * Round 6, pay at booking (founder, 2026-10-10: "payments have to be accepted
+ * at time of bookings so i can pay hauler"): the quoted total is PAID when the
+ * customer books, and the card is saved so that after the job a bigger size is
+ * charged the difference and a smaller one refunded it (api/visit-update.js).
+ * This function creates a Stripe customer and ONE PaymentIntent for the total
+ * (less any founding discount) with setup_future_usage 'off_session', and
+ * returns its client secret for the page to confirm. It never creates a
+ * SetupIntent, a subscription or a coupon. The webhook books the job when the
+ * PaymentIntent succeeds (payment_intent.succeeded, metadata.kind 'booking').
  *
  * The total is recomputed here from the order module (size price plus the
  * ZIP's travel fee). The page's number is only cross-checked. The customer's
- * consent to be charged later is required and stamped here, with the server
- * clock, on the card path and the wallet path alike.
+ * consent to the difference being charged or refunded later is required and
+ * stamped here, with the server clock, on the card path and the wallet path alike.
  *
  * Refusals (nothing is created in Stripe for any of them):
  *   400 bad_request | outside_area | stale_quote | closed_day | consent_required
@@ -131,10 +136,10 @@ module.exports = async (req, res) => {
     return res.status(400).json({ code: 'closed_day', error: 'We are not booking that day. Please choose another.' });
   }
 
-  // Consent to be charged after the job. The time is stamped by the server,
-  // never taken from the page.
+  // Consent to the difference being charged or refunded after the job. The
+  // time is stamped by the server, never taken from the page.
   if (!consent || consent.agreed !== true || consent.version !== ORDER.POLICY.consentVersion) {
-    return res.status(400).json({ code: 'consent_required', error: 'Please agree to the charge after the job to book.' });
+    return res.status(400).json({ code: 'consent_required', error: 'Please agree to the terms and to the difference being charged or refunded to book.' });
   }
   const consentAt = new Date().toISOString();
 
@@ -166,10 +171,11 @@ module.exports = async (req, res) => {
   };
 
   // ── Founding member offer (api/_lib/founding.js; off unless FOUNDING.open)
-  // Re-counted live here, never trusted from the page. Nothing is charged at
-  // booking, so the offer is recorded (founding, founding_discount_cents) for
-  // the final charge. If the page showed the offer but the last spot just
-  // went, refuse so the customer reviews the regular price (founding_closed).
+  // Re-counted live here, never trusted from the page. The discount comes off
+  // the booking payment, and founding: 'true' rides in its metadata so the
+  // after job difference takes the same percent off the final total (R19).
+  // If the page showed the offer but the last spot just went, refuse so the
+  // customer reviews the regular price (founding_closed).
   let foundingApplied = false;
   if (founding.FOUNDING.open) {
     let left = null;
@@ -198,9 +204,9 @@ module.exports = async (req, res) => {
   // object, while an edited resubmit (new phone, address, notes) gets a new key.
   // A retry that differs only by consent_at reuses a key with other params:
   // Stripe answers StripeIdempotencyError, and createOnce below retries once
-  // with a fresh key. A duplicate customer or an unconfirmed SetupIntent is
-  // harmless: no money moves at booking and the page confirms only the
-  // SetupIntent it was handed.
+  // with a fresh key. A duplicate customer or an unconfirmed PaymentIntent is
+  // harmless: no money moves until the page confirms, and the page confirms
+  // only the PaymentIntent it was handed (an unconfirmed one simply lapses).
   const canon = (v) => (Array.isArray(v) ? '[' + v.map(canon).join(',') + ']'
     : v && typeof v === 'object' ? '{' + Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}'
     : JSON.stringify(v));
@@ -226,21 +232,27 @@ module.exports = async (req, res) => {
       metadata: { ...metadata, ...serverMeta },
     });
 
-    const setupIntent = await createOnce('si', (q, o) => stripe.setupIntents.create(q, o), {
+    // The booking payment: the total now, the card saved for the difference.
+    // The page confirms it (Payment Element or a wallet); nothing here does.
+    const amountCents = totalCents - foundingCents;
+    const paymentIntent = await createOnce('pi', (q, o) => stripe.paymentIntents.create(q, o), {
+      amount: amountCents,
+      currency: 'usd',
       customer: customer.id,
-      usage: 'off_session',
+      setup_future_usage: 'off_session',
       automatic_payment_methods: { enabled: true },
       description: `${site.NAME}: ${ORDER.SIZES[row].label} haul, ${trip.label}, ${date}`,
       metadata: { ...metadata, ...serverMeta },
     });
 
     return res.status(200).json({
-      customerId:              customer.id,
-      setupIntentClientSecret: setupIntent.client_secret,
-      totalCents,
+      customerId:                customer.id,
+      paymentIntentClientSecret: paymentIntent.client_secret,
+      totalCents,                // the total before any founding discount
+      amountCents,               // what is charged now
       loadCents,
-      travelCents:             trip.cents,
-      founding:                foundingResult,
+      travelCents:               trip.cents,
+      founding:                  foundingResult,
     });
   } catch (err) {
     if (err && err.type && String(err.type).startsWith('Stripe')) {

@@ -8,6 +8,8 @@
  * Two classes, matching the transactional/marketing split:
  *   TRANSACTIONAL (no unsubscribe, sent off a customer action):
  *     1. bookingConfirmation   2. paymentFailed   3. serviceComplete
+ *     Order flow (pay at booking): 1b. bookedConfirmation   3b. receipt
+ *     (paid, adjusted, final)   3c. paymentNeeded   3d. refundNotice
  *   MARKETING (CAN-SPAM: physical address + unsubscribe required):
  *     4. reviewRequest   5. leadRecapture   6. visitReminder   7. winBack
  *   TO THE OWNER (OPS_EMAIL, transactional):
@@ -183,11 +185,14 @@ function bookingConfirmation(ctx = {}) {
   };
 }
 
-// 1b. Booked: fires when the card is saved (setup_intent.succeeded). Nothing is
-// charged yet, so it says so, with the day and the arrival window.
+// 1b. Booked: fires when the booking payment succeeds (payment_intent.succeeded,
+// kind 'booking'). Pay at booking: it says what was paid today, the day and the
+// arrival window, and the rule for a different size (charged or refunded).
 function bookedConfirmation(ctx = {}) {
-  const { name, dayLabel, windowLabel, address, load, travel, total } = ctx;
+  const { name, dayLabel, windowLabel, address, load, travel, total, discount } = ctx;
+  const paid = ctx.paid || total;
   const cancelHours = ctx.cancelHours || ORDER.POLICY.cancelHours;
+  const lateFee = `$${(ORDER.POLICY.lateFeeCents / 100).toFixed(2)}`;
   const heading = `You're booked${name ? ', ' + name : ''}!`;
   const rows = [
     detail('Day', dayLabel),
@@ -195,12 +200,14 @@ function bookedConfirmation(ctx = {}) {
     detail('Address', address),
     detail('Size', load),
     detail('Travel', travel),
-    detail('Total if the size is right', total),
+    detail('Total', total),
+    detail('Founding discount', discount),
+    detail('Paid today', paid),
   ].join('');
-  const rule = `Nothing is charged today. After the job we charge this card for the size you actually have. If it is bigger or smaller than ${load ? 'a ' + load : 'the size we quoted'}, the crew shows you the new price before loading, and you can say no. Free to cancel or move until ${cancelHours} hours before.`;
-  const consent = 'You agreed to this card being charged after the job.';
+  const rule = `${paid ? `You paid ${paid} today. ` : ''}If your load is bigger or smaller than ${load ? 'a ' + load : 'the size you booked'}, the crew shows you the new price before loading: we charge or refund the difference on your card, and you can say no. Free to cancel or move until ${cancelHours} hours before your arrival window, with a full refund. After that, we keep a ${lateFee} late cancel fee and refund the rest.`;
+  const consent = 'You agreed to the terms, and to this card being charged or refunded the difference if the crew finds a different size.';
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Thanks for booking with ${BRAND.name}. Your haul is confirmed, and here are the details:</p>
+    <p style="margin:0 0 12px;">Thanks for booking with ${BRAND.name}. Your haul is booked and paid, and here are the details:</p>
     <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
     <p style="margin:12px 0;"><strong>${escapeHtml(rule)}</strong></p>
     <p style="margin:12px 0;">${escapeHtml(consent)}</p>
@@ -209,8 +216,8 @@ function bookedConfirmation(ctx = {}) {
   const when = [dayLabel, windowLabel].filter(Boolean).join(', ');
   return {
     subject: when ? `You're booked for ${when}` : "You're booked",
-    html: layout({ preheader: 'Your haul is confirmed. Nothing is charged today.', heading, bodyHtml }),
-    text: `You're booked${name ? ', ' + name : ''}!\n\nDay: ${dayLabel || ''}\nWindow: ${windowLabel || ''}\nAddress: ${address || ''}${load ? `\nSize: ${load}` : ''}${travel ? `\nTravel: ${travel}` : ''}\nTotal if the size is right: ${total || ''}\n\n${rule}\n${consent}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+    html: layout({ preheader: 'Your haul is booked and paid. Here are the details.', heading, bodyHtml }),
+    text: `You're booked${name ? ', ' + name : ''}!\n\nDay: ${dayLabel || ''}\nWindow: ${windowLabel || ''}\nAddress: ${address || ''}${load ? `\nSize: ${load}` : ''}${travel ? `\nTravel: ${travel}` : ''}\nTotal: ${total || ''}${discount ? `\nFounding discount: ${discount}` : ''}\nPaid today: ${paid || ''}\n\n${rule}\n${consent}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
   };
 }
 
@@ -254,58 +261,86 @@ function serviceComplete(ctx = {}) {
   };
 }
 
-// 3b. Receipt: the card on file was charged after the job (final_charge).
+// 3b. Receipt: the job is done and settled (pay at booking). It shows what was
+// paid when booking, the adjustment (the difference charged for a bigger load,
+// refunded for a smaller one, or no change) and the final total.
+//   adjust: 'charged' | 'refunded' | 'none'
 function receipt(ctx = {}) {
-  const { name, amount, load, travel, discount, dayLabel } = ctx;
-  const heading = 'Paid, thank you';
+  const { name, paid, adjustment, final, load, travel, discount, dayLabel } = ctx;
+  const adjust = ctx.adjust || 'none';
+  const heading = 'Your receipt';
+  const adjustRow = adjust === 'charged' ? detail('Charged for the bigger load', adjustment)
+    : adjust === 'refunded' ? detail('Refunded for the smaller load', adjustment)
+    : detail('Change', 'No change');
   const rows = [
     detail('Day', dayLabel),
-    detail('Size', load),
+    detail('Final size', load),
     detail('Travel', travel),
     detail('Founding discount', discount),
-    detail('Charged', amount),
+    detail('Paid when you booked', paid),
+    adjustRow,
+    detail('Final total', final),
   ].join('');
+  const why = adjust === 'charged'
+    ? `Your load was bigger than you booked, so we charged the difference${adjustment ? ` of ${adjustment}` : ''} to your card, as agreed with the crew.`
+    : adjust === 'refunded'
+      ? `Your load was smaller than you booked, so we refunded the difference${adjustment ? ` of ${adjustment}` : ''} to your card. It can take 5 to 10 business days to show on your statement.`
+      : 'Your load was the size you booked, so there is no change to what you paid.';
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we charged the card you saved when you booked. Here is your receipt:</p>
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, thank you for having us out. ${escapeHtml(why)} Here is your receipt:</p>
     <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
-    <p style="margin:12px 0;">Questions about the charge? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+    <p style="margin:12px 0;">Questions about it? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  const adjText = adjust === 'charged' ? `Charged for the bigger load: ${adjustment || ''}` : adjust === 'refunded' ? `Refunded for the smaller load: ${adjustment || ''}` : 'Change: No change';
   return {
-    subject: amount ? `Receipt: ${amount} paid` : 'Receipt: paid',
-    html: layout({ preheader: 'We charged your saved card. Here is your receipt.', heading, bodyHtml }),
-    text: `Hi${name ? ' ' + name : ''}, we charged the card you saved when you booked.\n\n${dayLabel ? `Day: ${dayLabel}\n` : ''}${load ? `Size: ${load}\n` : ''}${travel ? `Travel: ${travel}\n` : ''}${discount ? `Founding discount: ${discount}\n` : ''}Charged: ${amount || ''}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+    subject: final ? `Receipt: ${final} total` : 'Your receipt',
+    html: layout({ preheader: 'Your job is done. Here is your receipt.', heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}, thank you for having us out. ${why}\n\n${dayLabel ? `Day: ${dayLabel}\n` : ''}${load ? `Final size: ${load}\n` : ''}${travel ? `Travel: ${travel}\n` : ''}${discount ? `Founding discount: ${discount}\n` : ''}Paid when you booked: ${paid || ''}\n${adjText}\nFinal total: ${final || ''}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
   };
 }
 
-// 3c. Payment needed: the saved card was declined after the job; a hosted invoice is the way to pay.
+// 3c. Payment needed: the load was bigger and the saved card was declined for the
+// difference after the job; a hosted invoice is the way to pay it.
 function paymentNeeded(ctx = {}) {
   const { name, amount, invoiceUrl } = ctx;
   const heading = 'We could not charge your card';
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, thank you for having us out. Your bank did not accept the charge${amount ? ` of <strong>${escapeHtml(amount)}</strong>` : ''}, so we sent an invoice instead. You can pay it with any card in a minute:</p>
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, thank you for having us out. Your load was bigger than you booked, and your bank did not accept the charge for the difference${amount ? ` of <strong>${escapeHtml(amount)}</strong>` : ''}, so we sent an invoice instead. You can pay it with any card in a minute:</p>
     ${button('Pay the invoice', invoiceUrl)}
     <p style="margin:12px 0;">If you would rather sort it out by phone, reply here or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: amount ? `Please pay your ${amount} invoice` : 'Please pay your invoice',
-    html: layout({ preheader: 'Your bank did not accept the charge. Here is the invoice.', heading, bodyHtml }),
-    text: `Hi${name ? ' ' + name : ''}, your bank did not accept the charge${amount ? ` of ${amount}` : ''}, so we sent an invoice.\nPay it here: ${invoiceUrl || BRAND.site}\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+    html: layout({ preheader: 'Your bank did not accept the charge for the difference. Here is the invoice.', heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}, your load was bigger than you booked, and your bank did not accept the charge for the difference${amount ? ` of ${amount}` : ''}, so we sent an invoice.\nPay it here: ${invoiceUrl || BRAND.site}\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
   };
 }
 
-// 3d. Late fee: charged to the saved card when a booking is canceled or moved inside the free window.
-function lateFee(ctx = {}) {
-  const { name, amount, dayLabel, windowLabel } = ctx;
+// 3d. Refund: the booking was canceled (a full refund, or less the late cancel
+// fee inside the free window) or the customer said no on site (less the
+// refusal fee, $0 today).
+//   why: 'canceled' | 'declined'; refund, kept: money strings; late: true inside the window
+function refundNotice(ctx = {}) {
+  const { name, refund, kept, late, dayLabel, windowLabel } = ctx;
+  const why = ctx.why === 'declined' ? 'declined' : 'canceled';
   const cancelHours = ctx.cancelHours || ORDER.POLICY.cancelHours;
   const when = [dayLabel, windowLabel].filter(Boolean).join(', ');
-  const heading = 'Late cancel fee';
-  const rule = `Canceling or moving is free until ${cancelHours} hours before the arrival window. You agreed to this when you booked.`;
+  const refunded = refund && !/^\$0\.00$/.test(refund);
+  const back = refunded ? ` We refunded ${refund} to your card. It can take 5 to 10 business days to show on your statement.` : '';
+  let lead;
+  if (why === 'declined') {
+    lead = `Thank you for having us out. You chose not to go ahead at the new price.${kept ? ` We kept ${kept} for the trip out.` : ''}${back}`;
+  } else if (late && kept) {
+    lead = `Your pickup${when ? ` on ${when}` : ''} is canceled. It was canceled less than ${cancelHours} hours before the arrival window, so we kept the ${kept} late cancel fee you agreed to when you booked.${back}`;
+  } else {
+    lead = `Your pickup${when ? ` on ${when}` : ''} is canceled.${back}`;
+  }
+  const heading = why === 'declined' ? 'Your refund' : 'Your booking is canceled';
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, we charged the card you saved a late cancel fee${amount ? ` of <strong>${escapeHtml(amount)}</strong>` : ''}${when ? ` for your booking on ${escapeHtml(when)}` : ''}.</p>
-    <p style="margin:12px 0;">${escapeHtml(rule)}</p>
-    <p style="margin:12px 0;">If you think this is a mistake, reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}. ${escapeHtml(lead)}</p>
+    <p style="margin:12px 0;">Questions? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
-    subject: amount ? `Late cancel fee: ${amount}` : 'Late cancel fee',
-    html: layout({ preheader: 'We charged a late cancel fee to your saved card.', heading, bodyHtml }),
-    text: `Hi${name ? ' ' + name : ''}, we charged the card you saved a late cancel fee${amount ? ` of ${amount}` : ''}${when ? ` for your booking on ${when}` : ''}.\n${rule}\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+    subject: why === 'declined' ? (refunded ? `Refund: ${refund}` : 'Your refund') : (refunded ? `Canceled: ${refund} refunded` : 'Your booking is canceled'),
+    html: layout({ preheader: refunded ? `We refunded ${refund} to your card.` : heading, heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}. ${lead}\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
   };
 }
 
@@ -419,7 +454,7 @@ module.exports = {
   serviceComplete,
   receipt,
   paymentNeeded,
-  lateFee,
+  refundNotice,
   // marketing
   reviewRequest,
   leadRecapture,
