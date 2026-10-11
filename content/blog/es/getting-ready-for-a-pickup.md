@@ -26,7 +26,7 @@ No tienes que estar. Saca todo afuera, en la entrada o bajo una cochera, y dinos
 
 ## Compara la pila con tu cotización
 
-Antes de que lleguemos, dale una mirada a la pila y compárala con las fotos o los artículos de tu reserva. Si hay más, agrégalo a tu cotización o avísanos. El día del retiro, si la carga es más grande de lo que nos mostraste, te enseñamos el nuevo precio antes de cargar nada, y tú eliges qué se va.
+Antes de que lleguemos, dale una mirada a la pila y compárala con el tamaño que reservaste y las fotos que nos mandaste. Si hay más, llámanos o escríbenos. El día del retiro, si la carga es más grande que el tamaño que reservaste, te enseñamos el nuevo precio antes de cargar nada, y tú eliges qué se va.
 
 ## Apartamentos y condominios
 

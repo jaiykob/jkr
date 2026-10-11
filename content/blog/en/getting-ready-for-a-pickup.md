@@ -26,7 +26,7 @@ You do not have to be. Set everything outside, in the driveway or under a carpor
 
 ## Compare the pile to your quote
 
-Before we arrive, glance at the pile against the photos or items in your booking. If there is more, add it to your quote or tell us. On the day, if the load is bigger than you showed us, we show you the new price before we load anything, and you choose what goes.
+Before we arrive, glance at the pile against the size you booked and any photos you sent. If there is more, call or text us. On the day, if the load is bigger than the size you booked, we show you the new price before we load anything, and you choose what goes.
 
 ## Apartments and condos
 

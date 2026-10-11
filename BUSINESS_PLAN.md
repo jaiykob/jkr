@@ -8,8 +8,9 @@ GUESS* is a placeholder until the founder checks it (`GUESSES.md`).
 
 ## 1. Summary
 
-- **What:** junk removal and hauling. Customers snap a photo or tap what is
-  going, see a flat price by load size plus travel by zone, and book online.
+- **What:** junk removal and hauling. Customers pick a load size (or send a
+  photo and we pick it), see a flat price plus travel by zone, and pay when
+  they book online.
   We do the lifting, loading, hauling and sweeping up.
 - **Who:** households moving, downsizing, remodeling or clearing an estate;
   landlords and property managers turning units; small businesses.
@@ -27,10 +28,12 @@ GUESS* is a placeholder until the founder checks it (`GUESSES.md`).
 - **One-time haul:** the core product. A single item up to a full truck.
 - **Monthly pickup:** a set load size every month, for landlords, property
   managers and businesses. A quarterly prepay saves 10%.
-- **Photo quotes:** up to four photos; the AI counts the items and fills the
-  truck; the customer fixes the count. If there is more on the day than the
-  photos showed, the customer sees the new price before we load
-  (Part 3 of the plan makes this binding at checkout).
+- **Photo quotes:** up to four photos; the AI counts the items and the page
+  picks the load size; the customer can change it.
+- **Pay at booking:** the customer pays the quoted total when booking, and
+  the card is saved. If the load is bigger or smaller, the crew shows the new
+  price before loading: we charge the difference (with the customer's
+  agreement) or refund it after the job, and the customer can say no.
 - **What we can't take:** paint, chemicals, fuel, asbestos, medical waste.
 
 ## 3. Pricing
@@ -98,14 +101,15 @@ Decide before launch (`LAUNCH-DAY.md` step 0).
 ## 7. Operations
 
 - **A job:** the booking arrives (Discord ping, owner email, dashboard). The
-  day before, a reminder email. On the day: arrival window text, look at the
-  job, confirm the load size, load, sweep, photos, mark done on the
-  dashboard (the customer gets the "all done" email with photos).
+  day before, a reminder email. On the day: On my way on the dashboard
+  (a text from the owner's phone), look at the job, confirm the load size,
+  load, sweep, photos, then Finish on the dashboard: it settles any
+  difference and the customer gets the "all done" email with photos.
 - **Where loads go:** donation first, then recycling (metal, electronics,
   cardboard, appliances), then the transfer station. GUESS* Metro Central (Portland) and Metro South (Oregon City) on the Oregon side; GUESS* Clark County transfer stations on the Washington side.
-- **Truck:** GUESS* one box truck or dump trailer of about 15 cubic yards (the "full truck" in the load builder is 100 units of about 0.15 cubic yards each).
+- **Truck:** GUESS* one box truck or dump trailer of about 15 cubic yards (the "full truck" size holds 100 of the photo count's units, about 0.15 cubic yards each).
 - **Crew:** the founder, plus GUESS* one helper for heavy items.
-- **Capacity:** GUESS* 3 to 4 jobs a day; a day is full at the cap in `api/_lib/schedule.js`.
+- **Capacity:** GUESS* 3 to 4 jobs a day; each 2 hour window and each day is full at its cap in `SCHEDULE` (`pricing.config.mjs`).
 - **Systems:** static site and Vercel functions, Stripe, Supabase,
   Resend, Discord, Anthropic (photo counts), the `/jkr/` dashboard.
 

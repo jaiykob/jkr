@@ -33,9 +33,9 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - [ ] `BUSINESS_PLAN.md`: 1-800-GOT-JUNK, College HUNKS, Junk King) | On site estimates, volume pricing, "starting at" prices online | A real price online, from a photo, before anyone visits |
 - [ ] `BUSINESS_PLAN.md`: transfer station fees alone are often $30 to $60 a trip |
 - [ ] `BUSINESS_PLAN.md`: Metro Central (Portland) and Metro South (Oregon City) on the Oregon side; GUESS* Clark County transfer stations on the Washington side.
-- [ ] `BUSINESS_PLAN.md`: one box truck or dump trailer of about 15 cubic yards (the "full truck" in the load builder is 100 units of about 0.15 cubic yards each).
+- [ ] `BUSINESS_PLAN.md`: one box truck or dump trailer of about 15 cubic yards (the "full truck" size holds 100 of the photo count's units, about 0.15 cubic yards each).
 - [ ] `BUSINESS_PLAN.md`: one helper for heavy items.
-- [ ] `BUSINESS_PLAN.md`: 3 to 4 jobs a day; a day is full at the cap in `api/_lib/schedule.js`.
+- [ ] `BUSINESS_PLAN.md`: 3 to 4 jobs a day; each 2 hour window and each day is full at its cap in `SCHEDULE` (`pricing.config.mjs`).
 - [ ] `BUSINESS_PLAN.md`: about $60 for half a truck | same |
 - [ ] `BUSINESS_PLAN.md`: about $25 | GUESS* about $45 (the travel fee covers the difference) |
 - [ ] `BUSINESS_PLAN.md`: about $60 | GUESS* about $75 |

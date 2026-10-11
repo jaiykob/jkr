@@ -6,10 +6,12 @@ A skeleton built from the Scoops Co. stack (`C:\Users\chris\scoopco`) on
 pictures only; the founder will write the copy.
 
 Redesigned 2026-09-28: charcoal and hi-vis yellow, Bricolage Grotesque for
-display type, and a "load builder" (tap items, the truck fills, the price is
-live) as the homepage hero and quote step 1. Phone (925) 408-6053 comes from
-Scoops Co. Since 2026-10-07 the service area is the whole Portland metro
-(Clark County, WA included) with a travel fee by zone: see Travel pricing.
+display type. Since round 6 (2026-10-11) there is no truck and no game: the
+homepage hero is five size cards (single item to full truck, each with its
+price), and booking is one order page, paid when the customer books. Phone
+(925) 408-6053 comes from Scoops Co. Since 2026-10-07 the service area is the
+whole Portland metro (Clark County, WA included) with a travel fee by zone:
+see Travel pricing.
 
 **Guesses are red.** The founder's rule (2026-10-07): guess anything not yet
 known, show it red with an asterisk (`css/guess.css`, `class="guess"`), and
@@ -28,17 +30,10 @@ The founder is finishing a degree. Keep sessions focused and small.
 Spec: `docs/superpowers/specs/2026-10-07-scoops-import-design.md`. Read it
 before starting any of this work. Three parts, in order:
 
-1. **Import**, in five rounds, each its own branch and its own step by step
-   plan written when the round starts:
-   1. Service area and travel pricing: the whole Portland metro (Clark County,
-      WA included), price = load + a travel fee by zone, zone set by ZIP in
-      road miles from a Gresham base. **Done 2026-10-07** (see Travel
-      pricing below).
-   2. Pages and site parts: shared chrome, a page for every town in the area,
-      FAQ, privacy, terms, 404. Copy drafted from Scoops Co.
-   3. Business docs and follow-up helpers, owner booking email.
-   4. SEO tools.
-   5. Blog, Spanish, commercial form, founding offer (off).
+1. **Import** of every Scoops Co. system in five rounds, each its own branch:
+   travel pricing; pages (shared chrome, 40 towns, FAQ, legal, 404);
+   business docs, follow-up helpers and the owner email; SEO tools; blog,
+   Spanish, commercial form and founding offer (off).
 2. **Walkthrough** of the whole site with the founder.
 3. **Photo first quote with an on site adjustment**: charge more when the job
    is bigger than the photos showed. Its own spec.
@@ -49,24 +44,20 @@ then a child plan that takes the best of both; the build is scored by
 Chrome at 360px) and a round is done at 100. Every generation's score is in
 `docs/superpowers/evolution.md`.
 
-Progress: **Part 1 is done** (2026-10-07). Rounds 1 (travel pricing), 2
-(pages), 3 (business docs and follow-up), 4 (SEO tools) and 5 (blog, Spanish,
-commercial form, founding offer) are merged, each scored 100. Next: Part 2,
-the walkthrough with the founder; then Part 3.
+Progress: **Part 1 is done** (rounds 1 to 5, 2026-10-07, each scored 100).
+**Round 6 is done** (2026-10-11, scored 100, merged from `feat/order-flow` at
+the end of its Task 11): the one page order flow, pay at booking, and the
+truck, the Junk Toss game and the homepage's driving truck gone everywhere
+(spec `docs/superpowers/specs/2026-10-10-order-flow-design.md`). It also
+built the money half of Part 3: a different size charged or refunded after
+the job.
 
-**Round 6 in progress (2026-10-10), branch `feat/order-flow`:** the founder
-replaced the truck with a one page order flow (size cards, ZIP, day and 2 hour
-window, pay at booking, the difference charged or refunded after the job).
-Spec `docs/superpowers/specs/2026-10-10-order-flow-design.md`, plan
-`docs/superpowers/plans/2026-10-10-round-6-order-flow.md`. Tasks 1 to 9 are
-built (round 6 scorecard 70/100, rounds 1 to 5 still 100); **resume at the
-HANDOFF in the ledger** `.superpowers/sdd/2026-10-10-round-6-order-flow/progress.md`
-(Task 9 review, Task 9b pay at booking, Task 10 homepage, Task 11 docs and
-merge). Parts of this file describing the booking flow are stale until Task 11.
-Queued after round 6, all authorized to run and merge: round 7 CRM and KPIs
-(`docs/superpowers/specs/2026-10-10-crm-kpis-design.md`), round 8 Sacramento
-metro as a second service area, round 9 SEO pass and service pages
-(`docs/superpowers/research/2026-10-10-service-pages.md`).
+**Next (the founder reordered the queue 2026-10-11; all authorized to run and
+merge):** the full SEO pass and service pages (round 9 in the old numbering,
+Portland only at first; `docs/superpowers/research/2026-10-10-service-pages.md`),
+then round 7 CRM and KPIs (`docs/superpowers/specs/2026-10-10-crm-kpis-design.md`),
+then round 8 the Sacramento metro as a second service area. Part 2, the
+walkthrough with the founder, is still to come.
 
 **Pending founder decision (2026-10-07):** "30 miles might be too far for
 junk removal ... a good radius is between 22 and 24 miles max", with travel
@@ -86,38 +77,40 @@ es/                    the Spanish site: index.html, <town>.html, service-areas.
 i18n/es.json           every phrase of index.html in Spanish (build-es stops on a missing one)
 blog/                  GENERATED from content/blog/en/*.md (es/blog/ from content/blog/es/)
 content/blog/en|es/    one plain text post per file, same slug in both languages
-book/                  the booking flow
-  quote.html             step 1: photos or taps fill the truck + one-time or monthly
-                         step 2: ZIP + contact
-  checkout.html          step 2: price, day, payment (Stripe)
-  thanks.html            step 3: confirmation
+book/
+  quote.html             THE order page: size, ZIP, day and window, contact, pay
+  checkout.html          a redirect to quote.html (vercel.json answers first)
+  thanks.html            confirmation (bookingSummary from sessionStorage)
   commercial.html        property managers, realtors, contractors (api/commercial-lead.js)
-jkr/index.html       admin dashboard, served at /jkr/
+jkr/index.html         admin dashboard, served at /jkr/
 api/                   Vercel serverless functions
-  create-booking.js      charges the card (authoritative price, ZIP and travel)
-  photo-quote.js         customer photos → Claude counts the items → the truck
+  create-booking.js      the booking PaymentIntent (authoritative price, ZIP, window, consent)
+  photo-quote.js         customer photos → Claude counts the items (the page picks the size)
   stripe-webhook.js      after payment: database rows, email, Discord ping
-  day-capacity.js        which days are full
+  day-capacity.js        which days and windows are full, per market (fails open)
   cron-visits.js         daily: next recurring jobs + reminders
   admin-data.js          dashboard data
-  visit-update.js        dashboard job actions (start, done, skip)
+  visit-update.js        dashboard job actions and the money after the job
   visit-photo.js         dashboard before/after photos
-  _lib/                  shared: db, email, email templates, schedule math,
-                         travel.js (GENERATED: ZIP → zone and fee)
+  _lib/                  shared: db, email, templates, schedule math, charge-alerts (payment
+                         needed), order-config.js and travel.js (GENERATED, see Pricing)
 css/ js/ fonts/ images/  design system, scripts, fonts, pictures
-  js/load-builder.js     the truck: items → load size → price (home + quote)
-  js/home.js, css/home.css  homepage only: scroll road, tilt cards, ZIP check
+  js/order.js, css/order.css   the order page; js/photo-quote.js its photo picker
+  js/order-config.js     GENERATED window.ORDER, the same file as api/_lib/order-config.js
+  js/size-cards.js       the five size cards (order page: pick one; homepage: links)
+  js/home.js, css/home.css  homepage only: the cards' travel line, tilt, price tiers, ZIP check
   js/travel.js           GENERATED, the same file as api/_lib/travel.js
   css/guess.css          red with an asterisk: placeholder guesses
 data/zip-miles.mjs     road miles from the base to every metro ZIP (measured once)
 db/schema.sql          Supabase tables (apply once); db/migrations/ for older ones
-pricing.config.mjs     THE price table, travel zones and guess flags
+pricing.config.mjs     THE price table, travel zones, SCHEDULE, POLICY and guess flags
 GUESSES.md             every placeholder guess (GENERATED by npm run guesses)
 scripts/               build-pricing, build-towns, build-es, build-blog, build-chrome, measure-zips, list-guesses, score, tests
   lib/browser.mjs        headless Chrome at a real 360px (score, screenshots)
+  lib/fake-stripe.mjs    the fake Stripe the booking and money tests run against
   lib/twins.mjs          which pages have a Spanish twin, hreflang, the language switch
-vercel.json            headers, daily cron
-api/_lib/site.js       THE site address, name and phone (every generator and API reads it)
+vercel.json            headers, daily cron, the checkout redirect
+api/_lib/site.js       THE site address, name, phone and WhatsApp number (every generator and API reads it)
 sitemap.xml robots.txt llms.txt   for search and AI engines (sitemap GENERATED)
 images/og/             share cards, one per page (GENERATED by build-og-cards)
 images/src/ images/photos/   drop real photos in src/; the build writes the sizes
@@ -132,57 +125,61 @@ agent/skills/          follow-up helpers (draft only) + _shared/jkr-context.md
 ## How a booking flows
 
 ```
-book/quote.html → book/checkout.html → POST /api/create-booking → Stripe
-                                          one-time: PaymentIntent
-                                          monthly:  subscription
-Stripe → /api/stripe-webhook → Supabase rows + confirmation email + Discord
-                               + owner email (OPS_EMAIL, new bookings only)
-book/thanks.html shows the summary
+book/quote.html → POST /api/create-booking → PaymentIntent for the quoted total
+                  (setup_future_usage off_session) → confirmPayment → thanks.html
+Stripe payment_intent.succeeded (own metadata.kind 'booking') → /api/stripe-webhook
+       → Supabase customer + visit (paid), confirmation email, Discord, OPS_EMAIL
+After the job: /jkr/ Finish → charge (kind 'difference') or refund the difference
 ```
 
-Contact details travel in sessionStorage (`quoteContact`), never in the URL.
-The webhook, not the checkout, writes customers/subscriptions/visits and sends
-the confirmation. In the database a job is a `visit`.
+The order page (English only) opens five sections in turn, with a bar fixed to
+the bottom on phones and a summary card on desktop; `?size=` picks a size,
+`#photos` opens the photo picker. With the gates closed, Book saves a
+reservation lead (size, ZIP, day, window, contact) and no card form shows.
+The server reprices (size plus travel) and refuses a stale quote, a closed
+day, a full window, a ZIP outside the zones, or no consent (`consent.agreed`
+and the current `POLICY.consentVersion`), all before any Stripe call. Contact
+details stay in sessionStorage (`orderState`, `bookingSummary`), never in the
+URL. The webhook, not the page, writes customers and visits (a job is a
+`visit`) and sends the confirmation; it branches on the event object's own
+`metadata.kind`, never the customer metadata.
 
 ## Travel pricing (2026-10-07)
 
 The service area is every ZIP inside the travel zones: the Portland metro,
-Clark County, WA included. Price per visit = **load price + the zone's travel
-fee**, for one-time hauls, monthly pickups and the quarterly prepay alike.
+Clark County, WA included. Price = **load price + the zone's travel fee**.
 
 - **`BASE`** in `pricing.config.mjs`: where miles are measured from (Gresham
   city center, a guess until the real yard is set).
 - **`ZONES`**: rings of road miles with a fee each (0 to 10 free, then +$25,
   +$50, +$75 to 40 miles; all guesses). An edge belongs to the inner ring.
-  Past the last ring is "call us": the quote page offers a price by email and
+  Past the last ring is "call us": the order page offers a price by email and
   keeps the lead, and the server refuses the booking.
 - **`ZONE_OVERRIDES`**: pin one ZIP to a zone by hand.
 - **`data/zip-miles.mjs`**: road miles from `BASE` to each ZIP's center
-  (GeoNames centers, OSRM road distance), measured once by
-  `node scripts/measure-zips.mjs`. Re-run it only if `BASE` moves. Nothing
-  calls a map service at booking time. Place names are USPS city names, so
-  Tigard and Milwaukie read "Portland".
+  (GeoNames, OSRM), measured once by `node scripts/measure-zips.mjs`; re-run
+  it only if `BASE` moves. Place names are USPS city names (Tigard reads
+  "Portland").
 - **`npm run build:pricing`** writes `api/_lib/travel.js` and `js/travel.js`
-  (byte identical; `travelFor(zip)` → zone, fee, miles, place, or null) and
-  the homepage zone list. `npm test` proves both copies agree with the config
-  for every ZIP.
-- Until the page knows the ZIP the truck says "+ travel"; the last ZIP typed
-  anywhere is kept in sessionStorage (`quoteZip`). Travel is its own line on
-  the quote, checkout, thanks page, confirmation email, Discord ping and
-  dashboard, and rides in Stripe metadata (`zip`, `zone`, `zone_label`,
-  `travel_cents`, `miles`, `load_cents`) into `subscriptions.travel_*`.
+  (byte identical; `travelFor(zip)` → zone, fee, miles, place, market, or
+  null; `market` is `portland` until Sacramento, and window caps count per
+  market). `npm test` proves both copies agree with the config for every ZIP.
+- Until the page knows the ZIP the size cards say "+ travel"; the last ZIP
+  typed anywhere is kept in sessionStorage (`quoteZip`). Travel is its own
+  line on every surface (order page, thanks, email, Discord, dashboard) and
+  rides in the PaymentIntent's metadata into `visits.travel_cents`.
 
 ## Pages are generated: `npm run build`
 
-`npm run build` runs, in order: `build-pricing` (prices, travel module),
-`build-faq-jsonld`, `build-towns` (the homepage zone list, then every town
-page and the hub, each a copy of `index.html` with its CITY regions swapped,
-in English and from the Spanish homepage in Spanish), `build-es` (the Spanish
-homepage), `build-blog` (posts and the blog index, both languages),
-`build-chrome` (the homepage header, footer and sticky button into the FAQ,
-legal, 404, blog and commercial pages; es/ pages get the Spanish ones), `build-docs` (prices, zones and towns into the Markdown docs between
-`BUILD:docs-*` markers), `list-guesses` (`GUESSES.md`). `npm test` runs every `--check`, so a
-hand edit to a generated page, or a homepage change not rebuilt, fails.
+`npm run build` runs, in order: `build-pricing` (prices, the order and travel
+modules, WhatsApp links), `build-faq-jsonld`, `build-towns` (the homepage zone
+list, then every town page and the hub, each a copy of `index.html` or the
+Spanish homepage with its CITY regions swapped), `build-es`, `build-blog`,
+`build-chrome` (the homepage header and footer into the other hand written
+pages), `build-docs` (the `BUILD:docs-*` blocks in the Markdown docs), the
+sitemap, share cards and images, and `list-guesses`. `npm test` runs every
+`--check`, so a hand edit to a generated page, or a homepage change not
+rebuilt, fails.
 
 - **Add a town:** write `content/towns/<slug>.md`, run `npm run build`. Every
   ZIP must be in a zone; two towns may not share a sentence (`test-towns`).
@@ -195,34 +192,43 @@ hand edit to a generated page, or a homepage change not rebuilt, fails.
   `/book/quote.html` and a town). Its Spanish is `content/blog/es/<slug>.md`.
 - **Spanish for a town:** `lede_es:`, `## Local (es)`, `## FAQ (es)` in its
   file (content/towns/README.md). Spanish writes to the reader with tú; the
-  quote and checkout stay English.
+  order page stays English.
 - `[[double brackets]]` in a town file print red with an asterisk (a guess).
-- `js/maintenance-banner.js` (`SHOW = true` while bookings are closed) and
-  `js/analytics.js` (`G-XXXXXXXXXX`) load on every public page.
+- `js/maintenance-banner.js` (`SHOW = true` while bookings are closed; off
+  the day they open) and `js/analytics.js` (`G-XXXXXXXXXX`) load on every
+  public page.
 
 ## Pricing is generated: never hand-edit the copies
 
 Edit **`pricing.config.mjs`** (rows = load sizes, columns = one-time haul and
-monthly pickup), then run **`npm run build:pricing`**. It rewrites the blocks
-between `BUILD:` markers in `api/create-booking.js` (authoritative),
-`book/quote.html`, `book/checkout.html` and `index.html`, and writes the two
-travel modules whole. The server
-recomputes every booking and refuses one that doesn't match ("Quote is out of
-date").
+monthly pickup; only the one time column is sold online), then run **`npm run
+build:pricing`**. It rewrites the `BUILD:` blocks in `book/quote.html` and
+`index.html` (size cards, tiers, JSON-LD), the `data-policy` spans in the
+terms and FAQ pages, every `https://wa.me/` link (`WHATSAPP` in
+`api/_lib/site.js`, a guess) and `ITEMS` in `api/photo-quote.js`, and writes
+the order module and the two travel modules whole.
 
-**Photo quotes:** the customer sends up to 4 photos; `api/photo-quote.js`
+- **`SCHEDULE`** (guesses): days shown, `leadDays`, closed weekdays, the 2
+  hour windows with a cap each, a daily cap; all Pacific time (Vercel runs
+  in UTC). **`POLICY`** (guesses): cancel hours, late fee, refusal fee, and
+  `consentVersion` (change it whenever the consent wording or rule changes).
+- **The order module**, `api/_lib/order-config.js` and `js/order-config.js`
+  (byte identical, `window.ORDER`): `SIZES` (one time prices), `ITEMS`,
+  `SCHEDULE`, `POLICY` (cents), `GUESS`, and `sizeForUnits`, `totalFor`,
+  `openDays`, `isBookable`, `windowStartMs`, `isLateCancel`. Server and pages
+  read prices, windows and fees only from it.
+
+**Photo quotes:** up to 4 photos from the order page; `api/photo-quote.js`
 asks Claude (`claude-opus-5`, structured output limited to the `ITEMS` keys)
-to count them, and the page drops the count into the truck for them to fix.
-Claude only counts; prices never come from it. The photos are kept in the
-private `visit-photos` bucket under `quotes/`, ride with the booking as
+to count them, and the page picks the smallest size whose `fits` holds the
+items' units (`ORDER.sizeForUnits`; past a full truck, call us) and says
+"From your photos: 1/2 truck. Change it if that looks wrong." Claude only
+counts; prices never come from it. The photos are kept in the private
+`visit-photos` bucket under `quotes/`, ride with the booking as
 `metadata.photos` (the server keeps only paths it named, `QUOTE_PHOTO_RE`),
 become `visit_photos` rows of kind `quote`, and show up in the Discord ping
-and on the dashboard job. No `ANTHROPIC_API_KEY` → 503 and the page falls
-back to tapping.
-
-`ITEMS` (units out of 100 per truck) and each load's `fits` ceiling drive the
-load builder: the smallest load whose `fits` holds the tapped units is the
-size. Items only pick a size; the server still prices the size.
+and on the dashboard job. No `ANTHROPIC_API_KEY` → 503 and the page asks for
+the closest size.
 
 Never hardcode a column index; derive it (`ONE_TIME_COL`, `BILLING_BY_COL`).
 Adding a column means a matching `CADENCE` entry in `api/_lib/schedule.js`
@@ -233,16 +239,23 @@ Adding a column means a matching `CADENCE` entry in `api/_lib/schedule.js`
 
 1. `BOOKINGS_OPEN_SERVER` in `api/create-booking.js`
 2. `BOOKINGS_OPEN=true` env var in Vercel
-3. `BOOKINGS_OPEN_CLIENT` in `book/checkout.html` (UI only)
+3. `BOOKINGS_OPEN_CLIENT` in `book/quote.html` (UI only: closed shows the
+   reservation path)
 
-Only live mode (`sk_live`) is gated. Emergency brake: flip #1 to `false`.
+Only live mode (`sk_live`) is gated (503). Emergency brake: flip #1 to `false`.
 
 ## Admin dashboard: `jkr/` (served at `/jkr/`)
 
-Clients and leads, schedule, bookings, and job actions (start, before and
-after photos, mark done, skip). Marking a job done emails the customer the
-"all done" note with the photos and queues the next recurring pickup. Every
-Discord booking alert links to it.
+Clients and leads, schedule, bookings, and job actions. An order flow job
+has **On my way** (a text from the owner's phone), **Finish** (the final
+size; the server prices it, the booked size at its quoted cents, travel as
+stored, and charges a bigger difference to the saved card with the "customer
+agreed" box or refunds a smaller one; a declined difference still completes
+the job, with a hosted invoice and an alert; then the "all done" email),
+**Cancel and refund** (in full before `POLICY.cancelHours`, less the late fee
+after) and **Customer said no** (refund less the refusal fee). Money steps
+are keyed per visit, ask in the page (never alert or confirm) and lock while
+in flight. Older recurring visits keep Start, Mark done and Skip.
 
 - **Auth is the `ADMIN_DASHBOARD_TOKEN` env var**, sent in the
   `x-admin-token` header only. Never add a `?token=` URL form (it leaks into
@@ -251,13 +264,15 @@ Discord booking alert links to it.
 
 ## Setup before launch
 
-Env vars: `STRIPE_SECRET_KEY`, `STRIPE_PRODUCT_ID`, `STRIPE_WEBHOOK_SECRET`,
-`BOOKINGS_OPEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
-`EMAIL_FROM`, `OPS_WEBHOOK_URL` (Discord), `OPS_EMAIL` (owner booking email), `ANTHROPIC_API_KEY` (photo quotes), `SITE_ORIGIN`, `CRON_SECRET`,
+Env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `BOOKINGS_OPEN`,
+`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `EMAIL_FROM`,
+`OPS_WEBHOOK_URL` (Discord), `OPS_EMAIL` (owner booking email),
+`ANTHROPIC_API_KEY` (photo quotes), `SITE_ORIGIN`, `CRON_SECRET`,
 `ADMIN_DASHBOARD_TOKEN` (a long random string).
 Apply `db/schema.sql` in Supabase (it includes the `leads` table). Put the
-publishable key in `book/checkout.html` and the anon key in `js/leads.js`.
-The Stripe webhook URL must use the host that does NOT redirect.
+publishable key in `book/quote.html` and the anon key in `js/leads.js`. The
+Stripe webhook URL must use the host that does NOT redirect; its events and
+its pinned API version (`2024-06-20`) are in `LAUNCH-DAY.md` step 2.
 
 ## Not carried over from Scoops Co.
 
@@ -281,12 +296,10 @@ the commercial form; Spanish; the blog.)
   keeps placeholder emails like you@example.com, then rebuilds). Never type
   the domain into a script; `npm run score -- --round 4` fails if one does.
 - **Structured data is generated and checked.** Town and hub pages get a
-  Service with a true price range (smallest load plus the town's lowest
-  travel, up to a full truck plus its highest) and a FAQPage from
-  `build-towns`; the homepage and FAQ page get FAQPage from their visible
-  questions (`build-faq-jsonld`). `check-schema` fails on any price that is
-  not a load price plus a real fee, a place we do not serve, or a FAQ that
-  does not match the page.
+  Service with a true price range and a FAQPage (`build-towns`); the homepage
+  and FAQ page get FAQPage from their visible questions (`build-faq-jsonld`).
+  `check-schema` fails on a price that is not a load plus a real fee, a place
+  we do not serve, or a FAQ that does not match the page.
 - `build-sitemap` (every indexable page, git dates), `check-indexability`
   (`--local` now; live once there is a domain), `build-og-cards` and
   `build-images` (both draw in headless Chrome: no image library).
@@ -295,17 +308,23 @@ the commercial form; Spanish; the blog.)
 
 ## Tests
 
-`npm test`: schedule math, travel zones (band edges, overrides, both travel
-modules agree), booking API against a fake Stripe (travel included), photo
-quotes against a fake Claude API, Discord/email/database travel lines, admin
-auth, generated prices in sync, titles and descriptions, GUESSES.md current,
-the domain on one host, FAQ JSON-LD current, schema true, sitemap current,
-indexability (local), share cards and photo sizes current, the image
-pipeline and the domain swap (`test-seo`), the founding offer
-(`test-founding`), the commercial form (`test-commercial`), the Spanish
-site: phrase list, twins, hreflang, the language switch, Spanish town pages
-(`test-es`), and every generated page current (`build-es`, `build-blog`).
+`npm test`: schedule math; travel zones (band edges, overrides, both modules
+agree); the order module (`test-order-config`: copies agree, days and windows
+in Pacific time across DST, late cancel); the booking API against a fake
+Stripe (`test-booking`: refusals before any Stripe call, the PaymentIntent
+that saves the card, the gate, idempotency); the money after the job
+(`test-charge`: charge or refund, agreement, founding, a decline to an
+invoice, cancel and refund, said no, never charged twice); the webhook
+(`test-ops`: emails, Discord, rows, window counts, announced once, a
+difference paid); the dashboard (`test-admin`: header only auth, the job
+actions, money buttons that ask in the page, a safe `sms:` link); photo
+quotes against a fake Claude API; founding (`test-founding`), commercial
+(`test-commercial`), Spanish (`test-es`: phrases, twins, hreflang, the
+switch), towns, SEO (`test-seo`); and every generated file current (each
+build's `--check`, GUESSES.md, titles, the domain on one host, schema true,
+FAQ JSON-LD, sitemap, indexability, share cards, photo sizes).
 
 `npm run score -- --round N`: the round's scorecard (0 to 100), including the
-pages in headless Chrome at a real 360px. Generations are logged in
+pages in headless Chrome at a real 360px (round 6 also at 1280px, and books
+on the order page by script in 10 taps or fewer). Generations are logged in
 `docs/superpowers/evolution.md`.

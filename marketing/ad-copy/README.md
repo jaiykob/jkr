@@ -62,11 +62,11 @@ We serve 135 ZIP codes and 40 towns (31 in Oregon, 9 in Clark County, Washington
 
 ## Claims you may make
 
-- "See your price before you book" (true: photo or tap, price on screen).
-- "Snap a photo and we count it for you" (true: photo quotes).
+- "See your price before you book" (true: pick a size or send a photo, price on screen).
+- "Snap a photo and we pick the size for you" (true: photo quotes).
 - "We do all the lifting" (true).
 - "Travel is set by your ZIP, and it is in the price you see" (true).
-- "If there is more than your photos showed, we show you the new price before we load anything" (true; the rule on the FAQ and terms pages).
+- "If there is more than the size you booked, we show you the new price before we load anything" (true; the rule on the FAQ and terms pages).
 - "Usable items go to donation" (true when a center takes them).
 
 ## Claims you may NOT make

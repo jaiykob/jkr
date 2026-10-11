@@ -176,7 +176,7 @@ function bookingConfirmation(ctx = {}) {
     <p style="margin:0 0 12px;">Thanks for booking with ${BRAND.name}. Your haul is confirmed, and here are the details:</p>
     <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
     <p style="margin:12px 0;">On the day we will text you an arrival window. We do all the lifting and loading. Anything still usable goes to donation, metal and electronics go to recycling, and the rest goes to the transfer station.</p>
-    <p style="margin:12px 0;">If there is more on the day than your photos or taps showed, we show you the new price before we load anything, and you decide.</p>
+    <p style="margin:12px 0;">If there is more on the day than the size you booked, we show you the new price before we load anything, and you decide.</p>
     <p style="margin:12px 0;">Questions? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: pickupDay ? `You're booked for ${pickupDay}` : "You're booked",
