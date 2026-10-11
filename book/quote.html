@@ -423,9 +423,10 @@
             <p>That ZIP is past our travel zones, so we price it by hand. Call or text <a href="tel:+19254086053">(925) 408-6053</a>, or leave your email and we will send you a price.</p>
             <div class="o-far-row">
               <label class="sr-only" for="o-far-email">Email for a price</label>
-              <input id="o-far-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+              <input id="o-far-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="o-far-err">
               <button type="button" id="o-far-btn" class="o-btn-dark">Send me a price</button>
             </div>
+            <p class="o-err" id="o-far-err" aria-live="polite"></p>
             <p class="o-msg is-ok" id="o-far-ok" hidden>Thanks. We will email you a price.</p>
             <p class="o-msg is-err" id="o-far-fail" hidden>That did not go through. Please call or text <a href="tel:+19254086053">(925) 408-6053</a> and we will price it.</p>
           </div>
@@ -468,7 +469,7 @@
             </div>
             <div class="o-field o-f-street">
               <label for="o-street">Street address</label>
-              <input id="o-street" name="street" type="text" autocomplete="street-address" placeholder="123 Oak Lane" aria-describedby="o-city o-street-err">
+              <input id="o-street" name="street" type="text" autocomplete="address-line1" maxlength="200" placeholder="123 Oak Lane" aria-describedby="o-city o-street-err">
               <p class="o-hint" id="o-city"></p>
               <p class="o-err" id="o-street-err"></p>
             </div>

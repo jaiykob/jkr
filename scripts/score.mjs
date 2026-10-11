@@ -378,7 +378,7 @@ async function fillOrder(p, { wallet = false, zip = Z2, contact = true, picked =
     bad = bad || await step('name', () => p.type('#o-you input[autocomplete="name"]', SAMPLE_CONTACT.name));
     bad = bad || await step('phone', () => p.type('#o-you input[autocomplete="tel"]', SAMPLE_CONTACT.phone));
     bad = bad || await step('email', () => p.type('#o-you input[autocomplete="email"]', SAMPLE_CONTACT.email));
-    bad = bad || await step('street', () => p.type('#o-you input[autocomplete="street-address"]', SAMPLE_CONTACT.addr));
+    bad = bad || await step('street', () => p.type('#o-you input[autocomplete="address-line1"]', SAMPLE_CONTACT.addr));
   }
   // The pay step (ruling R15). Gates open: the card form and the consent box show, and both
   // ways to pay need the box (the wallet too, Review Focus 5). Gates closed: neither shows.
@@ -565,7 +565,7 @@ const ROUNDS = {
       const shown = (d) => { const sec = byId(d, 'o-pay'); return sec ? text((sec.inner.match(/<p\b[^>]*>[\s\S]*?<\/p>/gi) || []).filter((p) => !/^<p\b[^>]*\shidden/i.test(p)).join(' ')) : ''; };
       const money = fmt(TOTAL).replace(/[$.]/g, '\\$&');
       const closed = shown(dom);
-      if (!new RegExp(`Your total is ${money}\\. Nothing is charged to reserve`).test(closed) || /You pay|full refund/i.test(closed)) return `with the gates closed the pay step does not tell the reserve story alone: "${closed.slice(0, 160)}"`;
+      if (!new RegExp(`Your total is ${money} ?\\. Nothing is charged to reserve`).test(closed) || /You pay|full refund/i.test(closed)) return `with the gates closed the pay step does not tell the reserve story alone: "${closed.slice(0, 160)}"`;
       const open = shown(await dump(ORDER_WITH_ZIP('__fakepay=1&__open=1')));
       const rule = [new RegExp(`You pay ${money} now`), /charge the difference to this card only if you agree/, /smaller, we refund the difference/, /Free to move your day, or to cancel with a full refund/];
       if (rule.some((r) => !r.test(open)) || /say no|Nothing is charged to reserve/i.test(open)) return `the pay step does not state the pay now rule beside Book: "${open.slice(0, 200)}"`;

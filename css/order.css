@@ -19,6 +19,7 @@
   --soft:   #F7F4EC;
   --line:   #E2DDD2;
   --line-2: #CFC8B9;
+  --line-3: #857F72;   /* field and pick ring borders: 4.0:1 on white, 3.6:1 on the cream page (3:1 needed) */
   --focus:  #0B6BCB;
   --err:    #B42318;
   --ok:     #146C43;
@@ -103,7 +104,7 @@ button { font: inherit; }
 .size-price { font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; color: var(--ink); }
 .size-travel { font-size: 16px; color: var(--muted); }
 .size-card[aria-pressed="true"] { border-color: var(--ink); background: var(--yel-50); box-shadow: 0 0 0 1.5px var(--ink); }
-.size-card::after { content: ''; position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-2); background: var(--card); }
+.size-card::after { content: ''; position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-3); background: var(--card); }
 .size-card[aria-pressed="true"]::after {
   border-color: var(--ink);
   background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23FFD23F' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat;
@@ -136,7 +137,7 @@ button { font: inherit; }
 .o-opt { font-weight: 400; color: var(--muted); }
 .o-field input, .o-field textarea, .o-far input {
   width: 100%; min-height: 52px; padding: 0 14px; font: inherit; font-size: 16px; color: var(--ink-2);
-  background: var(--card); border: 1.5px solid var(--line-2); border-radius: 12px; transition: border-color .15s, box-shadow .15s;
+  background: var(--card); border: 1.5px solid var(--line-3); border-radius: 12px; transition: border-color .15s, box-shadow .15s;
 }
 .o-field textarea { padding: 12px 14px; min-height: 96px; resize: vertical; }
 .o-field input::placeholder, .o-field textarea::placeholder, .o-far input::placeholder { color: #6E7278; }
@@ -266,6 +267,13 @@ button { font: inherit; }
 .o-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; border: 1px solid rgba(245,242,234,.26); color: #fff; }
 .o-icon svg { width: 22px; height: 22px; }
 body.o-has-bar { padding-bottom: var(--bar-h); }
+/* A field reached with Tab scrolls clear of the bar, not under it. */
+html:has(body.o-has-bar) { scroll-padding-bottom: calc(var(--bar-h) + 12px); }
+/* A phone on its side: the bar keeps Book only, so it covers less of a short screen. */
+@media (max-height: 520px) and (max-width: 899px) {
+  :root { --bar-h: 80px; }
+  .o-bar-top { display: none; }
+}
 /* The bar never sits over a field being typed in. */
 body.o-typing .o-bar { transform: translateY(115%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; }
 
@@ -296,6 +304,7 @@ body.o-typing .o-bar { transform: translateY(115%); visibility: hidden; transiti
   .o-summary { position: sticky; top: 24px; padding: 22px; border-radius: 22px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(21,23,26,.08); }
   .o-bar { display: none !important; }
   body.o-has-bar { padding-bottom: 0; }
+  html:has(body.o-has-bar) { scroll-padding-bottom: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

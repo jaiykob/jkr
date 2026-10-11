@@ -304,6 +304,7 @@
       zipMsg.textContent = '';
       var em = FIELDS.email.el.value.trim();
       if (em && !$('o-far-email').value) $('o-far-email').value = em;
+      if (edited) say('That ZIP is past our travel zones, so we price it by hand. Leave your email below, or ' + CALL_US + '.');
       if (how === 'typed') track('zip_check', { zip: v, in_area: false });
     } else {
       zipMsg.textContent = '';
@@ -316,10 +317,17 @@
   zipIn.addEventListener('blur', function () {
     if (zipIn.value && zipIn.value.length < 5) { zipMsg.textContent = 'Enter a 5 digit ZIP.'; zipMsg.className = 'o-msg is-err'; zipIn.setAttribute('aria-invalid', 'true'); }
   });
+  $('o-far-email').addEventListener('input', function () { $('o-far-err').textContent = ''; this.removeAttribute('aria-invalid'); });
   $('o-far-btn').addEventListener('click', function () {
     var input = $('o-far-email'), email = input.value.trim();
-    if (!EMAIL_RE.test(email)) { input.setAttribute('aria-invalid', 'true'); input.focus(); return; }
+    if (!EMAIL_RE.test(email)) {
+      $('o-far-err').textContent = 'Enter your email, like you@example.com, so we can send you a price.';
+      input.setAttribute('aria-invalid', 'true');
+      input.focus();
+      return;
+    }
     input.removeAttribute('aria-invalid');
+    $('o-far-err').textContent = '';
     track('far_zip_lead', { zip: state.zip });
     var s = sizeOf(state.size);
     var sent = sendLead({
@@ -400,7 +408,17 @@
     }
     if (state.window && !windowFree(state.date, state.window)) state.window = null;
   }
+  /* The day and window buttons are drawn afresh on every change: the one that
+     had the focus gets it back, so a keyboard user keeps their place. */
   function drawWhen() {
+    var ae = document.activeElement, sel = null;
+    if (ae && ae.getAttribute && $('o-days').contains(ae) && ae.getAttribute('data-date')) sel = '#o-days [data-date="' + ae.getAttribute('data-date') + '"]';
+    else if (ae && ae.getAttribute && $('o-wins').contains(ae) && ae.getAttribute('data-window')) sel = '#o-wins [data-window="' + ae.getAttribute('data-window') + '"]';
+    drawChips();
+    var again = sel && document.querySelector(sel);
+    if (again) again.focus({ preventScroll: true });
+  }
+  function drawChips() {
     var dayBox = $('o-days'), winBox = $('o-wins'), msg = $('o-when-msg');
     dayBox.textContent = ''; winBox.textContent = '';
     if (!days) { dayBox.appendChild(el('p', 'o-hint', 'Loading the open days…')); return; }
@@ -441,6 +459,7 @@
       if (state.window && !windowFree(state.date, state.window)) state.window = null;
       changed();
       track('order_day', { date: d.date });
+      say(d.label + ' picked.');
     }
     drawWhen(); render();
   });
@@ -449,7 +468,7 @@
     if (!b) return;
     var key = b.getAttribute('data-window');
     if (!windowFree(state.date, key)) { whenError('That time is full. Pick another one.'); return; }
-    if (state.window !== key) { state.window = key; changed(); track('order_window', { window: key }); }
+    if (state.window !== key) { state.window = key; changed(); track('order_window', { window: key }); say(winOf(state.date, key).label + ' picked.'); }
     var m = $('o-when-msg'); m.textContent = ''; m.className = 'o-msg';
     drawWhen();
     var opened = render();
