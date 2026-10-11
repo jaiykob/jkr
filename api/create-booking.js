@@ -199,14 +199,14 @@ module.exports = async (req, res) => {
     : { founding: 'false', founding_discount_cents: '0' });
 
   // Idempotency: each key is the hash of the exact params sent, EXCLUDING
-  // consent_at (the server clock, different on every attempt). So a network
-  // retry of the same booking reuses the key and Stripe returns the original
-  // object, while an edited resubmit (new phone, address, notes) gets a new key.
-  // A retry that differs only by consent_at reuses a key with other params:
-  // Stripe answers StripeIdempotencyError, and createOnce below retries once
-  // with a fresh key. A duplicate customer or an unconfirmed PaymentIntent is
-  // harmless: no money moves until the page confirms, and the page confirms
-  // only the PaymentIntent it was handed (an unconfirmed one simply lapses).
+  // consent_at (the server clock), so an edited resubmit (new phone, address,
+  // notes) gets a new key. A second Book of the same order reuses the key with
+  // a different consent_at: Stripe answers StripeIdempotencyError, and
+  // createOnce below retries once with a fresh key. So every attempt gets a
+  // new customer and a new PaymentIntent. That is harmless while nothing is
+  // paid (an unconfirmed PaymentIntent simply lapses); a second CHARGE is
+  // stopped by the page, which asks Stripe whether its last PaymentIntent was
+  // paid before it books again (lastPay in js/order.js).
   const canon = (v) => (Array.isArray(v) ? '[' + v.map(canon).join(',') + ']'
     : v && typeof v === 'object' ? '{' + Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}'
     : JSON.stringify(v));

@@ -226,6 +226,7 @@
      or price note no longer applies, and after a reservation the next Book
      saves the new details. */
   function changed() {
+    lastPay = null;
     $('o-pay-fail').hidden = true;
     payMsg('');
     if (reserved) { reserved = false; $('o-reserved').hidden = true; $('o-closed').hidden = OPEN; }
@@ -584,9 +585,14 @@
   /* ── 6. pay, bookings open: the total paid now, the card saved for the difference ── */
   var stripe = null, elements = null, payMounted = false, payBroken = false, payAmount = 0;
   var WALLETS = { apple_pay: 'Apple Pay', google_pay: 'Google Pay', link: 'Link' };
-  // One id per page visit. The booking API keys its Stripe calls on it, so a
-  // network retry of the same booking gets the same PaymentIntent back.
+  // One id per page visit, sent with every booking. The server stamps a fresh
+  // consent time on each attempt, so a second Book always gets a new
+  // PaymentIntent: lastPay, not the id, is what stops a second charge.
   var ATTEMPT = 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  // { secret, data }: the last booking PaymentIntent this page tried to pay.
+  // The next Book asks Stripe about it first, and a paid one goes straight to
+  // thanks. Any change to the order forgets it (changed()).
+  var lastPay = null;
   var LOAD_FAIL = 'The card form did not load. Please ' + CALL_US + ' and we will book it with you.';
   var consentBox = $('o-consent');
 
@@ -725,36 +731,60 @@
   /* Book: check the card form, ask the server for the booking PaymentIntent (it
      reprices, checks the window and the consent), then pay it with Stripe. */
   var NOT_PAID = 'Your payment did not go through, so nothing was booked. Try again, or use another card.';
+  // When the answer from Stripe is lost, money may have moved: never say it did not.
+  var UNSURE = 'We could not confirm your payment. Check your email for a booking confirmation before you try again, or ' + CALL_US + '.';
+  /* The last payment this page tried: if it went through after all (its answer
+     was lost), resolve its booking data so Book does not charge a second time. */
+  function earlierPaid() {
+    if (!lastPay) return Promise.resolve(null);
+    var was = lastPay;
+    return Promise.resolve(stripe.retrievePaymentIntent(was.secret)).then(function (r) {
+      var st = r && r.paymentIntent && r.paymentIntent.status;
+      if (st === 'succeeded' || st === 'processing') return was.data;
+      if (!st) throw { where: 'pay', text: UNSURE };
+      lastPay = null;   // not paid: this Book makes a new payment
+      return null;
+    }, function () { throw { where: 'pay', text: UNSURE }; });
+  }
   function startBooking(source, walletEv) {
     busy = true;
     payMsg(''); cardErr('');
     render();
     track('booking_attempt', { method: source });
     var data = null;
+    /* The booking API's answer: a refusal, or the PaymentIntent to pay now. */
+    function payFor(res, j) {
+      if (!res.ok || !j.paymentIntentClientSecret) throw refusal(res.status, j);
+      data = j;
+      lastPay = { secret: j.paymentIntentClientSecret, data: j };
+      // Written before the payment is confirmed: a card that needs a bank's
+      // own page comes back to thanks.html with the summary already there.
+      writeSummary(data, source);
+      // The server charges less than the page showed only with the founding
+      // offer on: the card form then shows the amount actually paid.
+      if (typeof j.amountCents === 'number' && j.amountCents > 0 && j.amountCents !== payAmount) {
+        payAmount = j.amountCents;
+        try { elements.update({ amount: j.amountCents }); } catch (e) { /* Stripe charges the PaymentIntent's own amount */ }
+      }
+      return Promise.resolve(stripe.confirmPayment({
+        elements: elements, clientSecret: j.paymentIntentClientSecret, redirect: 'if_required',
+        confirmParams: { return_url: new URL('thanks.html', location.href).href, payment_method_data: { billing_details: billing(walletEv) } },
+      })).catch(function () { throw { where: 'pay', text: UNSURE }; });
+    }
     elements.submit().then(function (r) {
       if (r && r.error) throw { where: 'card', text: r.error.message };
+      return earlierPaid();
+    }).then(function (paid) {
+      if (paid) { data = paid; return 'paid already'; }
       return fetch('../api/create-booking', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bookingBody()) })
-        .catch(function () { throw { where: 'pay', text: 'We could not reach our booking system. Check your connection and try again, or ' + CALL_US + '.' }; });
-    }).then(function (res) {
-      return res.json().catch(function () { return {}; }).then(function (j) {
-        if (!res.ok || !j.paymentIntentClientSecret) throw refusal(res.status, j);
-        data = j;
-        // Written before the payment is confirmed: a card that needs a bank's
-        // own page comes back to thanks.html with the summary already there.
-        writeSummary(data, source);
-        // The server charges less than the page showed only with the founding
-        // offer on: the card form then shows the amount actually paid.
-        if (typeof j.amountCents === 'number' && j.amountCents > 0 && j.amountCents !== payAmount) {
-          payAmount = j.amountCents;
-          try { elements.update({ amount: j.amountCents }); } catch (e) { /* Stripe charges the PaymentIntent's own amount */ }
-        }
-        return stripe.confirmPayment({
-          elements: elements, clientSecret: j.paymentIntentClientSecret, redirect: 'if_required',
-          confirmParams: { return_url: new URL('thanks.html', location.href).href, payment_method_data: { billing_details: billing(walletEv) } },
-        });
-      });
+        .catch(function () { throw { where: 'pay', text: 'We could not reach our booking system. Check your connection and try again, or ' + CALL_US + '.' }; })
+        .then(function (res) { return res.json().catch(function () { return {}; }).then(function (j) { return payFor(res, j); }); });
     }).then(function (c) {
-      if (c && c.error) throw { where: 'card', text: c.error.message || NOT_PAID };
+      if (c === 'paid already') { walletFailed(walletEv); booked(data, source); return; }
+      if (c && c.error) {
+        var lost = c.error.type === 'api_connection_error' || c.error.type === 'api_error';
+        throw lost ? { where: 'pay', text: UNSURE } : { where: 'card', text: c.error.message || NOT_PAID };
+      }
       var st = c && c.paymentIntent && c.paymentIntent.status;
       if (st && st !== 'succeeded' && st !== 'processing') throw { where: 'card', text: NOT_PAID };
       booked(data, source);

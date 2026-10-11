@@ -140,7 +140,8 @@ on:function(e,f){(h[e]=h[e]||[]).push(f);return el;},update:function(){return el
 return el;},
 submit:function(){return Promise.resolve({});},update:function(){},getElement:function(){return null;}};},
 confirmSetup:function(){return Promise.resolve({setupIntent:{status:'succeeded'}});},
-confirmPayment:function(){return Promise.resolve({paymentIntent:{status:'succeeded'}});}};};})();</script>`;
+retrievePaymentIntent:function(){return Promise.resolve({paymentIntent:{status:window.__piStatus||'requires_payment_method'}});},
+confirmPayment:function(){return Promise.resolve(window.__confirmLost?{error:{type:'api_connection_error',message:'Network error'}}:{paymentIntent:{status:'succeeded'}});}};};})();</script>`;
 
 /* The real API handlers, run in this process against the fake Stripe and no Supabase. */
 const fakeStripe = installFakeStripe();
@@ -640,7 +641,7 @@ const ROUNDS = {
       if (fd.windows.slice(1).some((w) => w.full && fd.windows.length > 1 && !fd.full)) return 'a window under its cap is flagged full';
       return true;
     } },
-    { id: 'failures-ui', pts: 4, desc: 'far ZIP lead; a full window greyed and labelled "Full"; the stale quote message; no booking call without the consent box (card or wallet); gates closed saves a reservation lead, shows no card form and calls no Stripe', async run() {
+    { id: 'failures-ui', pts: 4, desc: 'far ZIP lead; a full window greyed and labelled "Full"; the stale quote message; no booking call without the consent box (card or wallet); Book again after a lost payment answer never pays twice; gates closed saves a reservation lead, shows no card form and calls no Stripe', async run() {
       if (!Z2) return 'no zone 2 ZIP in the config';
       const far = byId(await dump(ORDER_WITH_ZIP('', FAR)), 'o-zip');
       if (!far) return 'no #o-zip section on the order page';
@@ -711,6 +712,26 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       });
       resetState();
       if (consent !== true) return consent;
+      // A lost answer (the final review's double charge): Stripe's reply to the payment never comes
+      // back, so the page says it could not confirm it (never "nothing was booked"); the next Book asks
+      // Stripe about that payment first and, paid, goes to thanks with no second create-booking call.
+      const retry = await withPage(360, async (p) => {
+        await p.goto(`${ORIGIN}${ORDER_WITH_ZIP('__fakepay=1&__open=1')}`);
+        const bad = await fillOrder(p, { zip: Z2 });
+        if (bad) return `could not fill the order page, ${bad}`;
+        await p.evaluate('window.__confirmLost=true');
+        await p.click('#o-book', 1500);
+        if (STATE.bookingHits !== 1) return `the first Book made ${STATE.bookingHits} create-booking call(s)`;
+        const t = await p.evaluate(`document.getElementById('o-pay').innerText`);
+        if (/nothing was (booked|charged)/i.test(t)) return 'a lost payment answer says nothing was booked';
+        if (!/could not confirm/i.test(t)) return 'a lost payment answer does not say we could not confirm the payment';
+        await p.evaluate("window.__confirmLost=false;window.__piStatus='succeeded'");
+        await p.click('#o-book', 1500);
+        if (STATE.bookingHits !== 1) return 'Book again after a payment that went through made a second create-booking call';
+        return /thanks.html/.test(await p.evaluate('location.pathname')) || 'Book again after a payment that went through did not go to thanks';
+      });
+      resetState();
+      if (retry !== true) return retry;
       return withPage(360, async (p) => {
         await p.goto(ORIGIN + ORDER_WITH_ZIP('__fakepay=1'));
         await p.evaluate(`window.__leads=[];if(window.SiteLeads)window.SiteLeads.capture=function(a){window.__leads.push(a);return Promise.resolve({});};`);
