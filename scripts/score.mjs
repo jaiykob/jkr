@@ -430,7 +430,7 @@ const ROUNDS = {
     } },
     { id: 'no-truck', pts: 6, desc: 'no page, script, style or Spanish phrase names the load builder or tells people to tap items into a truck', run() {
       if (exists('js/load-builder.js')) return 'js/load-builder.js is still there';
-      const bad = /load-builder|LoadBuilder|LOAD_BUILDER|\blb-|tap (the )?items?\b|tap what you|fill(s|ing)? (up )?(the|your) truck|truck fills|watch the truck/i;
+      const bad = /load-builder|LoadBuilder|LOAD_BUILDER|\blb-|tap (the |your )?items?\b|tap what\b|\b(tap|snap) or (tap|snap)\b|\bas you tap\b|\bphotos? or (a few )?taps?\b|\ba few taps\b|fill(s|ing)? (up )?(the|your) truck|truck fills|watch the truck|\btoca (lo|los|las|tus)\b|\btoca o\b|\bo toca\b|\btocaste\b|\bmientras tocas\b|\bunos toques\b/i;
       for (const f of [...scanFiles(), ...mdFiles()]) {
         const m = (read(f) || '').match(bad);
         if (m) return `${f} mentions "${m[0]}"`;
@@ -849,13 +849,22 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       }
       return true;
     } },
-    { id: 'spanish-js', pts: 5, desc: 'the travel line on the size cards and the ZIP check speak Spanish on Spanish pages', async run() {
+    { id: 'spanish-js', pts: 5, desc: 'the size cards\' travel line the script writes from the ZIP, and the ZIP check, speak Spanish on Spanish pages', async run() {
       if (!CHROME) return 'no Chrome';
       if (!exists('es/index.html')) return 'es/index.html missing';
-      const dom = await dump(seeded('/es/index.html', { quoteZip: '97211' }));
-      const tl = text((String(dom).match(/class="size-travel[^"]*"[^>]*>([\s\S]*?)<\/span>\s*<\/span>/) || [])[1] || '');
+      // The line js/home.js writes once it knows the seeded ZIP, priced by the travel module:
+      // "+ $25.00 de viaje", or "Sin cargo de viaje" in a free zone. The built page only says "+ viaje".
+      const ZIP = '97211';
+      delete require.cache[require.resolve(path.join(ROOT, 'api/_lib/travel.js'))];
+      const trip = require(path.join(ROOT, 'api/_lib/travel.js')).travelFor(ZIP);
+      if (!trip) return `${ZIP} is in no travel zone`;
+      const want = trip.cents ? `+ ${fmt(trip.cents)} de viaje` : 'Sin cargo de viaje';
+      const dom = await dump(seeded('/es/index.html', { quoteZip: ZIP }));
+      const lines = [...String(dom).matchAll(/class="size-travel[^"]*"[^>]*>([\s\S]*?)<\/span>\s*<\/span>/g)].map((m) => text(m[1]));
+      if (!lines.length) return 'no size card travel line on es/index.html';
+      const off = lines.find((l) => l !== want);
+      if (off !== undefined) return `size card travel line: "${off}", want "${want}"`;
       const zo = byId(dom, 'zipOut');
-      if (!/viaje/i.test(tl)) return `size card travel line: "${tl}"`;
       if (!zo || !/vamos/i.test(zo.text)) return `ZIP answer: "${zo && zo.text}"`;
       return true;
     } },

@@ -1,8 +1,8 @@
 name: Corbett
 state: OR
 zips: 97019
-lede: Corbett is in our Zone 2, up on the bluff above the Gorge. Tap or snap what is going and see your price with travel included.
-lede_es: Corbett está en nuestra Zona 2, arriba en el risco sobre la garganta del río. Toca o fotografía lo que se va y ve tu precio con el viaje incluido.
+lede: Corbett is in our Zone 2, up on the bluff above the Gorge. Pick the size that fits your load, or send a photo, and see your price with travel included.
+lede_es: Corbett está en nuestra Zona 2, arriba en el risco sobre la garganta del río. Elige el tamaño de tu carga, o manda una foto, y ve tu precio con el viaje incluido.
 areas: Corbett Hill, Historic Columbia River Highway, Springdale, Larch Mountain Road, Crown Point, Corbett school area
 
 ## Local

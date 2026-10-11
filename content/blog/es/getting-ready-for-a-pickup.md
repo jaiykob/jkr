@@ -32,4 +32,4 @@ Antes de que lleguemos, dale una mirada a la pila y compárala con las fotos o l
 
 Reserva el elevador de carga si tu edificio tiene, revisa dónde se pueden detener los camiones y avisa en la recepción que vamos a llegar. En edificios grandes, como en el centro de [Portland](/es/portland.html) o cerca de Orenco en [Hillsboro](/es/hillsboro.html), esa llamada puede ahorrar una espera larga el día del retiro.
 
-¿Listo para elegir un día? Tu precio está a unos toques en la [página de cotización](/book/quote.html).
+¿Listo para elegir un día? Elige tu tamaño en la [página de cotización](/book/quote.html) y tu precio aparece con el viaje de tu código postal.

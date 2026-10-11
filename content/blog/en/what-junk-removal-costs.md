@@ -19,7 +19,7 @@ We put travel on its own line on purpose. Two neighbors with the same pile in di
 
 ## What changes the price
 
-- **More than you showed us.** If there is more on the day than your photos or taps showed, we show you the new load size and price before we load anything. You decide.
+- **More than you showed us.** If there is more on the day than the size you booked, we show you the new load size and price before we load anything. You decide.
 - **Things we cannot take.** Paint, chemicals and fuel stay with you, so they do not count toward the load.
 - **Very heavy material.** [[Loose soil, concrete and roofing shingles are priced by hand]], because a truck reaches its weight limit long before it runs out of space.
 

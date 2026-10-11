@@ -19,7 +19,7 @@ Ponemos el viaje en su propia línea a propósito. Dos vecinos con la misma pila
 
 ## Lo que cambia el precio
 
-- **Más de lo que nos mostraste.** Si el día del retiro hay más de lo que mostraron tus fotos o lo que tocaste, te enseñamos el nuevo tamaño de carga y el precio antes de cargar nada. Tú decides.
+- **Más de lo que nos mostraste.** Si el día del retiro hay más que el tamaño que reservaste, te enseñamos el nuevo tamaño de carga y el precio antes de cargar nada. Tú decides.
 - **Cosas que no nos podemos llevar.** La pintura, los químicos y el combustible se quedan contigo, así que no cuentan para la carga.
 - **Material muy pesado.** [[La tierra suelta, el concreto y las tejas de techo se cotizan aparte]], porque un camión llega a su límite de peso mucho antes de quedarse sin espacio.
 

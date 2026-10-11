@@ -32,4 +32,4 @@ Before we arrive, glance at the pile against the photos or items in your booking
 
 Reserve the freight elevator if your building has one, check where trucks are allowed to stop, and let the front desk know we are coming. In larger buildings, such as downtown [Portland](/portland.html) or near Orenco in [Hillsboro](/hillsboro.html), that one phone call can save a long wait on the day.
 
-Ready to set a day? Your price is a few taps away on the [quote page](/book/quote.html).
+Ready to set a day? Pick your size on the [quote page](/book/quote.html) and your price shows up with travel for your ZIP.

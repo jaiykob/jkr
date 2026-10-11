@@ -1,8 +1,8 @@
 name: Happy Valley
 state: OR
 zips: 97086
-lede: Happy Valley is in our home zone, with no travel charge. Show us what is going with a photo or a few taps and see your price now.
-lede_es: Happy Valley está en nuestra zona base, sin cargo de viaje. Muéstranos lo que se va con una foto o unos toques y ve tu precio ahora.
+lede: Happy Valley is in our home zone, with no travel charge. Show us what is going with a photo, or pick the closest size, and see your price now.
+lede_es: Happy Valley está en nuestra zona base, sin cargo de viaje. Muéstranos lo que se va con una foto, o elige el tamaño más parecido, y ve tu precio ahora.
 areas: Scouters Mountain, Sunnyside, Rock Creek, Happy Valley Park, Mount Talbert, Clackamas Town Center area
 
 ## Local

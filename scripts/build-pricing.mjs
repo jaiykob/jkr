@@ -9,6 +9,7 @@
  *   book/quote.html           quote-jsonld, order-sizes (the five size cards)
  *   index.html                     home-prices, home-sizes
  *   terms.html, faq.html, es/faq.html   the data-policy spans (cancel hours, late fee, refusal fee)
+ *   index.html, book/quote.html    every https://wa.me/<number> (WHATSAPP in api/_lib/site.js)
  *   api/photo-quote.js              server-items
  */
 import fs from 'node:fs';
@@ -275,6 +276,13 @@ const policyText = (key, es) => ({
 const policySpans = (src, file) => src.replace(/<span(?: class="guess")? data-policy="(cancel|late|refusal)">[^<]*<\/span>/g,
   (m, key) => `<span${GUESS.policy ? ' class="guess"' : ''} data-policy="${key}">${policyText(key, file.startsWith('es/'))}</span>`);
 
+/* The WhatsApp chat address in the hand written pages (index.html: the menu row, the header
+   button and the chip under the cards; book/quote.html: the summary and the bar) is WHATSAPP
+   in api/_lib/site.js, a guess until the founder names a number. The pages built from
+   index.html (towns, Spanish, the shared header) follow through their own builds. */
+if (!/^\d{8,15}$/.test(String(site.WHATSAPP))) throw new Error(`api/_lib/site.js: WHATSAPP must be digits with the country code, not "${site.WHATSAPP}"`);
+const whatsapp = (src) => src.replace(/https:\/\/wa\.me\/\d*/g, `https://wa.me/${site.WHATSAPP}`);
+
 const TARGETS = [
   { file: 'terms.html', blocks: [], policy: true },
   { file: 'faq.html', blocks: [], policy: true },
@@ -282,11 +290,11 @@ const TARGETS = [
   { file: 'api/photo-quote.js', blocks: [
     { name: 'server-items', body: serverItems, comment: true },
   ] },
-  { file: 'book/quote.html', blocks: [
+  { file: 'book/quote.html', wa: true, blocks: [
     { name: 'quote-jsonld', body: quoteJsonld, comment: false },
     { name: 'order-sizes', body: orderSizes, comment: false },
   ] },
-  { file: 'index.html', blocks: [
+  { file: 'index.html', wa: true, blocks: [
     { name: 'home-jsonld', body: homeJsonld, comment: false },
     { name: 'home-prices', body: homePrices, comment: false },
     { name: 'home-travel-note', body: homeTravelNote, comment: false },
@@ -303,6 +311,7 @@ for (const t of TARGETS) {
   let out = before;
   for (const b of t.blocks) out = splice(out, b.name, b.body, b.comment, t.file);
   if (t.policy) out = policySpans(out, t.file);
+  if (t.wa) out = whatsapp(out);
   if (eol(out) === eol(before)) continue;
   if (check) { stale.push(t.file); continue; }
   fs.writeFileSync(abs, out, 'utf8');
@@ -321,7 +330,7 @@ for (const { files, text } of WHOLE) for (const f of files) {
 
 if (check) {
   if (stale.length) {
-    console.error(`STALE: ${stale.join(', ')} ${stale.length > 1 ? 'do' : 'does'} not match pricing.config.mjs.\nRun: npm run build:pricing`);
+    console.error(`STALE: ${stale.join(', ')} ${stale.length > 1 ? 'do' : 'does'} not match pricing.config.mjs (or WHATSAPP in api/_lib/site.js).\nRun: npm run build`);
     process.exit(1);
   }
   console.log(`check-pricing: in sync (${[...TARGETS.map((t) => t.file), ...WHOLE.flatMap((w) => w.files)].join(', ')})`);
