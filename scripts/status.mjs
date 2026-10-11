@@ -32,16 +32,16 @@ console.log(`\nLocal (the code in this folder)\n`);
 const placeholders = [
   ['"Brand Name"', site.NAME === 'Brand Name', 'api/_lib/site.js, then npm run build'],
   ['the domain', !site.HAS_DOMAIN, 'node scripts/set-domain.mjs <domain>'],
-  ['Stripe publishable key', /pk_test_REPLACE_ME/.test(read('book/checkout.html')), 'book/checkout.html'],
-  ['Google Analytics ID', /G-XXXXXXXXXX/.test(read('js/analytics.js')), 'js/analytics.js and the three booking pages'],
+  ['Stripe publishable key', /pk_test_REPLACE_ME/.test(read('book/quote.html')), 'book/quote.html'],
+  ['Google Analytics ID', /G-XXXXXXXXXX/.test(read('js/analytics.js')), 'js/analytics.js, book/quote.html and book/thanks.html'],
   ['Supabase project', /YOUR-PROJECT\.supabase\.co/.test(read('js/leads.js')), 'js/leads.js'],
 ];
 for (const [label, still, where] of placeholders) line(still ? 'todo' : 'done', label, still ? `placeholder: ${where}` : 'set');
 const guesses = Object.entries(GUESS).filter(([, on]) => on).map(([k]) => k);
 line(guesses.length ? 'todo' : 'done', 'Guesses', guesses.length ? `still guesses: ${guesses.join(', ')} (GUESSES.md)` : 'none');
 const gate1 = /const BOOKINGS_OPEN_SERVER = true/.test(read('api/create-booking.js'));
-const gate3 = /const BOOKINGS_OPEN_CLIENT = true/.test(read('book/checkout.html'));
-line(gate1 && gate3 ? 'done' : gate1 || gate3 ? 'warn' : 'todo', 'Booking gates (code)', `server ${gate1 ? 'open' : 'closed'}, checkout ${gate3 ? 'open' : 'closed'}; the third is BOOKINGS_OPEN in Vercel`);
+const gate3 = /(?:var|const|let) BOOKINGS_OPEN_CLIENT = true/.test(read('book/quote.html'));
+line(gate1 && gate3 ? 'done' : gate1 || gate3 ? 'warn' : 'todo', 'Booking gates (code)', `server ${gate1 ? 'open' : 'closed'}, order page ${gate3 ? 'open' : 'closed'}; the third is BOOKINGS_OPEN in Vercel`);
 const banner = /var SHOW = true/.test(read('js/maintenance-banner.js'));
 line(banner ? 'todo' : 'done', 'Not-booking-yet banner', banner ? 'showing (set SHOW = false at launch)' : 'off');
 

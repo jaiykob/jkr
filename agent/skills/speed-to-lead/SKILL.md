@@ -44,9 +44,9 @@ those facts here; point to them.
    zone and travel (`Zone 2, travel $25.00`). `quoted_price` is dollars and
    already includes travel.
 2. Build the resume link from the shared context:
-   `book/quote.html?load={load_idx}&freq={fi}&zip={zip}&edit=contact`, where
-   `load_idx` is the row of the load size and `fi` is 0 for one-time, 1 for
-   monthly. The quote page reprices it; nothing in the link is trusted.
+   `book/quote.html?size={load_idx}&zip={zip}`, where `load_idx` is the row
+   of the load size. The order page reprices it; nothing in the link is
+   trusted.
 3. Write the message (templates below), filling only facts from the row.
 4. Emit per channel and `MODE`:
    - **Email:** subject and body from the template; `draft` queues
@@ -69,8 +69,8 @@ Thanks for getting a price from us. Here is what you showed us:
 
 Want to pick a day? This link brings back your quote: {link}
 
-If there is more on the day than your photos or taps showed, we show you the
-new price before we load anything. Questions? Reply here or call or text
+If there is more on the day than the size you picked, we show you the new
+price before we load anything. Questions? Reply here or call or text
 (925) 408-6053.
 
 Brand Name

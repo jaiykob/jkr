@@ -19,15 +19,15 @@ Ponemos el viaje en su propia línea a propósito. Dos vecinos con la misma pila
 
 ## Lo que cambia el precio
 
-- **Más de lo que nos mostraste.** Si el día del retiro hay más de lo que mostraron tus fotos o lo que tocaste, te enseñamos el nuevo tamaño de carga y el precio antes de cargar nada. Tú decides.
+- **Más de lo que nos mostraste.** Si el día del retiro hay más que el tamaño que reservaste, te enseñamos el nuevo tamaño de carga y el precio antes de cargar nada. Tú decides.
 - **Cosas que no nos podemos llevar.** La pintura, los químicos y el combustible se quedan contigo, así que no cuentan para la carga.
-- **Material muy pesado.** [[La tierra suelta, el concreto y las tejas de techo se cotizan aparte]], porque un camión se llena por peso mucho antes que por espacio.
+- **Material muy pesado.** [[La tierra suelta, el concreto y las tejas de techo se cotizan aparte]], porque un camión llega a su límite de peso mucho antes de quedarse sin espacio.
 
 Nada más lo cambia. Ni las escaleras, ni la lluvia, ni la época del año.
 
 ## Cómo saber tu precio antes de que alguien vaya
 
-La forma más rápida es tomar unas fotos en nuestra [página de cotización](/book/quote.html). Contamos los artículos y llenamos el camión en la pantalla por ti; puedes corregir cualquier conteo con los botones de más y menos. ¿Prefieres tocar? Elige tus artículos de la lista y el camión se llena igual. De cualquier forma, el precio aparece en cuanto el camión tiene algo, y el viaje se suma en cuanto agregas tu código postal.
+La forma más rápida es tomar unas fotos en nuestra [página de cotización](/book/quote.html). Contamos los artículos y elegimos el tamaño de carga por ti, y lo puedes cambiar si no te parece. ¿Prefieres elegir tú? Escoge la tarjeta de tamaño que se parece a tu montón. De cualquier forma, el precio aparece con el tamaño, y el viaje se suma en cuanto agregas tu código postal.
 
 ## Por qué precio en línea y no una visita para cotizar
 

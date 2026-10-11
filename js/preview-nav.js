@@ -1,38 +1,29 @@
-// Local preview bar: Home / Quote / Checkout / Thanks on every page, so the
-// whole flow can be clicked through without paying. Runs on localhost only;
-// on the real site this file does nothing.
+// Local preview bar: Home / Order / Thanks on every page, so the whole flow
+// can be clicked through without paying. Runs on localhost only; on the real
+// site this file does nothing. (The old checkout page is a redirect to the
+// order page since round 6.)
 (function () {
   if (!['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) return;
 
-  const SAMPLE_CONTACT = {
-    name: 'Sample Customer', email: 'sample@example.com', phone: '(000) 000-0000',
-    addr: '123 Sample St', items: 'Old couch and boxes',
-  };
+  const SAMPLE_CONTACT = { name: 'Sample Customer', email: 'sample@example.com', phone: '(000) 000-0000', addr: '123 Sample St' };
 
   function read(key) { try { return JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (e) { return null; } }
   function write(key, v) { try { sessionStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* private mode */ } }
 
-  async function toCheckout() {
-    const { PRICES, ONE_TIME_COL, ALL_ZIPS, COLUMN_LABELS, COLUMNS, travelFor } = await import('/pricing.config.mjs');
-    const c = read('quoteContact') || {};
-    // Checkout sends you back to the quote without a full contact; fill the gaps.
-    const contact = { ...SAMPLE_CONTACT, ...c, zip: ALL_ZIPS.includes(c.zip) ? c.zip : ALL_ZIPS[0] };
-    write('quoteContact', contact);
-    const p = new URLSearchParams({
-      freq: COLUMN_LABELS[COLUMNS[ONE_TIME_COL]], fi: String(ONE_TIME_COL), load: '0',
-      // Load plus travel for the sample ZIP, the way the quote page sends it.
-      cents: String(PRICES[0][ONE_TIME_COL] + travelFor(contact.zip).cents), zip: contact.zip,
-    });
-    location.href = `/book/checkout.html?${p}`;
-  }
-
   async function toThanks() {
     if (!read('bookingSummary')) {
-      const { PRICES, ONE_TIME_COL } = await import('/pricing.config.mjs');
+      // The shape js/order.js writes after a booking: the first size, the
+      // first metro ZIP's travel, the first open day and window.
+      const { PRICES, ONE_TIME_COL, LOAD_OPTIONS, ALL_ZIPS, travelFor, SCHEDULE } = await import('/pricing.config.mjs');
+      const t = travelFor(ALL_ZIPS[0]);
+      const day = new Date(Date.now() + 2 * 86400000);
       write('bookingSummary', {
-        cadence: 'One-time visit, Monday', day: 'Monday', plan: 'Preview booking',
-        last4: '4242', amountCents: PRICES[0][ONE_TIME_COL], phone: SAMPLE_CONTACT.phone,
-        address: SAMPLE_CONTACT.addr, firstName: 'Sample',
+        size: LOAD_OPTIONS[0].label, loadCents: PRICES[0][ONE_TIME_COL], travelCents: t.cents,
+        totalCents: PRICES[0][ONE_TIME_COL] + t.cents, travel: `${t.label}, ${t.place}`,
+        date: day.toISOString().slice(0, 10), dayLabel: day.toDateString().slice(0, 10),
+        window: SCHEDULE.windows[0].key, windowLabel: SCHEDULE.windows[0].label,
+        address: `${SAMPLE_CONTACT.addr}, ${t.place}, ${t.state} ${t.zip}`, phone: SAMPLE_CONTACT.phone,
+        email: SAMPLE_CONTACT.email, firstName: 'Sample',
       });
     }
     location.href = '/book/thanks.html';
@@ -40,8 +31,7 @@
 
   const links = [
     ['Home', '/index.html'],
-    ['Quote', '/book/quote.html'],
-    ['Checkout', '/book/checkout.html', toCheckout],
+    ['Order', '/book/quote.html'],
     ['Thanks', '/book/thanks.html', toThanks],
   ];
 

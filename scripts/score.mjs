@@ -7,6 +7,11 @@
  * pages themselves, loaded in headless Chrome at phone width. Points add up to
  * 100, and a round is done only at 100. Exits 0 at 100, 1 below.
  *
+ * Round 6 also serves the real API handlers (POST /api/create-booking, GET
+ * /api/day-capacity) against the shared fake Stripe and no Supabase, a Stripe.js
+ * stub (?__fakepay=1), BOOKINGS_OPEN_CLIENT = true (?__open=1), and &__sticky=1 to
+ * keep both flags for the pages that follow.
+ *
  * Pages are served by a throwaway local server that adds two things the site
  * does not have:
  *   ?__probe=1        injects a script that, after the page settles, writes
@@ -14,8 +19,8 @@
  *                     window width, and any text under 16px inside the
  *                     elements this round added.
  *   /__seed.html      writes sessionStorage keys, then opens the real page,
- *                     so checkout and thanks can be checked with a booking
- *                     in progress.
+ *                     so the order page and thanks can be checked with a
+ *                     booking in progress.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -23,6 +28,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { openBrowser } from './lib/browser.mjs';
+import { installFakeStripe } from './lib/fake-stripe.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createRequire } from 'node:module';
 
@@ -31,6 +37,9 @@ const require = createRequire(import.meta.url);
 const args = process.argv.slice(2);
 const ROUND = Number(args[args.indexOf('--round') + 1]) || 1;
 const JSON_OUT = args.includes('--json');
+// --no-earlier skips any round's own "earlier rounds still score 100" check: round 6 runs
+// rounds 1 to 5 itself, so each would otherwise repeat the rounds before it.
+const NO_EARLIER = args.includes('--no-earlier');
 
 const read = (f) => { try { return fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { return null; } };
 const exists = (f) => fs.existsSync(path.join(ROOT, f));
@@ -67,10 +76,11 @@ let C = {};
 try { C = await import(pathToFileURL(path.join(ROOT, 'pricing.config.mjs')).href + `?t=${Date.now()}`); } catch (e) { C = { error: e.message }; }
 const zipsIn = C.ZIP_ZONES ? Object.keys(C.ZIP_ZONES) : [];
 const Z2 = zipsIn.find((z) => C.ZIP_ZONES[z].cents > 0 && C.ZIP_ZONES[z].zone === (C.ZONES && C.ZONES[1] && C.ZONES[1].key));
-let FAR = '98601';
+let FAR = '98601', FAR2 = null;
 try {
   const M = (await import(pathToFileURL(path.join(ROOT, 'data/zip-miles.mjs')).href)).default;
   FAR = Object.keys(M.zips).find((z) => !C.ZIP_ZONES || !C.ZIP_ZONES[z]) || FAR;
+  FAR2 = Object.keys(M.zips).find((z) => z !== FAR && (!C.ZIP_ZONES || !C.ZIP_ZONES[z])) || null;
 } catch { /* no data yet */ }
 const LOAD_ROW = 2;
 const LOAD_CENTS = C.PRICES ? C.PRICES[LOAD_ROW][C.ONE_TIME_COL] : 0;
@@ -83,14 +93,20 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 // ?__probe=<round>: which parts of the page each round measures for small
 // text, and (from round 2) which links and buttons must be 48px tall.
 const PROBE_SETS = {
-  1: { text: ['.lb-travel', '.lb-unit', '#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut'], taps: [] },
+  // Round 1's travel text; since round 6 the order page shows it in the ZIP answer, the total, the travel line and the size cards,
+  // and its pay step (#o-pay) took over the checkout's summary and card form.
+  1: { text: ['#h-zip', '#pick-sum', '#zoneList', '#sum-rows', '#zipOut', '#o-zip-msg', '.o-total', '.o-travel', '.size-price', '.size-travel', '#o-pay'], taps: [] },
   2: { text: ['main .prose', 'main .faq-list', '.town-local', '.town-zones', '#zoneList', 'footer', '#maint-banner'],
        taps: ['.site-nav a', '.site-nav button', 'footer a', '.town-nearby a', '.hub-towns a'] },
-  5: { text: ['.article p', '.article li', '.article h2', '.post-meta', '.lb-travel', '#zipOut', '.commercial-form label', '.commercial-form input', '.commercial-form textarea', 'footer'],
+  5: { text: ['.article p', '.article li', '.article h2', '.post-meta', '.size-travel', '#zipOut', '.commercial-form label', '.commercial-form input', '.commercial-form textarea', 'footer'],
        taps: ['.site-nav a', '.site-nav button', 'footer a', '.article .trail a', '.commercial-form button', '.post-list a', '.lang-switch'] },
 };
-const PROBE = `<script>(function(){setTimeout(function(){try{
-var SETS=${JSON.stringify(PROBE_SETS)};var set=SETS[new URLSearchParams(location.search).get('__probe')]||SETS[1];
+PROBE_SETS[6] = { text: ['.size-card', '#order label', '#order input', '#o-bar', '#o-summary', '.o-total', '.o-travel', 'footer'],
+  taps: ['.size-card', '#order button', '#o-bar a', '#o-bar button', '#o-summary a', '#o-summary button', '.site-nav a', '.site-nav button'] };
+/* The probe as one function of the set id, returning { sw, vw, small, taps }. PROBE runs it once the
+   page settles; probeNow(set) runs it now, for a page measured after a scripted walk (the pay step). */
+const PROBE_FN = `function(id){
+var SETS=${JSON.stringify(PROBE_SETS)};var set=SETS[id]||SETS[1];
 var small=[],taps=[];
 set.text.forEach(function(s){document.querySelectorAll(s).forEach(function(n){[n].concat([].slice.call(n.querySelectorAll('*'))).forEach(function(e){
 var t=(e.childNodes.length&&[].some.call(e.childNodes,function(c){return c.nodeType===3&&c.textContent.trim();}));
@@ -98,23 +114,108 @@ var r=e.getBoundingClientRect();if(!t||!r.width||!r.height)return;var fs=parseFl
 if(fs<16)small.push(s+' '+e.tagName.toLowerCase()+'.'+e.className+' '+fs+'px');});});});
 set.taps.forEach(function(s){document.querySelectorAll(s).forEach(function(e){var r=e.getBoundingClientRect();
 if(!r.width||!r.height||getComputedStyle(e).visibility==='hidden')return;if(r.height<47.5||r.width<47.5)taps.push(s+' "'+(e.textContent||'').trim().slice(0,20)+'" '+Math.round(r.width)+'x'+Math.round(r.height));});});
-document.documentElement.setAttribute('data-probe',JSON.stringify({sw:document.documentElement.scrollWidth,vw:window.innerWidth,small:small,taps:taps}));
+return {sw:document.documentElement.scrollWidth,vw:window.innerWidth,small:small,taps:taps};}`;
+const PROBE = `<script>(function(){setTimeout(function(){try{
+document.documentElement.setAttribute('data-probe',JSON.stringify((${PROBE_FN})(new URLSearchParams(location.search).get('__probe'))));
 }catch(e){document.documentElement.setAttribute('data-probe',JSON.stringify({error:String(e)}));}},1500);})();</script>`;
+const probeNow = (id) => `(function(){try{return (${PROBE_FN})(${JSON.stringify(String(id))});}catch(e){return {error:String(e)};}})()`;
 const SEED = `<!doctype html><meta charset="utf-8"><script>
 var q=new URLSearchParams(location.search);var s=JSON.parse(q.get('s')||'{}');
 Object.keys(s).forEach(function(k){sessionStorage.setItem(k,typeof s[k]==='string'?s[k]:JSON.stringify(s[k]));});location.replace(q.get('to'));</script>`;
 
-const server = http.createServer((req, res) => {
+/* Stripe.js stub (?__fakepay=1): the surface the order page uses, nothing more. */
+const STRIPE_STUB = `<script>(function(){
+window.Stripe=function(){return{
+elements:function(){return{
+create:function(type){var h={};var el={
+mount:function(sel){var host=typeof sel==='string'?document.querySelector(sel):sel;if(!host)return;
+if(type==='expressCheckout'){host.innerHTML='<button type="button" class="fake-wallet" style="min-height:48px;min-width:48px">Pay with wallet</button>';
+host.querySelector('button').addEventListener('click',function(){
+(h.click||[]).forEach(function(f){f({resolve:function(){}});});
+var d={billingDetails:{name:'Wallet Payer',email:'wallet@example.com',phone:'+15035550100'},
+shippingAddress:{name:'Wallet Payer',address:{line1:'1 Probe St',city:'Gresham',state:'OR',postal_code:'97030',country:'US'}},expressPaymentType:'google_pay'};
+(h.confirm||[]).forEach(function(f){f(d);});});}
+else host.innerHTML='<input class="fake-card" aria-label="Card number" placeholder="Card number" autocomplete="cc-number" style="min-height:48px;font-size:16px"><input class="fake-card" aria-label="Expiry" placeholder="MM / YY" style="min-height:48px;font-size:16px"><input class="fake-card" aria-label="CVC" placeholder="CVC" style="min-height:48px;font-size:16px">';},
+on:function(e,f){(h[e]=h[e]||[]).push(f);return el;},update:function(){return el;},unmount:function(){},destroy:function(){},collapse:function(){}};
+return el;},
+submit:function(){return Promise.resolve({});},update:function(){},getElement:function(){return null;}};},
+confirmSetup:function(){return Promise.resolve({setupIntent:{status:'succeeded'}});},
+retrievePaymentIntent:function(){return Promise.resolve({paymentIntent:{status:window.__piStatus||'requires_payment_method'}});},
+confirmPayment:function(){return Promise.resolve(window.__confirmLost?{error:{type:'api_connection_error',message:'Network error'}}:{paymentIntent:{status:'succeeded'}});}};};})();</script>`;
+
+/* The real API handlers, run in this process against the fake Stripe and no Supabase. */
+const fakeStripe = installFakeStripe();
+const STATE = { bookingHits: 0, full: false, stale: false };
+const resetState = () => { STATE.bookingHits = 0; STATE.full = false; STATE.stale = false; fakeStripe.calls.length = 0; };
+async function callHandler(file, { method = 'GET', url = '/', headers = {}, body, env = {} } = {}) {
+  const keep = {};
+  const set = { STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_PRODUCT_ID: 'prod_x', BOOKINGS_OPEN: '', ADMIN_DASHBOARD_TOKEN: 'score-admin-token', ...env };
+  for (const k of [...Object.keys(set), 'SUPABASE_URL']) keep[k] = process.env[k];
+  Object.assign(process.env, set);
+  delete process.env.SUPABASE_URL;
+  try {
+    const handler = require(path.join(ROOT, file));
+    const u = new URL(url, 'http://x');
+    let status = 200, json = null;
+    const out = {};
+    const res = { setHeader(k, v) { out[k] = v; }, status(c) { status = c; return this; }, json(j) { json = j; return this; }, end() { return this; } };
+    await handler({ method, url, headers, body, query: Object.fromEntries(u.searchParams) }, res);
+    return { status, json, headers: out };
+  } finally {
+    for (const k of Object.keys(keep)) { if (keep[k] === undefined) delete process.env[k]; else process.env[k] = keep[k]; }
+  }
+}
+/** day-capacity as the page sees it; STATE.full fills the first window of the first day. */
+async function dayCapacity(url) {
+  if (!STATE.full) return callHandler('api/day-capacity.js', { url });
+  const first = await callHandler('api/day-capacity.js', { url });
+  const d = first.json && first.json.days && first.json.days[0];
+  if (!d) return first;
+  const db = require(path.join(ROOT, 'api/_lib/db.js'));
+  const orig = db.slotCounts;
+  const cap = (C.SCHEDULE && C.SCHEDULE.windows[0].cap) || 2;
+  db.slotCounts = async () => ({ [d.date]: { total: cap, [d.windows[0].key]: cap } });
+  try { return await callHandler('api/day-capacity.js', { url }); } finally { db.slotCounts = orig; }
+}
+const readBody = (req) => new Promise((res) => { const b = []; req.on('data', (c) => b.push(c)); req.on('end', () => { try { res(JSON.parse(Buffer.concat(b).toString('utf8') || '{}')); } catch { res({}); } }); });
+
+const server = http.createServer(async (req, res) => {
   const u = new URL(req.url, 'http://x');
+  const send = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
   if (u.pathname === '/__seed.html') { res.writeHead(200, { 'Content-Type': TYPES['.html'] }); return res.end(SEED); }
+  if (u.pathname === '/api/create-booking' || u.pathname === '/api/day-capacity') {
+    try {
+      if (u.pathname === '/api/day-capacity') { const r = await dayCapacity(req.url); return send(r.status, r.json); }
+      if (req.method !== 'POST') return send(405, { error: 'Method not allowed' });
+      STATE.bookingHits++;
+      const body = await readBody(req);
+      if (STATE.stale && typeof body.quotedCents === 'number') body.quotedCents += 100;
+      const r = await callHandler('api/create-booking.js', { method: 'POST', body, headers: { origin: ORIGIN } });
+      return send(r.status, r.json);
+    } catch (e) { return send(500, { error: `score server: ${e.message}` }); }
+  }
   let p = decodeURIComponent(u.pathname);
   if (p.endsWith('/')) p += 'index.html';
   const file = path.join(ROOT, p);
   if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('not found'); }
   let body = fs.readFileSync(file);
   const ext = path.extname(file);
-  if (ext === '.html' && u.searchParams.has('__probe')) body = Buffer.from(body.toString('utf8').replace(/<\/body>/i, PROBE + '</body>'));
-  res.writeHead(200, { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+  const headers = { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': 'no-store' };
+  if (ext === '.html') {
+    const sticky = /(?:^|;\s*)jkr_flags=([a-z,]*)/.exec(req.headers.cookie || '');
+    const flags = new Set((sticky ? sticky[1] : '').split(',').filter(Boolean));
+    if (u.searchParams.has('__fakepay')) flags.add('fakepay');
+    if (u.searchParams.has('__open')) flags.add('open');
+    if (u.searchParams.has('__sticky')) headers['Set-Cookie'] = `jkr_flags=${[...flags].join(',')}; Path=/`;
+    if (u.searchParams.has('__probe') || flags.size) {
+      let html = body.toString('utf8');
+      if (u.searchParams.has('__probe')) html = html.replace(/<\/body>/i, PROBE + '</body>');
+      if (flags.has('fakepay')) html = html.replace(/<script[^>]*js\.stripe\.com[^>]*><\/script>/gi, '').replace(/<head[^>]*>/i, (m) => m + STRIPE_STUB);
+      if (flags.has('open')) html = html.replace(/(BOOKINGS_OPEN_CLIENT\s*=\s*)false/g, '$1true');
+      body = Buffer.from(html);
+    }
+  }
+  res.writeHead(200, headers);
   res.end(body);
 });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
@@ -235,7 +336,7 @@ function brokenLinks(files) {
   for (const f of files) {
     for (const m of (read(f) || '').matchAll(/\s(?:href|src)="([^"]+)"/g)) {
       const u = m[1].replace(/&amp;/g, '&');
-      if (/^(https?:|tel:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
+      if (/^(https?:|tel:|sms:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
       const [p0, hash] = u.split('#');
       const p = p0.split('?')[0];
       const target = !p ? f : p.startsWith('/') ? p.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(f), p));
@@ -248,7 +349,468 @@ function brokenLinks(files) {
 const altOf = (html, lang) => ((String(html).match(new RegExp(`<link rel="alternate" hreflang="${lang}" href="([^"]+)"`)) || [])[1] || null);
 const ENGLISH_WORDS = /\b(the|and|your|with|you|our|we|for|of|to)\b/gi;
 
+/* ── round 6 helpers: the order flow ──────────────────────────────────────── */
+const R6_ROWS = C.PRICES ? C.PRICES.map((r) => r[C.ONE_TIME_COL]) : [];
+const ORDER_URL = (q = '') => `/book/quote.html?size=${LOAD_ROW}${q ? `&${q}` : ''}`;
+/** The order page with a ZIP already known (the page reads quoteZip from sessionStorage). */
+const ORDER_WITH_ZIP = (q = '', zip = Z2) => seeded(ORDER_URL(q), { quoteZip: zip });
+async function withPage(width, fn) {
+  if (!browser) return 'no Chrome to measure with';
+  const p = await browser.page({ width });
+  try { return await fn(p); } finally { await p.close(); }
+}
+/** Everything the in-page checks ask for, as one evaluated expression. */
+const rectOf = (sel) => `(function(){var e=document.querySelector(${JSON.stringify(sel)});if(!e)return null;var r=e.getBoundingClientRect(),c=getComputedStyle(e);
+return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,w:r.width,h:r.height,display:c.display,visibility:c.visibility,opacity:c.opacity,position:c.position};})()`;
+const shown = (r) => !!r && r.display !== 'none' && r.visibility !== 'hidden' && r.w > 0 && r.h > 0;
+/** Walk the order page's sections the way a customer does. Returns null, or the step that failed. */
+async function fillOrder(p, { wallet = false, zip = Z2, contact = true, picked = {}, open = true } = {}) {
+  const step = async (name, fn) => { try { await fn(); return null; } catch (e) { return `${name}: ${e.message}`; } };
+  let bad = null;
+  bad = bad || await step('ZIP', () => p.type('#o-zip input', zip));
+  const DAY = '#o-when [data-date]:not([disabled]):not([aria-disabled="true"])', WIN = '#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)';
+  const attr = (sel, a) => p.evaluate(`(function(){var e=document.querySelector(${JSON.stringify(sel)});return e?e.getAttribute(${JSON.stringify(a)}):null;})()`);
+  picked.date = await attr(DAY, 'data-date');
+  bad = bad || await step('day chip', () => p.click(DAY));
+  picked.window = await attr(WIN, 'data-window');
+  bad = bad || await step('window', () => p.click(WIN));
+  if (contact) {
+    bad = bad || await step('name', () => p.type('#o-you input[autocomplete="name"]', SAMPLE_CONTACT.name));
+    bad = bad || await step('phone', () => p.type('#o-you input[autocomplete="tel"]', SAMPLE_CONTACT.phone));
+    bad = bad || await step('email', () => p.type('#o-you input[autocomplete="email"]', SAMPLE_CONTACT.email));
+    bad = bad || await step('street', () => p.type('#o-you input[autocomplete="address-line1"]', SAMPLE_CONTACT.addr));
+  }
+  // The pay step (ruling R15). Gates open: the card form and the consent box show, and both
+  // ways to pay need the box (the wallet too, Review Focus 5). Gates closed: neither shows.
+  const CARD = '#o-pay .fake-card', BOX = '#o-pay input[type="checkbox"]';
+  const seen = (sel) => p.evaluate(`[].some.call(document.querySelectorAll(${JSON.stringify(sel)}),function(e){var r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden';})`);
+  if (!open) {
+    if (!bad && contact && ((await seen(CARD)) || (await seen(BOX)))) bad = 'pay: the gates are closed but the pay step shows a card form or a consent box';
+    // Nothing to tick: the keyboard closes (not a tap) and the bar with Book comes back.
+    await p.evaluate('document.activeElement && document.activeElement.blur && document.activeElement.blur()');
+    await new Promise((r) => setTimeout(r, 400));
+    return bad;
+  }
+  if (!wallet) bad = bad || await step('card', () => p.type(CARD, '4242424242424242'));
+  bad = bad || await step('consent', () => p.click(BOX));
+  return bad;
+}
+/** Homepage card to thanks.html. Returns { taps, hits } or a reason. */
+async function bookingJourney(width, wallet) {
+  resetState();
+  return withPage(width, async (p) => {
+    try {
+    await p.goto(`${ORIGIN}/index.html?__fakepay=1&__open=1&__sticky=1`, 1200);
+    const tagged = await p.evaluate(`(function(){var cs=[].slice.call(document.querySelectorAll('.size-card'));
+var c=cs.filter(function(e){return (e.querySelector('.size-price')||e).textContent.indexOf(${JSON.stringify(fmt(LOAD_CENTS).replace(/\.00$/, ''))})>-1;})[0];
+if(!c)return false;c.setAttribute('data-score-pick','1');return true;})()`);
+    if (!tagged) return 'no homepage size card shows the half truck price';
+      await p.click('[data-score-pick]', 1800);
+      let bad = await fillOrder(p, { wallet });
+      if (bad) return `could not fill the order page, ${bad}`;
+      await p.click(wallet ? '.fake-wallet' : '#o-book', 1800);
+      for (let i = 0; i < 30 && !/thanks\.html/.test(await p.evaluate('location.pathname')); i++) await new Promise((r) => setTimeout(r, 200));
+      if (!/thanks\.html/.test(await p.evaluate('location.pathname'))) return `did not reach thanks.html (at ${await p.evaluate('location.pathname')})`;
+      // One autofill pick fills name, phone, email and street: it counts as one tap, typing as none.
+      return { taps: p.taps() + (wallet ? 0 : 1), hits: STATE.bookingHits };
+    } catch (e) { return `journey stopped: ${e.message}`; }
+    finally { await p.evaluate(`document.cookie='jkr_flags=; Path=/; Max-Age=0'`).catch(() => {}); }
+  });
+}
+const SCAN_DIRS = ['.', 'book', 'es', 'es/blog', 'blog', 'jkr', 'js', 'css'];
+const scanFiles = () => [
+  ...SCAN_DIRS.flatMap((d) => { try { return fs.readdirSync(path.join(ROOT, d)).filter((f) => /\.(html|js|css)$/.test(f)).map((f) => (d === '.' ? f : `${d}/${f}`)); } catch { return []; } }),
+  'i18n/es.json'].filter(exists);
+const mdFiles = () => ['content/towns', 'content/blog/en', 'content/blog/es'].flatMap((d) => { try { return fs.readdirSync(path.join(ROOT, d)).filter((f) => f.endsWith('.md')).map((f) => `${d}/${f}`); } catch { return []; } });
+
 const ROUNDS = {
+  6: [
+    { id: 'tests', pts: 6, desc: 'npm test passes', run() {
+      const r = run('npm', ['test']);
+      return r.code === 0 || `npm test failed: ${r.out.split('\n').filter((l) => /FAIL|Error|STALE|stale/.test(l)).slice(0, 3).join(' | ')}`;
+    } },
+    { id: 'no-truck', pts: 6, desc: 'no page, script, style or Spanish phrase names the load builder or tells people to tap items into a truck', run() {
+      if (exists('js/load-builder.js')) return 'js/load-builder.js is still there';
+      const bad = /load-builder|LoadBuilder|LOAD_BUILDER|\blb-|tap (the |your )?items?\b|tap what\b|\b(tap|snap) or (tap|snap)\b|\bas you tap\b|\bphotos? or (a few )?taps?\b|\ba few taps\b|fill(s|ing)? (up )?(the|your) truck|truck fills|watch the truck|\btoca (lo|los|las|tus)\b|\btoca o\b|\bo toca\b|\btocaste\b|\bmientras tocas\b|\bunos toques\b/i;
+      for (const f of [...scanFiles(), ...mdFiles()]) {
+        const m = (read(f) || '').match(bad);
+        if (m) return `${f} mentions "${m[0]}"`;
+      }
+      return true;
+    } },
+    { id: 'one-source', pts: 4, desc: 'both order module copies identical and match the config; no price, window or fee literal in the page scripts or APIs', run() {
+      const a = read('api/_lib/order-config.js'), b = read('js/order-config.js');
+      if (!a || !b) return 'api/_lib/order-config.js or js/order-config.js missing';
+      if (a !== b) return 'the two order module copies differ';
+      delete require.cache[require.resolve(path.join(ROOT, 'api/_lib/order-config.js'))];
+      const O = require(path.join(ROOT, 'api/_lib/order-config.js'));
+      if (!O.SIZES || O.SIZES.length !== R6_ROWS.length) return 'ORDER.SIZES does not list every size';
+      for (const [i, s] of O.SIZES.entries()) if (s.cents !== R6_ROWS[i]) return `size ${i} is ${s.cents}, config says ${R6_ROWS[i]}`;
+      if (!C.SCHEDULE || JSON.stringify(O.SCHEDULE) !== JSON.stringify(C.SCHEDULE)) return 'ORDER.SCHEDULE differs from the config';
+      if (!C.POLICY || O.POLICY.cancelHours !== C.POLICY.cancelHours || O.POLICY.lateFeeCents !== C.POLICY.lateFee * 100) return 'ORDER.POLICY differs from the config';
+      const files = ['js/order.js', 'js/size-cards.js', 'api/create-booking.js', 'api/day-capacity.js', 'api/visit-update.js', 'api/stripe-webhook.js'];
+      for (const f of files) {
+        const s = read(f);
+        if (s === null) return `${f} missing`;
+        const code = s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+        const prices = R6_ROWS.flatMap((c) => [String(c), `$${c / 100}`]);
+        for (const lit of prices) if (code.includes(lit)) return `${f} types the price ${lit}`;
+        for (const w of C.SCHEDULE.windows) if (code.includes(`'${w.key}'`) || code.includes(w.label)) return `${f} types the window ${w.key}`;
+        if (new RegExp(`\\b(lateFee|cancelHours|refusalFee)\\s*[:=]\\s*\\d`).test(code)) return `${f} types a fee or cancel hours`;
+      }
+      return true;
+    } },
+    { id: 'sizes', pts: 5, desc: 'five size cards on the homepage, order page, a town page and an es/ page, each at its config price, red while guessed', async run() {
+      if (!CHROME) return 'no Chrome to measure with';
+      const town = towns().find((t) => t.slug !== 'gresham') || towns()[0];
+      const pages = ['/index.html', '/book/quote.html', `/${town.slug}.html`, '/es/index.html'];
+      for (const url of pages) {
+        const dom = await dump(url);
+        const cards = [...String(dom).matchAll(/<(?:a|button|div|li|article)\b[^>]*class="[^"]*\bsize-card\b[^"]*"[^>]*>([\s\S]*?)(?=<(?:a|button|div|li|article)\b[^>]*class="[^"]*\bsize-card\b|$)/g)];
+        if (cards.length !== R6_ROWS.length) return `${url}: ${cards.length} size cards, want ${R6_ROWS.length}`;
+        for (const [i, m] of cards.entries()) {
+          const price = (m[1].match(/class="[^"]*\bsize-price\b[^"]*"[^>]*>([\s\S]*?)<\/[a-z]+>/) || [])[1];
+          const want = `$${R6_ROWS[i] / 100}`;
+          if (!price || !text(price).replace(/,/g, '').includes(want)) return `${url}: card ${i + 1} price is "${price && text(price)}", want ${want}`;
+          if (C.GUESS && C.GUESS.prices && !/class="[^"]*\bguess\b/.test(m[0].slice(0, m[0].indexOf(price) + price.length))) return `${url}: card ${i + 1} price is not red`;
+        }
+      }
+      return true;
+    } },
+    { id: 'phone', pts: 9, desc: 'order page at 360px: cards stacked, bar shows the total and Book carries the amount, bar hides while typing, no sideways scroll, text 16px+, taps 48px+', async run() {
+      if (!Z2) return 'no zone 2 ZIP in the config';
+      return withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('__probe=6'));
+        const probe = probeOf(await p.html());
+        if (!probe) return 'order page did not report (no #order page yet?)';
+        if (probe.error) return probe.error;
+        if (probe.vw !== 360) return `measured at ${probe.vw}px`;
+        if (probe.sw > probe.vw) return `${probe.sw}px wide in a ${probe.vw}px window`;
+        if (probe.small.length) return `small text ${probe.small.slice(0, 2).join('; ')}`;
+        if (probe.taps.length) return `small taps ${probe.taps.slice(0, 2).join('; ')}`;
+        const cards = await p.evaluate(`[].map.call(document.querySelectorAll('#o-size .size-card'),function(e){var r=e.getBoundingClientRect();return [r.left,r.top,r.width];})`);
+        if (!cards || cards.length !== R6_ROWS.length) return `${cards ? cards.length : 0} size cards on the order page`;
+        for (let i = 1; i < cards.length; i++) if (cards[i][1] <= cards[i - 1][1] || Math.abs(cards[i][0] - cards[0][0]) > 2) return 'size cards are not stacked in one column';
+        const bar = await p.evaluate(rectOf('#o-bar'));
+        if (!shown(bar) || bar.position !== 'fixed') return 'no fixed bottom bar (#o-bar)';
+        const barText = await p.evaluate(`document.querySelector('#o-bar').textContent`);
+        if (!barText.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `bar does not show the total ${fmt(TOTAL)}: "${text(barText).slice(0, 80)}"`;
+        const book = await p.evaluate(`(document.querySelector('#o-book')||{}).textContent`);
+        if (!book || !book.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `Book button reads "${text(book)}", want the amount`;
+        // Sections open in turn (spec): the contact fields open once a day and a window are picked.
+        try {
+          await p.click('#o-when [data-date]:not([disabled]):not([aria-disabled="true"])');
+          await p.click('#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)');
+        } catch (e) { return `could not reach the contact fields: ${e.message}`; }
+        const typing = await p.evaluate(`(function(){var i=document.querySelector('#o-you input');if(!i)return false;i.scrollIntoView({block:'center'});i.focus();return document.activeElement===i;})()`);
+        if (!typing) return 'no contact field in #o-you takes the focus';
+        await new Promise((r) => setTimeout(r, 500));
+        const hid = await p.evaluate(rectOf('#o-bar'));
+        if (shown(hid) && hid.opacity !== '0' && hid.top < 900) return 'the bar stays over the field being typed in';
+        return true;
+      });
+    } },
+    { id: 'desktop', pts: 7, desc: 'order page at 1280px: two columns, summary in view at the pay step, no bottom bar; homepage cards in one row; no sideways scroll', async run() {
+      if (!Z2) return 'no zone 2 ZIP in the config';
+      const order = await withPage(1280, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('__probe=6'));
+        const probe = probeOf(await p.html());
+        if (!probe) return 'order page did not report (no #order page yet?)';
+        if (probe.sw > probe.vw) return `order page ${probe.sw}px wide in a ${probe.vw}px window`;
+        const size = await p.evaluate(rectOf('#o-size')), sum = await p.evaluate(rectOf('#o-summary'));
+        if (!shown(size) || !shown(sum)) return 'no #o-size and #o-summary to measure';
+        if (sum.left < size.right - 2) return 'the summary is not in a second column';
+        const bar = await p.evaluate(rectOf('#o-bar'));
+        if (shown(bar)) return 'the bottom bar still shows at 1280px';
+        await p.evaluate(`document.querySelector('#o-pay').scrollIntoView({block:'center'})`);
+        await new Promise((r) => setTimeout(r, 400));
+        const after = await p.evaluate(rectOf('#o-summary'));
+        if (!shown(after) || after.bottom < 0 || after.top > 800) return 'the summary scrolled out of view at the pay step';
+        return true;
+      });
+      if (order !== true) return order;
+      return withPage(1280, async (p) => {
+        await p.goto(ORIGIN + '/index.html?__probe=6');
+        const probe = probeOf(await p.html());
+        if (probe && probe.sw > probe.vw) return `homepage ${probe.sw}px wide in a ${probe.vw}px window`;
+        const tops = await p.evaluate(`[].map.call(document.querySelectorAll('.size-card'),function(e){return Math.round(e.getBoundingClientRect().top);})`);
+        if (!tops || tops.length !== R6_ROWS.length) return `${tops ? tops.length : 0} size cards on the homepage`;
+        return tops.every((t) => Math.abs(t - tops[0]) <= 4) || 'homepage cards are not in one row at 1280px';
+      });
+    } },
+    { id: 'taps', pts: 10, desc: 'scripted booking, homepage card to thanks.html, against the real API: card 10 taps or fewer at 360 and 1280, wallet 8 or fewer, one create-booking call each', async run() {
+      if (!Z2) return 'no zone 2 ZIP in the config';
+      for (const [width, wallet, max] of [[360, false, 10], [1280, false, 10], [360, true, 8]]) {
+        const r = await bookingJourney(width, wallet);
+        const label = `${wallet ? 'wallet' : 'card'} at ${width}px`;
+        if (typeof r === 'string') return `${label}: ${r}`;
+        if (r.taps > max) return `${label}: ${r.taps} taps, want ${max} or fewer`;
+        if (r.hits !== 1) return `${label}: ${r.hits} create-booking calls, want exactly 1`;
+      }
+      return true;
+    } },
+    // Pay at booking (founder, 2026-10-10): the rule says what is paid when booking and that a
+    // different size is charged or refunded; "nothing is charged today" is gone from the page,
+    // thanks.html and the confirmation email.
+    { id: 'clear', pts: 6, desc: '"+ travel" before a ZIP, then the total and a Travel line; the pay now rule (the total paid when booking, a different size charged or refunded) beside Book, on thanks.html and in the confirmation email', async run() {
+      if (!Z2) return 'no zone 2 ZIP in the config';
+      const bare = await dump(ORDER_URL());
+      if (!/\+ travel/.test(text(bare))) return 'the order page never says "+ travel" before a ZIP';
+      const dom = await dump(ORDER_WITH_ZIP());
+      const total = (byId(dom, 'o-summary') || byId(dom, 'o-bar') || { text: '' }).text;
+      if (!total.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `with a ZIP the total reads "${total.slice(0, 80)}", want ${fmt(TOTAL)}`;
+      if (!/Travel/.test(total)) return 'no Travel line once the ZIP is known';
+      // The pay step tells one story: gates closed (as built) the reserve wording alone, gates
+      // open the pay now rule. Read from its paragraphs that are not hidden.
+      const shown = (d) => { const sec = byId(d, 'o-pay'); return sec ? text((sec.inner.match(/<p\b[^>]*>[\s\S]*?<\/p>/gi) || []).filter((p) => !/^<p\b[^>]*\shidden/i.test(p)).join(' ')) : ''; };
+      const money = fmt(TOTAL).replace(/[$.]/g, '\\$&');
+      const closed = shown(dom);
+      if (!new RegExp(`Your total is ${money} ?\\. Nothing is charged to reserve`).test(closed) || /You pay|full refund/i.test(closed)) return `with the gates closed the pay step does not tell the reserve story alone: "${closed.slice(0, 160)}"`;
+      const open = shown(await dump(ORDER_WITH_ZIP('__fakepay=1&__open=1')));
+      const rule = [new RegExp(`You pay ${money} now`), /charge the difference to this card only if you agree/, /smaller, we refund the difference/, /Free to move your day, or to cancel with a full refund/];
+      if (rule.some((r) => !r.test(open)) || /say no|Nothing is charged to reserve/i.test(open)) return `the pay step does not state the pay now rule beside Book: "${open.slice(0, 200)}"`;
+      const stale = /Nothing is charged today|charged after the job/i;
+      if (stale.test(visibleText(dom))) return 'the order page still says nothing is charged today, or charged after the job';
+      const th = await dump(seeded('/book/thanks.html', { bookingSummary: { plan: '1/2 truck', amountCents: TOTAL, travel: 'Zone 2', address: '1 Probe St' } }));
+      if (!/paid today/i.test(text(th)) || !/difference/i.test(text(th)) || stale.test(text(th))) return 'thanks.html does not say the total was paid today and a difference is settled after the job';
+      let mail = null;
+      try {
+        delete require.cache[require.resolve(path.join(ROOT, 'api/_lib/email-templates.js'))];
+        mail = require(path.join(ROOT, 'api/_lib/email-templates.js')).bookedConfirmation({ name: 'Jane', load: '1/2 truck', total: fmt(TOTAL), paid: fmt(TOTAL), dayLabel: 'Tue Oct 14', windowLabel: 'a window' });
+      } catch (e) { return `the confirmation email did not build: ${e.message}`; }
+      const all = `${mail.subject}\n${visibleText(mail.html)}\n${mail.text}`;
+      if (!/Paid today/.test(all) || !all.includes(fmt(TOTAL)) || !/charge the difference to your card only if you agree/.test(all) || !/refund the difference/.test(all) || /say no/i.test(all) || stale.test(all)) return 'the confirmation email does not say what was paid today and that a different size is charged or refunded';
+      return true;
+    } },
+    { id: 'server', pts: 10, desc: 'booking: exactly one PaymentIntent for the quoted total with setup_future_usage off_session and no SetupIntent; stale quote, full window, outside the area, closed day and no consent refused with no Stripe object; test-booking passes', async run() {
+      const src = read('scripts/test-booking.mjs') || '';
+      for (const k of ['setup_future_usage', 'stale_quote', 'window_full', 'outside_area', 'closed_day', 'consent_required']) if (!src.includes(k)) return `test-booking does not cover ${k}`;
+      // Proved here as well, through the real handler and the shared fake Stripe.
+      if (!Z2 || !C.SCHEDULE) return 'no zone 2 ZIP or schedule in the config';
+      delete require.cache[require.resolve(path.join(ROOT, 'api/_lib/order-config.js'))];
+      const O = require(path.join(ROOT, 'api/_lib/order-config.js'));
+      const day = O.openDays(Date.now())[0].date, win = C.SCHEDULE.windows[0].key;
+      const good = { email: 'probe@example.com', name: 'Score Probe', phone: '5035550100', size: LOAD_ROW, zip: Z2, date: day, window: win, quotedCents: TOTAL,
+        consent: { agreed: true, version: O.POLICY.consentVersion }, attemptId: `score_${Date.now()}`, metadata: { address: `1 Probe St, Portland ${Z2}` } };
+      const book = (body) => callHandler('api/create-booking.js', { method: 'POST', body, headers: {} });
+      const refusals = [['a stale quote', { ...good, quotedCents: TOTAL + 100 }], ['an address outside the area', { ...good, zip: FAR, metadata: { address: `1 Probe St ${FAR}` } }],
+        ['a closed day', { ...good, date: '2020-01-01' }], ['no consent', { ...good, consent: { agreed: false, version: O.POLICY.consentVersion } }], ['a full window', good]];
+      const db = require(path.join(ROOT, 'api/_lib/db.js'));
+      const orig = db.slotCounts;
+      try {
+        for (const [what, body] of refusals) {
+          resetState();
+          if (what === 'a full window') db.slotCounts = async () => ({ [day]: { total: 99, [win]: 99 } });
+          const r = await book(body);
+          db.slotCounts = orig;
+          if (r.status < 400) return `${what} was booked (${r.status})`;
+          if (fakeStripe.calls.length) return `${what} created a Stripe object (${fakeStripe.calls.map((c) => c[0]).join(', ')})`;
+        }
+      } finally { db.slotCounts = orig; }
+      resetState();
+      const r = await book(good);
+      const pis = fakeStripe.calls.filter((c) => c[0] === 'pi');
+      if (r.status !== 200 || !r.json || !r.json.paymentIntentClientSecret) return `a good booking answered ${r.status} ${JSON.stringify(r.json).slice(0, 80)}`;
+      if (pis.length !== 1) return `${pis.length} PaymentIntents at booking, want exactly 1`;
+      if (fakeStripe.calls.some((c) => c[0] === 'si' || c[0] === 'sub')) return 'a SetupIntent or a subscription was created at booking';
+      const pi = pis[0][1];
+      if (pi.setup_future_usage !== 'off_session') return 'the booking PaymentIntent does not save the card (setup_future_usage off_session)';
+      if (pi.amount !== TOTAL || pi.metadata.kind !== 'booking') return `the booking PaymentIntent is ${pi.amount} (${pi.metadata.kind}), want ${TOTAL} (booking)`;
+      resetState();
+      return run('node', ['scripts/test-booking.mjs']).code === 0 || 'test-booking fails';
+    } },
+    { id: 'final-charge', pts: 10, desc: 'test-charge passes: charge more, refund less, same, decline to invoice, cancel refunds, said no refund', run() {
+      if (!exists('scripts/test-charge.mjs')) return 'scripts/test-charge.mjs missing';
+      const r = run('node', ['scripts/test-charge.mjs']);
+      for (const k of ['== charge more ==', '== refund less ==', '== same ==', '== decline ==', '== cancel ==', '== said no ==']) if (!r.out.includes(k)) return `test-charge has no ${k} section`;
+      return r.code === 0 || `test-charge fails: ${r.out.split('\n').filter((l) => /FAIL/.test(l)).slice(0, 2).join(' | ')}`;
+    } },
+    { id: 'webhook', pts: 6, desc: 'test-ops sections "booked" and "final charge" pass', run() {
+      const r = run('node', ['scripts/test-ops.mjs']);
+      for (const k of ['== booked ==', '== final charge ==']) if (!r.out.includes(k)) return `test-ops has no ${k} section`;
+      return r.code === 0 || 'test-ops fails';
+    } },
+    { id: 'windows', pts: 4, desc: 'day-capacity returns dates and windows per market, full windows flagged, fail open', async run() {
+      resetState();
+      const r = await callHandler('api/day-capacity.js', { url: '/api/day-capacity?market=portland' });
+      const days = r.json && r.json.days;
+      if (r.status !== 200 || !Array.isArray(days) || !days.length) return `day-capacity answered ${r.status} ${JSON.stringify(r.json).slice(0, 80)}`;
+      const d = days[0];
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date) || typeof d.label !== 'string' || typeof d.full !== 'boolean') return 'a day has no date, label or full flag';
+      if (!Array.isArray(d.windows) || d.windows.length !== C.SCHEDULE.windows.length || !d.windows.every((w) => w.key && w.label && typeof w.full === 'boolean')) return 'a day does not list every window with a full flag';
+      if (days.some((x) => x.full || x.windows.some((w) => w.full))) return 'nothing should be full when the database cannot be read (fail open)';
+      STATE.full = true;
+      const f = await dayCapacity('/api/day-capacity?market=portland');
+      STATE.full = false;
+      const fd = f.json && f.json.days && f.json.days[0];
+      if (!fd || !fd.windows[0].full) return 'a window at its cap is not flagged full';
+      if (fd.windows.slice(1).some((w) => w.full && fd.windows.length > 1 && !fd.full)) return 'a window under its cap is flagged full';
+      return true;
+    } },
+    { id: 'failures-ui', pts: 4, desc: 'far ZIP lead; a full window greyed and labelled "Full"; the stale quote message; no booking call without the consent box (card or wallet); Book again after a lost payment answer never pays twice; gates closed saves a reservation lead, shows no card form and calls no Stripe', async run() {
+      if (!Z2) return 'no zone 2 ZIP in the config';
+      const far = byId(await dump(ORDER_WITH_ZIP('', FAR)), 'o-zip');
+      if (!far) return 'no #o-zip section on the order page';
+      if (!/type="email"/i.test(far.inner) || !/call/i.test(far.text) || !/price/i.test(far.text)) return 'a ZIP past the last zone shows no call-us message with an email-a-price form inside #o-zip';
+      // The far lead never claims a price is coming when nothing was sent, and a new far ZIP
+      // starts clean (no thank you, the button live). "Thank" marks the success line.
+      const farFlow = await withPage(360, async (p) => {
+        const panel = `(function(){var f=document.getElementById('o-zip');var b=f&&f.querySelector('button');var i=f&&f.querySelector('input[type="email"]');
+return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('', FAR));
+        await p.evaluate(`window.SiteLeads=undefined;`);
+        await p.type('#o-zip input[type="email"]', SAMPLE_CONTACT.email);
+        const before = await p.evaluate(panel);
+        if (!before) return 'no far ZIP panel to send from';
+        await p.click('#o-zip button');
+        let st = await p.evaluate(panel);
+        if (st.text === before.text) return 'with no lead client the far ZIP panel says nothing after Send';
+        if (/thank/i.test(st.text)) return 'with no lead client the far ZIP panel still says thank you';
+        if (!/call/i.test(st.text) || !st.button || !st.input) return 'with no lead client the far ZIP panel does not ask them to call and keep the email box usable';
+        if (!FAR2) return true;
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('', FAR));
+        await p.evaluate(`window.__far=[];if(window.SiteLeads)window.SiteLeads.capture=function(a){window.__far.push(a);return Promise.resolve({ok:true});};`);
+        await p.type('#o-zip input[type="email"]', SAMPLE_CONTACT.email);
+        await p.click('#o-zip button');
+        st = await p.evaluate(panel);
+        const sent = await p.evaluate('window.__far.length');
+        if (sent !== 1 || !/thank/i.test(st.text)) return `the far ZIP lead was not sent once with a thank you (${sent} sent)`;
+        await p.type('#o-zip input', FAR2);
+        st = await p.evaluate(panel);
+        if (!st || /thank/i.test(st.text) || !st.button) return 'a second far ZIP still shows the thank you or a dead button';
+        return true;
+      });
+      if (farFlow !== true) return farFlow;
+      resetState();
+      STATE.full = true;
+      const full = await withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('__fakepay=1'));
+        const ok = await p.evaluate(`[].some.call(document.querySelectorAll('#o-when [data-window]'),function(e){return /Full/.test(e.textContent)&&(e.disabled||e.getAttribute('aria-disabled')==='true'||/\\bfull\\b/.test(e.className));})`);
+        return ok || 'a full window is not greyed and labelled "Full"';
+      });
+      resetState();
+      if (full !== true) return full;
+      STATE.stale = true;
+      const stale = await withPage(360, async (p) => {
+        await p.goto(`${ORIGIN}${ORDER_WITH_ZIP('__fakepay=1&__open=1')}`);
+        const bad = await fillOrder(p, { zip: Z2 });
+        if (bad) return `could not fill the order page, ${bad}`;
+        await p.click('#o-book', 1500);
+        const t = await p.evaluate('document.body.innerText');
+        return /price (has )?changed|out of date|new total|updated the price/i.test(t) || 'a stale quote shows no message';
+      });
+      resetState();
+      if (stale !== true) return stale;
+      // Consent (Review Focus 5): with the box unticked neither Book nor the wallet button reaches
+      // create-booking; the page says what is missing and stays on the order page.
+      const consent = await withPage(360, async (p) => {
+        await p.goto(`${ORIGIN}${ORDER_WITH_ZIP('__fakepay=1&__open=1')}`);
+        const bad = await fillOrder(p, { zip: Z2 });
+        if (bad) return `could not fill the order page, ${bad}`;
+        await p.click('#o-pay input[type="checkbox"]');
+        if (await p.evaluate(`document.querySelector('#o-pay input[type="checkbox"]').checked`)) return 'the consent box does not untick';
+        await p.click('#o-book', 800);
+        await p.click('.fake-wallet', 800);
+        if (STATE.bookingHits !== 0) return `with the consent box unticked, ${STATE.bookingHits} create-booking call(s)`;
+        if (/thanks\.html/.test(await p.evaluate('location.pathname'))) return 'with the consent box unticked the page went to thanks.html';
+        const t = await p.evaluate(`document.getElementById('o-pay').innerText`);
+        return /\btick\b|check the box|agree first|before (you )?book/i.test(t) || 'with the consent box unticked the pay step does not say the box is needed';
+      });
+      resetState();
+      if (consent !== true) return consent;
+      // A lost answer (the final review's double charge): Stripe's reply to the payment never comes
+      // back, so the page says it could not confirm it (never "nothing was booked"); the next Book asks
+      // Stripe about that payment first and, paid, goes to thanks with no second create-booking call.
+      const retry = await withPage(360, async (p) => {
+        await p.goto(`${ORIGIN}${ORDER_WITH_ZIP('__fakepay=1&__open=1')}`);
+        const bad = await fillOrder(p, { zip: Z2 });
+        if (bad) return `could not fill the order page, ${bad}`;
+        await p.evaluate('window.__confirmLost=true');
+        await p.click('#o-book', 1500);
+        if (STATE.bookingHits !== 1) return `the first Book made ${STATE.bookingHits} create-booking call(s)`;
+        const t = await p.evaluate(`document.getElementById('o-pay').innerText`);
+        if (/nothing was (booked|charged)/i.test(t)) return 'a lost payment answer says nothing was booked';
+        if (!/could not confirm/i.test(t)) return 'a lost payment answer does not say we could not confirm the payment';
+        await p.evaluate("window.__confirmLost=false;window.__piStatus='succeeded'");
+        await p.click('#o-book', 1500);
+        if (STATE.bookingHits !== 1) return 'Book again after a payment that went through made a second create-booking call';
+        return /thanks.html/.test(await p.evaluate('location.pathname')) || 'Book again after a payment that went through did not go to thanks';
+      });
+      resetState();
+      if (retry !== true) return retry;
+      return withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('__fakepay=1'));
+        await p.evaluate(`window.__leads=[];if(window.SiteLeads)window.SiteLeads.capture=function(a){window.__leads.push(a);return Promise.resolve({});};`);
+        const picked = {};
+        const bad = await fillOrder(p, { zip: Z2, picked, open: false });
+        if (bad) return `could not fill the order page, ${bad}`;
+        if (!picked.date || !picked.window) return 'the day or window chip has no data-date or data-window to check';
+        await p.click('#o-book', 1500);
+        const leads = JSON.stringify(await p.evaluate('window.__leads'));
+        if (!leads || leads === '[]') return 'with the gates closed Book saved no reservation lead';
+        const sizeLabel = Object.values(C.LOADS)[LOAD_ROW].label;
+        const has = (v) => leads.toLowerCase().includes(String(v).toLowerCase());
+        const wanted = [['ZIP', Z2], ['date', picked.date], ['window', picked.window], ['phone', SAMPLE_CONTACT.phone.replace(/\D/g, '').slice(-7)], ['email', SAMPLE_CONTACT.email], ['name', SAMPLE_CONTACT.name], ['street', SAMPLE_CONTACT.addr]];
+        for (const [what, v] of wanted) if (!has(v) && !(what === 'phone' && /555.?0100/.test(leads))) return `the reservation lead has no ${what} (${v})`;
+        if (!has(sizeLabel) && !new RegExp(`"size"\\s*:\\s*"?${LOAD_ROW}\\b`).test(leads)) return `the reservation lead has no size (${sizeLabel} or row ${LOAD_ROW})`;
+        return (STATE.bookingHits === 0 && fakeStripe.calls.length === 0) || 'a closed-gate Book still reached create-booking or Stripe';
+      });
+    } },
+    { id: 'dashboard', pts: 3, desc: 'the four job actions (On my way, Finish, Cancel and refund, Customer said no) show on a job; each refuses a missing token and the ?token= form', async run() {
+      const j = read('jkr/index.html') || '';
+      for (const k of ['On my way', 'Finish', 'Cancel and refund', 'Customer said no']) if (!j.includes(k)) return `the dashboard has no "${k}" action`;
+      for (const action of ['finish', 'declined', 'cancel-refund', 'en-route']) {
+        const none = await callHandler('api/visit-update.js', { method: 'POST', body: { action, visitId: 'v1' }, headers: {}, env: { SUPABASE_SERVICE_ROLE_KEY: 'score-service-key' } });
+        if (![401, 403].includes(none.status)) return `${action} without a token answered ${none.status}`;
+        const q = await callHandler('api/visit-update.js', { method: 'POST', url: '/api/visit-update?token=score-admin-token', body: { action, visitId: 'v1' }, headers: {}, env: { SUPABASE_SERVICE_ROLE_KEY: 'score-service-key' } });
+        if (![401, 403].includes(q.status)) return `${action} with ?token= answered ${q.status}`;
+      }
+      return true;
+    } },
+    { id: 'contact', pts: 2, desc: 'call, text and WhatsApp in the header, the bar and under the homepage cards; the WhatsApp text names the size and ZIP once picked', async run() {
+      if (!Z2) return 'no zone 2 ZIP in the config';
+      const has = (s) => /href="tel:/.test(s) && /href="sms:/.test(s) && /href="https:\/\/wa\.me\//.test(s);
+      const home = read('index.html') || '';
+      const header = (home.match(/<header[\s\S]*?<\/header>/i) || [''])[0];
+      if (!has(header)) return 'the homepage header lacks call, text and WhatsApp';
+      const last = home.lastIndexOf('size-card');
+      if (last < 0 || !has(home.slice(last, last + 4000))) return 'no call, text and WhatsApp under the homepage size cards';
+      const dom = await dump(ORDER_WITH_ZIP());
+      const bar = byId(dom, 'o-bar');
+      if (!bar || !has(bar.inner)) return 'the order page bar lacks call, text and WhatsApp';
+      const wa = [...String(dom).matchAll(/href="(https:\/\/wa\.me\/[^"]*)"/g)].map((m) => decodeURIComponent(m[1].replace(/&amp;/g, '&')));
+      if (!wa.some((u) => u.includes(Z2) && /1\/2 truck/i.test(u))) return 'the WhatsApp message does not name the size and ZIP once picked';
+      return true;
+    } },
+    { id: 'redirect', pts: 2, desc: '/book/checkout.html sends to /book/quote.html keeping its query (vercel.json and a noindex meta refresh)', run() {
+      const v = read('vercel.json') || '';
+      let cfg = {}; try { cfg = JSON.parse(v); } catch { return 'vercel.json is not JSON'; }
+      const rd = (cfg.redirects || []).find((r) => /\/book\/checkout/.test(r.source));
+      if (!rd || !/\/book\/quote\.html/.test(rd.destination)) return 'vercel.json has no checkout to quote redirect';
+      const c = read('book/checkout.html') || '';
+      if (!/<meta[^>]+name="robots"[^>]+noindex/i.test(c)) return 'checkout.html is not noindex';
+      if (!/http-equiv="refresh"[^>]+quote\.html/i.test(c)) return 'checkout.html has no meta refresh to quote.html';
+      return /location\.search/.test(c) || 'checkout.html does not carry its query to quote.html';
+    } },
+    { id: 'guesses', pts: 2, desc: 'windows, caps, days ahead, late fee, cancel hours, refusal fee and the WhatsApp number are red and listed; GUESSES.md current', async run() {
+      if (!C.GUESS || !C.GUESS.schedule || !C.GUESS.policy) return 'GUESS has no schedule and policy flags';
+      const g = (read('GUESSES.md') || '').toLowerCase();
+      for (const k of ['window', 'cap', 'days ahead', 'late fee', 'cancel hours', 'refusal fee', 'whatsapp']) if (!g.includes(k)) return `GUESSES.md does not list ${k}`;
+      const dom = await dump(ORDER_WITH_ZIP());
+      const pay = byId(dom, 'o-pay'), when = byId(dom, 'o-when');
+      if (!pay || !/class="[^"]*\bguess\b/.test(pay.inner)) return 'the pay step prints no red guess (late fee, cancel hours)';
+      if (!when || !/class="[^"]*\bguess\b/.test(when.inner)) return 'the day and window step prints no red guess (windows, caps)';
+      return run('node', ['scripts/list-guesses.mjs', '--check']).code === 0 || 'GUESSES.md is stale';
+    } },
+    { id: 'earlier', pts: 4, desc: 'rounds 1 to 5 each still score 100', run() {
+      for (const n of [1, 2, 3, 4, 5]) {
+        const r = run('node', ['scripts/score.mjs', '--round', String(n), '--json', '--no-earlier'], { timeout: 1500000 });
+        let j = null; try { j = JSON.parse(r.out.slice(r.out.indexOf('{'))); } catch { /* not json */ }
+        if (!j || j.score !== 100) return `round ${n} scores ${j ? j.score : '?'}: ${j ? j.checks.filter((c) => !c.got).map((c) => c.id).join(', ') : r.out.slice(0, 80)}`;
+      }
+      return true;
+    } },
+  ],
   5: [
     { id: 'tests', pts: 10, desc: 'npm test passes', run() {
       const r = run('npm', ['test']);
@@ -314,13 +876,22 @@ const ROUNDS = {
       }
       return true;
     } },
-    { id: 'spanish-js', pts: 5, desc: 'the truck and the ZIP check speak Spanish on Spanish pages', async run() {
+    { id: 'spanish-js', pts: 5, desc: 'the size cards\' travel line the script writes from the ZIP, and the ZIP check, speak Spanish on Spanish pages', async run() {
       if (!CHROME) return 'no Chrome';
       if (!exists('es/index.html')) return 'es/index.html missing';
-      const dom = await dump(seeded('/es/index.html', { quoteZip: '97211', loadBuild: ['couch', 'mattress'] }));
-      const tl = text((String(dom).match(/class="lb-travel"[^>]*>([\s\S]*?)<\/p>/) || [])[1] || '');
+      // The line js/home.js writes once it knows the seeded ZIP, priced by the travel module:
+      // "+ $25.00 de viaje", or "Sin cargo de viaje" in a free zone. The built page only says "+ viaje".
+      const ZIP = '97211';
+      delete require.cache[require.resolve(path.join(ROOT, 'api/_lib/travel.js'))];
+      const trip = require(path.join(ROOT, 'api/_lib/travel.js')).travelFor(ZIP);
+      if (!trip) return `${ZIP} is in no travel zone`;
+      const want = trip.cents ? `+ ${fmt(trip.cents)} de viaje` : 'Sin cargo de viaje';
+      const dom = await dump(seeded('/es/index.html', { quoteZip: ZIP }));
+      const lines = [...String(dom).matchAll(/class="size-travel[^"]*"[^>]*>([\s\S]*?)<\/span>\s*<\/span>/g)].map((m) => text(m[1]));
+      if (!lines.length) return 'no size card travel line on es/index.html';
+      const off = lines.find((l) => l !== want);
+      if (off !== undefined) return `size card travel line: "${off}", want "${want}"`;
       const zo = byId(dom, 'zipOut');
-      if (!/viaje/i.test(tl)) return `truck travel line: "${tl}"`;
       if (!zo || !/vamos/i.test(zo.text)) return `ZIP answer: "${zo && zo.text}"`;
       return true;
     } },
@@ -664,7 +1235,7 @@ const ROUNDS = {
       for (const k of ['who we are', 'where we work', 'prices', 'paying', 'cancel', 'refund', 'responsible', 'messages']) if (!th.includes(k)) return `terms has no "${k}" section (${th.slice(0, 80)})`;
       const ph = [...priv.matchAll(/<h2[^>]*>([\s\S]*?)<\/h2>/g)].map((m) => text(m[1]).toLowerCase()).join(' | ');
       for (const k of ['what we collect', 'photos', 'how we use', 'who we share', 'your choices', 'questions']) if (!ph.includes(k)) return `privacy has no "${k}" section`;
-      const rel = [...nf.matchAll(/\shref="([^"]+)"/g)].map((m) => m[1]).filter((u) => !/^(https?:|tel:|mailto:|#)/.test(u));
+      const rel = [...nf.matchAll(/\shref="([^"]+)"/g)].map((m) => m[1]).filter((u) => !/^(https?:|tel:|sms:|mailto:|#)/.test(u));
       if (rel.some((u) => !u.startsWith('/'))) return `404 has relative links: ${rel.filter((u) => !u.startsWith('/')).slice(0, 3).join(', ')}`;
       return run('node', ['scripts/check-meta.mjs']).code === 0 || 'check-meta fails';
     } },
@@ -682,7 +1253,7 @@ const ROUNDS = {
       for (const f of round2Pages()) {
         for (const m of (read(f) || '').matchAll(/\s(?:href|src)="([^"]+)"/g)) {
           const u = m[1].replace(/&amp;/g, '&');
-          if (/^(https?:|tel:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
+          if (/^(https?:|tel:|sms:|mailto:|data:|javascript:)/.test(u) || u.startsWith('/_vercel/') || u.startsWith('/api/') || u.includes('${')) continue;
           const [p0, hash] = u.split('#');
           const p = p0.split('?')[0];
           const target = !p ? f : p.startsWith('/') ? p.slice(1) : path.posix.normalize(path.posix.join(path.posix.dirname(f), p));
@@ -709,7 +1280,7 @@ const ROUNDS = {
       }
       return true;
     } },
-    { id: 'site-js', pts: 5, desc: 'analytics on every public page, the maintenance banner loaded, checkout reads SITE_REOPEN_TEXT', run() {
+    { id: 'site-js', pts: 5, desc: 'analytics on every public page, the maintenance banner loaded, the booking page reads SITE_REOPEN_TEXT', run() {
       if (!/G-XXXXXXXXXX/.test(read('js/analytics.js') || '')) return 'js/analytics.js missing';
       if (!exists('js/maintenance-banner.js')) return 'js/maintenance-banner.js missing';
       for (const f of round2Pages()) {
@@ -717,8 +1288,12 @@ const ROUNDS = {
         if (!/analytics\.js/.test(s) && !/gtag\/js\?id=/.test(s)) return `${f} has no analytics`;
         if (f !== '404.html' && !/maintenance-banner\.js/.test(s)) return `${f} does not load the banner`;
       }
-      const co = read('book/checkout.html') || '';
-      return (/SITE_REOPEN_TEXT/.test(co) && !/SCOOPS_REOPEN_TEXT/.test(co)) || 'checkout still reads SCOOPS_REOPEN_TEXT';
+      // The checkout's closed notice read SITE_REOPEN_TEXT; since round 6 checkout is a redirect and
+      // the order page's closed note reads it (js/order.js, run after the banner sets it).
+      const q = read('book/quote.html') || '', oj = read('js/order.js') || '', co = read('book/checkout.html') || '';
+      if (!/maintenance-banner\.js/.test(q) || !/js\/order\.js/.test(q)) return 'the order page does not load the banner and js/order.js';
+      if (/SCOOPS_REOPEN_TEXT/.test(q + oj + co)) return 'a booking page still reads SCOOPS_REOPEN_TEXT';
+      return /SITE_REOPEN_TEXT/.test(oj) || 'the order page does not read SITE_REOPEN_TEXT';
     } },
   ],
   1: [
@@ -753,41 +1328,70 @@ const ROUNDS = {
       if (!/== travel ==/.test(r.out)) return 'test-booking has no travel section';
       return r.code === 0 || 'test-booking fails';
     } },
-    { id: 'quote-zone', pts: 10, desc: 'quote page: zone and travel in the ZIP answer and the load summary', async run() {
+    // Round 6 rebuilt the quote as the order page: the ZIP answer is #o-zip-msg and the load
+    // summary is the order summary and the phone bar (both must carry load plus travel). The
+    // old homepage link (?load=&zip=) still opens it, so the URL is the old one on purpose.
+    { id: 'quote-zone', pts: 10, desc: 'quote page: zone and travel in the ZIP answer and the order total (summary and bar)', async run() {
       if (!Z2) return 'no zone 2 ZIP in the config';
       const dom = await dump(QUOTE_URL());
-      const hint = byId(dom, 'h-zip'), sum = byId(dom, 'pick-sum');
+      const hint = byId(dom, 'o-zip-msg');
       if (!hint || !hint.text.includes(T2.label) || !hint.text.includes('+$')) return `ZIP answer is "${hint && hint.text}"`;
-      if (!sum || !sum.text.includes(fmt(TOTAL))) return `load summary is "${sum && sum.text}", want ${fmt(TOTAL)}`;
+      for (const id of ['o-summary', 'o-bar']) {
+        const sum = byId(dom, id);
+        if (!sum || !sum.text.includes(fmt(TOTAL))) return `#${id} reads "${sum && sum.text.slice(0, 80)}", want ${fmt(TOTAL)}`;
+      }
       return true;
     } },
-    { id: 'quote-far', pts: 5, desc: 'quote page: a ZIP past the last zone asks them to call and offers a call back', async run() {
+    { id: 'quote-far', pts: 5, desc: 'quote page: a ZIP past the last zone asks them to call and offers a price by email', async run() {
       const dom = await dump(`/book/quote.html?load=${LOAD_ROW}&freq=0&edit=contact&zip=${FAR}`);
-      const err = byId(dom, 'e-zip'), wl = byId(dom, 'waitlist');
-      if (!err || !/call/i.test(err.text)) return `ZIP error is "${err && err.text}"`;
-      if (!wl || /\shidden/.test(wl.tag)) return 'no call back offer';
+      const far = byId(dom, 'o-far');
+      if (!far || /\shidden/.test(far.tag)) return 'no call back offer (#o-far hidden or missing)';
+      if (!/call/i.test(far.text)) return `far ZIP answer is "${far.text}"`;
+      if (!/<input[^>]*type="email"/.test(far.inner) || !/<button/.test(far.inner)) return 'the far ZIP offer has no email box and button';
       return true;
     } },
-    { id: 'home', pts: 8, desc: 'homepage: truck says "+ travel" with no ZIP; one zone row per zone', async run() {
+    { id: 'home', pts: 8, desc: 'homepage: the size cards say "+ travel" with no ZIP; one zone row per zone', async run() {
       const dom = await dump('/index.html?__probe=1');
-      const unit = (String(dom).match(/class="lb-unit[^"]*"[^>]*>([\s\S]*?)<\/span>/) || [])[1];
+      const cards = [...String(dom).matchAll(/class="size-travel[^"]*"[^>]*>([\s\S]*?)<\/span>/g)].map((m) => text(m[1]));
+      if (!cards.length) return 'no size cards (.size-travel) on the homepage';
+      const bareCard = cards.find((c) => !/\+ travel/.test(c));
+      if (bareCard !== undefined) return `a size card's travel line is "${bareCard}", want "+ travel" until a ZIP is typed`;
       const list = byId(dom, 'zoneList');
       if (!list) return 'no #zoneList';
       const rows = (list.inner.match(/data-zone=/g) || []).length;
       if (!C.ZONES || rows !== C.ZONES.length) return `${rows} zone rows`;
-      // The unit only shows once a size is picked; the empty truck shows nothing, which is fine.
-      if (unit && text(unit) && !/\+ travel/.test(text(unit))) return `price unit is "${text(unit)}"`;
-      const js = read('js/load-builder.js') || '';
-      if (!/\+ travel/.test(js)) return 'load builder never says "+ travel"';
+      const js = read('js/size-cards.js') || '';
+      if (!/setTravel/.test(js) || !/' travel'/.test(js)) return 'the size cards script never writes the travel line';
       return true;
     } },
-    { id: 'checkout', pts: 10, desc: 'checkout: a Travel row, and the headline is load plus travel', async run() {
+    // Round 6 made book/checkout.html a redirect: paying is the order page's pay step. The old
+    // checkout link (its query) lands there with the same size and ZIP; the summary has a Travel
+    // row, the summary and the bar both total load plus travel, and with the gates open the pay
+    // step shows the card form and Book carries that total.
+    { id: 'checkout', pts: 10, desc: 'checkout (since round 6 the order page\'s pay step): the old link lands there; a Travel row, and the total is load plus travel', async run() {
       if (!Z2) return 'no zone 2 ZIP';
-      const dom = await dump(CHECKOUT_URL());
-      const rows = byId(dom, 'sum-rows'), big = byId(dom, 'sum-big');
-      if (!rows || !/Travel/.test(rows.text)) return `summary rows: "${rows && rows.text.slice(0, 120)}"`;
-      if (!big || !big.text.includes(fmt(TOTAL))) return `headline "${big && big.text}", want ${fmt(TOTAL)}`;
-      return true;
+      const landed = await withPage(360, async (p) => {
+        await p.goto(ORIGIN + CHECKOUT_URL());
+        const at = await p.evaluate('location.pathname + location.search');
+        const q = new URLSearchParams(at.split('?')[1] || '');
+        if (!at.startsWith('/book/quote.html') || q.get('zip') !== Z2 || q.get('load') !== String(LOAD_ROW)) return `the old checkout link landed on ${at}`;
+        const dom = await p.html();
+        const rows = byId(dom, 'o-summary');
+        if (!rows || !/Travel/.test(rows.text)) return `summary rows: "${rows && rows.text.slice(0, 120)}"`;
+        for (const id of ['o-summary', 'o-bar']) {
+          const b = byId(dom, id);
+          if (!b || !b.text.includes(fmt(TOTAL))) return `#${id} reads "${b && b.text.slice(0, 80)}", want ${fmt(TOTAL)}`;
+        }
+        return true;
+      });
+      if (landed !== true) return landed;
+      return withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('__fakepay=1&__open=1'));
+        const bad = await fillOrder(p, {});
+        if (bad) return `could not reach the pay step: ${bad}`;
+        const book = await p.evaluate(`(document.querySelector('#o-book')||{}).textContent||''`);
+        return book.includes(fmt(TOTAL)) || `Book reads "${text(book)}" at the pay step, want ${fmt(TOTAL)}`;
+      });
     } },
     { id: 'thanks', pts: 5, desc: 'thanks page: a Travel row', async run() {
       const dom = await dump(seeded('/book/thanks.html', { bookingSummary: { plan: 'One-time haul', amountCents: TOTAL || 37400, travel: 'Zone 2: $25.00', address: '1 Probe St' } }));
@@ -807,21 +1411,38 @@ const ROUNDS = {
     { id: 'guesses', pts: 5, desc: 'guesses red with an asterisk, linked everywhere, listed', run() {
       const css = read('css/guess.css') || '';
       if (!/color:\s*#C62828/i.test(css) || !/content:\s*"\*"/.test(css)) return 'css/guess.css missing red or asterisk';
-      for (const f of ['index.html', 'book/quote.html', 'book/checkout.html', 'book/thanks.html']) if (!/guess\.css/.test(read(f) || '')) return `${f} does not link guess.css`;
+      // Every page that prints a price links guess.css. Since round 6 book/checkout.html prints none:
+      // it must then be the redirect to the order page (a refresh to quote.html, no price on it).
+      for (const f of ['index.html', 'book/quote.html', 'book/thanks.html']) if (!/guess\.css/.test(read(f) || '')) return `${f} does not link guess.css`;
+      const co = read('book/checkout.html') || '';
+      if (!/guess\.css/.test(co) && !(/http-equiv="refresh"[^>]+quote\.html/i.test(co) && !/\$\d/.test(visibleText(co)))) return 'book/checkout.html does not link guess.css';
       if (C.GUESS && C.GUESS.prices && !/class="tier-price guess"/.test(read('index.html') || '')) return 'homepage prices are not marked';
       return run('node', ['scripts/list-guesses.mjs', '--check']).code === 0 || 'npm run guesses --check fails';
     } },
-    { id: 'mobile', pts: 5, desc: 'no sideways scroll at 360px and no new text under 16px (home, quote, checkout)', async run() {
+    // Since round 6 the checkout link lands on the order page, and the checkout's job (summary,
+    // card form) is the order page's pay step: measured with the gates open after a scripted walk.
+    { id: 'mobile', pts: 5, desc: 'no sideways scroll at 360px and no new text under 16px (home, quote, the checkout link, the pay step with the card form)', async run() {
       if (!CHROME) return 'no Chrome to measure with';
-      for (const [name, url] of [['home', '/index.html?__probe=1'], ['quote', QUOTE_URL()], ['checkout', CHECKOUT_URL()]]) {
-        const p = probeOf(await dump(url));
+      const bad = (name, p) => {
         if (!p) return `${name}: page did not report`;
         if (p.error) return `${name}: ${p.error}`;
         if (p.vw !== 360) return `${name}: measured at ${p.vw}px, not 360px`;
         if (p.sw > p.vw) return `${name}: ${p.sw}px wide in a ${p.vw}px window`;
         if (p.small.length) return `${name}: small text ${p.small.slice(0, 2).join('; ')}`;
+        return null;
+      };
+      for (const [name, url] of [['home', '/index.html?__probe=1'], ['quote', QUOTE_URL()], ['checkout link', CHECKOUT_URL()]]) {
+        const why = bad(name, probeOf(await dump(url)));
+        if (why) return why;
       }
-      return true;
+      const pay = await withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP('__fakepay=1&__open=1'));
+        const walk = await fillOrder(p, {});
+        if (walk) return { error: `could not reach the pay step, ${walk}` };
+        await p.evaluate(`document.querySelector('#o-pay').scrollIntoView({block:'start'})`);
+        return p.evaluate(probeNow(1));
+      });
+      return bad('pay step', typeof pay === 'string' ? { error: pay } : pay) || true;
     } },
     { id: 'photo', pts: 3, desc: 'photo prompt says Portland metro', run() {
       const s = read('api/photo-quote.js') || '';
@@ -841,7 +1462,7 @@ if (total !== 100) { console.error(`Round ${ROUND} checks add up to ${total}, no
 const results = [];
 for (const c of checks) {
   let r;
-  try { r = await c.run(); } catch (e) { r = `threw: ${e.message}`; }
+  try { r = NO_EARLIER && c.id === 'earlier' ? true : await c.run(); } catch (e) { r = `threw: ${e.message}`; }
   results.push({ id: c.id, pts: c.pts, got: r === true ? c.pts : 0, desc: c.desc, why: r === true ? '' : String(r) });
 }
 server.close();

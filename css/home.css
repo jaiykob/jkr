@@ -1,4 +1,4 @@
-/* Homepage only: hero with the load builder, ticker, scroll road, what we
+/* Homepage only: hero with the size cards, ticker, how it works, what we
    take, price tiers, ZIP check, FAQ, closer. Tokens come from css/site.css. */
 
 .logo-mark {
@@ -40,12 +40,39 @@
   border-radius: 99px; border: 1px solid rgba(255,210,63,.35); font-size: 1rem; font-weight: 600;
 }
 .h-proof li::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--tan); }
-.h-builder-card {
-  background: var(--page); color: var(--rg); border-radius: 24px; padding: 24px;
-  box-shadow: 0 30px 80px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.06);
+/* The five size cards: links to the order page, one stacked column on a phone,
+   one row of five on a desktop. Same class names as the order page's cards. */
+.h-order { min-width: 0; }
+.h-sizes { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+.h-sizes .size-card {
+  position: relative; display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: center; gap: 12px;
+  min-height: 84px; padding: 8px 12px 8px 8px; border-radius: 16px;
+  background: var(--card); color: var(--rg); text-decoration: none;
+  border: 2px solid transparent; box-shadow: 0 10px 30px rgba(0,0,0,.28);
+  transition: transform .15s, border-color .15s;
 }
-.h-nojs { font-size: 1rem; }
-.h-nojs a { color: var(--rg); font-weight: 700; }
+.h-sizes .size-card:hover { border-color: var(--tan); transform: translateY(-2px); }
+.h-sizes .size-card:focus-visible { outline: 3px solid var(--tan); outline-offset: 3px; }
+.h-sizes .size-photo { display: block; width: 68px; height: 68px; object-fit: cover; border-radius: 10px; background: #E4E4E4; }
+.h-sizes .size-body { display: grid; gap: 1px; min-width: 0; }
+.h-sizes .size-name { font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em; }
+.h-sizes .size-note { font-size: 1rem; line-height: 1.35; color: var(--txm); }
+.h-sizes .size-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 2px; }
+.h-sizes .size-price { font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; }
+.h-sizes .size-travel { font-size: 1rem; color: var(--txm); }
+.h-order-alt { margin-top: 18px; font-size: 1.05rem; color: var(--on-dark-m); }
+.h-order-alt a { color: var(--tan); font-weight: 700; text-underline-offset: 3px; display: inline-block; padding: 12px 0; }
+.h-order-alt a:hover { color: #fff; }
+.h-contact { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.h-chip {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; min-width: 48px; padding: 0 18px; border-radius: 99px;
+  border: 1.5px solid rgba(255,210,63,.55); color: var(--tan); text-decoration: none;
+  font-size: 1rem; font-weight: 700;
+}
+.h-chip svg { width: 20px; height: 20px; flex: none; }
+.h-chip:hover { background: rgba(255,210,63,.14); }
+.h-chip:focus-visible { outline: 3px solid var(--tan); outline-offset: 2px; }
 @media (min-width: 960px) {
   .h-hero { padding: 72px var(--gutter) 88px; }
   .h-hero-in { grid-template-columns: 1fr; }
@@ -53,11 +80,19 @@
   .h-hero-copy .h-eyebrow, .h-hero-copy .h-title { grid-column: 1; }
   .h-hero-copy .h-lede { grid-column: 2; grid-row: 2; margin: 0; }
   .h-hero-copy .h-proof { grid-column: 1 / -1; }
-  .h-builder-card { padding: 32px; }
+  .h-sizes { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+  .h-sizes .size-card { grid-template-columns: 1fr; align-items: start; align-content: start; gap: 10px; padding: 10px 10px 16px; }
+  .h-sizes .size-photo { width: 100%; height: auto; aspect-ratio: 16 / 10; }
+  .h-sizes .size-body { padding: 0 4px; }
 }
 @media (max-width: 599px) {
   .h-hero { padding: 36px 16px 44px; }
-  .h-builder-card { padding: 16px; border-radius: 18px; margin: 0 -4px; }
+  /* Phones: the first size card shows on the first screen (360x760 with the
+     bookings banner up). The proof chips move down, under the contact buttons. */
+  .h-hero-in { gap: 0; }
+  .h-hero-copy { display: contents; }
+  .h-order { order: 1; margin-top: 28px; }
+  .h-proof { order: 2; margin-top: 28px; }
 }
 
 /* ── TICKER ───────────────────────────────────────────────────────────── */
@@ -70,55 +105,12 @@
 .ticker span::after { content: ''; width: 10px; height: 10px; background: var(--rg); transform: rotate(45deg); }
 @keyframes ticker { to { transform: translateX(-50%); } }
 
-/* ── ROAD (how it works) ──────────────────────────────────────────────── */
-.road { position: relative; background: var(--page); padding: var(--pad-y) var(--gutter); }
-.road-sticky { max-width: var(--w-wide); margin: 0 auto; }
-.road-head { text-align: center; margin-bottom: 36px; }
-.road-stops { list-style: none; display: grid; gap: 18px; }
-.road-stop {
-  position: relative; padding: 24px; border-radius: 20px; background: var(--card);
-  border: 1.5px solid var(--bdr); transition: transform .4s cubic-bezier(.34,1.4,.64,1), border-color .3s, box-shadow .3s, opacity .3s;
-}
-.road-stop h3 { font: 800 1.4rem/1.2 'Bricolage Grotesque', sans-serif; margin: 12px 0 6px; letter-spacing: -.02em; }
-.road-stop p { color: var(--txm); }
-.road-num {
-  display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 12px;
-  background: var(--surf); font: 800 1.2rem/1 'Bricolage Grotesque', sans-serif; transition: background .3s;
-}
-.road-lane { display: none; }
-
-/* With JS and motion allowed: a tall section, sticky frame, truck driving. */
-.road.is-live { height: 260vh; padding: 0 var(--gutter); }
-.road.is-live .road-sticky {
-  position: sticky; top: var(--nav-h); min-height: calc(100vh - var(--nav-h));
-  display: flex; flex-direction: column; justify-content: center; padding: 32px 0;
-}
-.road.is-live .road-stops { grid-template-columns: repeat(3, 1fr); }
-.road.is-live .road-stop { opacity: .45; transform: translateY(12px) scale(.97); }
-.road.is-live .road-stop.is-on { opacity: 1; transform: none; border-color: var(--rg); box-shadow: 0 8px 0 var(--rg); }
-.road.is-live .road-stop.is-on .road-num { background: var(--tan); }
-.road.is-live .road-lane {
-  display: block; position: relative; height: 150px; margin-top: 40px;
-  border-radius: 16px; background: #2B2F36; overflow: hidden;
-}
-.road-dashes {
-  position: absolute; left: 0; right: 0; top: 50%; height: 6px; margin-top: 30px;
-  background: repeating-linear-gradient(90deg, var(--tan) 0 40px, transparent 40px 80px);
-}
-.road-truck { position: absolute; bottom: 18px; left: 0; width: 180px; height: auto; will-change: transform; filter: drop-shadow(0 8px 10px rgba(0,0,0,.4)); }
-.road-cargo { transition: opacity .4s; }
-.road[data-phase="2"] .road-cargo { opacity: 1; }
-.road-wheel { transform-box: fill-box; transform-origin: center; }
-@media (max-width: 759px) {
-  .road.is-live { height: 300vh; }
-  .road.is-live .road-stops { grid-template-columns: 1fr; gap: 10px; }
-  .road.is-live .road-stop { padding: 14px 18px; display: grid; grid-template-columns: auto 1fr; gap: 0 14px; align-items: center; }
-  .road.is-live .road-stop h3 { margin: 0; font-size: 1.15rem; }
-  .road.is-live .road-stop p { grid-column: 2; font-size: 1rem; }
-  .road.is-live .road-lane { height: 110px; margin-top: 20px; }
-  .road-truck { width: 130px; }
-  .road-head { margin-bottom: 18px; }
-}
+/* ── HOW IT WORKS ─────────────────────────────────────────────────────── */
+/* The three steps, still: the numbered steps of css/site.css (a charcoal
+   disc with a yellow number), stacked on a phone, three across from 760px,
+   the headings in the homepage's heavy type. */
+.steps h3 { font-weight: 800; font-size: 1.25rem; letter-spacing: -.02em; line-height: 1.25; }
+@media (min-width: 760px) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; } }
 
 /* ── WHAT WE TAKE ─────────────────────────────────────────────────────── */
 .take-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); perspective: 900px; }
@@ -160,7 +152,6 @@
 .tier-name { font: 800 1.3rem/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; }
 .tier-note { font-size: 1rem; color: var(--txm); line-height: 1.4; flex: 1; }
 .tier-price { margin-top: 10px; font: 800 2rem/1 'Bricolage Grotesque', sans-serif; letter-spacing: -.03em; }
-.tier-sub { font-size: 1rem; color: var(--txm); }
 .tiers-more { margin-top: 24px; text-align: center; font-size: 1rem; color: var(--txm); }
 .tiers-more a { color: var(--rg); font-weight: 700; }
 
@@ -212,7 +203,16 @@
 /* ── CLOSER ───────────────────────────────────────────────────────────── */
 .closer { background: var(--tan); padding: 80px var(--gutter); text-align: center; }
 .closer h2 { font: 800 clamp(2.2rem, 6vw, 4rem)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -.04em; color: var(--rg); margin-bottom: 28px; }
-.closer .lb-cta { background: var(--rg); color: var(--tan); box-shadow: 0 6px 0 rgba(0,0,0,.35); }
+.cta-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 56px; padding: 0 28px; border-radius: 14px; text-decoration: none;
+  background: var(--rg); color: var(--tan); box-shadow: 0 6px 0 rgba(0,0,0,.35);
+  font: 800 1.1rem/1 'DM Sans', system-ui, sans-serif; transition: transform .12s, box-shadow .12s;
+}
+.cta-btn::after { content: '\2192'; font-size: 1.2em; transition: transform .2s; }
+.cta-btn:hover::after { transform: translateX(4px); }
+.cta-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+.cta-btn:focus-visible { outline: 3px solid #0B6BCB; outline-offset: 2px; }
 .closer p { margin-top: 20px; font-size: 1rem; color: var(--rg); }
 .closer p a { color: var(--rg); font-weight: 800; }
 

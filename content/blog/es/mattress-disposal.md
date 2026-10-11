@@ -32,4 +32,4 @@ Si vas a cambiar la cama, también es buen momento para sacar la base, los buró
 
 ## En toda el área
 
-Recogemos colchones en toda nuestra área, desde apartamentos en [Beaverton](/es/beaverton.html) hasta casas en [Happy Valley](/es/happy-valley.html). ¿Te mudas de una vivienda de renta? Un colchón, un sofá y unas bolsas juntos muchas veces todavía caben en nuestros tamaños de carga pequeños. Toma una sola foto de toda la pila y el camión de la pantalla te dice qué tamaño necesitas.
+Recogemos colchones en toda nuestra área, desde apartamentos en [Beaverton](/es/beaverton.html) hasta casas en [Happy Valley](/es/happy-valley.html). ¿Te mudas de una vivienda de renta? Un colchón, un sofá y unas bolsas juntos muchas veces todavía caben en nuestros tamaños de carga pequeños. Toma una sola foto de toda la pila y nosotros te decimos qué tamaño necesitas.

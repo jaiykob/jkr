@@ -26,10 +26,10 @@ You do not have to be. Set everything outside, in the driveway or under a carpor
 
 ## Compare the pile to your quote
 
-Before we arrive, glance at the pile against the photos or items in your booking. If there is more, add it to your quote or tell us. On the day, if the load is bigger than you showed us, we show you the new price before we load anything, and you choose what goes.
+Before we arrive, glance at the pile against the size you booked and any photos you sent. If there is more, call or text us. On the day, if the load is bigger than the size you booked, we show you the new price before we load anything, and you choose what goes.
 
 ## Apartments and condos
 
 Reserve the freight elevator if your building has one, check where trucks are allowed to stop, and let the front desk know we are coming. In larger buildings, such as downtown [Portland](/portland.html) or near Orenco in [Hillsboro](/hillsboro.html), that one phone call can save a long wait on the day.
 
-Ready to set a day? Your price is a few taps away on the [quote page](/book/quote.html).
+Ready to set a day? Pick your size on the [quote page](/book/quote.html) and your price shows up with travel for your ZIP.

@@ -32,4 +32,4 @@ If you are replacing the bed, this is also a good moment to clear the frame, the
 
 ## Across the metro
 
-We pick up mattresses all over our area, from apartments in [Beaverton](/beaverton.html) to houses in [Happy Valley](/happy-valley.html). Moving out of a rental? A mattress, a couch and a few bags together often still fit in our smaller load sizes. Snap one photo of the whole pile and the truck on the screen tells you which size you need.
+We pick up mattresses all over our area, from apartments in [Beaverton](/beaverton.html) to houses in [Happy Valley](/happy-valley.html). Moving out of a rental? A mattress, a couch and a few bags together often still fit in our smaller load sizes. Snap one photo of the whole pile and we tell you which size you need.

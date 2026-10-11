@@ -17,6 +17,10 @@ const DOMAIN = 'example.com';   // TODO: the real domain (set-domain.mjs)
 // The reserved example domain the site uses until it has a real one.
 const PLACEHOLDER = 'example' + '.com';
 
+// GUESS* WhatsApp number (digits, with country code): the business phone until the founder names one.
+// npm run build writes it into every https://wa.me/ link (scripts/build-pricing.mjs, then the page builds).
+const WHATSAPP = '19254086053';
+
 module.exports = {
   DOMAIN,
   PLACEHOLDER,
@@ -25,5 +29,6 @@ module.exports = {
   NAME: 'Brand Name',             // TODO: the real name
   PHONE: '(925) 408-6053',
   PHONE_TEL: '+19254086053',
+  WHATSAPP,
   EMAIL: `hello@${DOMAIN}`,
 };

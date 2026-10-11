@@ -1,8 +1,8 @@
 name: Milwaukie
 state: OR
 zips: 97222, 97267
-lede: Milwaukie is in our Zone 2, and the travel fee is added to your price as soon as you enter your ZIP. Snap or tap what is going to start.
-lede_es: Milwaukie está en nuestra Zona 2, y el cargo de viaje se suma a tu precio en cuanto escribes tu código postal. Toma una foto o toca lo que se va para empezar.
+lede: Milwaukie is in our Zone 2, and the travel fee is added to your price as soon as you enter your ZIP. Pick a size or snap a photo to start.
+lede_es: Milwaukie está en nuestra Zona 2, y el cargo de viaje se suma a tu precio en cuanto escribes tu código postal. Elige un tamaño o toma una foto para empezar.
 areas: Downtown Milwaukie, Ardenwald, Lake Road, Oak Grove, Island Station, Hector Campbell
 
 ## Local

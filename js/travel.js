@@ -162,7 +162,7 @@
     if (!/^\d{5}$/.test(z) || !Object.prototype.hasOwnProperty.call(ZIPS, z)) return null;
     var r = ZIPS[z], zone = null;
     for (var i = 0; i < ZONES.length; i++) if (ZONES[i].key === r[0]) zone = ZONES[i];
-    return { zip: z, zone: zone.key, label: zone.label, cents: zone.cents, miles: r[1], place: r[2], state: r[3] };
+    return { zip: z, zone: zone.key, label: zone.label, cents: zone.cents, miles: r[1], place: r[2], state: r[3], market: 'portland' };
   }
 
   var api = { ZONES: ZONES, GUESS: GUESS, travelFor: travelFor, zips: function () { return Object.keys(ZIPS); } };

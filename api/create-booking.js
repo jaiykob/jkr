@@ -1,18 +1,28 @@
 /**
- * Vercel Serverless Function — create-booking
- * Carried over from Scoops Co. (2026-09-27), same structure.
+ * Vercel Serverless Function: create-booking
  *
- * Takes a quote from the junk flow and creates one of:
- *   - One-time PaymentIntent (Path B): a single haul. The usual case.
- *   - Recurring subscription (Path A): a standing pickup for landlords and
- *     businesses, billed on the plan's own cadence (or a 3-month quarterly prepay)
+ * Round 6, pay at booking (founder, 2026-10-10: "payments have to be accepted
+ * at time of bookings so i can pay hauler"): the quoted total is PAID when the
+ * customer books, and the card is saved so that after the job a bigger size is
+ * charged the difference and a smaller one refunded it (api/visit-update.js).
+ * This function creates a Stripe customer and ONE PaymentIntent for the total
+ * (less any founding discount) with setup_future_usage 'off_session', and
+ * returns its client secret for the page to confirm. It never creates a
+ * SetupIntent, a subscription or a coupon. The webhook books the job when the
+ * PaymentIntent succeeds (payment_intent.succeeded, metadata.kind 'booking').
  *
- * The amount is recomputed here from the generated matrix. No pre-created
- * Stripe Prices are needed; they are built inline.
+ * The total is recomputed here from the order module (size price plus the
+ * ZIP's travel fee). The page's number is only cross-checked. The customer's
+ * consent to the difference being charged or refunded later is required and
+ * stamped here, with the server clock, on the card path and the wallet path alike.
+ *
+ * Refusals (nothing is created in Stripe for any of them):
+ *   400 bad_request | outside_area | stale_quote | closed_day | consent_required
+ *   409 window_full (capacity fails open when the database cannot be read)
+ *   503 live mode with a closed gate
  *
  * Required env vars in Vercel (Settings → Environment Variables):
  *   STRIPE_SECRET_KEY    = sk_test_... or sk_live_...
- *   STRIPE_PRODUCT_ID    = prod_...   (one "Junk removal" product in Stripe)
  *   BOOKINGS_OPEN        = true       (second booking gate, live mode only)
  */
 
@@ -21,49 +31,9 @@ const crypto = require('crypto');
 const db = require('./_lib/db');
 const site = require('./_lib/site');
 const founding = require('./_lib/founding');
-const { DAILY_CAP } = require('./_lib/schedule');
-
-// ── Server-side pricing. GENERATED — edit pricing.config.mjs, run `npm run build:pricing`.
-// The server recomputes every booking from this matrix and rejects a quote that
-// doesn't match it, so a hand-edit here that misses book/quote.html 400s
-// every checkout. rows: load sizes, smallest first · cols: see PLAN_KEYS.
-// INTEGER CENTS, per visit, which is also what lands on the card each period.
-/* BUILD:server-prices */
-const PRICES = [
-  /* Single item  */ [  9900,  8900],
-  /* 1/4 truck    */ [ 19900, 17900],
-  /* 1/2 truck    */ [ 34900, 31900],
-  /* 3/4 truck    */ [ 47900, 43900],
-  /* Full truck   */ [ 59900, 54900],
-];
-// How each column bills. `stripe` goes straight to price_data.recurring;
-// null marks a one-time column (PaymentIntent, not a subscription).
-const BILLING_BY_COL = [
-  /* One-time haul    */ {"weeks":null,"stripe":null},
-  /* Monthly pickup   */ {"weeks":4.333333333333333,"stripe":{"interval":"month"}},
-];
-// Column key by index: what goes in Stripe/db metadata as the plan name.
-const PLAN_KEYS = ["one_time","monthly"];
-// Load size by row index, for metadata and the confirmation email.
-const LOAD_LABELS = ["Single item","1/4 truck","1/2 truck","3/4 truck","Full truck"];
-/* /BUILD:server-prices */
-
-// TODO: real coupon codes, or {} for none. Code → percent off.
-const COUPONS = {};
-
-// Quarterly billing = 13 weeks of service charged up front, 10% off, billed
-// every 3 months whatever the plan's own cadence is. Priced off the plan's
-// WEEKLY-EQUIVALENT rate, not off its period price. Mirrored in
-// book/checkout.html and pricing.config.mjs: keep the three in step.
-const WEEKS_PER_QUARTER = 13;
-const QUARTERLY_INTERVAL = { interval: 'month', interval_count: 3 };
-
-/** Cents charged up front for one quarter of the plan in column `col`. */
-function quarterCents(perPeriodCents, col) {
-  const { weeks } = BILLING_BY_COL[col];
-  return Math.round((perPeriodCents / weeks) * WEEKS_PER_QUARTER * (1 - 0.10));
-}
-
+// Sizes, prices, windows, open days, consent version. GENERATED from
+// pricing.config.mjs by `npm run build:pricing`.
+const ORDER = require('./_lib/order-config');
 // The authoritative service-area gate AND the travel fee: a ZIP outside every
 // zone gets null. GENERATED (whole file) from ZONES in pricing.config.mjs.
 const travel = require('./_lib/travel');
@@ -96,10 +66,8 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST')    return res.status(405).json({ error: 'Method not allowed' });
 
   // ── Validate env ──────────────────────────────────────────
-  const SECRET     = process.env.STRIPE_SECRET_KEY;
-  const PRODUCT_ID = process.env.STRIPE_PRODUCT_ID;
-  if (!SECRET)     return res.status(500).json({ error: 'STRIPE_SECRET_KEY not configured' });
-  if (!PRODUCT_ID) return res.status(500).json({ error: 'STRIPE_PRODUCT_ID not configured' });
+  const SECRET = process.env.STRIPE_SECRET_KEY;
+  if (!SECRET) return res.status(500).json({ error: 'STRIPE_SECRET_KEY not configured' });
 
   const stripe = new Stripe(SECRET, { apiVersion: '2024-06-20' });
 
@@ -107,7 +75,7 @@ module.exports = async (req, res) => {
   // Three gates must all be open to take a live booking, same as Scoops Co.:
   //   1. BOOKINGS_OPEN_SERVER below (in code, deploys from `main`)
   //   2. BOOKINGS_OPEN=true in Vercel env vars
-  //   3. BOOKINGS_OPEN_CLIENT in book/checkout.html (UI only)
+  //   3. BOOKINGS_OPEN_CLIENT in book/quote.html (UI only)
   // Only LIVE mode (sk_live) is gated, so test-mode runs keep working.
   // EMERGENCY BRAKE: flip this to false and merge. It stands alone.
   const BOOKINGS_OPEN_SERVER = false;   // CLOSED until launch
@@ -121,103 +89,93 @@ module.exports = async (req, res) => {
   // ── Parse body ────────────────────────────────────────────
   let body = req.body;
   if (typeof body === 'string') {
-    try { body = JSON.parse(body); } catch { return res.status(400).json({ error: 'Invalid JSON' }); }
+    try { body = JSON.parse(body); } catch { return res.status(400).json({ code: 'bad_request', error: 'Invalid JSON' }); }
   }
   body = body || {};
 
   const {
-    email,
-    name,
-    phone,
-    paymentMethodId,
-    quotedCents,         // client's displayed PER-VISIT price (cents): cross-checked, never trusted
-    load,                // row index into PRICES (0 = smallest load)
-    freqIdx,             // column index into PRICES
-    coupon = '',
-    zip,
-    quarterly = false,   // 10% discount + quarterly billing (recurring plans only)
+    email, name, phone, size, zip, date,
+    window: windowKey,
+    quotedCents,         // the page's displayed total (cents): cross-checked, never trusted
+    consent,
+    attemptId,
     founding: foundingShown = false,   // the page showed the founding member discount
-    metadata  = {},
+    metadata = {},
   } = body;
+  const bad = (error) => res.status(400).json({ code: 'bad_request', error });
 
-  if (!email || !paymentMethodId) {
-    return res.status(400).json({ error: 'Missing required fields: email, paymentMethodId' });
-  }
+  if (!email || !/^[^\s@]+@[^\s@]+$/.test(String(email))) return bad('Missing required field: email');
+  if (!/^[\w-]{1,100}$/.test(String(attemptId || ''))) return bad('Missing required field: attemptId');
+  const row = Number(size);
+  if (!Number.isInteger(row) || row < 0 || row >= ORDER.SIZES.length) return bad('Invalid size. Please rebuild your quote.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || ''))) return bad('Invalid day');
+  const win = ORDER.SCHEDULE.windows.find((w) => w.key === windowKey);
+  if (!win) return bad('Invalid arrival window');
 
-  // Recompute the price server-side. Bounds come from the matrix itself, so a
-  // table resize can't leave a hardcoded bound pointing off the end.
-  const row = parseInt(load, 10);
-  const fi  = parseInt(freqIdx, 10);
-  if (!(row >= 0 && row < PRICES.length) || !(fi >= 0 && fi < PRICES[0].length)) {
-    return res.status(400).json({ error: 'Invalid quote parameters. Please rebuild your quote.' });
-  }
   const trip = travel.travelFor(zip);
   if (!trip) {
-    return res.status(400).json({ error: 'Sorry, that address is outside our service area' });
+    return res.status(400).json({ code: 'outside_area', error: 'Sorry, that address is outside our service area' });
   }
   // The address is what the route and the CRM use, so it has to name the ZIP
   // that just passed the gate.
   const addressZip = zipFromAddress(metadata && metadata.address);
   if (addressZip && addressZip !== String(zip).trim()) {
-    return res.status(400).json({ error: 'Sorry, that address is outside our service area' });
+    return res.status(400).json({ code: 'outside_area', error: 'Sorry, that address is outside our service area' });
   }
 
-  const pct       = COUPONS[String(coupon).trim().toUpperCase()] || 0;
-  // Per visit: the load's price plus the travel fee for the ZIP's zone. Both
-  // are already cents: do NOT multiply by 100. A coupon comes off the whole.
-  const loadCents = PRICES[row][fi];
-  const baseCents = loadCents + trip.cents;
-  const amount    = pct > 0 ? Math.round(baseCents * (1 - pct / 100)) : baseCents;
-  // Derived from the billing table, never from a hardcoded column index.
-  const isOneTime = !BILLING_BY_COL[fi].stripe;
-  const planKey   = !isOneTime && quarterly ? 'quarterly' : PLAN_KEYS[fi];
-
+  // The size's price plus the travel fee for the ZIP's zone, integer cents
+  // (do NOT multiply by 100).
+  const loadCents   = ORDER.SIZES[row].cents;
+  const totalCents  = ORDER.totalFor(row, trip.cents);
   const clientCents = Math.round(Number(quotedCents));
-  if (Number.isFinite(clientCents) && clientCents !== amount) {
-    return res.status(400).json({ error: 'Quote is out of date. Please refresh and rebuild your quote.' });
-  }
-  if (!(amount >= 50)) {
-    // Stripe's minimum charge is $0.50. A zero or near-zero price is a config error.
-    return res.status(400).json({ error: 'This quote cannot be booked online. Please call us.' });
+  if (!Number.isFinite(clientCents) || clientCents !== totalCents) {
+    return res.status(400).json({ code: 'stale_quote', totalCents, error: 'Your quote is out of date. Please review the new total.' });
   }
 
-  // ── Day-capacity backstop ─────────────────────────────────
-  // Refuse a route day that's already at DAILY_CAP. FAIL-OPEN: if the count
-  // can't be read, allow the booking; a capacity read must never block a
-  // paying customer. Every booking claims a day, one-time hauls included,
-  // because a haul takes a truck for the day just like a standing pickup.
-  const pickupWeekday = String((metadata && metadata.pickup_weekday) || '').trim();
-  if (pickupWeekday) {
-    try {
-      const counts = await db.scheduledVisitCountsByWeekday();
-      if (counts && (counts[pickupWeekday] || 0) >= DAILY_CAP) {
-        return res.status(409).json({ error: `${pickupWeekday}s are fully booked. Please choose another day.` });
-      }
-    } catch (e) { console.warn('[create-booking] capacity check skipped:', e.message); }
+  if (!ORDER.isBookable(date, windowKey, Date.now())) {
+    return res.status(400).json({ code: 'closed_day', error: 'We are not booking that day. Please choose another.' });
   }
 
-  // Set after the client's metadata is spread, so a page can't overwrite them.
+  // Consent to the difference being charged or refunded after the job. The
+  // time is stamped by the server, never taken from the page.
+  if (!consent || consent.agreed !== true || consent.version !== ORDER.POLICY.consentVersion) {
+    return res.status(400).json({ code: 'consent_required', error: 'Please agree to the terms and to the difference being charged or refunded to book.' });
+  }
+  const consentAt = new Date().toISOString();
+
+  // ── Window capacity backstop ──────────────────────────────
+  // FAIL-OPEN: if the count can't be read, allow the booking; a capacity read
+  // must never block a customer.
+  try {
+    const counts = await db.slotCounts({ market: trip.market, from: date, to: date });
+    const day = counts && counts[date];
+    if (day && ((day[windowKey] || 0) >= win.cap || (day.total || 0) >= ORDER.SCHEDULE.dailyCap)) {
+      return res.status(409).json({ code: 'window_full', error: 'That arrival window just filled up. Please choose another.' });
+    }
+  } catch (e) { console.warn('[create-booking] capacity check skipped:', e.message); }
+
   // Quote photos (api/photo-quote.js): only paths in the shape the server
   // names them. The webhook signs these for the owner, so a page must not be
   // able to slip in any other object in the bucket.
   const photos = String((metadata && metadata.photos) || '').split(',')
     .map((p) => p.trim()).filter((p) => db.QUOTE_PHOTO_RE.test(p)).slice(0, 4);
-  // Travel rides with every booking so the email, Discord ping, database and
-  // dashboard can show it without recomputing it.
+  // Spread AFTER the page's metadata, so a page can't overwrite them. Travel
+  // and the quote ride with the booking so the webhook, email, Discord ping
+  // and dashboard never recompute them.
   const serverMeta = {
-    plan: planKey, load: LOAD_LABELS[row], load_idx: String(row), photos: photos.join(','),
-    load_cents: String(loadCents), zip: trip.zip, zone: trip.zone, zone_label: trip.label,
-    travel_cents: String(trip.cents), miles: String(trip.miles),
+    kind: 'booking', size: ORDER.SIZES[row].key, load: ORDER.SIZES[row].label, load_idx: String(row),
+    load_cents: String(loadCents), travel_cents: String(trip.cents), total_cents: String(totalCents),
+    zip: trip.zip, zone: trip.zone, zone_label: trip.label, miles: String(trip.miles), market: trip.market,
+    date, window: windowKey, consent_at: consentAt, consent_version: ORDER.POLICY.consentVersion,
+    photos: photos.join(','),
   };
 
   // ── Founding member offer (api/_lib/founding.js; off unless FOUNDING.open)
-  // Re-counted live here, never trusted from the page. Taken off the whole
-  // per visit price, travel included: the first month of a monthly pickup, a
-  // third of a quarterly prepay, or the whole one-time haul. If the page
-  // showed the offer but the last spot just went, refuse before any charge so
-  // the customer reviews the regular price (founding_closed).
-  const quarterlyPlan = !isOneTime && quarterly;
-  const preOfferCents = quarterlyPlan ? quarterCents(amount, fi) : amount;
+  // Re-counted live here, never trusted from the page. The discount comes off
+  // the booking payment, and founding: 'true' rides in its metadata so the
+  // after job difference takes the same percent off the final total (R19).
+  // If the page showed the offer but the last spot just went, refuse so the
+  // customer reviews the regular price (founding_closed).
   let foundingApplied = false;
   if (founding.FOUNDING.open) {
     let left = null;
@@ -232,104 +190,69 @@ module.exports = async (req, res) => {
       });
     }
   }
-  const foundingCents = foundingApplied ? founding.firstMonthDiscountCents(preOfferCents, { quarterly: quarterlyPlan }) : 0;
+  const foundingCents = foundingApplied ? founding.firstMonthDiscountCents(totalCents) : 0;
   const foundingResult = foundingApplied ? { percentOff: founding.FOUNDING.percentOff, discountCents: foundingCents } : null;
   // Stamped after the page's metadata is spread, so a page cannot stamp
   // itself a founding member (which is what the spot count reads).
   Object.assign(serverMeta, foundingApplied
     ? { founding: 'true', founding_discount_cents: String(foundingCents) }
-    : { founding: 'false' });
+    : { founding: 'false', founding_discount_cents: '0' });
 
-  // Idempotency anchor: a network retry of the SAME booking reuses these keys
-  // (Stripe returns the original objects instead of a second customer and a
-  // second charge), while a fresh PaymentMethod gets a new key.
-  const idemBase = crypto.createHash('sha256')
-    .update([email, paymentMethodId, amount, row, fi, quarterly ? 'q' : 'm', foundingCents].join('|'))
-    .digest('hex').slice(0, 40);
+  // Idempotency: each key is the hash of the exact params sent, EXCLUDING
+  // consent_at (the server clock), so an edited resubmit (new phone, address,
+  // notes) gets a new key. A second Book of the same order reuses the key with
+  // a different consent_at: Stripe answers StripeIdempotencyError, and
+  // createOnce below retries once with a fresh key. So every attempt gets a
+  // new customer and a new PaymentIntent. That is harmless while nothing is
+  // paid (an unconfirmed PaymentIntent simply lapses); a second CHARGE is
+  // stopped by the page, which asks Stripe whether its last PaymentIntent was
+  // paid before it books again (lastPay in js/order.js).
+  const canon = (v) => (Array.isArray(v) ? '[' + v.map(canon).join(',') + ']'
+    : v && typeof v === 'object' ? '{' + Object.keys(v).sort().filter((k) => v[k] !== undefined).map((k) => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}'
+    : JSON.stringify(v));
+  const keyFor = (kind, params) => {
+    const q = { ...params, metadata: { ...params.metadata } };
+    delete q.metadata.consent_at;
+    return crypto.createHash('sha256').update(attemptId + '|' + kind + '|' + canon(q)).digest('hex').slice(0, 40);
+  };
+  const createOnce = async (kind, create, params) => {
+    const key = `${keyFor(kind, params)}:${kind}`;
+    try { return await create(params, { idempotencyKey: key }); }
+    catch (e) {
+      if (!(e && e.type === 'StripeIdempotencyError')) throw e;
+      return create(params, { idempotencyKey: `${key}:${crypto.randomBytes(6).toString('hex')}` });
+    }
+  };
 
   try {
-    // 0. The founding coupon (monthly and quarterly), before anything
-    //    customer shaped exists, so a failure here leaves nothing behind.
-    const foundingCoupon = foundingApplied && !isOneTime ? await founding.ensureCoupon(stripe, foundingCents) : null;
-
-    // 1. Create customer with default PM
-    const customer = await stripe.customers.create({
+    const customer = await createOnce('cust', (q, o) => stripe.customers.create(q, o), {
       email,
       name:  name  || undefined,
       phone: phone || undefined,
-      payment_method: paymentMethodId,
-      invoice_settings: { default_payment_method: paymentMethodId },
       metadata: { ...metadata, ...serverMeta },
-    }, { idempotencyKey: `${idemBase}:cust` });
+    });
 
-    // ── PATH B: One-time haul — single PaymentIntent ──────
-    if (isOneTime) {
-      const pi = await stripe.paymentIntents.create({
-        amount: amount - foundingCents,
-        currency: 'usd',
-        customer: customer.id,
-        payment_method: paymentMethodId,
-        confirm: true,
-        off_session: false,
-        description: `${site.NAME}: ${LOAD_LABELS[row]} haul, ${trip.label}${foundingApplied ? `, founding member ${founding.FOUNDING.percentOff}% off` : ''}`,
-        statement_descriptor_suffix: 'HAUL',
-        metadata: { ...metadata, ...serverMeta, plan: 'one_time' },
-        automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
-      }, { idempotencyKey: `${idemBase}:pi` });
-
-      return res.status(200).json({
-        customerId:               customer.id,
-        subscriptionId:           null,
-        oneTimeClientSecret:      pi.client_secret,
-        firstInvoiceClientSecret: null,
-        plan:                     'one_time',
-        founding:                 foundingResult,
-        amountChargedToday:       pi.amount,
-      });
-    }
-
-    // ── PATH A: Recurring subscription ────────────────────
-    // Each plan bills on its OWN cadence from BILLING_BY_COL. The quoted number
-    // is the charged number; nothing here may invent a period the customer
-    // wasn't shown. Quarterly overrides the cadence with a 3-month prepay.
-    const interval    = quarterly ? QUARTERLY_INTERVAL : BILLING_BY_COL[fi].stripe;
-    const finalAmount = quarterly ? quarterCents(amount, fi) : amount;
-
-    const subscription = await stripe.subscriptions.create({
+    // The booking payment: the total now, the card saved for the difference.
+    // The page confirms it (Payment Element or a wallet); nothing here does.
+    const amountCents = totalCents - foundingCents;
+    const paymentIntent = await createOnce('pi', (q, o) => stripe.paymentIntents.create(q, o), {
+      amount: amountCents,
+      currency: 'usd',
       customer: customer.id,
-      items: [{
-        price_data: {
-          currency: 'usd',
-          product:  PRODUCT_ID,
-          unit_amount: finalAmount,
-          recurring: interval,
-        },
-      }],
-      // The founding coupon rides on the subscription, not the price, so it
-      // ends after one month and the price stays the regular one.
-      ...(foundingCoupon ? { discounts: [{ coupon: foundingCoupon }] } : {}),
-      default_payment_method: paymentMethodId,
-      payment_behavior:       'default_incomplete',
-      payment_settings:       { save_default_payment_method: 'on_subscription' },
-      expand:                 ['latest_invoice.payment_intent'],
-      metadata: {
-        ...metadata,
-        ...serverMeta,
-        cadence:      PLAN_KEYS[fi],    // the service cadence, even when billed quarterly
-        quoted_price: String(amount),   // per-visit price after coupon, cents
-      },
-    }, { idempotencyKey: `${idemBase}:sub` });
+      setup_future_usage: 'off_session',
+      automatic_payment_methods: { enabled: true },
+      description: `${site.NAME}: ${ORDER.SIZES[row].label} haul, ${trip.label}, ${date}`,
+      metadata: { ...metadata, ...serverMeta },
+    });
 
-    const invoice = subscription.latest_invoice;
-    const pi = invoice && invoice.payment_intent;
     return res.status(200).json({
-      customerId:               customer.id,
-      subscriptionId:           subscription.id,
-      oneTimeClientSecret:      null,
-      firstInvoiceClientSecret: pi ? pi.client_secret : null,
-      plan:                     planKey,
-      founding:                 foundingResult,
-      amountChargedToday:       invoice && Number.isFinite(invoice.amount_due) ? invoice.amount_due : finalAmount - foundingCents,
+      customerId:                customer.id,
+      paymentIntentClientSecret: paymentIntent.client_secret,
+      totalCents,                // the total before any founding discount
+      amountCents,               // what is charged now
+      loadCents,
+      travelCents:               trip.cents,
+      founding:                  foundingResult,
     });
   } catch (err) {
     if (err && err.type && String(err.type).startsWith('Stripe')) {

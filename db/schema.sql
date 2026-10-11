@@ -32,8 +32,10 @@ end $$;
 -- ── enums ───────────────────────────────────────────────────────────────────
 do $$ begin
   create type public.visit_status as enum
-    ('scheduled','en_route','in_progress','completed','skipped','canceled');
+    ('scheduled','en_route','in_progress','completed','skipped','canceled','declined');
 exception when duplicate_object then null; end $$;
+-- 'declined': the customer said no on site (order flow, 2026-10-10). Backfill for an already-applied schema:
+alter type public.visit_status add value if not exists 'declined';
 
 do $$ begin
   create type public.sub_status as enum
@@ -123,6 +125,32 @@ create table if not exists public.visits (
 );
 -- Backfill for an already-applied schema (idempotent):
 alter table public.visits add column if not exists reminder_sent_at timestamptz;
+-- Order flow (2026-10-10), also in db/migrations/2026-10-10-order-flow.sql:
+alter table public.visits add column if not exists window_key text;
+alter table public.visits add column if not exists market text;
+alter table public.visits add column if not exists quoted_load_idx int;
+alter table public.visits add column if not exists quoted_load_cents int;
+alter table public.visits add column if not exists quoted_cents int;
+alter table public.visits add column if not exists travel_cents int;
+alter table public.visits add column if not exists final_load_idx int;
+alter table public.visits add column if not exists final_cents int;
+-- Pay at booking: paid | payment_needed | refunded | late_fee_kept
+alter table public.visits add column if not exists payment_status text;
+-- Paid (the booking, plus any difference charged after the job) and refunded
+-- since, in cents. Net paid = paid - refunded.
+alter table public.visits add column if not exists paid_cents int;
+alter table public.visits add column if not exists refunded_cents int;
+alter table public.visits add column if not exists stripe_payment_method_id text;
+alter table public.visits add column if not exists stripe_payment_intent_id text;
+alter table public.visits add column if not exists invoice_url text;
+alter table public.visits add column if not exists consent_at timestamptz;
+alter table public.visits add column if not exists consent_version text;
+alter table public.visits add column if not exists en_route_at timestamptz;
+alter table public.visits add column if not exists booking_notified_at timestamptz;
+-- One visit per booking payment (the booking PaymentIntent, which refunds go
+-- back to): a redelivered webhook cannot duplicate it.
+create unique index if not exists visits_payment_intent_uidx on public.visits(stripe_payment_intent_id);
+create index if not exists visits_slot_idx on public.visits(market, scheduled_date, window_key);
 create index if not exists visits_customer_idx   on public.visits(customer_id);
 create index if not exists visits_route_idx       on public.visits(route_date, route_seq);
 create index if not exists visits_scheduled_idx   on public.visits(scheduled_date, status);

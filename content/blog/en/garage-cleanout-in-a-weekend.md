@@ -28,10 +28,10 @@ Pull out the paint, chemicals, fuel and propane; those need their own trip (see 
 
 Put up shelving or hooks for the keep pile before it goes back in: vertical storage is what keeps a garage clear. When we arrive, the donate and go piles both come with us; we take the donations to a thrift store and the rest to recycling or the transfer station.
 
-## What usually fills the truck
+## What usually fills a load
 
 In our area the same things turn up again and again: old bikes and toys, exercise machines, broken patio sets, scrap wood, a second fridge, carpet rolls, and boxes from three moves ago. Big lots in places like [Damascus](/damascus.html) and [Boring](/boring.html) add shop tools and fencing.
 
 ## How big a load?
 
-Most single car garages fit in half a truck once they are sorted; a packed two car garage is often a full truck. You do not need to guess: snap a couple of photos on the [quote page](/book/quote.html) and the truck on the screen fills to the right size, with the price for your zone.
+Most single car garages fit in half a truck once they are sorted; a packed two car garage is often a full truck. You do not need to guess: snap a couple of photos on the [quote page](/book/quote.html) and we pick the right size for you, with the price for your zone.

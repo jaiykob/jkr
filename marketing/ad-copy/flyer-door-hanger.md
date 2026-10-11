@@ -19,7 +19,7 @@ rules are in `README.md`; no prices in print, ever.
 
 > **How it works**
 >
-> 1. Snap a photo of what is going, or tap the items on our site.
+> 1. Snap a photo of what is going, or pick a size on our site.
 > 2. See your price right away. Travel for your ZIP is already in it.
 > 3. Pick a day. We carry it out, load it, and sweep up.
 >

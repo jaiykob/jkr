@@ -11,10 +11,13 @@ delete process.env.SUPABASE_SERVICE_ROLE_KEY;
 // Fake Stripe (the event is the request body) and a sendEmail that records.
 const sent = [];
 let customerMeta = {};
+let invoiceMeta = {};
+const customerUpdates = [];
 class FakeStripe {
   constructor() {
     this.webhooks = { constructEvent: (raw) => JSON.parse(raw.toString('utf8')) };
-    this.customers = { retrieve: async (id) => ({ id, name: 'Jane Smith', email: 'jane@example.com', phone: '5035550100', metadata: customerMeta }) };
+    this.customers = { update: async (id, p) => { customerUpdates.push({ id, ...p }); return { id, ...p }; }, retrieve: async (id) => ({ id, name: 'Jane Smith', email: 'jane@example.com', phone: '5035550100', metadata: customerMeta }) };
+    this.invoices = { retrieve: async (id) => ({ id, metadata: invoiceMeta }) };
     this.subscriptions = { retrieve: async (id) => ({ id, status: 'active', items: { data: [] }, metadata: {} }) };
   }
 }
@@ -64,11 +67,12 @@ const plain = tpl.bookingConfirmation({ name: 'Jane', load: '1/2 truck', amount:
 ok(!/Travel/.test(plain.html), 'an email without travel still prints a travel row');
 
 console.log('== owner email ==');
+// A booking is the booking PaymentIntent succeeding (pay at booking): its OWN metadata.kind is 'booking'.
 const booking = (id, over = {}) => ({
   id, type: 'payment_intent.succeeded', livemode: false,
-  data: { object: { id: 'pi_1', customer: 'cus_1', amount_received: 37400, metadata: {
-    plan: 'one_time', load: '1/2 truck', zone_label: 'Zone 2', travel_cents: '2500', miles: '16.8',
-    address: '9 Elm St, Portland 97202', pickup_day: 'Tuesday, Oct 14', items: 'Couch, mattress', frequency: 'One-time haul', ...over } } },
+  data: { object: { id: 'pi_1', object: 'payment_intent', customer: 'cus_1', payment_method: 'pm_1', amount: 37400, amount_received: 37400, metadata: {
+    kind: 'booking', load_idx: '2', total_cents: '37400', load_cents: '34900', zone_label: 'Zone 2', travel_cents: '2500', miles: '16.8',
+    date: '2026-10-14', window: 'w10', address: '9 Elm St, Portland 97202', items: 'Couch, mattress', ...over } } },
 });
 // Discord is down (its fetch throws): the owner email still goes.
 const realFetch = globalThis.fetch;
@@ -77,9 +81,10 @@ let st = await deliver(booking('evt_1'), { OPS_EMAIL: 'owner@example.com', OPS_W
 const owner = sent.find((m) => m.to === 'owner@example.com');
 ok(st === 200, `webhook answered ${st}`);
 ok(!!owner, 'no owner email on a new booking');
-ok(owner && owner.idempotencyKey === 'evt_1:owner', `owner email key is ${owner && owner.idempotencyKey} (a redelivery would send twice)`);
+ok(owner && owner.idempotencyKey === 'pi_1:owner', `owner email key is ${owner && owner.idempotencyKey} (a redelivery would send twice)`);
 ok(owner && /New booking/.test(owner.subject) && /\$374\.00/.test(owner.subject), `owner subject: ${owner && owner.subject}`);
 ok(owner && /1\/2 truck/.test(owner.html) && /Zone 2/.test(owner.html) && /9 Elm St/.test(owner.html) && /503/.test(owner.html), 'owner email lacks the load, travel, address or phone');
+ok(owner && /Paid/.test(owner.html) && !/not charged/i.test(owner.html), 'owner email does not say the booking is paid');
 ok(owner && /\/jkr\//.test(owner.html), 'owner email does not link the dashboard');
 ok(sent.some((m) => m.to === 'jane@example.com'), 'the customer confirmation stopped going out');
 globalThis.fetch = realFetch;
@@ -94,8 +99,8 @@ st = await deliver({ id: 'evt_3', type: 'invoice.payment_succeeded', livemode: f
 ok(!sent.some((m) => m.to === 'owner@example.com'), 'a monthly renewal sent an owner booking email');
 // A declined card is not a booking either.
 st = await deliver({ id: 'evt_4', type: 'payment_intent.payment_failed', livemode: false,
-  data: { object: { id: 'pi_2', customer: 'cus_1', amount: 37400, metadata: { plan: 'one_time' } } } }, { OPS_EMAIL: 'owner@example.com' });
-ok(!sent.some((m) => m.to === 'owner@example.com'), 'a declined card sent an owner booking email');
+  data: { object: { id: 'pi_2', customer: 'cus_1', amount: 37400, metadata: { kind: 'booking' } } } }, { OPS_EMAIL: 'owner@example.com' });
+ok(!sent.some((m) => m.to === 'owner@example.com') && !sent.some((m) => m.to === 'jane@example.com'), 'a declined card sent an owner booking email or a customer email');
 
 console.log('== customer emails ==');
 const ctxAll = { name: 'Jane', plan: 'One-time haul', amount: '$374.00', frequency: 'One-time haul', pickupDay: 'Tuesday', address: '1 Oak St',
@@ -131,6 +136,273 @@ rows.length = 0;
 await db.upsertSubscription({ customerId: 'c1', plan: 'one_time', loadSize: '1/2 truck', priceCents: 34900, dedupeId: 'pi_2' });
 const before = rows.length && rows[rows.length - 1].body;
 ok(before && !('travel_zone' in before) && !('travel_cents' in before), 'a booking without travel wrote empty travel columns');
+
+console.log('== slots ==');
+// A Supabase stand-in for visits: GET filters on market, status, date range, id and stripe_payment_intent_id.
+const ORDER = require('../api/_lib/order-config.js');
+const NOW = Date.now();
+let visitRows = [], down = false, posts = [];
+const pings = [], patches = [];
+const eqId = (q) => (q.get('id') || '').replace(/^eq\./, '');
+const fakeVisits = (r) => { visitRows = r.map((v, i) => ({ id: v.id || `v${i}`, customer_id: 'c1', customers: { id: 'c1', email: 'jane@example.com' }, ...v })); down = false; };
+const dbDown = () => { down = true; };
+globalThis.fetch = async (url, init = {}) => {
+  const u = new URL(url);
+  if (u.hostname === 'discord.invalid') { pings.push(JSON.parse(init.body)); return { ok: true, status: 204, text: async () => '' }; }
+  if (down) throw new Error('database unreachable');
+  const q = u.searchParams;
+  if (u.pathname.endsWith('/customers') && (init.method || 'GET') === 'POST') return { ok: true, status: 201, json: async () => [{ id: 'c1' }], text: async () => '' };
+  if (!u.pathname.endsWith('/visits')) return { ok: true, status: 200, json: async () => [], text: async () => '' };
+  if (init.method === 'PATCH') {
+    const row = visitRows.find((r) => r.id === eqId(q));
+    if (!row) return { ok: true, status: 200, json: async () => [], text: async () => '' };
+    Object.assign(row, JSON.parse(init.body)); patches.push({ id: row.id, ...JSON.parse(init.body) });
+    return { ok: true, status: 200, json: async () => [row], text: async () => '' };
+  }
+  if ((init.method || 'GET') === 'POST') {
+    const b = JSON.parse(init.body); posts.push(b);
+    const row = { id: `new${posts.length}`, ...b }; visitRows.push(row);
+    return { ok: true, status: 201, json: async () => [row], text: async () => '' };
+  }
+  let out = visitRows;
+  const eq = (k) => (q.get(k) || '').startsWith('eq.') ? q.get(k).slice(3) : null;
+  const neq = (k) => (q.get(k) || '').startsWith('neq.') ? q.get(k).slice(4) : null;
+  if (eq('market')) out = out.filter((v) => v.market === eq('market'));
+  if (neq('status')) out = out.filter((v) => v.status !== neq('status'));
+  if (eq('id')) out = out.filter((v) => v.id === eq('id'));
+  if (eq('stripe_payment_intent_id')) out = out.filter((v) => v.stripe_payment_intent_id === eq('stripe_payment_intent_id'));
+  for (const [k, v] of u.searchParams.entries()) {
+    if (k === 'scheduled_date' && v.startsWith('gte.')) out = out.filter((r) => r.scheduled_date >= v.slice(4));
+    if (k === 'scheduled_date' && v.startsWith('lte.')) out = out.filter((r) => r.scheduled_date <= v.slice(4));
+  }
+  if ((q.get('select') || '').includes('customers(')) out = out.map((r) => ({ ...r, customers: r.customers || { id: r.customer_id, email: 'jane@example.com' } }));
+  return { ok: true, status: 200, json: async () => out, text: async () => '' };
+};
+async function callCapacity(qs) {
+  const handler = require('../api/day-capacity.js');
+  let status = 0, json = null; const headers = {};
+  const res = { setHeader(k, v) { headers[k] = v; }, status(s) { status = s; return this; }, json(j) { json = j; return this; }, end() { return this; } };
+  await handler({ method: 'GET', url: '/api/day-capacity' + qs, headers: {}, query: Object.fromEntries(new URLSearchParams(qs)) }, res);
+  return { status, json, headers };
+}
+const first = ORDER.openDays(NOW)[0].date;
+const v = (window_key, status = 'scheduled') => ({ scheduled_date: first, window_key, market: 'portland', status });
+const threeScheduledIn = (k) => [v(k), v(k), v(k)];
+// two scheduled and one canceled in w08, cap 2: the canceled one is not counted, so w08 is full only by the two
+fakeVisits([v('w08'), v('w08'), v('w08', 'canceled')]);
+let cap = await callCapacity('?market=portland');
+let d0 = cap.json.days.find((d) => d.date === first);
+ok(cap.status === 200 && cap.headers['Cache-Control'] === 'no-store', 'capacity is not sent no-store');
+ok(d0.windows.find((w) => w.key === 'w08').full === true, 'two scheduled visits at cap 2 did not fill the window');
+ok(d0.windows.find((w) => w.key === 'w10').full === false, 'an empty window was flagged full');
+fakeVisits([v('w08'), v('w08', 'canceled'), v('w08', 'canceled')]);
+cap = await callCapacity('?market=portland');
+ok(cap.json.days[0].windows[0].full === false, 'a canceled visit counted');
+fakeVisits([...threeScheduledIn('w08')]);
+ok((await callCapacity('?market=portland')).json.days[0].windows[0].full === true, 'full window not flagged');
+// another market's visits do not count
+fakeVisits([{ ...v('w08'), market: 'sacramento' }, { ...v('w08'), market: 'sacramento' }]);
+ok((await callCapacity('?market=portland')).json.days[0].windows[0].full === false, 'another market filled this market');
+// a day is full when its total reaches the daily cap, or every window is full
+fakeVisits([v('w08'), v('w08'), v('w10'), v('w10'), v('w12'), v('w12')]);
+d0 = (await callCapacity('?market=portland')).json.days[0];
+ok(d0.full === true, 'a day at the daily cap is not full');
+fakeVisits([v('w08'), v('w08'), v('w10'), v('w10'), v('w12'), v('w12'), v('w14'), v('w14')]);
+ok((await callCapacity('?market=portland')).json.days[0].full === true, 'a day with every window full is not full');
+fakeVisits([v('w08')]);
+ok((await callCapacity('?market=portland')).json.days[0].full === false, 'a quiet day is full');
+ok(!JSON.stringify((await callCapacity('?market=portland')).json).includes('jane'), 'capacity leaks customer data');
+// slotCounts shape
+fakeVisits([v('w08'), v('w10')]);
+const sc = await db.slotCounts({ market: 'portland', from: first, to: first });
+ok(sc[first] && sc[first].total === 2 && sc[first].w08 === 1 && sc[first].w10 === 1, `slotCounts is ${JSON.stringify(sc)}`);
+// createBookedVisit is idempotent on the booking payment intent, and getVisit carries the customer
+fakeVisits([]); posts = [];
+const f1 = { customerId: 'c1', scheduledDate: first, windowKey: 'w08', market: 'portland', stripePaymentIntentId: 'pi_1', paidCents: 34900, quotedCents: 34900, travelCents: 0 };
+const b1 = await db.createBookedVisit(f1);
+const b2 = await db.createBookedVisit(f1);
+ok(b1 && b2 && b1.id === b2.id && posts.length === 1, `createBookedVisit wrote ${posts.length} rows for one payment intent`);
+ok(posts[0] && posts[0].window_key === 'w08' && posts[0].stripe_payment_intent_id === 'pi_1' && posts[0].quoted_cents === 34900 && posts[0].status === 'scheduled', `visit row is ${JSON.stringify(posts[0])}`);
+ok(posts[0] && posts[0].payment_status === 'paid' && posts[0].paid_cents === 34900 && posts[0].refunded_cents === 0 && !('stripe_setup_intent_id' in posts[0]), `a booked visit is not paid with paid_cents: ${JSON.stringify(posts[0])}`);
+const gv = await db.getVisit(b1.id);
+ok(gv && gv.customers && gv.customers.email === 'jane@example.com', 'getVisit has no customer');
+// fail soft
+dbDown();
+ok((await db.createBookedVisit(f1)) === null, 'createBookedVisit threw or returned a row with the database down');
+dbDown();
+ok(Object.keys(await db.slotCounts({ market: 'portland', from: first, to: first })).length === 0, 'slotCounts is not empty with the database down');
+dbDown();
+ok((await callCapacity('?market=portland')).json.days.every((d) => !d.full && d.windows.every((w) => !w.full)), 'capacity must fail open');
+// The old weekday answer (no market) is gone with the old checkout: a market is required.
+const noMarket = await callCapacity('');
+ok(noMarket.status === 400 && !(noMarket.json && ('counts' in noMarket.json || 'cap' in noMarket.json)), `capacity without a market answered ${noMarket.status} ${JSON.stringify(noMarket.json)}`);
+
+
+console.log('== booked ==');
+const day = first;
+const createdVisits = () => posts;
+const sentEmails = () => sent;
+const discordPings = () => pings;
+// Pay at booking: the booking PaymentIntent (quoted total, card saved for the difference) succeeding books the job.
+const paymentSucceeded = (meta, id = 'evt_pi_1', over = {}) => ({
+  id, type: 'payment_intent.succeeded', livemode: false,
+  data: { object: { id: 'pi_9', object: 'payment_intent', customer: 'cus_1', payment_method: 'pm_9', status: 'succeeded',
+    amount: 37400, amount_received: 37400, setup_future_usage: 'off_session', metadata: meta, ...over } },
+});
+const bookEnv = { OPS_EMAIL: 'owner@example.com', OPS_WEBHOOK_URL: 'https://discord.invalid/hook' };
+customerMeta = { address: '9 Elm St, Portland 97202', plan: 'one_time' };
+fakeVisits([]); posts = []; pings.length = 0; customerUpdates.length = 0;
+const bookMeta = { kind: 'booking', date: day, window: 'w10', total_cents: '37400', load_cents: '34900', travel_cents: '2500', load_idx: '2', zone_label: 'Zone 2' };
+const ev = paymentSucceeded(bookMeta);
+await deliver(ev, bookEnv);
+ok(createdVisits().length === 1 && createdVisits()[0].window_key === 'w10' && createdVisits()[0].payment_status === 'paid', `visit not written as paid: ${JSON.stringify(createdVisits()[0])}`);
+ok(createdVisits()[0] && createdVisits()[0].paid_cents === 37400 && createdVisits()[0].stripe_payment_intent_id === 'pi_9' && createdVisits()[0].stripe_payment_method_id === 'pm_9' && createdVisits()[0].travel_cents === 2500, `visit row is ${JSON.stringify(createdVisits()[0])}`);
+ok(createdVisits()[0] && !('stripe_setup_intent_id' in createdVisits()[0]), 'the visit still carries a setup intent column');
+ok(customerUpdates.some((u) => u.id === 'cus_1' && u.invoice_settings && u.invoice_settings.default_payment_method === 'pm_9'), 'the saved card is not the customer default payment method');
+const conf = sentEmails().find((e) => e.to === 'jane@example.com');
+ok(conf && /10 am to 12 pm/.test(conf.html) && /charge the difference to your card only if you agree/.test(conf.html) && /we refund the difference/.test(conf.html) && !/say no/i.test(conf.html), 'confirmation lacks the window or the rule');
+ok(conf && /Paid today/.test(conf.html) && /\$374\.00/.test(conf.html) && /Zone 2/.test(conf.html) && /\$25\.00/.test(conf.html), 'confirmation lacks what was paid, the travel line or the total');
+ok(conf && /charged or refunded the difference/.test(conf.html), 'confirmation lacks the consent');
+ok(conf && !/Nothing is charged today/.test(conf.html + conf.text + conf.subject) && !/charged after the job/.test(conf.html + conf.text), 'the confirmation still says nothing is charged today');
+ok(conf && /charge the difference to your card only if you agree/.test(conf.text) && /Paid today: \$374\.00/.test(conf.text), 'confirmation text lacks the rule or what was paid');
+// The refusal fee sentence only while there is a fee: none at $0, the fee itself once one is set.
+{
+  const realFee = ORDER.POLICY.refusalFeeCents;
+  ORDER.POLICY.refusalFeeCents = 0;
+  const none = tpl.bookedConfirmation({ name: 'Jane', total: '$374.00' });
+  ORDER.POLICY.refusalFeeCents = 2500;
+  const fee = tpl.bookedConfirmation({ name: 'Jane', total: '$374.00' });
+  ORDER.POLICY.refusalFeeCents = realFee;
+  ok(!/refusal fee/.test(none.html + none.text), 'the confirmation names a refusal fee of $0');
+  ok(/If you decide not to go ahead once the crew is there, we keep a \$25\.00 refusal fee/.test(fee.text), 'the confirmation does not name a refusal fee once one is set');
+}
+ok(sentEmails().some((e) => e.to === 'owner@example.com'), 'no owner email');
+ok(discordPings().length === 1 && /New booking/.test(discordPings()[0].embeds[0].title), 'no Discord ping');
+ok(sentEmails().every((e) => /^pi_9:(cust|owner)$/.test(e.idempotencyKey)), 'email keys are not PaymentIntent based: ' + sentEmails().map((e) => e.idempotencyKey));
+ok(patches.length === 1 && patches[0].booking_notified_at, 'the visit was not stamped booking_notified_at after all three went out');
+await deliver(ev, bookEnv);
+ok(createdVisits().length === 1, 'a redelivered event wrote a second visit');
+ok(discordPings().length === 1, 'a redelivered event pinged Discord again');
+ok(sentEmails().length === 0, 'a redelivery after a full first delivery sent email again');
+// A different event for the same PaymentIntent is also quiet.
+await deliver(paymentSucceeded(bookMeta, 'evt_pi_other'), bookEnv);
+ok(createdVisits().length === 1 && discordPings().length === 1 && sentEmails().length === 0, 'a second event for the same payment intent notified again');
+// The first try wrote the visit and died before announcing it: the retry sends all three, once, and stamps.
+visitRows.forEach((r) => { r.booking_notified_at = null; }); patches.length = 0;
+await deliver(ev, bookEnv);
+ok(createdVisits().length === 1 && discordPings().length === 2, 'the retry of an unstamped visit did not ping (or wrote a second visit)');
+ok(sentEmails().filter((e) => e.to === 'jane@example.com').length === 1 && sentEmails().filter((e) => e.to === 'owner@example.com').length === 1, 'the retry of an unstamped visit did not send the confirmation and the owner email once each');
+ok(patches.length === 1 && patches[0].booking_notified_at, 'the retry did not stamp the visit');
+pings.splice(1);
+// Not a booking: another kind, no kind (the customer's merged metadata says plan one_time), or a SetupIntent.
+await deliver(paymentSucceeded({ kind: 'something_else' }, 'evt_pi_2', { id: 'pi_other' }), bookEnv);
+await deliver(paymentSucceeded({}, 'evt_pi_3', { id: 'pi_nokind' }), bookEnv);
+ok(createdVisits().length === 1 && discordPings().length === 1 && sentEmails().length === 0, 'a payment intent that is not a booking wrote a visit, pinged or sent email');
+await deliver({ id: 'evt_si_1', type: 'setup_intent.succeeded', livemode: false,
+  data: { object: { id: 'seti_9', object: 'setup_intent', customer: 'cus_1', payment_method: 'pm_9', status: 'succeeded', metadata: bookMeta } } }, bookEnv);
+ok(createdVisits().length === 1 && discordPings().length === 1 && sentEmails().length === 0, 'a SetupIntent still books a job (pay at booking removed that path)');
+// Only a success books: a booking PaymentIntent that is created, processing or canceled writes nothing.
+for (const type of ['payment_intent.created', 'payment_intent.processing', 'payment_intent.canceled', 'payment_intent.requires_action']) {
+  await deliver({ ...paymentSucceeded(bookMeta, 'evt_' + type, { id: 'pi_' + type }), type }, bookEnv);
+}
+ok(createdVisits().length === 1 && discordPings().length === 1 && sentEmails().length === 0, 'a booking PaymentIntent that did not succeed booked or notified');
+// A declined booking card: the customer is still on the page; the owner sees it in Discord, nothing else.
+await deliver({ ...paymentSucceeded(bookMeta, 'evt_pi_fail', { id: 'pi_fail', last_payment_error: { message: 'Your card was declined.' } }), type: 'payment_intent.payment_failed' }, bookEnv);
+ok(createdVisits().length === 1 && sentEmails().length === 0, 'a declined booking card wrote a visit or sent email');
+ok(discordPings().length === 2 && /declined/i.test(discordPings()[1].embeds[0].title) && !/New booking/.test(discordPings()[1].embeds[0].title), 'a declined booking card did not ping as a decline');
+pings.splice(1);
+// The customer's merged metadata must not make a difference charge a booking.
+customerMeta = { plan: 'one_time', kind: 'booking', date: day, window: 'w10' };
+await deliver({ id: 'evt_fc_1', type: 'payment_intent.succeeded', livemode: false,
+  data: { object: { id: 'pi_fc', customer: 'cus_1', amount_received: 13000, metadata: { kind: 'difference', visit_id: 'v1' } } } }, bookEnv);
+ok(createdVisits().length === 1 && discordPings().length === 1 && !sentEmails().some((e) => /booked|New booking/i.test(e.subject || '')), 'a difference charge was read as a booking');
+customerMeta = { address: '9 Elm St, Portland 97202' };
+fakeVisits([]); posts = []; pings.length = 0; customerUpdates.length = 0;
+dbDown();
+await deliver(paymentSucceeded({ kind: 'booking', date: day, window: 'w12', total_cents: '34900', travel_cents: '0' }, 'evt_pi_db', { id: 'pi_db', amount: 34900, amount_received: 34900 }), bookEnv);
+ok(sentEmails().some((e) => e.to === 'jane@example.com' && /12 to 2 pm/.test(e.html)), 'a database error lost the confirmation (fail soft)');
+ok(sentEmails().length >= 2 && discordPings().length === 1, 'a database error lost the owner email or the ping (fail soft)');
+
+console.log('== final charge ==');
+// After the job a bigger size charges the DIFFERENCE (kind 'difference'): booked 1/2 truck paid 37400, finished at 50400.
+const fcEnv = { OPS_EMAIL: 'owner@example.com', OPS_WEBHOOK_URL: 'https://discord.invalid/hook' };
+const fcVisit = (over = {}) => { fakeVisits([{ id: 'v1', scheduled_date: day, window_key: 'w10', market: 'portland', status: 'completed', payment_status: 'paid',
+  paid_cents: 37400, refunded_cents: 0, final_load_idx: 3, final_cents: 50400, stripe_payment_intent_id: 'pi_booking', ...over }]); posts = []; pings.length = 0; patches.length = 0; };
+const piEvent = (type, kind, over = {}, id = 'evt_fc_a') => ({ id, type, livemode: false,
+  data: { object: { id: 'pi_fc', customer: 'cus_1', amount: 13000, amount_received: 13000, metadata: { kind, visit_id: 'v1', final_load_idx: '3' }, ...over } } });
+customerMeta = { plan: 'one_time', kind: 'booking', date: day, window: 'w10' };   // merged customer metadata must not win
+fcVisit();
+let fst = await deliver(piEvent('payment_intent.succeeded', 'difference'), fcEnv);
+ok(fst === 200, `difference answered ${fst}`);
+ok(visitRows[0].payment_status === 'paid' && visitRows[0].paid_cents === 50400, `visit is ${JSON.stringify(visitRows[0])}`);
+ok(visitRows[0].stripe_payment_intent_id === 'pi_booking', 'the difference replaced the booking PaymentIntent id (refunds need it)');
+ok(posts.length === 0, 'a difference wrote a visit');
+ok(discordPings().length === 0, 'a difference sent a Discord ping');
+ok(!sentEmails().some((e) => /New booking/.test(e.subject || '')), 'a difference sent a New booking email');
+const rec = sentEmails().find((e) => e.to === 'jane@example.com');
+ok(rec && /receipt/i.test(rec.subject) && /\$374\.00/.test(rec.html) && /\$130\.00/.test(rec.html) && /\$504\.00/.test(rec.html), 'the difference receipt does not show paid, adjusted and final');
+ok(rec && rec.idempotencyKey === 'visit:v1:receipt:3', `receipt key is ${rec && rec.idempotencyKey} (the dashboard sends the same one)`);
+// a hosted invoice for a declined difference: invoice.paid and invoice.payment_succeeded, never a booking
+for (const type of ['invoice.paid', 'invoice.payment_succeeded']) {
+  fcVisit({ payment_status: 'payment_needed' });
+  await deliver({ id: 'evt_inv_' + type, type, livemode: false, data: { object: { id: 'in_fc', customer: 'cus_1', payment_intent: 'pi_inv', amount_paid: 13000, metadata: { kind: 'difference', visit_id: 'v1' } } } }, fcEnv);
+  ok(visitRows[0].payment_status === 'paid' && visitRows[0].paid_cents === 50400 && visitRows[0].stripe_payment_intent_id === 'pi_booking', `${type}: visit is ${JSON.stringify(visitRows[0])}`);
+  ok(posts.length === 0 && discordPings().length === 0 && !sentEmails().some((e) => /New booking/.test(e.subject || '')), `${type} read as a booking`);
+  ok(sentEmails().some((e) => e.to === 'jane@example.com' && /receipt/i.test(e.subject)), `${type}: no receipt`);
+}
+// a decline: marks payment_needed and alerts once, however many events say so
+fcVisit({ status: 'scheduled' });
+await deliver(piEvent('payment_intent.payment_failed', 'difference', {}, 'evt_fc_f1'), fcEnv);
+ok(visitRows[0].payment_status === 'payment_needed', 'a failed difference did not mark payment_needed');
+ok(discordPings().length === 1 && /Payment needed/i.test(discordPings()[0].embeds[0].title), 'no payment needed ping');
+ok(!/New booking/.test(JSON.stringify(discordPings())) && posts.length === 0, 'a failed difference read as a booking');
+await deliver(piEvent('payment_intent.payment_failed', 'difference', {}, 'evt_fc_f2'), fcEnv);
+ok(discordPings().length === 1, 'the second decline event alerted again');
+// the synchronous path already alerted and invoiced: the webhook adds nothing
+fcVisit({ payment_status: 'payment_needed', invoice_url: 'https://invoice.example/in_1' });
+await deliver(piEvent('payment_intent.payment_failed', 'difference', {}, 'evt_fc_f3'), fcEnv);
+ok(discordPings().length === 0 && !sentEmails().length && patches.length === 0, 'the webhook alerted a decline the charge call already handled');
+// a visit whose difference is already paid is not pulled back to payment_needed by a late failure event
+fcVisit({ paid_cents: 50400 });
+await deliver(piEvent('payment_intent.payment_failed', 'difference', {}, 'evt_fc_f4'), fcEnv);
+ok(visitRows[0].payment_status === 'paid' && discordPings().length === 0, 'a late failure event unpaid a paid visit');
+// payment intents of other types with our own kind: ignored, never paid, never a booking
+for (const type of ['payment_intent.created', 'payment_intent.canceled', 'payment_intent.requires_action', 'payment_intent.processing']) {
+  fcVisit({ payment_status: 'payment_needed' });
+  await deliver(piEvent(type, 'difference', {}, 'evt_' + type), fcEnv);
+  ok(visitRows[0].payment_status === 'payment_needed' && !sentEmails().length && posts.length === 0 && discordPings().length === 0, `${type} marked paid, sent mail or read as a booking`);
+}
+// the hosted invoice's own PaymentIntent has no kind: the invoice decides, the customer metadata does not
+customerMeta = { plan: 'one_time', kind: 'booking', date: day, window: 'w10' };
+invoiceMeta = { kind: 'difference', visit_id: 'v1' };
+fcVisit({ payment_status: 'payment_needed' });
+await deliver({ id: 'evt_inv_pi', type: 'payment_intent.succeeded', livemode: false,
+  data: { object: { id: 'pi_inv', customer: 'cus_1', invoice: 'in_fc', amount: 13000, amount_received: 13000, metadata: {} } } }, fcEnv);
+ok(visitRows[0].payment_status === 'paid' && posts.length === 0 && discordPings().length === 0 && !sentEmails().some((e) => /booked|New booking/i.test(e.subject || '')), `an invoice PaymentIntent: ${visitRows[0].payment_status}`);
+invoiceMeta = {};   // an invoice that is not ours
+fcVisit({ payment_status: 'payment_needed' });
+await deliver({ id: 'evt_inv_pi2', type: 'payment_intent.succeeded', livemode: false,
+  data: { object: { id: 'pi_other', customer: 'cus_1', invoice: 'in_other', amount: 37400, metadata: {} } } }, fcEnv);
+ok(posts.length === 0 && discordPings().length === 0 && !sentEmails().length && visitRows[0].payment_status === 'payment_needed', 'an unknown invoice PaymentIntent was read as a booking');
+customerMeta = { address: '9 Elm St, Portland 97202' };
+for (const k of ['receipt', 'paymentNeeded', 'refundNotice']) ok(typeof tpl[k] === 'function', `template ${k} missing`);
+ok(typeof tpl.lateFee !== 'function', 'the late fee charge email is still there (the late fee is now kept from a refund)');
+const lc = tpl.refundNotice({ name: 'Jane', why: 'canceled', refund: '$324.00', kept: '$50.00', late: true, dayLabel: 'Tue Oct 14', windowLabel: '10 am to 12 pm', cancelHours: 24 });
+ok(/\$324\.00/.test(lc.html) && /\$50\.00/.test(lc.html) && /24 hours/.test(lc.html), 'late cancel email lacks the refund, the fee or the rule');
+const ec = tpl.refundNotice({ name: 'Jane', why: 'canceled', refund: '$374.00', late: false });
+ok(/\$374\.00/.test(ec.html) && /refund/i.test(ec.subject + ec.html) && !/late/i.test(ec.html), 'early cancel email lacks the refund or mentions a late fee');
+const dn = tpl.refundNotice({ name: 'Jane', why: 'declined', refund: '$374.00' });
+ok(/\$374\.00/.test(dn.html) && /refund/i.test(dn.html), 'said no email lacks the refund');
+const rc = tpl.receipt({ name: 'Jane', paid: '$374.00', adjustment: '$130.00', adjust: 'charged', final: '$504.00', load: '3/4 truck' });
+ok(/\$374\.00/.test(rc.html) && /\$130\.00/.test(rc.html) && /\$504\.00/.test(rc.html) && /\$504\.00/.test(rc.text), 'receipt lacks paid, adjusted or final');
+const pn = tpl.paymentNeeded({ name: 'Jane', amount: '$130.00', invoiceUrl: 'https://invoice.example/in_1' });
+ok(/\$130\.00/.test(pn.html) && /invoice\.example\/in_1/.test(pn.html) && /difference/i.test(pn.html), 'payment needed email lacks the amount, the link or the difference');
+
+// Reminders show the window.
+const rem = tpl.visitReminder({ name: 'Jane', visitDate: 'Tue Oct 14', windowLabel: '10 am to 12 pm' });
+ok(/10 am to 12 pm/.test(rem.html) && /10 am to 12 pm/.test(rem.text), 'the reminder does not show the window');
+const rem0 = tpl.visitReminder({ name: 'Jane', visitDate: 'Tue Oct 14' });
+ok(!/undefined/.test(rem0.html + rem0.text), 'a reminder without a window prints undefined');
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

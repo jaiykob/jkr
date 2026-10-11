@@ -2,10 +2,10 @@
  * Vercel Serverless Function — photo-quote
  *
  * The customer sends photos of their junk; Claude looks at them and counts
- * the items, and the page drops those items into the truck. The count only
- * picks a load size: prices still come from the table in pricing.config.mjs,
- * and create-booking.js still reprices the size on its own. The customer can
- * fix any count before they book.
+ * the items, and the order page picks the smallest load size that holds them
+ * (ORDER.sizeForUnits). The count only picks a size: prices still come from
+ * the table in pricing.config.mjs, and create-booking.js still reprices the
+ * size on its own. The customer can change the size before they book.
  *
  * The photos are also saved to the private `visit-photos` bucket under
  * quotes/, and their paths ride along with the booking so the owner sees the
@@ -14,7 +14,7 @@
  * POST body: { photos: [ "<base64 JPEG>", ... ] }   (1 to MAX_PHOTOS, the page
  *            downsizes them first)
  * → 200 { items: { couch: 1, ... }, notes, unsure, photos: [paths] }
- * → 503 when ANTHROPIC_API_KEY is not set: the page falls back to tapping.
+ * → 503 when ANTHROPIC_API_KEY is not set: the page asks for the closest size.
  *
  * Env: ANTHROPIC_API_KEY (required), SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
  * (optional: without them the photos are read but not kept).
@@ -157,7 +157,7 @@ module.exports = async (req, res) => {
   if (!process.env.ANTHROPIC_API_KEY) return res.status(503).json({ error: 'Photo quotes are not set up yet' });
 
   const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
-  if (limited(ip)) return res.status(429).json({ error: 'Too many photo quotes. Tap your items instead, or try again in a few minutes.' });
+  if (limited(ip)) return res.status(429).json({ error: 'Too many photo quotes. Pick a size instead, or try again in a few minutes.' });
 
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return res.status(400).json({ error: 'Invalid JSON' }); } }
@@ -187,8 +187,8 @@ module.exports = async (req, res) => {
     if (e instanceof Anthropic.RateLimitError) console.error('[photo-quote] rate limited');
     else if (e instanceof Anthropic.APIError) console.error('[photo-quote] API error', e.status, e.message);
     else console.error('[photo-quote] failed:', e && e.message);
-    // The photos may still have been kept; the page lets them tap instead.
-    return res.status(502).json({ error: 'We could not read the photos right now. Tap your items instead.', photos: paths });
+    // The photos may still have been kept; the page asks them to pick a size instead.
+    return res.status(502).json({ error: 'We could not read the photos right now. Pick a size instead.', photos: paths });
   }
   return res.status(200).json({ ...read.value, photos: paths });
 };

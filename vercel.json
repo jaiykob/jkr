@@ -5,6 +5,18 @@
       "schedule": "0 14 * * *"
     }
   ],
+  "redirects": [
+    {
+      "source": "/book/checkout.html",
+      "destination": "/book/quote.html",
+      "permanent": true
+    },
+    {
+      "source": "/book/checkout",
+      "destination": "/book/quote.html",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

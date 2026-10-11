@@ -1,8 +1,8 @@
 name: Gresham
 state: OR
 zips: 97030, 97080
-lede: Our truck starts every day in Gresham, so there is no travel charge here. Snap a photo or tap what is going and see your price now.
-lede_es: Nuestro camión sale todos los días de Gresham, así que aquí no hay cargo de viaje. Toma una foto o toca lo que se va y ve tu precio ahora.
+lede: Our truck starts every day in Gresham, so there is no travel charge here. Pick a size or snap a photo and see your price now.
+lede_es: Nuestro camión sale todos los días de Gresham, así que aquí no hay cargo de viaje. Elige un tamaño o toma una foto y ve tu precio ahora.
 areas: Rockwood, Pleasant Valley, Centennial, Gresham Butte, Kelly Creek, North Gresham, Powell Valley
 
 ## Local

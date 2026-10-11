@@ -3,30 +3,28 @@
  *
  * Bookings are CLOSED until launch (the three gates in CLAUDE.md). This banner
  * is the public explanation; it gates nothing on its own. While the gates are
- * closed, checkout reserves a spot without taking a card, and this says so.
+ * closed, the order page reserves a day without taking a card, and this says so.
  *
  * TO TURN OFF AT LAUNCH: set SHOW = false below, in the same sitting as
  * opening the booking gates. One edit, every page.
  *
  * NAMING A DATE IS OPTIONAL and off by default. Scoops Co. published a date
  * and missed it twice; a promise the site can't keep costs more trust than a
- * vague one. To publish one, set REOPEN_TEXT ("October 20"). The checkout's
- * pre-launch notice reads it from window.SITE_REOPEN_TEXT, so the date lives
- * here and nowhere else. If you set one, move it the day it slips.
+ * vague one. To publish one, set REOPEN_TEXT ("October 20"). The order page's
+ * closed note reads it from window.SITE_REOPEN_TEXT (js/order.js), so the date
+ * lives here and nowhere else. If you set one, move it the day it slips.
  */
 (function () {
   var SHOW = true;          // bookings are closed until launch
   var REOPEN_TEXT = null;   // null = no date named anywhere on the site
 
-  // Published so checkout's pre-launch notice shows the same date.
+  // Published so the order page's closed note shows the same date.
   window.SITE_REOPEN_TEXT = REOPEN_TEXT;
 
   if (!SHOW) return;
 
   function mount() {
     if (document.getElementById('maint-banner')) return;
-    // Checkout has its own pre-launch notice right above the form; one is enough.
-    if (document.getElementById('prelaunch-banner')) return;
 
     var css = document.createElement('style');
     css.textContent = [

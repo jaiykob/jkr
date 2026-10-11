@@ -28,10 +28,10 @@ Aparta la pintura, los químicos, el combustible y el propano; esos necesitan su
 
 Pon repisas o ganchos para la pila de guardar antes de volver a meterla: guardar hacia arriba es lo que mantiene un garaje despejado. Cuando llegamos, nos llevamos las pilas de donar y de tirar; las donaciones van a una tienda de segunda mano y el resto a reciclaje o a la estación de transferencia.
 
-## Lo que suele llenar el camión
+## Lo que suele llenar una carga
 
 En nuestra área aparecen las mismas cosas una y otra vez: bicicletas y juguetes viejos, aparatos de ejercicio, juegos de patio rotos, madera sobrante, un segundo refrigerador, rollos de alfombra y cajas de tres mudanzas atrás. Los terrenos grandes en lugares como [Damascus](/es/damascus.html) y [Boring](/es/boring.html) suman herramientas de taller y cercas.
 
 ## ¿Qué tamaño de carga?
 
-Casi todos los garajes de un auto caben en medio camión una vez separados; un garaje de dos autos lleno muchas veces es un camión completo. No tienes que adivinar: toma un par de fotos en la [página de cotización](/book/quote.html) y el camión de la pantalla se llena al tamaño correcto, con el precio de tu zona.
+Casi todos los garajes de un auto caben en medio camión una vez separados; un garaje de dos autos lleno muchas veces es un camión completo. No tienes que adivinar: toma un par de fotos en la [página de cotización](/book/quote.html) y nosotros elegimos el tamaño correcto por ti, con el precio de tu zona.

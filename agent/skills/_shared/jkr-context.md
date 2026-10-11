@@ -14,7 +14,7 @@ blocks are written by `npm run build` from `pricing.config.mjs` and
 - **Email:** GUESS* hello@example.com (no business email yet)
 - **Site:** `https://www.example.com` (GUESS* no domain yet)
 - **Base:** Gresham, Oregon. The truck starts there every day.
-- **Stage:** not live. The three booking gates are closed; checkout reserves a day without a card.
+- **Stage:** not live. The three booking gates are closed; the order page reserves a day without a card.
 
 ### Service area
 
@@ -58,11 +58,13 @@ GUESS* The mile bands and fees are placeholder guesses (`GUESS` in `pricing.conf
 GUESS* The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).
 <!-- /BUILD:docs-zones -->
 
-- **The price a customer sees is load price + their zone's travel fee**, per visit.
-  Monthly pickups pay travel every month; the quarterly prepay is 10% off the whole.
-- **More than the photos showed:** on the day, if there is more than the
-  customer's photos or taps showed, we show the new load size and price
-  before loading. They can accept, remove items, or cancel. Never promise a
+- **The price a customer sees is load price + their zone's travel fee**, paid
+  when they book. The online order is one time hauls only; regular pickups
+  go through the commercial form or a call.
+- **A different size on the day:** if the load is bigger or smaller than the
+  size booked, we show the new load size and price before loading. Bigger:
+  we charge the difference with the customer's agreement. Smaller: we refund
+  the difference. They can also remove items, or say no. Never promise a
   price will not change if the job turns out bigger.
 - Never quote a full truck plus more online. It is quoted by hand.
 - `leads.quoted_price` is **dollars** (the pages divide cents by 100). Multiply by 100 for cents.
@@ -70,11 +72,10 @@ GUESS* The base point (Gresham city center) is a placeholder guess (`GUESS` in `
 ### Links to hand a lead
 
 - Get or rebuild a price: `https://www.example.com/book/quote.html`
-- Resume a quote with the load, plan and ZIP filled in:
-  `https://www.example.com/book/quote.html?load={load_idx}&freq={fi}&zip={zip}&edit=contact`
+- Resume an order with the size and ZIP filled in:
+  `https://www.example.com/book/quote.html?size={load_idx}&zip={zip}`
   - `load_idx`: 0 single item, 1 quarter, 2 half, 3 three quarter, 4 full truck (row order of the price table above).
-  - `fi`: 0 one-time haul, 1 monthly pickup (column order of the price table above).
-  - The quote page reprices from the config and the ZIP, travel included; nothing in the link is trusted.
+  - The order page reprices from the config and the ZIP, travel included; nothing in the link is trusted.
 
 ## Data: Supabase
 

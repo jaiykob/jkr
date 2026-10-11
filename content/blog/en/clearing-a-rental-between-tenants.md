@@ -31,4 +31,4 @@ Couches and mattresses, broken furniture, kitchen leftovers, bags of clothes, ol
 
 ## Price it in a minute
 
-Snap photos of each room on our [quote page](/book/quote.html), and the truck on the screen fills to the load size with the price for your zone. Turning more than one unit this month? Each one is its own visit, or call us and we will plan a single trip.
+Snap photos of each room on our [quote page](/book/quote.html), and we pick the load size for you, with the price for your zone. Turning more than one unit this month? Each one is its own visit, or call us and we will plan a single trip.

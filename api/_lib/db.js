@@ -204,10 +204,10 @@ async function updateVisit(visitId, patch) {
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
-/** One visit row by id (no joins). */
+/** One visit row by id, with its customer (customers(*)). */
 async function getVisit(visitId) {
   if (!visitId) return null;
-  const rows = await rest('GET', `visits?id=eq.${encodeURIComponent(visitId)}&select=*&limit=1`);
+  const rows = await rest('GET', `visits?id=eq.${encodeURIComponent(visitId)}&select=*,customers(*)&limit=1`);
   return Array.isArray(rows) && rows[0] ? rows[0] : null;
 }
 
@@ -244,30 +244,72 @@ async function activeSubscriptionsWithVisits() {
   return Array.isArray(rows) ? rows : [];
 }
 
+// ── Windows (order flow) ─────────────────────────────────────────────────────
+
 /**
- * Count upcoming scheduled visits grouped by weekday name. Because each active
- * recurring subscription self-heals to keep exactly one future 'scheduled' visit
- * at a time, this is a live proxy for how many customers already own each route
- * day — the signal behind the day-capacity cap.
- *
- * @returns {Object} { Monday: n, Thursday: n, ... } (weekdays with 0 omitted).
- *   Returns {} when the DB/schema is unreachable so callers can fail open.
+ * Visits per day and 2 hour window for one market, canceled ones left out.
+ * @returns {Object} { 'YYYY-MM-DD': { total, w08, w10, ... } }. {} when the
+ *   database cannot be read, so the capacity API fails open.
  */
-async function scheduledVisitCountsByWeekday(fromDateStr) {
-  const today = fromDateStr || new Date().toISOString().slice(0, 10);
+async function slotCounts({ market, from, to } = {}) {
+  if (!market || !from || !to) return {};
   const rows = await rest(
     'GET',
-    `visits?status=eq.scheduled&scheduled_date=gte.${today}&select=scheduled_date`,
+    `visits?market=eq.${encodeURIComponent(market)}&status=neq.canceled` +
+      `&scheduled_date=gte.${from}&scheduled_date=lte.${to}&select=scheduled_date,window_key&limit=5000`,
   );
-  const NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const counts = {};
+  const out = {};
   for (const r of (Array.isArray(rows) ? rows : [])) {
     if (!r.scheduled_date) continue;
-    // Bare DATE → noon UTC so the weekday never shifts across timezones.
-    const wd = NAMES[new Date(`${String(r.scheduled_date).slice(0, 10)}T12:00:00Z`).getUTCDay()];
-    counts[wd] = (counts[wd] || 0) + 1;
+    const day = (out[String(r.scheduled_date).slice(0, 10)] ||= { total: 0 });
+    day.total += 1;
+    if (r.window_key) day[r.window_key] = (day[r.window_key] || 0) + 1;
   }
-  return counts;
+  return out;
+}
+
+/**
+ * Create the booked visit of an order (pay at booking: the quoted total paid,
+ * the card saved for the difference after the job). Idempotent on
+ * stripe_payment_intent_id, the booking PaymentIntent (refunds go back to it):
+ * a redelivered webhook gets the existing row back. Returns the visit, or null
+ * (logged) on any failure.
+ */
+async function createBookedVisit(fields = {}) {
+  const f = fields;
+  if (!f.customerId || !f.scheduledDate || !f.windowKey || !f.stripePaymentIntentId) return null;
+  const find = () => rest('GET', `visits?stripe_payment_intent_id=eq.${encodeURIComponent(f.stripePaymentIntentId)}&select=*&limit=1`);
+  const existing = await find();
+  if (existing === null) return null;
+  if (Array.isArray(existing) && existing[0]) return { ...existing[0], existing: true };
+  const int = (v) => (v != null && v !== '' && Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
+  const rows = await rest('POST', 'visits?on_conflict=stripe_payment_intent_id', {
+    body: {
+      customer_id:              f.customerId,
+      subscription_id:          f.subscriptionId || null,
+      scheduled_date:           f.scheduledDate,
+      status:                   'scheduled',
+      window_key:               f.windowKey,
+      market:                   f.market || 'portland',
+      quoted_load_idx:          int(f.quotedLoadIdx),
+      quoted_load_cents:        int(f.quotedLoadCents),
+      quoted_cents:             int(f.quotedCents),
+      travel_cents:             int(f.travelCents),
+      payment_status:           f.paymentStatus || 'paid',
+      paid_cents:               int(f.paidCents),
+      refunded_cents:           0,
+      stripe_payment_intent_id: f.stripePaymentIntentId,
+      stripe_payment_method_id: f.stripePaymentMethodId || null,
+      consent_at:               f.consentAt || null,
+      consent_version:          f.consentVersion || null,
+    },
+    prefer: 'resolution=ignore-duplicates,return=representation',
+  });
+  if (Array.isArray(rows) && rows[0]) return rows[0];
+  if (rows === null) return null;
+  // A parallel delivery won the insert: return its row.
+  const again = await find();
+  return Array.isArray(again) && again[0] ? { ...again[0], existing: true } : null;
 }
 
 // ── Visit photos + private storage ───────────────────────────────────────────
@@ -370,7 +412,8 @@ module.exports = {
   getVisitContext,
   visitsDueForReminder,
   activeSubscriptionsWithVisits,
-  scheduledVisitCountsByWeekday,
+  slotCounts,
+  createBookedVisit,
   recordVisitPhoto,
   visitPhotoPaths,
   signPhotoUpload,

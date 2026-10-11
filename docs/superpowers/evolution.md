@@ -470,3 +470,98 @@ graph LR
 
 Next: Part 2, the walkthrough with the founder, then Part 3, the photo first
 quote with the on site upcharge (its own spec).
+
+## Round 6: the order flow (no truck, paid after the job)
+
+Spec: `docs/superpowers/specs/2026-10-10-order-flow-design.md`. Rubric: the
+round 1 criteria, with **clear to the customer** meaning the total, the travel
+line and the "charged after the job" rule wherever a price shows, on a phone
+and a desktop, and **failure handling** meaning stale quote, full window,
+outside the area, declined final charge, bookings closed reservation,
+customer says no and late cancel.
+
+### Plan A: rebuild in place
+
+Rewrite `book/quote.html`, `api/create-booking.js` (SetupIntent),
+`api/stripe-webhook.js` and `api/visit-update.js` (after job actions) where
+they stand; prices for the final charge in a second BUILD block.
+
+| Coverage | Authority | One source | Copies | Testable | Style | Clear | Guesses | Failures | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 9 | 8 | 5 | 8 | 9 | 9 | 9 | 9 | 6 | **81** |
+
+Open day logic lives in the page and in `schedule.js` separately; big files
+rewritten whole.
+
+### Plan B: a new order module beside the old flow, then one switch
+
+New `book/order.html`, `api/book.js`, `api/charge-job.js`, `api/windows.js`,
+and one generated order module; the old flow retired in one task at the end.
+
+| Coverage | Authority | One source | Copies | Testable | Style | Clear | Guesses | Failures | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 10 | 9 | 7 | 9 | 8 | 9 | 9 | 8 | 6 | **84** |
+
+Two booking APIs, two capacity endpoints and two order pages side by side
+for nine tasks, 13 functions mid round, and a large risky switch commit.
+
+### Child (A × B), plan to be written as `docs/superpowers/plans/2026-10-10-round-6-order-flow.md`
+
+From B: one generated order module written twice byte identical
+(`api/_lib/order-config.js`, `js/order-config.js`: sizes, `ITEMS` units,
+`sizeForUnits`, windows, caps, `openDays` in Pacific time, `totalFor`, cancel
+terms, consent version), the `travel.js` pattern; size card HTML generated
+into BUILD blocks (crawlable, translated by build-es); page logic in
+`js/order.js`, `js/size-cards.js`, `css/order.css`; the webhook branches on
+the event object's own `metadata.kind` so a final charge never reads as a
+new booking; the town files and post that say "tap items" rewritten;
+`terms.html` on paying and late cancels.
+
+From A: the server rebuilt in place: `create-booking.js` makes the
+SetupIntent and `day-capacity.js` answers dates and windows (no second
+booking API; functions stay at 10, under Vercel Hobby's 12); the after job
+actions (finish with a dry run price preview, late fee, customer said no, on
+my way) in `visit-update.js` behind the admin token, priced from the order
+module; a shared `scripts/lib/fake-stripe.mjs` for the tests and the score
+server, which runs the real API functions; `quote.html` rewritten in place in
+two tasks (no card yet, then pay), each mergeable because the gates are
+closed.
+
+Both accept: the last window race fails open; the dashboard shows a window
+over its cap.
+
+| Coverage | Authority | One source | Copies | Testable | Style | Clear | Guesses | Failures | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 10 | 10 | 9 | 10 | 10 | 9 | 9 | 9 | 8 | **94** |
+
+Clear 9: a wallet sheet in setup mode may not show the amount on every
+device. Failures 9: the last slot race is accepted. Steps 8:
+`create-booking.js` and `quote.html` still change whole, behind closed gates.
+
+Open founder question: the scroll road truck and the Junk Toss game stay
+unless the founder says otherwise.
+
+```mermaid
+graph TD
+  A6["Plan A · in place · 81"] --> C6["Child · 94"]
+  B6["Plan B · module beside · 84"] --> C6
+```
+
+### Build generations
+
+| Gen | Parent | What changed | Score | Best so far |
+| --- | --- | --- | --- | --- |
+| 0 | feat/order-flow (1b7afac) | nothing yet: the round 6 scorecard alone (shared fake Stripe, real API routes and a Stripe.js stub in the score server, click and type helpers in the browser driver); only `tests` and `earlier` pass | 10 | 10 |
+| 1 | gen 0 | Task 2: `SCHEDULE`, `POLICY` and `photo` in the config, the order module written whole to `api/_lib/order-config.js` and `js/order-config.js`, `market` on `travelFor`, `test-order-config` in `npm test`; `one-source` still fails only because later tasks' files (js/order.js, js/size-cards.js) do not exist yet | 10 | 10 |
+| 2 | gen 1 | Task 3: visit columns for the window, quote, payment and consent (migration folded into `db/schema.sql`), `db.slotCounts` and idempotent `createBookedVisit`, `getVisit` now carries the customer, `day-capacity?market=` answers dates and windows and fails open (old weekday answer kept without `market` until Task 4); `windows` passes | 14 | 14 |
+| 3 | gen 2 | Task 4: `create-booking` saves the card (customer plus SetupIntent, consent stamped by the server, window capacity, no PaymentIntent, subscription, quarterly or coupon); founding spots counted on customers; `server` passes; `build-pricing` no longer writes prices into create-booking | 24 | 24 |
+| 4 | gen 3 | Task 5: `setup_intent.succeeded` with its own `kind: 'booking'` sets the customer's default card, writes the customer and the visit (idempotent, fail soft), keeps quote photos, sends the booked confirmation (day, window, total, travel line, the rule), the Discord ping and the owner email; a redelivery pings nothing new; a final charge is never read as a booking; reminders show the window; `webhook` half done (`final charge` section comes in Task 6) and the email half of `clear` is in place | 24 | 24 |
+| 5 | gen 4 | Task 6: `finish` (final size priced on the server: booked size at its quoted cents, another size at today's price, travel always as booked; founding percent off from the SetupIntent; agreement needed for a higher price; one off session charge keyed per visit and size; a paid, invoiced or no charge visit refuses a second), `declined`, `late-fee`, `en-route`; a decline sends a hosted invoice and alerts Discord and the owner once; the webhook marks `final_charge`, `late_fee` and their hosted invoices paid and sends the receipt, never a booking; receipt, payment needed and late fee emails; `test-charge` in `npm test`; `final-charge` and `webhook` pass | 40 | 40 |
+| 6 | gen 5 | Task 7: the dashboard job card (size booked, quoted total, day and window, payment status and invoice link; On my way opens the text and stamps `en-route`; Finish and charge shows a dry run price and an agreement box when the size or the price is higher; Late cancel fee only when `ORDER.isLateCancel`; Customer said no confirms in the page, no browser dialogs; 48px buttons and 16px text at 360px); `admin-data` returns the new visit columns; `test-admin` checks the four actions; the scorecard dashboard check sets the service key so it reaches the auth check; `dashboard` passes | 43 | 43 |
+| 7 | gen 6 | Task 8: the order page (`book/quote.html` rebuilt, same address): five size cards generated into `BUILD:order-sizes` (photo, name, what fits, price red while guessed, "+ travel" until the ZIP), `js/size-cards.js`, `js/order.js` (one state object, sections open in turn, no Continue button; ZIP from `?zip=` or `quoteZip`; far ZIP keeps the price by email lead; day chips and windows from `day-capacity`, full ones greyed and labelled "Full", soonest open day picked; five contact fields with autocomplete; notes behind "Anything we should know?"; the rule beside Book; gates closed: Book saves the reservation lead and shows the reserved state), `css/order.css` (phone: one column and a fixed bar that hides while typing; 900px and up: two columns, sticky summary, cards three to a row), the photo quote moved to `js/photo-quote.js` (the load builder borrows it until Task 10), quote JSON-LD one time only, the order page footer at 16px; round 1 `quote-zone`, `quote-far` and `mobile` generalised to the order page, round 6 `phone` walks to the contact step before it types; `phone`, `one-source` and `guesses` pass, the order page halves of `sizes`, `desktop`, `clear` and `failures-ui` pass (their other halves wait on Tasks 9 and 10) | 58 | 58 |
+| 8 | gen 7 | Task 9: the pay step with the gates open (`BOOKINGS_OPEN_CLIENT` and `STRIPE_PUBLISHABLE_KEY` on the order page; Stripe.js loaded only then): one Elements group in setup mode, Apple Pay or Google Pay (Express Checkout, email and phone required) above the boxed card form (Payment Element, name, email and phone passed at confirm), "Secured by Stripe", the rule above one box ("I agree to the terms, and to this card being charged after the job.") that gates the card and the wallet alike; Book: `elements.submit()`, `POST /api/create-booking` (consent and version, one `attemptId` per visit), `confirmSetup` (`redirect: if_required`), thanks.html; a stale quote takes the server total and says so, a full window greys and asks for another, a closed day picks again; thanks.html rebuilt (size, travel line, total, day and window, "charged after the job", what happens next, back from a bank page); book/checkout.html a noindex redirect (vercel.json plus a meta refresh keeping the query); day-capacity's weekday branch, `DAILY_CAP` and `scheduledVisitCountsByWeekday` deleted (R9); `build-pricing` drops the checkout block; `status` reads the order page; round 1 `checkout`, `guesses`, `mobile` and round 2 `site-js` generalised to the order page, the scorecard's `fillOrder` fills the card and box only with the gates open and asserts neither shows when closed (R15), `failures-ui` adds no booking without the box (card or wallet); `clear`, `failures-ui` and `redirect` pass, `taps` passes from the order page's cards and waits on the homepage cards (Task 10) | 70 | 70 |
+| 9 | gen 8 | Task 9b, pay at booking (founder, 2026-10-10: "payments have to be accepted at time of bookings so i can pay hauler"; rulings R17 to R19): `create-booking` makes one PaymentIntent for the quoted total (less any founding discount) with `setup_future_usage: off_session` and no SetupIntent (idempotency as R10), and answers `paymentIntentClientSecret` and `amountCents`; the webhook books on `payment_intent.succeeded` whose own `kind` is `booking` (visit `paid` with `paid_cents` and the booking PaymentIntent, default card, `booking_notified_at` dedupe, email keys from the PaymentIntent; a declined booking card pings Discord only; the `setup_intent.succeeded` path is gone; a PaymentIntent's legacy plan is read from its own metadata only); `visit-update`: `finish` settles the difference against what was paid (bigger: agreement, an off session charge keyed `visit:<id>:diff:<size>` with `allow_redirects: never`, a decline or an unfinished payment canceled then invoiced and the job still completed; smaller: a refund on the booking payment keyed `visit:<id>:refund:<size>`; same: no Stripe call; the final size written before money moves so a retry can only repeat it), `cancel-refund` replaces `late-fee` (full refund, or less the late fee inside the cancel window), `declined` refunds less the refusal fee, both only for a booking still ahead and only what is unrefunded, with dry runs; skip and cancel refuse a paid booking; visits gain `paid_cents`, `refunded_cents` and the `declined` status, unique on the booking PaymentIntent; consent version `2026-10-10b`; emails: paid today, receipt with paid, adjusted and final, payment needed for the difference, `refundNotice`; the order page pays now (`mode: payment`, `elements.update` follows the total, `confirmPayment`), "Book and pay $X", the new consent and the pay now rule ("when you book" while closed), every edit (the ZIP too) clears the failure line; thanks.html says paid today and a difference settled after the job; the dashboard shows Charge $X more, Refund $X or No change from the dry run, Cancel and refund and Customer said no with the server's refund, asked in the page and disabled in flight; scorecard `server` proves one PaymentIntent and refusals with no Stripe object through the real handler, `final-charge` names its six sections, `clear` looks for the pay now rule, `dashboard` names `cancel-refund`; still failing only Task 10's homepage checks (`no-truck`, `sizes`, `desktop`, `taps` at the homepage card, `contact`) | 70 | 70 |
+| 10 | gen 9 | Task 10, the truck leaves: `js/load-builder.js`, its CSS and data block gone; the homepage hero is "Pick your size. See your price." over the five size cards from the same generator as the order page (`BUILD:home-sizes`, links to `/book/quote.html?size=N`, the ZIP added once known, "+ travel" until then, red while guessed), "Not sure? Send us a photo" to `/book/quote.html#photos` (the order page focuses its photo picker), call, text and WhatsApp under the cards and in the header (`WHATSAPP` in `api/_lib/site.js`, a guess, the label red), "Need regular pickups?" to the commercial form; town and Spanish pages follow from the build; the header fits again with the two new buttons (burger up to 1099px, tighter bars to 1519px); phones show the first card on the first screen; terms and both FAQs say pay at booking with the cancel hours, late fee and refusal fee from `POLICY`; truck wording out of towns, posts and the phrase list. Round 1 `home` and round 5 `spanish-js` generalised to `.size-travel`; scorecard repairs: two stray backspace bytes in the `sizes` price regex (it could not pass), the browser driver scrolls instantly before a click (smooth scroll made the 360px journey miss), `sms:` counted as a scheme in the round 2 and 5 link checks | 100 | 100 |
+| 11 | gen 10 | Task 10 review fixes: the last tap wording out (the town page descriptions in `build-towns`, the Corbett, Troutdale and Happy Valley ledes, two posts, both languages) and `no-truck` made stricter to catch it ("tap or snap", "as you tap", "photos or taps", "a few taps", "toca lo", "tocaste", "mientras tocas", "unos toques"); round 5 `spanish-js` now wants the exact travel line the script writes for the seeded ZIP, priced by the travel module (the built "+ viaje" no longer passes); `build-pricing` writes every `https://wa.me/` number in index.html and the order page from `WHATSAPP` in `api/_lib/site.js`, so `npm test` catches a drift | 100 | 100 |
+| 12 | gen 11 | Task 10b, the game and the driving truck leave (founder, 2026-10-11: "remove the game from all instances plus the banner that drives the car"): Junk Toss gone (its homepage band, `js/junk-toss.js`, `css/junk-toss.css`, their tags, its nine Spanish phrases, the `build-es` comment naming it); the sticky road gone (the lane, the dashes, the truck drawing with its cargo and wheels, the tall scroll section, its JS in `js/home.js` and its CSS in `css/home.css`); "How it works" stays at `#how-it-works` as three still steps in the site's numbered steps pattern (`.steps` in `css/site.css`), stacked on a phone and three across from 760px, retitled "Three steps. That's the whole thing." ("Tres pasos. Así de sencillo.") since there is no road to stop on; town, hub and Spanish pages follow from the build; every phrase left in `i18n/es.json` is used; no scorecard check measured the game or the road, so no check changed | 100 | 100 |
+| 13 | gen 12 | Task 11, the final whole-branch review and the accessibility and copy review, fixed in one pass (rulings R26, R27, R30): Customer said no refunds a job under way (a before photo sets `in_progress`), and neither refund path runs once Finish has written a final size; Book again after a lost payment answer asks Stripe about the last PaymentIntent first (`lastPay` in `js/order.js`), so it never charges twice, and the page says it could not confirm the payment instead of "nothing was booked"; the late cancel prompt on the dashboard reads the right way round; the homepage tiers and FAQ drop the monthly price; no "you can say no" anywhere a customer reads it: one rule on the pay step, thanks and the confirmation email (the crew checks the size, a bigger load charged only if the customer agrees, a smaller one refunded), the refusal fee line only while the fee is above $0, cancel and move worded the same everywhere with the late fee, terms and both FAQs state the decline policy plainly, consent version `2026-10-11`; gates closed, the pay step is "Reserve your day" with "Nothing is charged to reserve" and Book reads "Reserve, no card"; a refused payment on thanks retitles the tab and drops the check; order page: day and window buttons keep the keyboard focus and say what was picked, Tab scrolls clear of the bar, the bar keeps Book only on a short screen, field borders at 4:1, a far ZIP said aloud and its bad email explained, the street field `address-line1`; a yellow focus ring on the charcoal parts of the site. Scorecard: `clear` holds the new rule as strictly (the reserve story alone with the gates closed, the pay now rule with them open, no "say no"), `failures-ui` adds the lost answer retry (one create-booking call, then thanks), the street field selector follows the new autocomplete | 100 | 100 |

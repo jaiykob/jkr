@@ -1,8 +1,8 @@
 name: Troutdale
 state: OR
 zips: 97060
-lede: Troutdale is five minutes from where our truck starts, so there is no travel charge. Tell us what is going and the price shows up as you tap.
-lede_es: Troutdale está a cinco minutos de donde sale nuestro camión, así que no hay cargo de viaje. Dinos qué se va y el precio aparece mientras tocas.
+lede: Troutdale is five minutes from where our truck starts, so there is no travel charge. Tell us what is going and the price shows up as soon as you pick a size.
+lede_es: Troutdale está a cinco minutos de donde sale nuestro camión, así que no hay cargo de viaje. Dinos qué se va y el precio aparece en cuanto eliges un tamaño.
 areas: Downtown Troutdale, Sandy River, Glenn Otto Park, Sweetbriar, Troutdale Airport area, Strebin Farms
 
 ## Local

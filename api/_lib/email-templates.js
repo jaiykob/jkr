@@ -8,6 +8,8 @@
  * Two classes, matching the transactional/marketing split:
  *   TRANSACTIONAL (no unsubscribe, sent off a customer action):
  *     1. bookingConfirmation   2. paymentFailed   3. serviceComplete
+ *     Order flow (pay at booking): 1b. bookedConfirmation   3b. receipt
+ *     (paid, adjusted, final)   3c. paymentNeeded   3d. refundNotice
  *   MARKETING (CAN-SPAM: physical address + unsubscribe required):
  *     4. reviewRequest   5. leadRecapture   6. visitReminder   7. winBack
  *   TO THE OWNER (OPS_EMAIL, transactional):
@@ -33,6 +35,7 @@
  */
 
 const site = require('./site');
+const ORDER = require('./order-config');
 
 const BRAND = {
   name:    'Brand Name',
@@ -173,12 +176,52 @@ function bookingConfirmation(ctx = {}) {
     <p style="margin:0 0 12px;">Thanks for booking with ${BRAND.name}. Your haul is confirmed, and here are the details:</p>
     <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
     <p style="margin:12px 0;">On the day we will text you an arrival window. We do all the lifting and loading. Anything still usable goes to donation, metal and electronics go to recycling, and the rest goes to the transfer station.</p>
-    <p style="margin:12px 0;">If there is more on the day than your photos or taps showed, we show you the new price before we load anything, and you decide.</p>
+    <p style="margin:12px 0;">If there is more on the day than the size you booked, we show you the new price before we load anything, and you decide.</p>
     <p style="margin:12px 0;">Questions? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: pickupDay ? `You're booked for ${pickupDay}` : "You're booked",
     html: layout({ preheader: 'Your haul is confirmed. Here are the details.', heading, bodyHtml }),
     text: `You're booked${name ? ', ' + name : ''}!\n\nPlan: ${plan || ''}\nFrequency: ${frequency || ''}\nDay: ${pickupDay || ''}\nAddress: ${address || ''}${load ? `\nLoad: ${load}` : ''}${travel ? `\nTravel: ${travel}` : ''}\nCharged: ${amount || ''}\n\nWe will text you an arrival window, then do all the lifting and hauling.\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+  };
+}
+
+// 1b. Booked: fires when the booking payment succeeds (payment_intent.succeeded,
+// kind 'booking'). Pay at booking: it says what was paid today, the day and the
+// arrival window, and the rule for a different size (charged or refunded).
+function bookedConfirmation(ctx = {}) {
+  const { name, dayLabel, windowLabel, address, load, travel, total, discount } = ctx;
+  const paid = ctx.paid || total;
+  const cancelHours = ctx.cancelHours || ORDER.POLICY.cancelHours;
+  const lateFee = `$${(ORDER.POLICY.lateFeeCents / 100).toFixed(2)}`;
+  const heading = `You're booked${name ? ', ' + name : ''}!`;
+  const rows = [
+    detail('Day', dayLabel),
+    detail('Window', windowLabel),
+    detail('Address', address),
+    detail('Size', load),
+    detail('Travel', travel),
+    detail('Total', total),
+    detail('Founding discount', discount),
+    detail('Paid today', paid),
+  ].join('');
+  // The refusal fee sentence only while there is a fee: a fee is never kept that was not shown.
+  const refusal = ORDER.POLICY.refusalFeeCents > 0
+    ? ` If you decide not to go ahead once the crew is there, we keep a $${(ORDER.POLICY.refusalFeeCents / 100).toFixed(2)} refusal fee and refund the rest.`
+    : '';
+  const rule = `${paid ? `You paid ${paid} today. ` : ''}Before loading, the crew checks the size. If your load is bigger, we show you the new price first and charge the difference to your card only if you agree. If it is smaller, we refund the difference.${refusal} Free to move your day, or to cancel with a full refund, until ${cancelHours} hours before your arrival window. After that, a cancel keeps the ${lateFee} late fee and we refund the rest.`;
+  const consent = 'You agreed to the terms, and to this card being charged or refunded the difference if the crew finds a different size.';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Thanks for booking with ${BRAND.name}. Your haul is booked and paid, and here are the details:</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
+    <p style="margin:12px 0;"><strong>${escapeHtml(rule)}</strong></p>
+    <p style="margin:12px 0;">${escapeHtml(consent)}</p>
+    <p style="margin:12px 0;">We do all the lifting and loading. Anything still usable goes to donation, metal and electronics go to recycling, and the rest goes to the transfer station.</p>
+    <p style="margin:12px 0;">Questions? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  const when = [dayLabel, windowLabel].filter(Boolean).join(', ');
+  return {
+    subject: when ? `You're booked for ${when}` : "You're booked",
+    html: layout({ preheader: 'Your haul is booked and paid. Here are the details.', heading, bodyHtml }),
+    text: `You're booked${name ? ', ' + name : ''}!\n\nDay: ${dayLabel || ''}\nWindow: ${windowLabel || ''}\nAddress: ${address || ''}${load ? `\nSize: ${load}` : ''}${travel ? `\nTravel: ${travel}` : ''}\nTotal: ${total || ''}${discount ? `\nFounding discount: ${discount}` : ''}\nPaid today: ${paid || ''}\n\n${rule}\n${consent}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
   };
 }
 
@@ -222,6 +265,89 @@ function serviceComplete(ctx = {}) {
   };
 }
 
+// 3b. Receipt: the job is done and settled (pay at booking). It shows what was
+// paid when booking, the adjustment (the difference charged for a bigger load,
+// refunded for a smaller one, or no change) and the final total.
+//   adjust: 'charged' | 'refunded' | 'none'
+function receipt(ctx = {}) {
+  const { name, paid, adjustment, final, load, travel, discount, dayLabel } = ctx;
+  const adjust = ctx.adjust || 'none';
+  const heading = 'Your receipt';
+  const adjustRow = adjust === 'charged' ? detail('Charged for the bigger load', adjustment)
+    : adjust === 'refunded' ? detail('Refunded for the smaller load', adjustment)
+    : detail('Change', 'No change');
+  const rows = [
+    detail('Day', dayLabel),
+    detail('Final size', load),
+    detail('Travel', travel),
+    detail('Founding discount', discount),
+    detail('Paid when you booked', paid),
+    adjustRow,
+    detail('Final total', final),
+  ].join('');
+  const why = adjust === 'charged'
+    ? `Your load was bigger than you booked, so we charged the difference${adjustment ? ` of ${adjustment}` : ''} to your card, as agreed with the crew.`
+    : adjust === 'refunded'
+      ? `Your load was smaller than you booked, so we refunded the difference${adjustment ? ` of ${adjustment}` : ''} to your card. It can take 5 to 10 business days to show on your statement.`
+      : 'Your load was the size you booked, so there is no change to what you paid.';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, thank you for having us out. ${escapeHtml(why)} Here is your receipt:</p>
+    <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:12px 0;">${rows}</table>
+    <p style="margin:12px 0;">Questions about it? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  const adjText = adjust === 'charged' ? `Charged for the bigger load: ${adjustment || ''}` : adjust === 'refunded' ? `Refunded for the smaller load: ${adjustment || ''}` : 'Change: No change';
+  return {
+    subject: final ? `Receipt: ${final} total` : 'Your receipt',
+    html: layout({ preheader: 'Your job is done. Here is your receipt.', heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}, thank you for having us out. ${why}\n\n${dayLabel ? `Day: ${dayLabel}\n` : ''}${load ? `Final size: ${load}\n` : ''}${travel ? `Travel: ${travel}\n` : ''}${discount ? `Founding discount: ${discount}\n` : ''}Paid when you booked: ${paid || ''}\n${adjText}\nFinal total: ${final || ''}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+  };
+}
+
+// 3c. Payment needed: the load was bigger and the saved card was declined for the
+// difference after the job; a hosted invoice is the way to pay it.
+function paymentNeeded(ctx = {}) {
+  const { name, amount, invoiceUrl } = ctx;
+  const heading = 'We could not charge your card';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, thank you for having us out. Your load was bigger than you booked, and your bank did not accept the charge for the difference${amount ? ` of <strong>${escapeHtml(amount)}</strong>` : ''}, so we sent an invoice instead. You can pay it with any card in a minute:</p>
+    ${button('Pay the invoice', invoiceUrl)}
+    <p style="margin:12px 0;">If you would rather sort it out by phone, reply here or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  return {
+    subject: amount ? `Please pay your ${amount} invoice` : 'Please pay your invoice',
+    html: layout({ preheader: 'Your bank did not accept the charge for the difference. Here is the invoice.', heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}, your load was bigger than you booked, and your bank did not accept the charge for the difference${amount ? ` of ${amount}` : ''}, so we sent an invoice.\nPay it here: ${invoiceUrl || BRAND.site}\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+  };
+}
+
+// 3d. Refund: the booking was canceled (a full refund, or less the late cancel
+// fee inside the free window) or the customer said no on site (less the
+// refusal fee, $0 today).
+//   why: 'canceled' | 'declined'; refund, kept: money strings; late: true inside the window
+function refundNotice(ctx = {}) {
+  const { name, refund, kept, late, dayLabel, windowLabel } = ctx;
+  const why = ctx.why === 'declined' ? 'declined' : 'canceled';
+  const cancelHours = ctx.cancelHours || ORDER.POLICY.cancelHours;
+  const when = [dayLabel, windowLabel].filter(Boolean).join(', ');
+  const refunded = refund && !/^\$0\.00$/.test(refund);
+  const back = refunded ? ` We refunded ${refund} to your card. It can take 5 to 10 business days to show on your statement.` : '';
+  let lead;
+  if (why === 'declined') {
+    lead = `Thank you for having us out. You chose not to go ahead at the new price.${kept ? ` We kept ${kept} for the trip out.` : ''}${back}`;
+  } else if (late && kept) {
+    lead = `Your pickup${when ? ` on ${when}` : ''} is canceled. It was canceled less than ${cancelHours} hours before the arrival window, so we kept the ${kept} late cancel fee you agreed to when you booked.${back}`;
+  } else {
+    lead = `Your pickup${when ? ` on ${when}` : ''} is canceled.${back}`;
+  }
+  const heading = why === 'declined' ? 'Your refund' : 'Your booking is canceled';
+  const bodyHtml = `
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}. ${escapeHtml(lead)}</p>
+    <p style="margin:12px 0;">Questions? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
+  return {
+    subject: why === 'declined' ? (refunded ? `Refund: ${refund}` : 'Your refund') : (refunded ? `Canceled: ${refund} refunded` : 'Your booking is canceled'),
+    html: layout({ preheader: refunded ? `We refunded ${refund} to your card.` : heading, heading, bodyHtml }),
+    text: `Hi${name ? ' ' + name : ''}. ${lead}\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+  };
+}
+
 /* ─────────────────────────  MARKETING  ───────────────────────── */
 
 // 4. Review request: after a finished job; Google reviews are the biggest growth lever.
@@ -258,17 +384,18 @@ function leadRecapture(ctx = {}) {
 
 // 6. Visit reminder: the day before (email until SMS clears A2P).
 function visitReminder(ctx = {}) {
-  const { name, visitDate, pickupDay, unsubscribeUrl } = ctx;
+  const { name, visitDate, pickupDay, unsubscribeUrl, windowLabel } = ctx;
   const heading = 'We are coming by soon';
   const when = visitDate || pickupDay || 'your next scheduled day';
+  const arrival = windowLabel ? ` in the window of <strong>${escapeHtml(windowLabel)}</strong>` : '';
   const bodyHtml = `
-    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, this is a reminder that ${BRAND.name} is scheduled to come on <strong>${escapeHtml(when)}</strong>.</p>
+    <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, this is a reminder that ${BRAND.name} is scheduled to come on <strong>${escapeHtml(when)}</strong>${arrival}.</p>
     <p style="margin:12px 0;">To help us get in and out: please make sure the items are easy to reach and there is room for the truck to park. We will text you an arrival window.</p>
     <p style="margin:12px 0;">Need a different day? Reply here or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: `We're hauling ${when}`,
     html: layout({ preheader: 'Please make sure the items are easy to reach.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
-    text: `Hi${name ? ' ' + name : ''}, a reminder: ${BRAND.name} comes ${when}.\nPlease make sure the items are easy to reach and there is room to park.\nNeed a different day? Reply or call ${BRAND.phone}.\n${BRAND.name}`,
+    text: `Hi${name ? ' ' + name : ''}, a reminder: ${BRAND.name} comes ${when}${windowLabel ? `, ${windowLabel}` : ''}.\nPlease make sure the items are easy to reach and there is room to park.\nNeed a different day? Reply or call ${BRAND.phone}.\n${BRAND.name}`,
   };
 }
 
@@ -294,7 +421,7 @@ function winBack(ctx = {}) {
 // ping, so the two alerts fail independently (a dead Discord webhook used to
 // mean no alert at all; Scoops Co. punch list). Plain and scannable.
 function ownerBooking(ctx = {}) {
-  const { name, phone, email, amount, plan, load, travel, address, pickupDay, items, photoCount, dashboardUrl, stripeUrl } = ctx;
+  const { name, phone, email, amount, plan, load, travel, address, pickupDay, items, photoCount, dashboardUrl, stripeUrl, amountLabel } = ctx;
   const heading = `New booking: ${load || 'a haul'}${pickupDay ? `, ${pickupDay}` : ''}`;
   const rows = [
     detail('Customer', name),
@@ -307,7 +434,7 @@ function ownerBooking(ctx = {}) {
     detail('Travel', travel),
     detail('Items', items),
     detail('Photos', photoCount ? `${photoCount} sent with the quote (open the dashboard to see them)` : null),
-    detail('Charged', amount),
+    detail(amountLabel || 'Charged', amount),
   ].join('');
   const bodyHtml = `
     <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="margin:4px 0 12px;">${rows}</table>
@@ -316,7 +443,7 @@ function ownerBooking(ctx = {}) {
   return {
     subject: `New booking: ${amount || 'paid'}, ${load || 'haul'}${pickupDay ? `, ${pickupDay}` : ''}`,
     html: layout({ preheader: `${name || 'A customer'} booked ${load || 'a haul'}.`, heading, bodyHtml }),
-    text: `New booking\n\nCustomer: ${name || ''}\nPhone: ${phone || ''}\nEmail: ${email || ''}\nAddress: ${address || ''}\nDay: ${pickupDay || ''}\nPlan: ${plan || ''}\nLoad: ${load || ''}\nTravel: ${travel || ''}\nItems: ${items || ''}\nPhotos: ${photoCount || 0}\nCharged: ${amount || ''}\n\nDashboard: ${dashboardUrl || ''}`,
+    text: `New booking\n\nCustomer: ${name || ''}\nPhone: ${phone || ''}\nEmail: ${email || ''}\nAddress: ${address || ''}\nDay: ${pickupDay || ''}\nPlan: ${plan || ''}\nLoad: ${load || ''}\nTravel: ${travel || ''}\nItems: ${items || ''}\nPhotos: ${photoCount || 0}\n${amountLabel || 'Charged'}: ${amount || ''}\n\nDashboard: ${dashboardUrl || ''}`,
   };
 }
 
@@ -326,8 +453,12 @@ module.exports = {
   layout,
   // transactional
   bookingConfirmation,
+  bookedConfirmation,
   paymentFailed,
   serviceComplete,
+  receipt,
+  paymentNeeded,
+  refundNotice,
   // marketing
   reviewRequest,
   leadRecapture,

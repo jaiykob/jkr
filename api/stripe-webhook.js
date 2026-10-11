@@ -23,8 +23,11 @@
  *              invoice.payment_failed
  *              customer.subscription.created
  *              customer.subscription.deleted
- *              payment_intent.succeeded
+ *              payment_intent.succeeded      (metadata.kind 'booking': the booking
+ *                                            payment books the job; 'difference':
+ *                                            a bigger load paid after the job)
  *              payment_intent.payment_failed
+ *              invoice.paid             (a hosted invoice for a declined difference)
  *   Copy the signing secret (whsec_...) into STRIPE_WEBHOOK_SECRET.
  */
 
@@ -33,6 +36,8 @@ const { sendEmail } = require('./_lib/email');
 const tpl = require('./_lib/email-templates');
 const db  = require('./_lib/db');
 const { firstVisitDate } = require('./_lib/schedule');
+const ORDER = require('./_lib/order-config');
+const { alertPaymentNeeded } = require('./_lib/charge-alerts');
 
 // Display label per plan key. MUST cover every value PLAN_KEYS can produce in
 // api/create-booking.js plus 'quarterly'. A missing key prints the raw
@@ -221,7 +226,7 @@ function buildDiscordEmbed(ctx, payload) {
 function opsPayload(ctx, event) {
   const obj  = event.data.object || {};
   const m    = ctx.metadata || {};
-  const oneTime = m.plan === 'one_time';
+  const oneTime = planOf(ctx, event) === 'one_time';
   const reason  = (obj.last_payment_error && obj.last_payment_error.message)
     || (obj.last_finalization_error && obj.last_finalization_error.message)
     || obj.cancellation_reason || null;
@@ -251,6 +256,17 @@ function opsPayload(ctx, event) {
     default:
       return null;
   }
+}
+
+/**
+ * The legacy plan of an event. A PaymentIntent is judged by its OWN metadata
+ * only: since pay at booking, a customer's merged metadata must never turn a
+ * PaymentIntent into a booking (Review Focus 2). Subscriptions and invoices
+ * keep reading the merged context, as before.
+ */
+function planOf(ctx, event) {
+  if (event.type.startsWith('payment_intent.')) return ((event.data.object || {}).metadata || {}).plan;
+  return (ctx.metadata || {}).plan;
 }
 
 async function notifyOps(ctx, payload) {
@@ -299,7 +315,7 @@ async function emailCustomer(ctx, event) {
   const isFirstRecurringInvoice =
     event.type === 'invoice.payment_succeeded' && obj.billing_reason === 'subscription_create';
   const isOneTimePaid =
-    event.type === 'payment_intent.succeeded' && m.plan === 'one_time';
+    event.type === 'payment_intent.succeeded' && planOf(ctx, event) === 'one_time';
 
   if (isFirstRecurringInvoice || isOneTimePaid) {
     const amountCents = isFirstRecurringInvoice
@@ -383,7 +399,7 @@ async function keepQuotePhotos(m, customerId, visit) {
  * (not renewals, not declines). Keyed by event id, so a Stripe redelivery
  * sends nothing new. Fail-soft: an error is logged, never thrown.
  */
-async function emailOwner(ctx, event, payload) {
+async function emailOwner(ctx, event, payload, amountLabel) {
   const to = process.env.OPS_EMAIL;
   if (!to || !payload || payload.kind !== 'signup_or_payment' || !/New booking/.test(payload.title || '')) return;
   const m = ctx.metadata || {};
@@ -392,6 +408,7 @@ async function emailOwner(ctx, event, payload) {
     phone:       ctx.phone,
     email:       ctx.email,
     amount:      fmtAmount(payload.amount),
+    amountLabel,
     plan:        PLAN_LABEL[m.plan] || m.plan,
     load:        m.load,
     travel:      travelLine(m),
@@ -403,7 +420,7 @@ async function emailOwner(ctx, event, payload) {
     stripeUrl:   ctx.customerId ? `${stripeDashboardBase(ctx.livemode)}/customers/${ctx.customerId}` : null,
   });
   try {
-    await sendEmail({ to, kind: 'transactional', idempotencyKey: `${event.id}:owner`, ...msg });
+    await sendEmail({ to, kind: 'transactional', idempotencyKey: `${payload.keyBase || event.id}:owner`, ...msg });
   } catch (e) {
     console.error('[stripe-webhook] owner email failed:', e.message);
   }
@@ -462,7 +479,7 @@ async function persistSpine(ctx, event) {
         }) : null;
         await keepQuotePhotos(m, customer.id, visit);
       }
-    } else if (event.type === 'payment_intent.succeeded' && m.plan === 'one_time') {
+    } else if (event.type === 'payment_intent.succeeded' && planOf(ctx, event) === 'one_time') {
       // One-time haul: no Stripe subscription. Persist the customer and a
       // one_time subscription row so the visit always has a parent.
       const customer = await db.upsertCustomer({
@@ -514,6 +531,213 @@ async function persistSpine(ctx, event) {
   }
 }
 
+/**
+ * The booking payment books the job (round 6, pay at booking). Fires on
+ * payment_intent.succeeded whose OWN metadata.kind is 'booking' (create-booking
+ * stamps it). Never branch on ctx.metadata here: it merges the customer's
+ * metadata, and the customer carries booking fields.
+ *
+ *   1. the saved card (setup_future_usage off_session) becomes the customer's
+ *      default payment method (the founding count reads it; the difference
+ *      charge uses the visit's stored payment method)
+ *   2. the customer and the visit (day, window, quote, paid_cents, the booking
+ *      PaymentIntent that refunds go back to) go to the database, idempotent
+ *      on the PaymentIntent; a database error is logged and the rest still
+ *      runs (fail soft: an error never loses a booking)
+ *   3. quote photos, the Discord ping, the owner email, the confirmation
+ *
+ * The visit's booking_notified_at is stamped once the confirmation, the owner
+ * email and the ping have all gone out. A redelivery of a stamped visit sends
+ * nothing; an unstamped one (the first try died part way) sends all three, the
+ * emails keyed by the PaymentIntent id so they dedupe on Resend's side too.
+ */
+function dayLabel(date) {
+  const d = new Date(`${String(date || '').slice(0, 10)}T12:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(date || '').slice(0, 10)) || Number.isNaN(d.getTime())) return null;
+  return `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getUTCDay()]} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+async function handleBooked(stripe, event) {
+  const pi  = event.data.object || {};
+  const own = pi.metadata || {};
+  const ctx = await gatherContext(stripe, event);
+  const pm  = typeof pi.payment_method === 'string' ? pi.payment_method : (pi.payment_method && pi.payment_method.id) || null;
+  const paidCents = pi.amount_received != null ? Number(pi.amount_received) : (pi.amount != null ? Number(pi.amount) : null);
+
+  if (ctx.customerId && pm) {
+    try { await stripe.customers.update(ctx.customerId, { invoice_settings: { default_payment_method: pm } }); }
+    catch (e) { console.error('[stripe-webhook] default payment method failed:', e.message); }
+  }
+
+  const windowDef = ORDER.SCHEDULE.windows.find((w) => w.key === own.window) || null;
+  const size      = ORDER.SIZES[Number(own.load_idx)] || null;
+  const day       = dayLabel(own.date);
+  const m = {
+    ...ctx.metadata,
+    pickup_day: [day, windowDef && windowDef.label].filter(Boolean).join(', ') || undefined,
+    load: size ? size.label : ctx.metadata.load,
+  };
+  ctx.metadata = m;
+
+  let visit = null;
+  try {
+    const customer = await db.upsertCustomer({
+      stripeCustomerId: ctx.customerId,
+      name: ctx.name, email: ctx.email, phone: ctx.phone,
+      address: m.address, zip: own.zip || zipFromAddress(m.address),
+    });
+    if (customer) {
+      visit = await db.createBookedVisit({
+        customerId: customer.id, scheduledDate: own.date, windowKey: own.window, market: own.market,
+        quotedLoadIdx: own.load_idx, quotedLoadCents: own.load_cents, quotedCents: own.total_cents, travelCents: own.travel_cents,
+        stripePaymentIntentId: pi.id, stripePaymentMethodId: pm, paidCents, paymentStatus: 'paid',
+        consentAt: own.consent_at, consentVersion: own.consent_version,
+      });
+      await keepQuotePhotos(own, customer.id, visit);
+    }
+  } catch (e) {
+    console.error('[stripe-webhook] booked visit failed:', e.message);
+  }
+
+  const total = own.total_cents != null && own.total_cents !== '' ? Number(own.total_cents) : null;
+  const discountCents = Number(own.founding_discount_cents) || 0;
+  const payload = {
+    kind: 'signup_or_payment', title: '🎉 New booking', eventType: event.type,
+    amount: paidCents, receiptUrl: null,
+  };
+  // Already announced (the visit carries the stamp): a redelivery sends nothing.
+  // A visit without the stamp (the first delivery died part way) sends all
+  // three again; the emails are keyed by the PaymentIntent so they dedupe too.
+  if (visit && visit.booking_notified_at) return;
+  payload.keyBase = pi.id;
+  await notifyOps(ctx, payload);
+  await emailOwner(ctx, event, payload, 'Paid');
+
+  if (ctx.email) {
+    const msg = tpl.bookedConfirmation({
+      name: ctx.name, dayLabel: day, windowLabel: windowDef && windowDef.label,
+      address: m.address, load: size && size.label, travel: travelLine(m),
+      total: fmtAmount(total), paid: fmtAmount(paidCents),
+      discount: discountCents ? `${fmtAmount(discountCents)} off` : null,
+      cancelHours: ORDER.POLICY.cancelHours,
+    });
+    await sendEmail({ to: ctx.email, kind: 'transactional', idempotencyKey: `${pi.id}:cust`, ...msg });
+  }
+  if (visit && visit.id) {
+    try {
+      const row = await db.updateVisit(visit.id, { booking_notified_at: new Date().toISOString() });
+      if (!row) console.error('[stripe-webhook] could not stamp booking_notified_at on visit', visit.id);
+    } catch (e) { console.error('[stripe-webhook] stamp failed:', e.message); }
+  }
+}
+
+/**
+ * Any other event for the booking PaymentIntent: only a decline matters. The
+ * customer is still on the order page, which says so; the owner sees it in
+ * Discord (the channel is the payment failure monitor). No visit, no email.
+ */
+async function handleBookingNotPaid(stripe, event) {
+  if (event.type !== 'payment_intent.payment_failed') return;
+  const ctx = await gatherContext(stripe, event);
+  const obj = event.data.object || {};
+  await notifyOps(ctx, {
+    kind: 'attention_needed', title: '⚠️ Checkout declined: the card failed at booking, no booking made', eventType: event.type,
+    reason: (obj.last_payment_error && obj.last_payment_error.message) || null,
+  });
+}
+
+// After the job: the difference for a bigger load. The event object's OWN
+// metadata.kind decides (never the customer metadata merged into a context), so
+// it is never read as a booking: no visit written, no "New booking".
+const AFTER_JOB_KINDS = new Set(['difference']);
+
+/**
+ * Is this event an after the job payment? Returns { kind, meta } to handle it,
+ * { ignore: true } for an event that must never reach the booking path, or null
+ * (not ours). The event object's OWN metadata decides; a PaymentIntent that
+ * belongs to an invoice is judged by that invoice's metadata (Stripe does not
+ * copy it onto the PaymentIntent).
+ */
+async function resolveAfterJob(stripe, event) {
+  const o = event.data.object || {};
+  const t = event.type;
+  const own = o.metadata && o.metadata.kind;
+  if (t.startsWith('payment_intent.')) {
+    if (AFTER_JOB_KINDS.has(own)) {
+      // Only a success or a decline means anything; created, requires_action, processing, canceled are noise.
+      return t === 'payment_intent.succeeded' || t === 'payment_intent.payment_failed' ? { kind: own, meta: o.metadata } : { ignore: true };
+    }
+    if (o.invoice) {
+      const invId = typeof o.invoice === 'string' ? o.invoice : o.invoice.id;
+      let meta = typeof o.invoice === 'object' ? o.invoice.metadata : null;
+      if (!(meta && AFTER_JOB_KINDS.has(meta.kind))) {
+        try { const inv = await stripe.invoices.retrieve(invId); meta = inv && inv.metadata; }
+        catch (e) { console.error('[stripe-webhook] invoice retrieve failed:', e.message); meta = null; }
+      }
+      if (meta && AFTER_JOB_KINDS.has(meta.kind) && (t === 'payment_intent.succeeded' || t === 'payment_intent.payment_failed')) return { kind: meta.kind, meta };
+      return { ignore: true };   // an invoice payment is never a booking
+    }
+    return null;
+  }
+  if (AFTER_JOB_KINDS.has(own) && (t === 'invoice.paid' || t === 'invoice.payment_succeeded' || t === 'invoice.payment_failed')) return { kind: own, meta: o.metadata };
+  return null;
+}
+
+async function handleAfterJob(event, kind, meta) {
+  const o = event.data.object || {};
+  const visitId = meta && meta.visit_id;
+  if (!visitId) { console.error('[stripe-webhook] after the job event without a visit_id:', event.id); return; }
+  let visit = null;
+  try { visit = await db.getVisit(visitId); } catch (e) { console.error('[stripe-webhook] visit read failed:', e.message); }
+  const cust = (visit && visit.customers) || {};
+  const failed = event.type === 'payment_intent.payment_failed' || event.type === 'invoice.payment_failed';
+  const int = (n) => (n === null || n === undefined || n === '' || !Number.isFinite(Number(n)) ? null : Math.round(Number(n)));
+  const finalCents = visit ? int(visit.final_cents) : null;
+  const netPaid = visit ? (int(visit.paid_cents) || 0) - (int(visit.refunded_cents) || 0) : null;
+  const differencePaid = finalCents !== null && netPaid !== null && netPaid >= finalCents;
+
+  if (failed) {
+    // An invoice that has not been paid yet is the plan, not news; only the card decline matters.
+    if (event.type !== 'payment_intent.payment_failed') return;
+    // The charge call usually handled this decline already (and alerted once). Alert only if nobody has,
+    // and never pull back a visit whose difference is already paid.
+    if (!visit || visit.payment_status === 'payment_needed' || differencePaid) return;
+    try { await db.updateVisit(visitId, { payment_status: 'payment_needed' }); }
+    catch (e) { console.error('[stripe-webhook] payment_needed mark failed:', e.message); }
+    await alertPaymentNeeded(visit, { cents: o.amount, kind, reason: o.last_payment_error && o.last_payment_error.message, sendEmail });
+    return;
+  }
+
+  // Paid: the difference PaymentIntent, or the hosted invoice that replaced a declined one.
+  // The visit keeps the booking PaymentIntent id (refunds go back to it); paid_cents becomes the final total.
+  const isInvoice = event.type.startsWith('invoice.');
+  const piId = isInvoice ? (typeof o.payment_intent === 'string' ? o.payment_intent : (o.payment_intent && o.payment_intent.id) || null) : o.id;
+  const cents = isInvoice ? o.amount_paid : (o.amount_received != null ? o.amount_received : o.amount);
+  if (visit) {
+    const patch = { payment_status: 'paid' };
+    if (finalCents !== null) patch.paid_cents = finalCents + (int(visit.refunded_cents) || 0);
+    try {
+      const row = await db.updateVisit(visitId, patch);
+      if (!row) console.error('[stripe-webhook] could not mark visit paid:', visitId, piId);
+    } catch (e) { console.error('[stripe-webhook] mark paid failed:', e.message); }
+  }
+  if (!cust.email) return;
+  const finalLoad = visit && visit.final_load_idx != null ? visit.final_load_idx : (meta || {}).final_load_idx;
+  const size = ORDER.SIZES[Number(finalLoad)];
+  const diff = int(cents);
+  // Paid at booking = the final total less this difference (the same numbers the dashboard's receipt shows).
+  const msg = tpl.receipt({
+    name: cust.first_name, adjust: 'charged', adjustment: fmtAmount(diff),
+    paid: finalCents !== null && diff !== null ? fmtAmount(finalCents - diff) : null, final: fmtAmount(finalCents),
+    load: size ? size.label : undefined, travel: visit && int(visit.travel_cents) ? fmtAmount(visit.travel_cents) : null,
+    dayLabel: visit && visit.scheduled_date ? dayLabel(visit.scheduled_date) : undefined,
+  });
+  try {
+    // Keyed like the dashboard's receipt (api/visit-update.js), so the customer gets one.
+    await sendEmail({ to: cust.email, kind: 'transactional', idempotencyKey: `visit:${visitId}:receipt:${finalLoad}`, ...msg });
+  } catch (e) { console.error('[stripe-webhook] receipt failed:', e.message); }
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).end();
 
@@ -536,6 +760,21 @@ module.exports = async (req, res) => {
   }
 
   const obj = event.data.object || {};
+
+  // The booking payment: the PaymentIntent's OWN kind decides, never the
+  // customer metadata merged into the context. Only a success books the job.
+  if (event.type.startsWith('payment_intent.') && obj.metadata && obj.metadata.kind === 'booking') {
+    if (event.type === 'payment_intent.succeeded') await handleBooked(stripe, event);
+    else await handleBookingNotPaid(stripe, event);
+    return res.status(200).json({ received: true });
+  }
+
+  // The difference after the job, and the hosted invoice for a declined one: never a booking.
+  const after = await resolveAfterJob(stripe, event);
+  if (after) {
+    if (!after.ignore) await handleAfterJob(event, after.kind, after.meta);
+    return res.status(200).json({ received: true });
+  }
 
   const OPS_GOOD = new Set([
     'customer.subscription.created',

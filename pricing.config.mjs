@@ -12,17 +12,17 @@
  * regenerates, in place, everything between BUILD: markers in:
  *
  *   index.html                 the crawlable price list, the zone list
- *   book/quote.html            the estimator's PRICES matrix, JSON-LD offers
- *   book/checkout.html         the checkout billing table
- *   api/create-booking.js      the server PRICES matrix (authoritative)
+ *   book/quote.html            the order page's size cards, JSON-LD offers
  *
- * and writes the travel module whole, twice: api/_lib/travel.js (server) and
- * js/travel.js (pages). The two are byte identical; every ZIP check and
+ * and writes two modules whole, twice each: the travel module,
+ * api/_lib/travel.js (server) and js/travel.js (pages), and the order module,
+ * api/_lib/order-config.js (create-booking reads it, authoritative) and
+ * js/order-config.js (pages). Each pair is byte identical; every ZIP check and
  * travel fee on the site comes from them.
  *
  * WHY THIS MATTERS: the server recomputes each booking's price from its own
  * matrix and rejects any quote that doesn't match ("Quote is out of date").
- * If the client and server copies drift, every checkout 400s.
+ * If the client and server copies drift, every booking 400s.
  *
  * TODO: every price below is a placeholder (GUESS.prices). Set real ones
  * before launch.
@@ -57,21 +57,21 @@ export const PRICE_TABLE = [
  * "6+ dogs").
  */
 export const LOADS = {
-  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance', fits: 15 },
-  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner',     fits: 25 },
-  half:    { label: '1/2 truck',    note: 'A small room or a garage corner',   fits: 50 },
-  three:   { label: '3/4 truck',    note: 'A full room or a small garage',     fits: 75 },
-  full:    { label: 'Full truck',   note: 'A garage, basement or estate',      fits: 100 },
+  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance', fits: 15, photo: '/images/placeholder.svg' },
+  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner',     fits: 25, photo: '/images/placeholder.svg' },
+  half:    { label: '1/2 truck',    note: 'A small room or a garage corner',   fits: 50, photo: '/images/placeholder.svg' },
+  three:   { label: '3/4 truck',    note: 'A full room or a small garage',     fits: 75, photo: '/images/placeholder.svg' },
+  full:    { label: 'Full truck',   note: 'A garage, basement or estate',      fits: 100, photo: '/images/placeholder.svg' },
 };
 
 /**
- * The load builder (homepage hero and quote step 1). A customer taps what they
- * have, each item drops blocks into the truck, and the smallest load size that
- * holds it all is the price. A full truck is 100 units (about 15 cubic yards,
+ * What the photo quote counts (api/photo-quote.js asks Claude for these keys).
+ * The order page adds up the units and picks the smallest load size that holds
+ * them (ORDER.sizeForUnits). A full truck is 100 units (about 15 cubic yards,
  * so one unit is roughly 0.15 cubic yards).
  *
  *   units   space the item takes, out of 100
- *   color   its block color in the truck
+ *   color   unused since round 6 (it colored the old on screen truck)
  *
  * `fits` above is each load size's ceiling in the same units. "Single item" is
  * one item of 15 units or less; anything over 100 is quoted by hand.
@@ -175,7 +175,56 @@ export const GUESS = {
   prices: true,   // PRICE_TABLE: placeholder prices
   zones:  true,   // ZONES: the mile bands and the travel fees
   base:   true,   // BASE: Gresham city center, not the real yard
+  schedule: true, // SCHEDULE: the hours, windows and caps
+  policy:   true, // POLICY: the cancel window and the fees
 };
+
+/**
+ * GUESS* the hours, windows and caps (GUESS.schedule): the founder sets the
+ * real ones before launch. Every date is Pacific time (timeZone), never the
+ * host's clock. Window `start` is 24 hour HH:MM; `cap` is jobs per window;
+ * `dailyCap` is jobs per day across all windows.
+ */
+export const SCHEDULE = {
+  timeZone: 'America/Los_Angeles',
+  daysAhead: 14,            // day chips shown
+  leadDays: 1,              // earliest bookable day = today (Pacific) + leadDays
+  closedWeekdays: [0],      // 0 = Sunday
+  windows: [
+    { key: 'w08', label: '8 to 10 am',     start: '08:00', cap: 2 },
+    { key: 'w10', label: '10 am to 12 pm', start: '10:00', cap: 2 },
+    { key: 'w12', label: '12 to 2 pm',     start: '12:00', cap: 2 },
+    { key: 'w14', label: '2 to 4 pm',      start: '14:00', cap: 2 },
+  ],
+  dailyCap: 6,
+};
+
+/** GUESS* the cancel window and fees (GUESS.policy). Dollars here, cents in the module. */
+export const POLICY = {
+  cancelHours: 24,          // free to cancel or move until this many hours before the window starts
+  lateFee: 50,              // dollars, kept from the refund when the dashboard's Cancel and refund runs inside cancelHours
+  refusalFee: 0,            // dollars, kept from the refund when the customer says no on site
+  consentVersion: '2026-10-11', // 2026-10-10b: pay at booking, the difference charged or refunded after the job; 2026-10-11: the rule reworded (the crew checks the size, a bigger load charged only if the customer agrees)
+};
+
+/** Fails the build on a schedule that would misbook a day. */
+function assertSchedule(sc) {
+  const fail = (msg) => { throw new Error(`pricing.config.mjs: ${msg}
+Fix SCHEDULE, then re-run npm run build:pricing.`); };
+  const keys = new Set();
+  let biggest = 0;
+  for (const w of sc.windows) {
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(w.start)) fail(`window ${w.key}: start "${w.start}" is not HH:MM`);
+    if (keys.has(w.key)) fail(`window key "${w.key}" is used twice`);
+    keys.add(w.key);
+    if (!(Number.isInteger(w.cap) && w.cap >= 1)) fail(`window ${w.key}: cap must be a whole number, 1 or more`);
+    biggest = Math.max(biggest, w.cap);
+  }
+  if (!(Number.isInteger(sc.dailyCap) && sc.dailyCap >= 1)) fail('dailyCap must be 1 or more');
+  if (sc.dailyCap < biggest) fail(`dailyCap ${sc.dailyCap} is under the largest window cap ${biggest}`);
+  return sc;
+}
+assertSchedule(SCHEDULE);
 
 /**
  * ┌─── TRAVEL ZONES: the second table you edit ─────────────────────────┐
@@ -256,7 +305,7 @@ export const PLACES_BY_ZONE = Object.fromEntries(ZONES.map((z) => [z.key,
 export function travelFor(zip) {
   const z = String(zip == null ? '' : zip).trim();
   const r = /^\d{5}$/.test(z) ? ZIP_ZONES[z] : null;
-  return r ? { zip: z, zone: r.zone, label: r.label, cents: r.cents, miles: r.miles, place: r.place, state: r.state } : null;
+  return r ? { zip: z, zone: r.zone, label: r.label, cents: r.cents, miles: r.miles, place: r.place, state: r.state, market: 'portland' } : null;
 }
 
 /** The headline number: the cheapest one-time haul. */

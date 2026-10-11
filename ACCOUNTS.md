@@ -11,7 +11,7 @@ everywhere. Setting them up is `LAUNCH-DAY.md`.
 | --- | --- | --- | --- |
 | **Vercel** | vercel.com/dashboard | Hosts the site and every `/api` function; deploys on every merge to `main`. The environment variables live here. | not set up |
 | **Supabase** | supabase.com/dashboard | The database (leads, customers, subscriptions, visits, photos) and the private `visit-photos` bucket. | not set up |
-| **Stripe** | dashboard.stripe.com | Takes the money: one-time hauls, monthly pickups, payouts. | not set up |
+| **Stripe** | dashboard.stripe.com | Takes the money: the booking payment, the difference after the job, refunds, payouts. | not set up |
 | **Resend** | resend.com | Sends the customer emails and the owner booking email. | not set up |
 | **Discord** | your server, Integrations, Webhooks | The booking ping, with photos and a link to the dashboard. | not set up |
 | **Anthropic** | console.anthropic.com | Counts the items in quote photos (Claude). | not set up |
@@ -34,14 +34,14 @@ everywhere. Setting them up is `LAUNCH-DAY.md`.
 | Variable | What it is |
 | --- | --- |
 | `STRIPE_SECRET_KEY` | `sk_test_` while testing, `sk_live_` at launch |
-| `STRIPE_PRODUCT_ID` | the one "Junk removal" product |
+| `STRIPE_PRODUCT_ID` | the one "Junk removal" product (nothing reads it since round 6: a booking is a plain payment) |
 | `STRIPE_WEBHOOK_SECRET` | the signing secret of the webhook endpoint |
 | `BOOKINGS_OPEN` | `true` only on launch day (gate 2 of 3) |
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | the database, server side only |
 | `RESEND_API_KEY`, `EMAIL_FROM` | email; without the key every send dry runs |
 | `OPS_WEBHOOK_URL` | the Discord webhook |
 | `OPS_EMAIL` | where the owner booking email goes |
-| `ANTHROPIC_API_KEY` | photo quotes; without it the page falls back to tapping |
+| `ANTHROPIC_API_KEY` | photo quotes; without it the page asks for the closest size |
 | `SITE_ORIGIN` | `https://www.<domain>`, for links in emails and pings |
 | `CRON_SECRET` | protects the daily job route |
 | `ADMIN_DASHBOARD_TOKEN` | the dashboard password: a long random string |

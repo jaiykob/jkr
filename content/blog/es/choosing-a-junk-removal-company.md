@@ -11,7 +11,7 @@ La mejor respuesta es un precio claro antes de que llegue alguien. Cuidado con l
 
 ## 2. ¿Qué pasa si hay más de lo que les mostré?
 
-A veces se nos olvidan cosas; el día del retiro aparece una esquina del sótano o un segundo cobertizo. Una buena empresa te enseña el nuevo precio antes de cargar nada y te deja elegir. La nuestra hace exactamente eso, y puedes decir que no.
+A veces se nos olvidan cosas; el día del retiro aparece una esquina del sótano o un segundo cobertizo. Una buena empresa te enseña el nuevo precio antes de cargar nada y te deja elegir. La nuestra hace exactamente eso.
 
 ## 3. ¿El viaje es aparte?
 

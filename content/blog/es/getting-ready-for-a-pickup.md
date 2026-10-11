@@ -26,10 +26,10 @@ No tienes que estar. Saca todo afuera, en la entrada o bajo una cochera, y dinos
 
 ## Compara la pila con tu cotización
 
-Antes de que lleguemos, dale una mirada a la pila y compárala con las fotos o los artículos de tu reserva. Si hay más, agrégalo a tu cotización o avísanos. El día del retiro, si la carga es más grande de lo que nos mostraste, te enseñamos el nuevo precio antes de cargar nada, y tú eliges qué se va.
+Antes de que lleguemos, dale una mirada a la pila y compárala con el tamaño que reservaste y las fotos que nos mandaste. Si hay más, llámanos o escríbenos. El día del retiro, si la carga es más grande que el tamaño que reservaste, te enseñamos el nuevo precio antes de cargar nada, y tú eliges qué se va.
 
 ## Apartamentos y condominios
 
 Reserva el elevador de carga si tu edificio tiene, revisa dónde se pueden detener los camiones y avisa en la recepción que vamos a llegar. En edificios grandes, como en el centro de [Portland](/es/portland.html) o cerca de Orenco en [Hillsboro](/es/hillsboro.html), esa llamada puede ahorrar una espera larga el día del retiro.
 
-¿Listo para elegir un día? Tu precio está a unos toques en la [página de cotización](/book/quote.html).
+¿Listo para elegir un día? Elige tu tamaño en la [página de cotización](/book/quote.html) y tu precio aparece con el viaje de tu código postal.

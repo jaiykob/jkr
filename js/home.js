@@ -1,6 +1,6 @@
-/* Homepage: the hero load builder, the scroll road, the card tilt, the price
-   tier fill and the ZIP check. Each piece is optional; without JS the page is
-   plain and every link still goes to the quote. */
+/* Homepage: the size cards' travel line, the card tilt, the price tier fill
+   and the ZIP check. Each piece is optional; without JS the page is plain and
+   every link still goes to the quote. */
 (function () {
   'use strict';
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -19,36 +19,16 @@
   };
   function zoneName(l) { return ES ? String(l).replace(/^Home zone$/, 'Zona base').replace(/^Zone /, 'Zona ') : l; }
 
-  // Hero: the configurator. "Book this load" opens the quote with the size set.
-  var hero = window.LoadBuilder ? LoadBuilder.mount(document.getElementById('heroBuilder'), { cta: { href: ROOT + 'book/quote.html' }, persist: true, photos: { endpoint: ROOT + 'api/photo-quote' } }) : null;
-
-  // How it works: the truck drives the road as the section scrolls by.
-  var road = document.querySelector('.road');
-  if (road && !reduce) {
-    road.classList.add('is-live');
-    var truck = road.querySelector('.road-truck');
-    var lane = road.querySelector('.road-lane');
-    var wheels = road.querySelectorAll('.road-wheel');
-    var stops = road.querySelectorAll('.road-stop');
-    var cargo = road.querySelector('.road-cargo');
-    var ticking = false;
-    var update = function () {
-      ticking = false;
-      var r = road.getBoundingClientRect();
-      var span = r.height - window.innerHeight;
-      var p = Math.max(0, Math.min(1, span > 0 ? -r.top / span : 0));
-      var travel = lane.clientWidth - truck.getBoundingClientRect().width;
-      truck.style.transform = 'translateX(' + (p * travel).toFixed(1) + 'px)';
-      wheels.forEach(function (w) { w.style.transform = 'rotate(' + (p * 1440).toFixed(0) + 'deg)'; });
-      var phase = p < 0.34 ? 0 : p < 0.67 ? 1 : 2;
-      stops.forEach(function (s, i) { s.classList.toggle('is-on', i <= phase); });
-      // loaded after stop one, empty (hauled) at the end
-      cargo.style.opacity = p < 0.2 ? p / 0.2 : p > 0.9 ? Math.max(0, (1 - p) / 0.1) : 1;
-    };
-    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
-    window.addEventListener('resize', update);
-    update();
-  }
+  // Hero: the five size cards are links to the order page. Once the ZIP is known each
+  // card says what travel adds (js/size-cards.js); until then it says "+ travel".
+  var hero = window.SizeCards ? SizeCards.mount(document.getElementById('homeSizes'), {
+    words: ES ? { none: 'Sin cargo de viaje', suffix: ' de viaje' } : null
+  }) : null;
+  // Each card opens the order page with its size picked, and with the ZIP once we
+  // know it (the order page reads quoteZip too; the link carries it if storage is off).
+  var cardLinks = [].slice.call(document.querySelectorAll('#homeSizes a.size-card'));
+  var cardHrefs = cardLinks.map(function (a) { return a.getAttribute('href'); });
+  function cardsZip(zip) { cardLinks.forEach(function (a, i) { a.setAttribute('href', cardHrefs[i] + (zip ? '&zip=' + zip : '')); }); }
 
   // What we take: cards tilt toward the pointer.
   if (!reduce && matchMedia('(hover: hover)').matches) {
@@ -74,7 +54,7 @@
   }
 
   // ZIP check: the answer as you type (zone and travel), its zone lights up,
-  // and the hero truck adds the travel to its price.
+  // and the size cards add the travel to their prices.
   var zin = document.getElementById('zipIn'), zout = document.getElementById('zipOut');
   var form = document.getElementById('zipCheck');
   function money(c) { return '$' + (c / 100).toFixed(2); }
@@ -87,14 +67,18 @@
       document.querySelectorAll('#zoneList li').forEach(function (li) { li.classList.toggle('is-hit', !!t && li.getAttribute('data-zone') === t.zone); });
       zout.className = 'zip-out';
       zout.textContent = '';
-      if (zin.value.length < 5) return;
+      if (zin.value.length < 5) { if (hero) hero.setTravel(null); cardsZip(''); return; }
       if (t) {
         try { sessionStorage.setItem('quoteZip', t.zip); } catch (e) { /* private mode */ }
-        if (hero) hero.setTravel(t);
+        window.dispatchEvent(new Event('quotezip'));
+        if (hero) hero.setTravel(t, !!T.GUESS);
+        cardsZip(t.zip);
         var fee = '<span' + (T.GUESS ? ' class="guess"' : '') + '>' + (t.cents ? S.travel + money(t.cents) : S.noTravel) + '</span>';
         zout.className = 'zip-out ok';
         zout.innerHTML = S.yes + esc(t.place) + '. ' + esc(zoneName(t.label)) + ': ' + fee + '. <a href="' + ROOT + 'book/quote.html?zip=' + t.zip + '">' + S.price + '</a>';
       } else {
+        if (hero) hero.setTravel(null);
+        cardsZip('');
         zout.className = 'zip-out no';
         zout.innerHTML = S.far + '<a href="tel:+19254086053">(925) 408-6053</a>' + S.farEnd;
       }

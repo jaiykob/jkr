@@ -19,7 +19,7 @@ ok(phraseKey('1/4 truck') === '{0}/{1} truck', `fractions: "${phraseKey('1/4 tru
 
 console.log('== translating text ==');
 const map = {
-  'Fill the truck.': 'Llena el camión.',
+  'Pick your size.': 'Elige tu tamaño.',
   'Up to {0} road miles from Gresham': 'Hasta {0} millas por carretera desde Gresham',
   'Call or text': 'Llama o escribe',
   'and we will price it.': 'y te damos el precio.',
@@ -30,27 +30,27 @@ const map = {
 };
 const src = [
   '<html lang="en"><head><title>Junk removal near you.</title><meta name="description" content="Junk removal near you." /></head><body>',
-  '<h1> Fill the truck. </h1>',
+  '<h1> Pick your size. </h1>',
   '<p>Up to 12 road miles from Gresham</p>',
   '<p>Call or text <a href="tel:+19254086053">(925) 408-6053</a> and we will price it.</p>',
   '<button aria-label="Open menu"></button><label>Your ZIP code</label>',
-  '<script>var s = "Fill the truck.";</script><style>.a{}</style><!-- Fill the truck. -->',
-  '<svg viewBox="0 0 2 2"><text>Fill the truck.</text></svg>',
+  '<script>var s = "Pick your size.";</script><style>.a{}</style><!-- Pick your size. -->',
+  '<svg viewBox="0 0 2 2"><text>Pick your size.</text></svg>',
   '<a href="gresham.html">Gresham</a> <span>Brand Name</span> <span>&copy; 2026 Brand Name &nbsp;·&nbsp;</span>',
   '<span>1/4 truck</span>',
   '</body></html>',
 ].join('\n');
 const r = translateHtml(src, map, { places: ['Gresham'], brand: 'Brand Name' });
 ok(r.missing.length === 0, `nothing should be missing: ${r.missing.join(' | ')}`);
-ok(r.html.includes('<h1> Llena el camión. </h1>'), 'text is translated and its spacing kept');
+ok(r.html.includes('<h1> Elige tu tamaño. </h1>'), 'text is translated and its spacing kept');
 ok(r.html.includes('<p>Hasta 12 millas por carretera desde Gresham</p>'), 'the number goes back into its slot');
 ok(r.html.includes('<p>Llama o escribe <a href="tel:+19254086053">(925) 408-6053</a> y te damos el precio.</p>'), 'text around an inline link');
 ok(r.html.includes('aria-label="Abrir menú"') && r.html.includes('<label>Tu código postal</label>'), 'labels for screen readers are translated');
 ok(r.html.includes('<title>Retiro de basura cerca de ti.</title>') && r.html.includes('content="Retiro de basura cerca de ti."'), 'title and description are translated');
-ok(r.html.includes('var s = "Fill the truck.";') && r.html.includes('<!-- Fill the truck. -->') && r.html.includes('<text>Fill the truck.</text>'), 'scripts, comments and drawings are left alone');
+ok(r.html.includes('var s = "Pick your size.";') && r.html.includes('<!-- Pick your size. -->') && r.html.includes('<text>Pick your size.</text>'), 'scripts, comments and drawings are left alone');
 ok(r.html.includes('>Gresham</a>') && r.html.includes('<span>Brand Name</span>'), 'place names and the brand are not phrases');
 ok(r.html.includes('<span>1/4 de camión</span>'), 'fractions keep both numbers');
-const r2 = translateHtml('<p>A brand new sentence.</p><p>Fill the truck.</p>', map, {});
+const r2 = translateHtml('<p>A brand new sentence.</p><p>Pick your size.</p>', map, {});
 ok(r2.missing.length === 1 && r2.missing[0] === 'A brand new sentence.', `a phrase with no Spanish is listed: ${JSON.stringify(r2.missing)}`);
 
 console.log('== twins ==');
@@ -83,10 +83,14 @@ ok(es.missing.length === 0, `untranslated: ${es.missing.slice(0, 5).join(' | ')}
 ok(/<html lang="es"/.test(es.html), 'lang="es"');
 ok(es.html.includes('<link rel="canonical" href="https://www.example.com/es/" />'), 'canonical is itself');
 ok(es.html.includes(hreflang('es/index.html')), 'hreflang both ways');
-ok(es.html.includes('href="../css/site.css"') && es.html.includes('src="../js/load-builder.js"') && es.html.includes('url(../fonts/dm-sans.woff2)'), 'styles, scripts and fonts climb out of /es/');
+ok(es.html.includes('href="../css/site.css"') && es.html.includes('src="../js/size-cards.js"') && es.html.includes('url(../fonts/dm-sans.woff2)'), 'styles, scripts and fonts climb out of /es/');
 ok(es.html.includes('href="../book/quote.html"'), 'the quote stays English, one level up');
 ok(es.html.includes('href="#pricing"'), 'anchors stay on the page');
-ok(/"label":"Sofá"/.test(es.html), 'the truck items are in Spanish');
+// The size cards (BUILD:home-sizes): Spanish names and travel line, links to the English order page.
+const esCards = es.html.match(/<a class="size-card"[\s\S]*?<\/a>/g) || [];
+const enCards = (page('index.html').match(/<a class="size-card"/g) || []).length;
+ok(enCards > 0 && esCards.length === enCards && esCards.some((c) => c.includes('<span class="size-name">Camión lleno</span>')) && esCards.every((c) => /<span class="size-travel">\+ viaje<\/span>/.test(c)), 'the size cards are in Spanish');
+ok(esCards.every((c) => /href="\.\.\/book\/quote\.html\?size=\d"/.test(c)), 'each size card opens the order page one level up with its size');
 ok(/"@type": "FAQPage"/.test(es.html) && /"@id": "https:\/\/www\.example\.com\/es\/#faq"/.test(es.html), 'the FAQ schema is the Spanish page\'s own');
 const faqLd = es.html.match(/"name": "([^"]+)"/g) || [];
 ok(faqLd.some((x) => /¿/.test(x)), 'the FAQ schema asks in Spanish');
