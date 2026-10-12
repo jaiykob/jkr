@@ -24,12 +24,15 @@ order). The SEO pass moves to round 9, CRM and KPIs to 10, Sacramento to 11.
   the one order record it already keeps).
 - **A progress bar at the top**, sticky: four named steps (Size, Where,
   When, Book), the done ones ticked and tappable to go back, the current one
-  marked (`aria-current="step"`), a filled bar under them and "Step N of 4".
+  marked (`aria-current="step"`), a filled bar under them and "Step N of 4"
+  (shown from 600px; said to screen readers on a phone).
   A Back button sits at its left from step 2 on.
 - **No Next or Continue button anywhere.** A step moves on by itself the
   moment it is complete:
-  - Size: tapping a card (or the photo quote picking one).
-  - Where: the fifth digit of a ZIP we serve. The When page then says where
+  - Size: tapping a card. The photo quote picks a card and stays, so its
+    "From your photos" line is read first; tapping the card moves on.
+  - Where: the fifth digit of a ZIP we serve (the box says so first: "Once
+    your ZIP is in, we go on to the times"; Enter moves on too). The When page then says where
     and what travel adds ("Gresham, OR 97030. No travel charge.") with a
     Change link. A ZIP past the zones stays on Where with the email a price
     panel, as now.
@@ -40,9 +43,11 @@ order). The SEO pass moves to round 9, CRM and KPIs to 10, Sacramento to 11.
   skips Size; a ZIP typed anywhere on the site (`quoteZip`) skips Where. A
   link to a step that is not reachable yet opens the first step still to do.
 - **Taps, homepage card to booked**: card 1, ZIP typed 0, time 1, autofill
-  1, agree box 1, Book 1: **5** (round 6 measured about 8). Wallet (Apple or
-  Google Pay): card, time, box, wallet: **4**. Gates closed: card, time,
-  autofill, Reserve: **4**.
+  1, agree box 1, Book 1: **5** (round 6 measured about 8), the cursor already
+  in the ZIP box and the name box (every other tap into a box counts). Wallet
+  (Apple or Google Pay): card, time, autofill, box, wallet: **5** (the page asks
+  for the details before the wallet sheet; letting the wallet supply them is a
+  later change). Gates closed: card, time, autofill, Reserve: **4**.
 - **The total stays in view** the whole way: the bar at the bottom on a
   phone, the summary card on the right on a desktop. The Book button shows
   only on the Book page (on earlier pages it would only send people back).
@@ -73,10 +78,10 @@ the section headings). The order page stays English.
 | one-step | 12 | at 360 and 1280px only the current step's sections show; each step has its hash; the progress bar is at the top of the screen on every step (sticky), names four steps, marks the current one and says "Step N of 4" |
 | advance | 15 | a size tap goes to Where; the fifth ZIP digit goes to When (which names the place); an arrival time tap goes to Book; no Next or Continue button on the page |
 | skip | 8 | `?size=` and a known ZIP open on When; `?size=` alone on Where; nothing on Size; a hash for an unreachable step opens the first step to do |
-| back | 8 | the browser Back goes to the step before with the ZIP and size kept; a done step in the progress bar goes back to it |
-| taps | 15 | scripted bookings from a homepage card against the real API: card 5 taps or fewer at 360 and 1280, wallet 4 or fewer, gates closed 4 or fewer; one create-booking call each |
+| back | 8 | the browser Back goes to the step before with the ZIP and size kept and never goes dead (one Back after a refusal reaches Where); a reload on Book stays on Book; a done step in the progress bar goes back to it; Change selects the ZIP; Enter on Where moves on |
+| taps | 15 | scripted bookings from a homepage card against the real API, every tap counted (a box the cursor is not in, the autofill pick): card 5 or fewer at 360 and 1280, wallet 5 or fewer, gates closed 4 or fewer; one create-booking call each |
 | refusal | 7 | a window that fills at Book takes the page to When with the message; a stale price stays on Book with the new total |
-| mobile | 10 | each step at 360px: no sideways scroll, text 16px+, taps 48px+; the progress bar 48px taps; the first arrival time on the first screen, above the bar |
+| mobile | 10 | each step at 360px: no sideways scroll, text 16px+, taps 48px+; the progress bar 48px taps; the first arrival time on a 360x640 first screen with the bookings banner up, above the bar |
 | desktop | 5 | at 1280px the steps on the left and the summary on the right, the summary in view on every step |
 | a11y | 5 | the focus goes to the ZIP box on Where, the first empty field on Book and the heading on When; the progress list has `aria-current="step"`; each step's title is in the tab |
 

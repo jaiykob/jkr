@@ -485,8 +485,13 @@ async function minJourney(width, mode) {
       if (!tagged) return 'no homepage size card shows the half truck price';
       await p.click('[data-score-pick]', 1800);
       if (!open) await p.evaluate(`window.__leads=[];if(window.SiteLeads)window.SiteLeads.capture=function(a){window.__leads.push(a);return Promise.resolve({});};`);
+      // Round 8 review: typing is free only where the cursor already is; a box it is not in
+      // costs the tap into it (browser.mjs type() focuses by script, a person taps).
+      let boxTaps = 0;
+      const focusedOn = (sel) => p.evaluate(`document.activeElement===document.querySelector(${JSON.stringify(sel)})`);
       let s = await onStep(p, 'where');
       if (s.hash !== '#where') return `a homepage card opened ${s.hash || 'no step'}, want #where`;
+      if (!(await focusedOn('#o-zip-in'))) boxTaps++;
       await p.type('#o-zip-in', Z2);
       s = await onStep(p, 'when');
       if (s.hash !== '#when') return `the ZIP did not move on to When (at ${s.hash})`;
@@ -494,8 +499,13 @@ async function minJourney(width, mode) {
       await p.click(R8_WIN);
       s = await onStep(p, 'book');
       if (s.hash !== '#book') return `an arrival time did not move on to Book (at ${s.hash})`;
+      // The details: one autofill pick fills name, phone, email and street (one tap on every path,
+      // the wallet's too: the page asks for them before the wallet sheet), plus the tap into the
+      // name box when the cursor is not already there.
+      if (!(await focusedOn('#o-name'))) boxTaps++;
       for (const [sel, v] of [['#o-name', SAMPLE_CONTACT.name], ['#o-phone', SAMPLE_CONTACT.phone], ['#o-email', SAMPLE_CONTACT.email], ['#o-street', SAMPLE_CONTACT.addr]]) await p.type(sel, v);
       if (open) {
+        // The card number: the founder's five tap model leaves out the tap into the card box (round 6 did too).
         if (mode === 'card') await p.type('#o-pay .fake-card', '4242424242424242');
         await p.click('#o-pay input[type="checkbox"]');
         await p.click(mode === 'wallet' ? '.fake-wallet' : '#o-book', 1800);
@@ -508,8 +518,7 @@ async function minJourney(width, mode) {
         await p.click('#o-book', 1200);
         if (!(await p.evaluate(`!!document.getElementById('o-reserved')&&!document.getElementById('o-reserved').hidden`))) return 'Reserve did not show the reserved message';
       }
-      // One autofill pick fills name, phone, email and street: one tap; typing is free.
-      return { taps: p.taps() + (mode === 'wallet' ? 0 : 1), hits: STATE.bookingHits, leads: open ? null : await p.evaluate('window.__leads.length') };
+      return { taps: p.taps() + 1 + boxTaps, hits: STATE.bookingHits, leads: open ? null : await p.evaluate('window.__leads.length') };
     } catch (e) { return `journey stopped: ${e.message}`; }
     finally { await p.evaluate(`document.cookie='jkr_flags=; Path=/; Max-Age=0'`).catch(() => {}); }
   });
@@ -571,6 +580,8 @@ window.scrollTo(0,document.documentElement.scrollHeight);return {pos:c.position,
         await p.click(`#o-size .size-card[data-size="${LOAD_ROW}"]`);
         let s = await onStep(p, 'where');
         if (s.hash !== '#where') return `a size tap stayed at ${s.hash}`;
+        const hint = await p.evaluate(`(function(){var z=document.getElementById('o-zip-in');return (z.getAttribute('aria-describedby')||'').split(' ').map(function(id){var e=id&&document.getElementById(id);return e?e.textContent:'';}).join(' ');})()`);
+        if (!/(go|move) on/i.test(hint) || !/time/i.test(hint)) return `the ZIP box does not say the page moves on to the times once the ZIP is in (WCAG 3.2.2): "${hint.trim()}"`;
         await p.type('#o-zip-in', Z2.slice(0, 4));
         s = await p.evaluate(STEP_STATE);
         if (s.hash !== '#where') return 'four ZIP digits already moved on';
@@ -600,9 +611,9 @@ window.scrollTo(0,document.documentElement.scrollHeight);return {pos:c.position,
       }
       return true;
     } },
-    { id: 'back', pts: 8, desc: 'the browser Back goes to the step before, the ZIP and size kept; a done step in the progress bar goes back to it', async run() {
+    { id: 'back', pts: 8, desc: 'the browser Back goes to the step before, the ZIP and size kept, never a dead press (one Back after a refusal reaches Where); a reload on Book stays; a done step in the progress bar goes back; Change selects the ZIP, Enter on Where moves on', async run() {
       if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
-      return withPage(360, async (p) => {
+      const r1 = await withPage(360, async (p) => {
         await p.goto(ORIGIN + ORDER_URL(), 1200);
         await onStep(p, 'where');
         await p.type('#o-zip-in', Z2);
@@ -619,12 +630,58 @@ window.scrollTo(0,document.documentElement.scrollHeight);return {pos:c.position,
         if (s.hash !== '#size') return `the progress bar's Size did not go back to Size (at ${s.hash})`;
         await p.evaluate('history.back()');
         s = await onStep(p, 'where');
-        return s.hash === '#where' || `Back from Size went to ${s.hash}, want #where`;
+        if (s.hash !== '#where') return `Back from Size went to ${s.hash}, want #where`;
+        // Change on When selects the ZIP (type over it); Enter on Where with a ZIP we serve moves on.
+        await p.goto(ORIGIN + ORDER_WITH_ZIP(), 1200);
+        await onStep(p, 'when');
+        await p.click('#o-when .o-change');
+        await onStep(p, 'where');
+        const sel = await p.evaluate(`(function(){var z=document.getElementById('o-zip-in');return {f:document.activeElement===z,a:z.selectionStart,b:z.selectionEnd,n:z.value.length};})()`);
+        if (!sel.f || sel.a !== 0 || sel.b !== sel.n) return 'Change does not put the cursor in the ZIP box with the ZIP selected';
+        await p.evaluate(`document.getElementById('order').requestSubmit()`);
+        s = await onStep(p, 'when');
+        return s.hash === '#when' || `Enter on Where with a ZIP we serve stayed at ${s.hash}`;
+      });
+      if (r1 !== true) return r1;
+      // Round 8 review: Back never goes dead. A window that filled at Book sends the page to When;
+      // one Back then reaches Where, not the When page again.
+      resetState();
+      const r2 = await withPage(360, async (p) => {
+        await p.goto(`${ORIGIN}${ORDER_URL('__fakepay=1&__open=1')}`, 1200);
+        await onStep(p, 'where');
+        await p.type('#o-zip-in', Z2);
+        await onStep(p, 'when');
+        await p.click(R8_WIN);
+        await onStep(p, 'book');
+        for (const [sl, v] of [['#o-name', SAMPLE_CONTACT.name], ['#o-phone', SAMPLE_CONTACT.phone], ['#o-email', SAMPLE_CONTACT.email], ['#o-street', SAMPLE_CONTACT.addr]]) await p.type(sl, v);
+        await p.type('#o-pay .fake-card', '4242424242424242');
+        await p.click('#o-pay input[type="checkbox"]');
+        await p.evaluate(`(function(){var f=window.fetch;window.fetch=function(u,o){if(String(u).indexOf('create-booking')>-1)return Promise.resolve(new Response(JSON.stringify({error:'full',code:'window_full'}),{status:409,headers:{'Content-Type':'application/json'}}));return f.apply(this,arguments);};})()`);
+        await p.click('#o-book', 1200);
+        let s = await onStep(p, 'when');
+        if (s.hash !== '#when') return `the refusal left the page at ${s.hash}`;
+        await p.evaluate('history.back()');
+        s = await onStep(p, 'where');
+        return s.hash === '#where' || `one Back after a refusal stayed at ${s.hash} (want #where)`;
+      });
+      resetState();
+      if (r2 !== true) return r2;
+      // A reload (an iPhone restoring the tab) on Book stays on Book once the days load.
+      return withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP(), 1200);
+        await onStep(p, 'when');
+        await p.click(R8_WIN);
+        await onStep(p, 'book');
+        await p.type('#o-name', SAMPLE_CONTACT.name);
+        await p.evaluate('location.reload()');
+        await new Promise((x) => setTimeout(x, 1500));
+        const s = await onStep(p, 'book');
+        return s.hash === '#book' || `a reload on Book opened ${s.hash}`;
       });
     } },
-    { id: 'taps', pts: 15, desc: 'homepage card to booked against the real API, fewest taps: card 5 or fewer at 360 and 1280, wallet 4 or fewer, gates closed 4 or fewer; one create-booking call each (none closed)', async run() {
+    { id: 'taps', pts: 15, desc: 'homepage card to booked against the real API, every tap counted (a box the cursor is not in, the autofill pick): card 5 or fewer at 360 and 1280, wallet 5 or fewer, gates closed 4 or fewer; one create-booking call each (none closed)', async run() {
       if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
-      for (const [width, mode, max] of [[360, 'card', 5], [1280, 'card', 5], [360, 'wallet', 4], [360, 'closed', 4]]) {
+      for (const [width, mode, max] of [[360, 'card', 5], [1280, 'card', 5], [360, 'wallet', 5], [360, 'closed', 4]]) {
         const r = await minJourney(width, mode);
         const label = `${mode} at ${width}px`;
         if (typeof r === 'string') return `${label}: ${r}`;
@@ -670,9 +727,9 @@ window.scrollTo(0,document.documentElement.scrollHeight);return {pos:c.position,
       resetState();
       return stale;
     } },
-    { id: 'mobile', pts: 10, desc: 'each step at 360px: no sideways scroll, text 16px+, taps 48px+ (the progress bar too)', async run() {
+    { id: 'mobile', pts: 10, desc: 'each step at 360px: no sideways scroll, text 16px+, taps 48px+ (the progress bar too); the first arrival time on a 360x640 first screen, banner up, above the bar', async run() {
       if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
-      return withPage(360, async (p) => {
+      const r = await withPage(360, async (p) => {
         const steps = [['size', '/book/quote.html'], ['where', ORDER_URL()], ['when', ORDER_WITH_ZIP()], ['book', null]];
         for (const [step, url] of steps) {
           if (url) await p.goto(ORIGIN + url, 1200); else { await p.click(R8_WIN); }
@@ -684,17 +741,23 @@ window.scrollTo(0,document.documentElement.scrollHeight);return {pos:c.position,
           if (pr.sw > pr.vw) return `#${step}: ${pr.sw}px wide`;
           if (pr.small.length) return `#${step}: small text ${pr.small.slice(0, 2).join('; ')}`;
           if (pr.taps.length) return `#${step}: small taps ${pr.taps.slice(0, 2).join('; ')}`;
-          // The one tap the When page needs is on a phone's first screen (banner up, above the bar).
-          if (step === 'when') {
-            const r = await p.evaluate(`(function(){var x=document.querySelector('[aria-label="Local preview"]');if(x)x.remove();window.scrollTo(0,0);
-var w=document.querySelector(${JSON.stringify(R8_WIN)});var bar=document.getElementById('o-bar');if(!w)return null;
-var bt=bar&&!bar.hidden?bar.getBoundingClientRect().top:innerHeight;return {bottom:w.getBoundingClientRect().bottom,limit:bt};})()`);
-            if (!r) return '#when: no arrival time to tap';
-            if (r.bottom > r.limit) return `#when: the first arrival time ends at ${Math.round(r.bottom)}px, under the bar at ${Math.round(r.limit)}px (a scroll before the tap)`;
-          }
         }
         return true;
       });
+      if (r !== true) return r;
+      // Round 8 review: the one tap the When page needs is on a real phone's first screen
+      // (360x640, the bookings banner up), above the bar.
+      const p = await browser.page({ width: 360, height: 640 });
+      try {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP(), 1200);
+        await onStep(p, 'when');
+        await new Promise((x) => setTimeout(x, 400));
+        const fs1 = await p.evaluate(`(function(){var x=document.querySelector('[aria-label="Local preview"]');if(x)x.remove();window.scrollTo(0,0);
+var w=document.querySelector(${JSON.stringify(R8_WIN)});var bar=document.getElementById('o-bar');if(!w)return null;
+var bt=bar&&!bar.hidden?bar.getBoundingClientRect().top:innerHeight;return {bottom:w.getBoundingClientRect().bottom,limit:bt,banner:!!document.getElementById('maint-banner')};})()`);
+        if (!fs1) return '#when at 360x640: no arrival time to tap';
+        return fs1.bottom <= fs1.limit || `#when at 360x640${fs1.banner ? ' (banner up)' : ''}: the first arrival time ends at ${Math.round(fs1.bottom)}px, under the bar at ${Math.round(fs1.limit)}px`;
+      } finally { await p.close(); }
     } },
     { id: 'desktop', pts: 5, desc: 'at 1280px the steps on the left and the summary on the right, the summary in view on every step', async run() {
       if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
@@ -729,8 +792,21 @@ var bt=bar&&!bar.hidden?bar.getBoundingClientRect().top:innerHeight;return {bott
         if (!s.title.startsWith(h)) return `the tab title "${s.title}" does not start with the step's heading "${h}"`;
         await p.click(R8_WIN);
         const bk = await onStep(p, 'book');
-        return bk.focus === 'o-name' || `on Book the focus is on ${bk.focus}, want the first empty field (#o-name)`;
-      });
+        if (bk.focus !== 'o-name') return `on Book the focus is on ${bk.focus}, want the first empty field (#o-name)`;
+        return true;
+      }).then((r) => (r !== true ? r : withPage(360, async (p) => {
+        // Arriving on Where from a homepage card (a fresh tab): the cursor already in the ZIP box.
+        await p.goto(ORIGIN + ORDER_URL(), 1200);
+        const arr = await onStep(p, 'where');
+        if (arr.focus !== 'o-zip-in') return `arriving on Where the focus is on ${arr.focus}, want the ZIP box`;
+        return true;
+      }))).then((r) => (r !== true ? r : withPage(360, async (p) => {
+        // The Size page (the address in the sitemap, a fresh tab) keeps the page's own title for search engines.
+        await p.goto(`${ORIGIN}/book/quote.html`, 1200);
+        const sz = await onStep(p, 'size');
+        const own = text(((read('book/quote.html') || '').match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '');
+        return sz.title === own || `the Size page's title is "${sz.title}", want the page's own "${own}"`;
+      })));
     } },
   ],
   7: [

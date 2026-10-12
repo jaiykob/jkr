@@ -106,7 +106,9 @@ button { font: inherit; }
 .o-sec h2:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 6px; }
 .o-sec-body { margin-top: 10px; }
 /* The When page says where the job is, one tap from changing it. */
-.o-where-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; margin: 0 0 10px; padding: 2px 4px 2px 14px; border-radius: 12px; background: var(--soft); color: var(--ink); font-weight: 700; }
+.o-where-line { display: flex; align-items: center; justify-content: space-between; gap: 0 8px; margin: 0 0 10px; padding: 2px 2px 2px 14px; border-radius: 12px; background: var(--soft); color: var(--ink); font-weight: 700; line-height: 1.3; }
+.o-where-line > span { flex: 1; min-width: 0; }
+.o-change { flex: none; }
 .o-change { min-height: 48px; min-width: 48px; padding: 0 10px; border: 0; background: none; color: var(--ink); font: 700 16px/1 'DM Sans', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .o-help { margin: 0 0 10px; color: var(--muted); }
 .o-label { margin: 14px 0 8px; font-weight: 700; color: var(--ink); }
@@ -193,7 +195,13 @@ button { font: inherit; }
 /* Phones: the days in one row you swipe (the soonest is picked already), so the
    arrival times, the one tap this page needs, sit on the first screen. */
 @media (max-width: 599px) {
-  .o-days { display: flex; overflow-x: auto; scroll-snap-type: x proximity; margin: 0 -12px; padding: 2px 12px 6px; scrollbar-width: none; }
+  /* A 640px tall phone with the bookings banner up still shows an arrival time above the
+     bar: the help line and the Day label give way (the times say what they are; the Book
+     page says we text on the way), and the focus ring of a day keeps room in the row. */
+  #o-when .o-help { display: none; }
+  #o-days-h { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
+  #o-when .o-label { margin: 8px 0 6px; }
+  .o-days { display: flex; overflow-x: auto; scroll-snap-type: x proximity; margin: 0 -12px; padding: 6px 12px; scrollbar-width: none; }
   .o-days::-webkit-scrollbar { display: none; }
   .o-day { flex: 0 0 68px; scroll-snap-align: start; }
 }

@@ -434,7 +434,9 @@
         <div class="o-sec-body">
           <div class="o-field o-field-zip">
             <label for="o-zip-in">ZIP code</label>
-            <input id="o-zip-in" name="zip" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="97030" aria-describedby="o-zip-msg">
+            <input id="o-zip-in" name="zip" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="97030" aria-describedby="o-zip-hint o-zip-msg">
+            <!-- The page moves on by itself at the fifth digit: said before it happens (WCAG 3.2.2). -->
+            <p class="o-hint" id="o-zip-hint">Once your ZIP is in, we go on to the times.</p>
             <p class="o-msg" id="o-zip-msg" aria-live="polite"></p>
           </div>
           <!-- Past the last travel zone is a real job: we may still go, so the
@@ -458,7 +460,7 @@
         <div class="o-sec-head"><h2 id="o-when-h" tabindex="-1">When should we come?</h2></div>
         <div class="o-sec-body">
           <p class="o-help">Pick a day, then a 2 hour arrival window. We text you when the crew is on the way.</p>
-          <p class="o-where-line" id="o-where-line"><span id="o-where-text"></span> <button type="button" class="o-change" data-go="where" data-focus="o-zip-in">Change</button></p>
+          <p class="o-where-line" id="o-where-line"><span id="o-where-text"></span><button type="button" class="o-change" data-go="where" data-focus="o-zip-in" aria-label="Change ZIP">Change</button></p>
           <p class="o-label" id="o-days-h">Day</p>
           <div class="o-days" id="o-days" role="group" aria-labelledby="o-days-h"></div>
           <p class="o-label" id="o-wins-h">Arrival window<span id="o-wins-day"></span></p>
