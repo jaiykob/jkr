@@ -233,21 +233,67 @@
 }
 
 /* ── WHAT WE TAKE ─────────────────────────────────────────────────────── */
-.take-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); perspective: 900px; }
+/* Eight cards, each with its block from the hero's pile (its color, the
+   offset shadow) holding a line icon. One column of rows on a phone, two
+   across from 520px, four from 960px. */
+.take-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 520px) { .take-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 960px) { .take-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } }
 .take {
-  position: relative; padding: 24px; border-radius: 20px; background: var(--page); border: 1.5px solid var(--bdr);
-  transform-style: preserve-3d; transition: transform .25s ease, box-shadow .25s, border-color .25s;
+  display: grid; grid-template-columns: 56px minmax(0, 1fr); align-content: start; gap: 2px 16px;
+  padding: 20px; border-radius: 20px; background: var(--card); border: 1.5px solid var(--bdr);
+  transition: border-color .2s, transform .2s;
 }
-.take:hover { border-color: var(--sw); box-shadow: 0 18px 40px rgba(21,23,26,.12); }
-.take-block {
-  display: block; width: 56px; height: 44px; border-radius: 8px; margin-bottom: 18px;
-  background: var(--sw); box-shadow: 8px 8px 0 rgba(21,23,26,.9); transform: translateZ(30px);
-  transition: transform .3s cubic-bezier(.34,1.6,.64,1);
+.take:hover { border-color: var(--rg); transform: translateY(-3px); }
+.take-icon {
+  grid-row: span 2; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 12px;
+  background: var(--sw); border: 2px solid var(--rg); box-shadow: 5px 5px 0 var(--rg); color: var(--rg);
 }
-.take:hover .take-block { transform: translateZ(30px) translateY(-6px) rotate(-6deg); }
-.take h3 { font: 800 1.25rem/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; margin-bottom: 6px; }
-.take p { color: var(--txm); font-size: 1rem; }
+.take.is-dark .take-icon { color: #fff; }
+.take-icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.take h3 { font: 800 1.2rem/1.25 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; margin: 4px 0 4px; }
+.take p { color: var(--txm); font-size: 1rem; line-height: 1.5; }
+@media (min-width: 960px) {
+  .take { grid-template-columns: minmax(0, 1fr); padding: 24px; gap: 0; }
+  .take-icon { grid-row: auto; margin-bottom: 18px; }
+}
 .take-no { margin-top: 24px; text-align: center; color: var(--txm); font-size: 1rem; }
+
+/* ── PROMISES ─────────────────────────────────────────────────────────── */
+/* LoadUp's "why us": the title and a link on the left, four cards with a
+   charcoal icon square on the right (stacked on a phone). */
+.promises-in { display: grid; gap: 32px; }
+@media (min-width: 960px) { .promises-in { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 56px; align-items: start; } }
+.promises-head .section-sub { margin-top: 14px; }
+.promises .section-title em {
+  color: var(--rg); text-decoration: underline; text-decoration-color: var(--tan);
+  text-decoration-thickness: .34em; text-underline-offset: -.2em; text-decoration-skip-ink: none;
+}
+.promise-cta {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 48px; margin-top: 18px;
+  color: var(--rg); font-weight: 800; font-size: 1.05rem; text-decoration: underline;
+  text-decoration-color: var(--tan); text-decoration-thickness: 3px; text-underline-offset: 6px;
+}
+.promise-cta::after { content: '\2192'; }
+.promise-grid { display: grid; gap: 14px; }
+.promise {
+  display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 18px; align-items: start;
+  padding: 22px; border-radius: 18px; background: var(--page); border: 1.5px solid var(--bdr);
+}
+.promise-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 12px; background: var(--rg); color: var(--tan); }
+.promise-icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.promise h3 { font: 800 1.2rem/1.25 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; margin: 2px 0 6px; }
+.promise p { color: var(--txm); font-size: 1rem; line-height: 1.6; }
+
+/* ── PRICE BAND ───────────────────────────────────────────────────────── */
+/* LoadUp's colored band in our yellow: one line and one charcoal button. */
+.price-band { background: var(--tan); padding: 80px var(--gutter); text-align: center; border-block: 3px solid var(--rg); }
+.price-band-in { max-width: 640px; margin: 0 auto; }
+.price-band-eyebrow { font-size: 1rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--rg); margin-bottom: 12px; }
+.price-band h2 { font: 800 clamp(2.2rem, 5.6vw, 3.6rem)/1.02 'Bricolage Grotesque', sans-serif; letter-spacing: -.04em; color: var(--rg); }
+.price-band-line { margin: 18px auto 28px; max-width: 480px; font-size: 1.1rem; line-height: 1.55; color: var(--rg); }
+.price-band-alt { margin-top: 18px; font-size: 1rem; color: var(--rg); }
+.price-band-alt a { display: inline-block; padding: 12px 0; color: var(--rg); font-weight: 800; }
 
 /* ── AREA ─────────────────────────────────────────────────────────────── */
 .area-in { display: grid; gap: 36px; align-items: center; }

@@ -343,23 +343,57 @@
   </div>
 </section>
 
-<section class="band is-card" aria-labelledby="what-we-take">
+<!-- WHAT WE TAKE: eight kinds of junk as cards, each with its block and icon. -->
+<section class="band" aria-labelledby="what-we-take">
   <div class="wrap">
     <div class="section-head center">
       <p class="h-eyebrow dark">What we take</p>
       <h2 class="section-title" id="what-we-take">If it fits in the truck, it can go.</h2>
     </div>
     <div class="take-grid">
-      <article class="take" style="--sw:#E4572E"><span class="take-block"></span><h3>Furniture</h3><p>Couches, chairs, tables, dressers, desks.</p></article>
-      <article class="take" style="--sw:#9AA5B1"><span class="take-block"></span><h3>Appliances</h3><p>Fridges, freezers, washers, dryers, stoves.</p></article>
-      <article class="take" style="--sw:#4C8BF5"><span class="take-block"></span><h3>Mattresses</h3><p>Any size, with or without the box spring.</p></article>
-      <article class="take" style="--sw:#D9B26F"><span class="take-block"></span><h3>Garage and basement</h3><p>Boxes, shelves, tools and everything in between.</p></article>
-      <article class="take" style="--sw:#3FA34D"><span class="take-block"></span><h3>Yard debris</h3><p>Branches, clippings, old fencing, sheds taken apart.</p></article>
-      <article class="take" style="--sw:#8E6CCF"><span class="take-block"></span><h3>Move outs</h3><p>What didn't make the moving truck.</p></article>
-      <article class="take" style="--sw:#2E3440"><span class="take-block"></span><h3>Electronics</h3><p>TVs, monitors, computers, printers.</p></article>
-      <article class="take" style="--sw:#F2A541"><span class="take-block"></span><h3>Estate cleanouts</h3><p>A whole home, handled with care.</p></article>
+      <!-- Each kind as a block in its pile color (the hero's pile) with a line icon in it. -->
+      <article class="take" style="--sw:#E4572E"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/><path d="M5 18v2M19 18v2"/></svg></span><h3>Furniture</h3><p>Couches, chairs, tables, dressers, desks.</p></article>
+      <article class="take" style="--sw:#9AA5B1"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 10h12M9 5v2M9 13v3"/></svg></span><h3>Appliances</h3><p>Fridges, freezers, washers, dryers, stoves.</p></article>
+      <article class="take" style="--sw:#4C8BF5"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 18V6M2 14h20v4M22 14v-2a3 3 0 0 0-3-3h-8v5"/><circle cx="6.5" cy="11" r="2"/></svg></span><h3>Mattresses</h3><p>Any size, with or without the box spring.</p></article>
+      <article class="take" style="--sw:#D9B26F"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg></span><h3>Garage and basement</h3><p>Boxes, shelves, tools and everything in between.</p></article>
+      <article class="take" style="--sw:#3FA34D"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-14 15-15-1 10-7 15-15 15z"/><path d="M5 19l8-8"/></svg></span><h3>Yard debris</h3><p>Branches, clippings, old fencing, sheds taken apart.</p></article>
+      <article class="take" style="--sw:#8E6CCF"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="8" height="8" rx="1"/><rect x="13" y="12" width="8" height="8" rx="1"/><rect x="8" y="3" width="8" height="8" rx="1"/></svg></span><h3>Move outs</h3><p>What didn't make the moving truck.</p></article>
+      <article class="take is-dark" style="--sw:#2E3440"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="13" rx="2"/><path d="M8 21h8M12 18v3"/></svg></span><h3>Electronics</h3><p>TVs, monitors, computers, printers.</p></article>
+      <article class="take" style="--sw:#F2A541"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><h3>Estate cleanouts</h3><p>A whole home, handled with care.</p></article>
     </div>
     <p class="take-no">We can't take paint, chemicals, fuel, asbestos or medical waste.</p>
+  </div>
+</section>
+
+<!-- PROMISES (round 7, LoadUp's "why us" cards): four things every job gets. Each is
+     already true in how we book and work (the order page's rule, the On my way text,
+     the crew, the "all done" email's photos); docs/service-standard.md is how the crew
+     keeps them. Promise only what we do: never a rating or a review count we lack. -->
+<section class="band is-card promises" aria-labelledby="promises">
+  <div class="wrap promises-in">
+    <div class="promises-head">
+      <p class="h-eyebrow dark">Why us</p>
+      <h2 class="section-title" id="promises">What you can count on, <em>every job.</em></h2>
+      <p class="section-sub">Four things every job gets, from your price to the last sweep.</p>
+      <a class="promise-cta" href="book/quote.html">Get my price</a>
+    </div>
+    <div class="promise-grid">
+      <article class="promise"><span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/></svg></span><div><h3>Your price first</h3><p>You see the price before you book. If your load is bigger, we show you the new price before we lift anything and charge it only if you agree.</p></div></article>
+      <article class="promise"><span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9.5L5 19.5V16H4z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/></svg></span><div><h3>A text before we arrive</h3><p>You pick a day and an arrival window, and we text you when we are on the way.</p></div></article>
+      <article class="promise"><span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg></span><div><h3>We do all the lifting</h3><p>From the attic, the basement or the backyard. You never carry a thing.</p></div></article>
+      <article class="promise"><span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 21l7-7M14 4l6 6-8 8H6v-6z"/><path d="M16 20h5"/></svg></span><div><h3>We leave it clean</h3><p>We sweep up when we finish and send you a before and after photo.</p></div></article>
+    </div>
+  </div>
+</section>
+
+<!-- PRICE BAND (round 7, LoadUp's colored band): one line and one button. -->
+<section class="price-band" id="price-band" aria-labelledby="price-band-title">
+  <div class="price-band-in" data-hides-sticky>
+    <p class="price-band-eyebrow">No estimate visit</p>
+    <h2 id="price-band-title">See your price in seconds.</h2>
+    <p class="price-band-line">Pick a size and add your ZIP. The total with travel shows before you book.</p>
+    <a class="cta-btn" href="book/quote.html">Get my price</a>
+    <p class="price-band-alt">Or call or text <a href="tel:+19254086053">(925) 408-6053</a></p>
   </div>
 </section>
 
