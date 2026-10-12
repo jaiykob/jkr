@@ -639,3 +639,55 @@ graph TD
 | 3 | gen 2 | Tasks 5 and 6: the metro map (`data/zip-points.mjs` from `measure-zips --points`, no routing; one dot per ZIP colored by zone, the base marked, six towns named, labels moved apart, hidden under 860px), town chips, the ZIP form posting to the order page without JS and lighting its dot and zone with it; FAQ cards on light grey; the charcoal closer with two buttons; the column footer on every page; `build-towns` writes the map, chips and footer towns; the map column held to the screen at 360px | 84 | 84 |
 | 4 | gen 3 | Task 7: `docs/service-standard.md` (nine parts, Disneyland's practice in our words, a red guess of a $25 on the spot limit) and `agent/skills/complaint-reply` (draft only, never sends); CLAUDE.md: round 7 done, rounds renumbered | 100 | 100 |
 | 5 | gen 4 | Final review fixes (fresh reviewer, "with fixes"): the Spanish ZIP form action relinked (it was a 404 without JS on 42 pages; `test-es` checks every relative link, source and action under `es/`); map labels 21px and hidden under 1100px; nothing moves under reduced motion (the `mobile` check emulates it); the heading and ZIP box before the map, the drawing `aria-hidden`; the map centers on and marks `BASE` (a `test-towns` case moves it); the service standard and helper say only what is true and doable. Checks added to `map`, `mobile` and `service` (each failed first) | 100 | 100 |
+
+## Round 8: the order page one step per page, with a progress bar
+
+Spec: `docs/superpowers/specs/2026-10-12-order-steps-design.md`. Founder,
+2026-10-12: "the booking flow clicks should each have there own page with
+progress batrd a ttoo", "minmize clicks at all costs"; picked 4 pages and 5
+taps. Rubric: the round 6 columns, with **Taps** (fewest taps from a
+homepage card to booked) in place of Authority.
+
+### Plan A: steps over the one page
+
+Keep `book/quote.html` and the one state object in `js/order.js`; the five
+sections become four step pages (the details and pay sections share the
+last), shown one at a time from a `step` value, with a hash per step, the
+history API for Back, auto-advance where a choice completes a step, and a
+sticky progress bar.
+
+| Coverage | Taps | One source | Copies | Testable | Style | Clear | Guesses | Failures | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 10 | 10 | 10 | 9 | 10 | 9 | 10 | 9 | 8 | **94** |
+
+### Plan B: a separate HTML page per step
+
+`book/size.html`, `where.html`, `when.html`, `book.html`, the order carried
+between them in sessionStorage, one script per page.
+
+| Coverage | Taps | One source | Copies | Testable | Style | Clear | Guesses | Failures | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 8 | 7 | 6 | 7 | 7 | 9 | 10 | 6 | 6 | **75** |
+
+A reload per step (slower, and Stripe's card form and the day list load
+again on every visit back), four copies of the summary and bar, the refusal
+paths (a window filling at Book) cross pages, every round 1 and 6 check that
+reads one order page breaks.
+
+### Child (A, with B's page feel)
+
+Plan A, plus from B what makes each step feel like a page: its own tab
+title, the focus on its heading, the screen back at the top on every step.
+Plan: `docs/superpowers/plans/2026-10-12-round-8-order-steps.md`.
+
+```mermaid
+graph TD
+  A8["Plan A · steps over the one page · 94"] --> C8["Child · 96"]
+  B8["Plan B · a page per step · 75"] --> C8
+```
+
+### Build generations
+
+| Gen | Parent | What changed | Score | Best so far |
+| --- | --- | --- | --- | --- |
+| 0 | main (cae4f96) | nothing yet: the round 8 scorecard alone (eleven checks; a fewest-taps journey with no day tap; each step probed at 360px after a walk); the one page already passes `mobile` and `desktop` | 30 | 30 |
