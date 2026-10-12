@@ -84,6 +84,32 @@ ok(/name/.test(bad('name: Sample cleanout\n', '', 'no-name.md')), 'a file with n
 ok(/Free options/.test(bad('## Free options\nWhat you can do for free.\n\n', '', 'no-free.md')), 'a file with no "## Free options" did not fail');
 ok(/smallest first/.test(bad('sizes: half, full', 'sizes: full, half', 'backwards.md')), 'sizes out of order did not fail');
 ok(/Portland/.test(bad('h1: Sample cleanouts across the Portland metro', 'h1: Sample cleanouts near you', 'no-portland.md')), 'an H1 that does not name Portland did not fail');
+// Nothing in a file may vanish silently: an unknown or repeated heading, a town line cut off by a
+// blank line or set apart from the list, or a header line that is not a field all fail, naming it.
+{
+  const e = bad('## FAQ', '## Notes\nA paragraph that would never print.\n\n## FAQ', 'unknown-heading.md');
+  ok(/"## Notes"/.test(e) && e.startsWith('content/services/portland/unknown-heading.md:'), `an unknown "## " heading did not fail naming it and the file: ${e}`);
+  const d = bad('## FAQ', '## Free options\nA second copy that would never print.\n\n## FAQ', 'twice-heading.md');
+  ok(/"## Free options"/.test(d) && /twice/.test(d), `a heading used twice did not fail naming it: ${d}`);
+}
+{
+  const gap = throws(() => parseService(sample.replace('- troutdale:', '\n- troutdale:'), 'town-gap.md'));
+  const g = gap ? null : parseService(sample.replace('- troutdale:', '\n- troutdale:'), 'town-gap.md');
+  ok(g && g.towns.length === 5 && g.towns[2].slug === 'troutdale', `a blank line inside "towns:" ended the list: ${gap || (g && g.towns.map((t) => t.slug))}`);
+  const e = bad('posts: garage-cleanout-in-a-weekend, where-hauled-junk-goes', 'posts: garage-cleanout-in-a-weekend, where-hauled-junk-goes\n- camas: Hilly streets above the river.', 'town-after.md');
+  ok(/camas/.test(e) && e.startsWith('content/services/portland/town-after.md:'), `a "- town:" line after another field did not fail naming it: ${e}`);
+  const w = bad('lede: The line under the headline, with [[a guess]] in it.', 'lede: The line under the headline, with [[a guess]] in it,\nwrapped onto a second line.', 'wrapped.md');
+  ok(/wrapped onto a second line/.test(w) && w.startsWith('content/services/portland/wrapped.md:'), `a header line that is not a field did not fail naming it: ${w}`);
+}
+{
+  // The four sections read like a post: links from the site root point up out of portland/, and **bold**.
+  const l = parseService(sample.replace('A first paragraph about what we take.', 'A first paragraph with [the order page](/book/quote.html), [Gresham](/gresham.html) and **bold** words.'), 'links.md');
+  ok(l.take[0] === '<p>A first paragraph with <a href="../book/quote.html">the order page</a>, <a href="../gresham.html">Gresham</a> and <strong>bold</strong> words.</p>', `a section link or bold did not render: ${l.take[0]}`);
+  const m = parseService(sample.replace('- Bikes and toys', '- [[Bikes]] and [toys](/blog/x.html)'), 'list-links.md');
+  ok(m.take[1].includes('<li><span class="guess">Bikes</span> and <a href="../blog/x.html">toys</a></li>'), `a list item's guess or link did not render: ${m.take[1]}`);
+  const mixed = parseService(sample.replace('A first paragraph about what we take.\n\n- Bikes', 'A first paragraph about what we take.\n- Bikes'), 'mixed.md');
+  ok(mixed.take.length === 2 && mixed.take[0].startsWith('<p>') && mixed.take[1].startsWith('<ul>'), `a list right under a paragraph line is not its own list: ${JSON.stringify(mixed.take)}`);
+}
 
 const s = parseService(sample, 'sample-cleanout.md');
 ok(s.slug === 'sample-cleanout' && s.metro === 'portland' && s.name === 'Sample cleanout', `header fields: ${JSON.stringify([s.slug, s.metro, s.name])}`);

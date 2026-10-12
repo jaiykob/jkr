@@ -35,7 +35,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import site from '../api/_lib/site.js';
 import { fmt } from '../pricing.config.mjs';
 import { parseTown, townTravel, inline, faqPage } from './build-towns.mjs';
-import { parsePost } from './build-blog.mjs';
+import { parsePost, renderMd } from './build-blog.mjs';
 import { crumbs, HUB } from './lib/crumbs.mjs';
 
 const require = createRequire(import.meta.url);
@@ -49,19 +49,26 @@ const eol = (s) => s.replace(/\r\n/g, '\n');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const idOf = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-/** Paragraphs and "- " lists to HTML blocks, each escaped, [[guesses]] red. */
+// The pages live one folder down (portland/<slug>.html), so a link written from the site root
+// (/book/quote.html) is rewritten to ../book/quote.html, the way the blog rewrites its own.
+const UP = '../'.repeat(`${METRO}/x.html`.split('/').length - 1);
+const HEAD_FIELDS = ['name', 'h1', 'description', 'lede', 'sizes', 'towns', 'posts'];
+
+/** Paragraphs and "- " lists to HTML blocks, written like a post (build-blog's renderMd): escaped,
+ *  [[guesses]] red, **bold**, and [links](/from/the/site/root.html). A "- " line right under a
+ *  paragraph line starts its own list. */
 function blocks(text) {
   const out = [];
   for (const b of text.split(/\n\s*\n/)) {
-    let para = [], list = [];
-    const flushP = () => { if (para.length) out.push(`<p>${inline(para.join(' '))}</p>`); para = []; };
-    const flushL = () => { if (list.length) out.push(['<ul>', ...list.map((l) => `  <li>${inline(l)}</li>`), '</ul>'].join('\n')); list = []; };
+    let run = [], isList = false;
+    const flush = () => { if (run.length) out.push(renderMd(run.join('\n'), UP)); run = []; };
     for (const raw of b.split('\n')) {
       const l = raw.trim();
       if (!l) continue;
-      if (l.startsWith('- ')) { flushP(); list.push(l.slice(2).trim()); } else { flushL(); para.push(l); }
+      if (l.startsWith('- ') !== isList) { flush(); isList = l.startsWith('- '); }
+      run.push(l);
     }
-    flushP(); flushL();
+    flush();
   }
   return out;
 }
@@ -87,6 +94,35 @@ export function parseService(text, file) {
   const field = (k) => ((head.match(new RegExp(`^${k}:[ \\t]*(.*)$`, 'm')) || [])[1] || '').trim();
   const section = (name) => ((s.split(new RegExp(`^## ${name}[ \\t]*$`, 'm'))[1] || '').split(/^## /m)[0]).trim();
 
+  // Nothing may vanish silently: every "## " heading is a known section, used once.
+  const known = [...SECTIONS.map(([, title]) => title), 'FAQ'];
+  const seen = new Set();
+  for (const [, h] of s.matchAll(/^## (.*)$/gm)) {
+    const title = h.trim();
+    if (!known.includes(title)) fail(`"## ${title}" is not a section; the sections are ${known.map((t) => `"## ${t}"`).join(', ')}`);
+    if (seen.has(title)) fail(`"## ${title}" is used twice; write all of it under one heading`);
+    seen.add(title);
+  }
+
+  // The header, line by line: each field once, on one line, and the town lines together under
+  // "towns:" (blank lines between them are fine). Anything else would silently never print.
+  const lines = head.split('\n');
+  const at = lines.findIndex((l) => /^towns:/.test(l));
+  if (at < 0) fail('no "towns:" line');
+  if (lines[at].replace(/^towns:/, '').trim()) fail('towns go one per line under "towns:", as "- <town>: <why>"');
+  const townAt = [];
+  for (let i = at + 1; i < lines.length && (/^- /.test(lines[i]) || !lines[i].trim()); i++) if (lines[i].trim()) townAt.push(i);
+  const townLines = townAt.map((i) => lines[i]);
+  const fields = new Set();
+  for (const [i, l] of lines.entries()) {
+    if (!l.trim() || townAt.includes(i)) continue;
+    if (/^- /.test(l)) fail(`the town line "${l}" is not under "towns:"; keep every town line together, right under it`);
+    const k = (l.match(/^([a-z0-9_]+):/) || [])[1];
+    if (!k || !HEAD_FIELDS.includes(k)) fail(`the line "${l}" is not a field (${HEAD_FIELDS.join(', ')}); each field is one line, as "<field>: <value>"`);
+    if (fields.has(k)) fail(`"${k}:" is given twice`);
+    fields.add(k);
+  }
+
   for (const k of ['name', 'h1', 'description', 'lede', 'sizes', 'posts']) if (!field(k)) fail(`no "${k}:" line`);
   const name = field('name'), h1 = field('h1'), description = field('description');
   for (const [k, v] of [['name', name], ['h1', h1], ['description', description]]) if (v.includes('[[')) fail(`no [[guess]] in "${k}:" (it prints where it cannot be red)`);
@@ -101,14 +137,10 @@ export function parseService(text, file) {
   const rows = sizes.map((k) => keys.indexOf(k));
   if (rows.some((r, i) => i && r <= rows[i - 1])) fail(`sizes go smallest first, each once (${keys.join(', ')})`);
 
-  const lines = head.split('\n');
-  const at = lines.findIndex((l) => /^towns:/.test(l));
-  if (at < 0) fail('no "towns:" line');
-  if (lines[at].replace(/^towns:/, '').trim()) fail('towns go one per line under "towns:", as "- <town>: <why>"');
   const towns = [];
-  for (let i = at + 1; i < lines.length && /^- /.test(lines[i]); i++) {
-    const m = lines[i].match(/^- ([a-z0-9-]+):[ \t]*(.*)$/);
-    if (!m) fail(`the town line "${lines[i]}" is not "- <town>: <why>"`);
+  for (const line of townLines) {
+    const m = line.match(/^- ([a-z0-9-]+):[ \t]*(.*)$/);
+    if (!m) fail(`the town line "${line}" is not "- <town>: <why>"`);
     if (!fs.existsSync(path.join(ROOT, 'content/towns', `${m[1]}.md`))) fail(`town "${m[1]}" has no content/towns/${m[1]}.md`);
     if (!m[2].trim()) fail(`town "${m[1]}" has no reason after its colon`);
     if (towns.some((t) => t.slug === m[1])) fail(`town "${m[1]}" is listed twice`);

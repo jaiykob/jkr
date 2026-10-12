@@ -53,7 +53,17 @@ A: The plain answer first, then what to do next.
 - **towns**: 5 to 8 town slugs (each must have `content/towns/<slug>.md`),
   each with a one line reason that is true of that town (read its file).
 - **posts**: related blog posts, by slug (`content/blog/en/<slug>.md`).
-- The four sections and the FAQ (3 to 5 questions) are required.
+- The four sections and the FAQ (3 to 5 questions) are required, each under
+  its own heading, once. Any other `## ` heading stops the build (its text
+  would never print).
+- Each field is one line. A line in the top part that is not a field, or a
+  town line that is not under `towns:`, stops the build; blank lines between
+  the town lines are fine.
+- **The four sections are written like a blog post**: `**bold**`, and links
+  written from the site root, such as `[send a photo](/book/quote.html#photos)`
+  or `[Gresham](/gresham.html)`, which the build points up out of the
+  `portland/` folder. The lede, the town reasons and the FAQ answers are plain
+  text: no links or bold there, only `[[guesses]]`.
 
 ## Rules the build and the tests hold you to
 
