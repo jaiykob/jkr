@@ -52,6 +52,7 @@ comment, or drop `class="guess"`. Then run `npm run guesses` again.
 - [ ] `agent/skills/review-request/SKILL.md`: not set up yet).
 - [ ] `api/_lib/site.js`: WhatsApp number (digits, with country code): the business phone until the founder names one.
 - [ ] `book/quote.html`: WhatsApp number: the business phone until the founder names one
+- [ ] `docs/service-standard.md`: the crew's on the spot give back limit, $25 (founder sets the real number)
 - [ ] `marketing/ad-copy/README.md`: These prices are placeholder guesses (`GUESS` in `pricing.config.mjs`).
 - [ ] `marketing/ad-copy/README.md`: The mile bands and fees are placeholder guesses (`GUESS` in `pricing.config.mjs`).
 - [ ] `marketing/ad-copy/README.md`: The base point (Gresham city center) is a placeholder guess (`GUESS` in `pricing.config.mjs`).

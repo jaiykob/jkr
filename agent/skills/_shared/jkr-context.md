@@ -149,3 +149,6 @@ next window.
   stuffing, **no dashes as punctuation**.
 - Name the customer's own load, zone and price. Never invent a discount.
 - Every first text says who we are and ends with "Reply STOP to opt out."
+- How we treat customers on and off the job, and how a complaint is answered
+  (listen, understand, sorry, fix, why): `docs/service-standard.md`. The
+  `complaint-reply` helper drafts those answers.
