@@ -759,3 +759,9 @@ graph TD
   A9["Plan A · metro folders now · 81"] --> C9["Child · 92"]
   B9["Plan B · Portland at the root · 89"] --> C9
 ```
+
+### Build generations
+
+| Gen | Parent | What changed | Score | Best so far |
+| --- | --- | --- | --- | --- |
+| 0 | main (ed657f0) | nothing yet: the round 9 scorecard alone (eleven checks; the breadcrumb rule scored on every page below the homepage, a size card's link proved in Chrome, the help topic tap measured with the banner forced up, layout shift and the largest paint read from Chrome's own entries); `tests` passes and `earlier` is skipped under `--no-earlier`; of `audit`'s parts, no blocking head script and the layout shift and largest paint on the three pages that exist already pass | 13 | 13 |
