@@ -799,7 +799,10 @@ var s=new URL(a.href).searchParams.get('size');return s===${JSON.stringify(Strin
           if (n < 3) return `${rel}: the topic "${l.text}" has ${n} questions, want 3+`;
           out.push([l.hash, n]);
         }
-        return out.length === 6 ? out : `${rel}: ${out.length} topic links in .help-topics, want 6`;
+        if (out.length !== 6) return `${rel}: ${out.length} topic links in .help-topics, want 6`;
+        // Six different places: no group twice, Before we come once.
+        const twice = out.map((x) => x[0]).find((k, i, all) => all.indexOf(k) !== i);
+        return twice === undefined ? out : `${rel}: two topics go to ${twice === 'before' ? bwc : `#${twice}`}, want six different places`;
       };
       const contact = (html, rel) => {
         const box = byClass(html, 'help-contact')[0];
@@ -908,7 +911,7 @@ if(r.bottom>innerHeight)return 'after the tap the heading ends at '+Math.round(r
       }
       return bad.length ? bad.join('; ') : true;
     } },
-    { id: 'copy', pts: 7, desc: 'the service files, Before we come, the help pages and the piano posts: no dashes, slang, dog words, TODO or Disney words; no typed price ($ and a digit) in content/services; GUESSES.md current', run() {
+    { id: 'copy', pts: 7, desc: 'the service files, Before we come, the help pages and the piano posts: no dashes, slang, dog words, TODO or Disney words; no typed price ($ and a digit) in content/services or on Before we come (outside the data-policy spans the config writes); GUESSES.md current', run() {
       const md = (f) => mdText(f).replace(/<!--[\s\S]*?-->/g, '');
       const items = [...R9_SERVICES.map((s) => [`${R9_SVC_DIR}/${s}.md`, md(`${R9_SVC_DIR}/${s}.md`)]),
         ...['before-we-come.html', 'es/before-we-come.html', 'faq.html', 'es/faq.html'].map((f) => [f, visibleText(read(f))]),
@@ -924,6 +927,14 @@ if(r.bottom>innerHeight)return 'after the tap the heading ends at '+Math.round(r
       for (const f of walk('content/services')) {
         const m = (read(f) || '').match(/\$\s*\d/);
         if (m) return `${f} types a price ("${(read(f) || '').slice(Math.max(0, m.index - 20), m.index + 10).replace(/\s+/g, ' ')}"); prices come from the config`;
+      }
+      // Before we come: the fees print only through data-policy spans (build-pricing writes them from the config);
+      // scripts, styles and comments are not copy.
+      for (const f of ['before-we-come.html', 'es/before-we-come.html']) {
+        const s = (read(f) || '').replace(/<script\b[\s\S]*?<\/script>/gi, ' ').replace(/<style\b[\s\S]*?<\/style>/gi, ' ').replace(/<!--[\s\S]*?-->/g, ' ')
+          .replace(/<([a-z0-9]+)\b[^>]*\sdata-policy="[^"]*"[^>]*>[\s\S]*?<\/\1>/gi, ' ');
+        const m = s.match(/\$\s*\d/);
+        if (m) return `${f} types a price ("${s.slice(Math.max(0, m.index - 20), m.index + 10).replace(/\s+/g, ' ')}"); a fee prints through a data-policy span`;
       }
       return run('node', ['scripts/list-guesses.mjs', '--check']).code === 0 || 'GUESSES.md is stale (npm run guesses)';
     } },
