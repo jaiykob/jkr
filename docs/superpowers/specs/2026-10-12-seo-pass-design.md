@@ -91,8 +91,8 @@ folders now, 81; the child keeps the towns and `service-areas.html` where
 they are and puts the eight new service pages in `/portland/`**
 (`/portland/garage-cleanout.html`), so the address names the metro, nothing
 already built moves, and round 11's `/sacramento/garage-cleanout.html` is
-its sibling. `/portland` and `/portland/` 301 to `service-areas.html` until
-round 11 decides on metro hubs. Every page below the homepage shows a
+its sibling. `/portland/` 301s to `service-areas.html` until round 11 decides on
+metro hubs (`/portland.html` is the Portland town page and stays). Every page below the homepage shows a
 breadcrumb trail (Home › Portland metro › Garage cleanout) matching its
 BreadcrumbList.
 
@@ -152,9 +152,8 @@ A new check script, `scripts/check-seo-audit.mjs` (run by `npm test`),
 over every indexable page in English and Spanish:
 
 - exactly one H1; a unique title of 65 characters or fewer that names the
-  place (town and service pages name the town or "Portland", and the state
-  where a town has a twin elsewhere); a unique description of 100 to 160
-  characters naming the place;
+  place (a town page its town; a service page, the hub and the homepages
+  "Portland"); a unique description of 100 to 160 characters;
 - a self canonical, share card and `twitter:card` (already true; kept
   true);
 - BreadcrumbList JSON-LD on every page below the homepage, matching a
