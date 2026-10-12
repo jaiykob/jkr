@@ -160,8 +160,14 @@
     if (OPEN && s === 'book') mountPay();
     if (!moved || how === 'start') return;
     window.scrollTo(0, 0);
-    var target = (focusId && $(focusId)) || $(SECTIONS.filter(function (id) { return STEP_OF[id] === s; })[0] + '-h');
+    // The focus goes where the next keystroke goes, so nobody taps into a box: the ZIP
+    // box on Where, the first empty field on Book; else the page's heading. The step is
+    // said aloud, since the focus may skip the heading.
+    var heading = $(SECTIONS.filter(function (id) { return STEP_OF[id] === s; })[0] + '-h');
+    var typeHere = s === 'where' ? zipIn : s === 'book' ? Object.keys(FIELDS).map(function (k) { return FIELDS[k].el; }).filter(function (f) { return !f.value.trim(); })[0] : null;
+    var target = (focusId && $(focusId)) || typeHere || heading;
     if (target) target.focus({ preventScroll: true });
+    if (target !== heading && heading) say('Step ' + (STEPS.indexOf(s) + 1) + ' of ' + STEPS.length + '. ' + heading.textContent.trim());
     track('order_step', { step: s, how: how || 'tap' });
   }
   /* The step on screen: its sections, the progress bar, the tab title, Book. */
@@ -180,6 +186,7 @@
     $('o-steps-of').textContent = 'Step ' + (at + 1) + ' of ' + STEPS.length;
     $('o-steps-fill').style.width = ((at + 1) / STEPS.length * 100) + '%';
     $('o-back').hidden = at === 0;
+    document.querySelector('.o-intro').classList.toggle('is-quiet', at > 0);
     var h = $(SECTIONS.filter(function (id) { return STEP_OF[id] === step; })[0] + '-h');
     document.title = (h ? h.textContent.trim() + ' | ' : '') + BASE_TITLE;
     // Book shows on the Book page only: on the pages before it, it could only send people back.

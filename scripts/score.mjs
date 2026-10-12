@@ -684,6 +684,14 @@ window.scrollTo(0,document.documentElement.scrollHeight);return {pos:c.position,
           if (pr.sw > pr.vw) return `#${step}: ${pr.sw}px wide`;
           if (pr.small.length) return `#${step}: small text ${pr.small.slice(0, 2).join('; ')}`;
           if (pr.taps.length) return `#${step}: small taps ${pr.taps.slice(0, 2).join('; ')}`;
+          // The one tap the When page needs is on a phone's first screen (banner up, above the bar).
+          if (step === 'when') {
+            const r = await p.evaluate(`(function(){var x=document.querySelector('[aria-label="Local preview"]');if(x)x.remove();window.scrollTo(0,0);
+var w=document.querySelector(${JSON.stringify(R8_WIN)});var bar=document.getElementById('o-bar');if(!w)return null;
+var bt=bar&&!bar.hidden?bar.getBoundingClientRect().top:innerHeight;return {bottom:w.getBoundingClientRect().bottom,limit:bt};})()`);
+            if (!r) return '#when: no arrival time to tap';
+            if (r.bottom > r.limit) return `#when: the first arrival time ends at ${Math.round(r.bottom)}px, under the bar at ${Math.round(r.limit)}px (a scroll before the tap)`;
+          }
         }
         return true;
       });
@@ -704,17 +712,24 @@ window.scrollTo(0,document.documentElement.scrollHeight);return {pos:c.position,
         return true;
       });
     } },
-    { id: 'a11y', pts: 5, desc: 'a step change puts the focus on the new step\'s heading; aria-current="step" in the progress bar; each step names itself in the tab title', async run() {
+    { id: 'a11y', pts: 5, desc: 'a step change puts the focus where the next keystroke or tap goes: the ZIP box on Where, the first empty field on Book, the heading on When; aria-current="step"; each step names itself in the tab title', async run() {
       if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
       return withPage(360, async (p) => {
-        await p.goto(ORIGIN + ORDER_URL(), 1200);
-        await onStep(p, 'where');
+        // Fewest taps: the cursor is already where the customer types next, so no tap into a box.
+        await p.goto(`${ORIGIN}/book/quote.html`, 1200);
+        await p.click(`#o-size .size-card[data-size="${LOAD_ROW}"]`);
+        const w = await onStep(p, 'where');
+        if (w.focus !== 'o-zip-in') return `on Where the focus is on ${w.focus}, want the ZIP box (no tap into it)`;
+        // One walk in one tab (a second visit would open on When: the ZIP is kept in the tab).
         await p.type('#o-zip-in', Z2);
         const s = await onStep(p, 'when');
         if (s.focus !== 'o-when-h') return `after the ZIP the focus is on ${s.focus}, want the When heading (#o-when-h)`;
         if (!s.current) return 'no aria-current="step" in the progress bar';
         const h = await p.evaluate(`document.getElementById('o-when-h').textContent.trim()`);
-        return s.title.startsWith(h) || `the tab title "${s.title}" does not start with the step's heading "${h}"`;
+        if (!s.title.startsWith(h)) return `the tab title "${s.title}" does not start with the step's heading "${h}"`;
+        await p.click(R8_WIN);
+        const bk = await onStep(p, 'book');
+        return bk.focus === 'o-name' || `on Book the focus is on ${bk.focus}, want the first empty field (#o-name)`;
       });
     } },
   ],
@@ -1020,6 +1035,10 @@ if(t||a)out.push(x[0]+x[1]+(t?' transition '+c.transitionDuration:'')+(a?' anima
         if (probe.sw > probe.vw) return `${probe.sw}px wide in a ${probe.vw}px window`;
         if (probe.small.length) return `small text ${probe.small.slice(0, 2).join('; ')}`;
         if (probe.taps.length) return `small taps ${probe.taps.slice(0, 2).join('; ')}`;
+        // Since round 8 the page opens on the first step still to do (When, with the size and ZIP
+        // known): the cards are measured on the Size page, reached through the progress bar.
+        await p.evaluate(`(function(){var b=document.querySelector('.o-steps [data-go="size"]');if(b)b.click();})()`);
+        await new Promise((r) => setTimeout(r, 300));
         const cards = await p.evaluate(`[].map.call(document.querySelectorAll('#o-size .size-card'),function(e){var r=e.getBoundingClientRect();return [r.left,r.top,r.width];})`);
         if (!cards || cards.length !== R6_ROWS.length) return `${cards ? cards.length : 0} size cards on the order page`;
         for (let i = 1; i < cards.length; i++) if (cards[i][1] <= cards[i - 1][1] || Math.abs(cards[i][0] - cards[0][0]) > 2) return 'size cards are not stacked in one column';
@@ -1029,7 +1048,10 @@ if(t||a)out.push(x[0]+x[1]+(t?' transition '+c.transitionDuration:'')+(a?' anima
         if (!barText.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `bar does not show the total ${fmt(TOTAL)}: "${text(barText).slice(0, 80)}"`;
         const book = await p.evaluate(`(document.querySelector('#o-book')||{}).textContent`);
         if (!book || !book.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `Book button reads "${text(book)}", want the amount`;
-        // Sections open in turn (spec): the contact fields open once a day and a window are picked.
+        // The contact fields open once a day and a window are picked (since round 8: the When page,
+        // then the Book page after the window).
+        await p.evaluate(`(function(){var b=document.querySelector('.o-steps [data-go="when"]');if(b)b.click();})()`);
+        await new Promise((r) => setTimeout(r, 300));
         try {
           await p.click('#o-when [data-date]:not([disabled]):not([aria-disabled="true"])');
           await p.click('#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)');
@@ -1049,11 +1071,14 @@ if(t||a)out.push(x[0]+x[1]+(t?' transition '+c.transitionDuration:'')+(a?' anima
         const probe = probeOf(await p.html());
         if (!probe) return 'order page did not report (no #order page yet?)';
         if (probe.sw > probe.vw) return `order page ${probe.sw}px wide in a ${probe.vw}px window`;
-        const size = await p.evaluate(rectOf('#o-size')), sum = await p.evaluate(rectOf('#o-summary'));
-        if (!shown(size) || !shown(sum)) return 'no #o-size and #o-summary to measure';
+        // Since round 8 one step shows at a time: the steps column (#order) is what sits beside the summary.
+        const size = await p.evaluate(rectOf('#order')), sum = await p.evaluate(rectOf('#o-summary'));
+        if (!shown(size) || !shown(sum)) return 'no #order and #o-summary to measure';
         if (sum.left < size.right - 2) return 'the summary is not in a second column';
         const bar = await p.evaluate(rectOf('#o-bar'));
         if (shown(bar)) return 'the bottom bar still shows at 1280px';
+        // The pay step is the Book page since round 8: an arrival time opens it.
+        await p.click('#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)');
         await p.evaluate(`document.querySelector('#o-pay').scrollIntoView({block:'center'})`);
         await new Promise((r) => setTimeout(r, 400));
         const after = await p.evaluate(rectOf('#o-summary'));
