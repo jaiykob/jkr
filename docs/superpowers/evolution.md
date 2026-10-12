@@ -699,3 +699,63 @@ Final run (2026-10-12, gen 3 at cf86758): every round scored on its own
 (`--round N --no-earlier`, rounds 8 then 1 to 7, one Chrome at a time; the
 same checks as the full run, split so the machine does not run out of
 memory): **rounds 1 to 8 all 100**. Merged to `main`.
+
+## Round 9: the full SEO pass and service pages (Portland)
+
+Spec: `docs/superpowers/specs/2026-10-12-seo-pass-design.md`. Founder,
+2026-10-10: "full seo pass and service pages for portland metro and
+sacramento metro" (Portland first, 2026-10-11), with Disneyland's search
+practices (2026-10-11). Rubric: the round 6 columns, with **Churn** (how
+much already built has to move, and how many earlier checks must be walked)
+in place of Taps, and **Future** (how Sacramento, round 11, fits beside it)
+in place of Authority.
+
+### Plan A: metro folders now
+
+Move the 40 towns and their Spanish twins into `/portland/` and
+`/es/portland/`, the hub to `/portland/index.html`, the eight services
+beside them, 301s for every old address generated into `vercel.json`. Round
+11 then adds `/sacramento/` as a sibling.
+
+| Coverage | Churn | One source | Copies | Testable | Style | Clear | Guesses | Failures | Future | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 4 | 9 | 8 | 7 | 9 | 9 | 10 | 6 | 10 | **81** |
+
+Every town link on the site, the share cards, the sitemap, the docs, the
+marketing files and the checks of rounds 1, 2, 4, 5, 6 and 7 that open a
+town page move at once; 80 generated redirects to keep right; the Spanish
+depth goes to two folders. All of it pre launch, so no ranking is lost, but
+the most places to break.
+
+### Plan B: Portland at the root
+
+Services at `/<service>.html` from a new builder on the blog's template
+(the shared header and footer by `build-chrome`), the towns and
+`service-areas.html` untouched, the hub given a Services section. Round 11
+puts Sacramento under `/sacramento/`.
+
+| Coverage | Churn | One source | Copies | Testable | Style | Clear | Guesses | Failures | Future | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 9 | 10 | 9 | 9 | 9 | 9 | 9 | 10 | 9 | 6 | **89** |
+
+Nothing already built moves. But `/garage-cleanout.html` does not say
+Portland, and in round 11 it sits beside `/sacramento/garage-cleanout.html`
+as if it were the only one.
+
+### Child (B, with A's metro folder for the new pages)
+
+Plan B, except the eight new service pages go in `/portland/` (new pages,
+so nothing moves): `/portland/garage-cleanout.html` names the metro in the
+address and the search result, and round 11's
+`/sacramento/garage-cleanout.html` is its exact sibling. The towns and
+`service-areas.html` stay where they are; `/portland` and `/portland/` 301
+to the hub until a metro hub is worth its own page (round 11 decides).
+From A also: a visible breadcrumb on every page below the homepage
+(Home › Portland metro › Garage cleanout) matching its BreadcrumbList.
+Plan: `docs/superpowers/plans/2026-10-12-round-9-seo-pass.md`.
+
+```mermaid
+graph TD
+  A9["Plan A · metro folders now · 81"] --> C9["Child · 92"]
+  B9["Plan B · Portland at the root · 89"] --> C9
+```
