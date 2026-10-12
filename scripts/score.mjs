@@ -103,6 +103,11 @@ const PROBE_SETS = {
 };
 PROBE_SETS[6] = { text: ['.size-card', '#order label', '#order input', '#o-bar', '#o-summary', '.o-total', '.o-travel', 'footer'],
   taps: ['.size-card', '#order button', '#o-bar a', '#o-bar button', '#o-summary a', '#o-summary button', '.site-nav a', '.site-nav button'] };
+// Round 7: the whole landing page (homepage, town pages, the Spanish homepage). Inline links inside
+// a sentence (the zone list's towns, an FAQ answer) are text, not buttons: they are not measured as taps.
+PROBE_SETS[7] = { text: ['main', 'footer'],
+  taps: ['.h-hero a', '.h-ticket', '.size-card', '.sizes-after a', '.promise-cta', '.price-band a', '.town-chips a', '.zip input', '.zip button',
+    '.faq summary', '.closer a', '.site-nav a', '.site-nav button', 'footer a'] };
 /* The probe as one function of the set id, returning { sw, vw, small, taps }. PROBE runs it once the
    page settles; probeNow(set) runs it now, for a page measured after a scripted walk (the pay step). */
 const PROBE_FN = `function(id){
@@ -423,7 +428,232 @@ const scanFiles = () => [
   'i18n/es.json'].filter(exists);
 const mdFiles = () => ['content/towns', 'content/blog/en', 'content/blog/es'].flatMap((d) => { try { return fs.readdirSync(path.join(ROOT, d)).filter((f) => f.endsWith('.md')).map((f) => `${d}/${f}`); } catch { return []; } });
 
+/* ── round 7 helpers: the landing page ─────────────────────────────────────── */
+// The local preview bar (js/preview-nav.js, localhost only) is not on the real site: it comes
+// off before anything is measured against the first screen.
+const NO_PREVIEW = `(function(){var b=document.querySelector('[aria-label="Local preview"]');if(b)b.remove();return true;})()`;
+/** WCAG contrast of each selector's text against the first solid background behind it. */
+const CONTRAST_FN = `function(sels){
+function rgb(s){var m=String(s).match(/rgba?\\(([^)]+)\\)/);if(!m)return null;var p=m[1].split(/[ ,\\/]+/).filter(Boolean).map(parseFloat);return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1};}
+function lum(c){return [c.r,c.g,c.b].map(function(v){v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}).reduce(function(s,v,i){return s+v*[0.2126,0.7152,0.0722][i];},0);}
+function bg(e){for(;e;e=e.parentElement){var c=rgb(getComputedStyle(e).backgroundColor);if(c&&c.a>0.5)return c;}return {r:255,g:255,b:255,a:1};}
+var out=[];sels.forEach(function(s){var e=document.querySelector(s);if(!e){out.push(s+': missing');return;}
+var cs=getComputedStyle(e),fg=rgb(cs.color),b=bg(e);var l1=lum(fg),l2=lum(b);var r=(Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+var fs=parseFloat(cs.fontSize),big=fs>=24||(fs>=18.66&&parseInt(cs.fontWeight,10)>=700);if(r<(big?3:4.5))out.push(s+' '+r.toFixed(2)+':1');});return out;}`;
+const R7_TOWN = () => (towns().find((t) => t.slug === 'happy-valley') || towns().find((t) => t.slug !== 'gresham') || towns()[0]).slug;
+const R7_ORDER = [/class="h-hero"/, /class="ticker"/, /id="how-it-works"/, /id="pricing"/, /id="what-we-take"/, /id="promises"/,
+  /id="price-band"/, /id="area"/, /id="faq"/, /class="closer"/, /<footer>/];
+const DISNEY_WORDS = /\b(magic(al)?|guests?|cast members?|onstage|backstage)\b/i;
+const R7_STANDARD = 'docs/service-standard.md', R7_HELPER = 'agent/skills/complaint-reply/SKILL.md';
+const sectionOf = (md, re) => { const s = String(md); const i = s.search(re); if (i < 0) return ''; const rest = s.slice(i + 1); const j = rest.search(/^## /m); return j < 0 ? s.slice(i) : s.slice(i, i + 1 + j); };
+
 const ROUNDS = {
+  7: [
+    { id: 'tests', pts: 10, desc: 'npm test passes', run() {
+      const r = run('npm', ['test']);
+      return r.code === 0 || `npm test failed: ${r.out.split('\n').filter((l) => /FAIL|Error|STALE|stale/.test(l)).slice(0, 3).join(' | ')}`;
+    } },
+    { id: 'earlier', pts: 5, desc: 'rounds 1 to 6 each still score 100', run() {
+      for (const n of [1, 2, 3, 4, 5, 6]) {
+        const r = run('node', ['scripts/score.mjs', '--round', String(n), '--json', '--no-earlier'], { timeout: 1500000 });
+        let j = null; try { j = JSON.parse(r.out.slice(r.out.indexOf('{'))); } catch { /* not json */ }
+        if (!j || j.score !== 100) return `round ${n} scores ${j ? j.score : '?'}: ${j ? j.checks.filter((c) => !c.got).map((c) => c.id).join(', ') : r.out.slice(0, 80)}`;
+      }
+      return true;
+    } },
+    { id: 'order', pts: 8, desc: 'homepage sections in LoadUp\'s order (hero, strip, steps, sizes, what we take, promises, price band, area, FAQ, closer, footer); the price tiers gone', run() {
+      const home = read('index.html') || '';
+      if (/BUILD:home-prices|class="tier"/.test(home)) return 'the old price tiers are still on the homepage';
+      let at = -1;
+      for (const re of R7_ORDER) {
+        const m = re.exec(home.slice(at + 1));
+        if (!m) return `${re.source} missing or out of order`;
+        at += 1 + m.index;
+      }
+      return true;
+    } },
+    { id: 'hero', pts: 12, desc: 'hero: copy beside the picture at 1280px, headline and the one big button on the first screen (1280x800 and 360x740 with the banner up), the check line beside the button, the price ticket a link at its config price', async run() {
+      if (!CHROME) return 'no Chrome to measure with';
+      const home = read('index.html') || '';
+      const hero = (home.match(/<section class="h-hero"[\s\S]*?<\/section>/) || [''])[0];
+      if (!/<a class="h-cta" href="book\/quote\.html"/.test(hero)) return 'no a.h-cta to the order page in the hero';
+      if ((hero.match(/class="h-cta"/g) || []).length !== 1) return 'want exactly one big button in the hero';
+      if (!/class="h-check"/.test(hero)) return 'no .h-check line';
+      const t = hero.match(/<a class="h-ticket[^"]*" data-size="(\d)" href="book\/quote\.html\?size=\1"[\s\S]*?<\/a>/);
+      if (!t) return 'no price ticket link (a.h-ticket to book/quote.html?size=N)';
+      const price = (t[0].match(/class="size-price([^"]*)"[^>]*>([^<]*)</) || []);
+      if (!price[2] || !price[2].includes(fmt(R6_ROWS[+t[1]]))) return `ticket price "${price[2]}", want ${fmt(R6_ROWS[+t[1]])}`;
+      if (C.GUESS && C.GUESS.prices && !/\bguess\b/.test(price[1])) return 'ticket price is not red';
+      for (const [w, h] of [[1280, 800], [360, 740]]) {
+        const r = await withPage(w, async (p) => {
+          await p.goto(`${ORIGIN}/index.html`, 1500);
+          await p.evaluate(NO_PREVIEW);
+          await new Promise((x) => setTimeout(x, 300));
+          const t1 = await p.evaluate(rectOf('.h-title')), cta = await p.evaluate(rectOf('.h-cta')), chk = await p.evaluate(rectOf('.h-check'));
+          if (!shown(t1) || !shown(cta) || !shown(chk)) return 'headline, button or check line not shown';
+          if (t1.bottom > h || cta.bottom > h) return `the headline (${Math.round(t1.bottom)}) or the button (${Math.round(cta.bottom)}) is below the first screen (${h}px)`;
+          if (w === 1280) {
+            const copy = await p.evaluate(rectOf('.h-hero-copy')), art = await p.evaluate(rectOf('.h-art'));
+            if (!shown(copy) || !shown(art)) return 'no .h-hero-copy and .h-art';
+            if (art.left < copy.right - 2) return 'the picture is not beside the copy';
+            if (Math.abs((chk.top + chk.bottom) / 2 - (cta.top + cta.bottom) / 2) > cta.h / 2) return 'the check line is not beside the button';
+          }
+          return true;
+        });
+        if (r !== true) return `${w}px: ${r}`;
+      }
+      return true;
+    } },
+    { id: 'contrast', pts: 6, desc: 'headline, highlighted line, buttons, the dark band, the price band and the closer at 4.5:1 or better (3:1 for large text)', async run() {
+      return withPage(1280, async (p) => {
+        await p.goto(`${ORIGIN}/index.html`, 1200);
+        const bad = await p.evaluate(`(${CONTRAST_FN})(${JSON.stringify(['.h-title', '.h-title span', '.h-lede', '.h-cta', '.h-check', '.h-pill',
+          '#pricing .section-title', '#pricing .section-sub', '.size-name', '.price-band h2', '.price-band .cta-btn', '.closer h2', '.closer .cta-btn', 'footer a'])})`);
+        return (bad && !bad.length) || `low contrast: ${(bad || ['no answer']).join('; ')}`;
+      });
+    } },
+    { id: 'steps', pts: 6, desc: 'three numbered steps joined by a line: side by side at 1280px, stacked at 360px', async run() {
+      if (!CHROME) return 'no Chrome to measure with';
+      for (const w of [1280, 360]) {
+        const r = await withPage(w, async (p) => {
+          await p.goto(`${ORIGIN}/index.html`, 1200);
+          return p.evaluate(`(function(){var ol=document.querySelector('#how-it-works ol.steps');if(!ol)return 'no ol.steps in #how-it-works';
+var li=[].slice.call(ol.children);if(li.length!==3)return li.length+' steps';
+var line=getComputedStyle(ol,'::before');if(line.content==='none'||!(parseFloat(line.width)>2||parseFloat(line.height)>2))return 'no line joining the steps (ol.steps::before)';
+var b=li.map(function(e){return e.getBoundingClientRect();});
+if(${w}>=760)return b.every(function(x){return Math.abs(x.top-b[0].top)<=4;})||'steps not side by side';
+for(var i=1;i<3;i++)if(b[i].top<b[i-1].bottom-1)return 'steps not stacked';return true;})()`);
+        });
+        if (r !== true) return `${w}px: ${r}`;
+      }
+      return true;
+    } },
+    { id: 'sizes', pts: 10, desc: 'the five cards in a charcoal band with id="pricing", one row at 1280px, stacked at 360px; "Starting at" is the smallest config price; photo link, travel note and call, text, WhatsApp under them', async run() {
+      if (!CHROME) return 'no Chrome to measure with';
+      const home = read('index.html') || '';
+      const band = (home.match(/<section[^>]*id="pricing"[\s\S]*?<\/section>/) || [''])[0];
+      if (!/class="band is-dark[^"]*"/.test(band.slice(0, 200))) return 'no charcoal band with id="pricing"';
+      if ((band.match(/class="size-card"/g) || []).length !== 5) return 'the band does not hold the five size cards';
+      const from = (band.match(/class="h-from"[^>]*>([\s\S]*?)<\/p>/) || [])[1];
+      const min = Math.min(...R6_ROWS);
+      if (!from || !text(from).includes(fmt(min))) return `"Starting at" line is "${from && text(from)}", want ${fmt(min)}`;
+      if (C.GUESS && C.GUESS.prices && !/class="guess"/.test(from)) return 'the "Starting at" price is not red';
+      const after = band.slice(band.lastIndexOf('class="size-card"'));
+      if (!/href="book\/quote\.html#photos"/.test(after)) return 'no photo link under the cards';
+      if (!/class="tiers-travel"/.test(after)) return 'no travel note under the cards';
+      if (!/href="tel:/.test(after) || !/href="sms:/.test(after) || !/href="https:\/\/wa\.me\//.test(after)) return 'no call, text and WhatsApp under the cards';
+      for (const w of [1280, 360]) {
+        const r = await withPage(w, async (p) => {
+          await p.goto(`${ORIGIN}/index.html`, 1200);
+          return p.evaluate(`(function(){var b=[].map.call(document.querySelectorAll('#pricing .size-card'),function(e){return e.getBoundingClientRect();});
+if(b.length!==5)return b.length+' cards';
+if(${w}>=960)return b.every(function(x){return Math.abs(x.top-b[0].top)<=4;})||'cards not in one row';
+for(var i=1;i<5;i++)if(b[i].top<b[i-1].bottom-1)return 'cards not stacked';return true;})()`);
+        });
+        if (r !== true) return `${w}px: ${r}`;
+      }
+      return true;
+    } },
+    { id: 'map', pts: 8, desc: 'the metro map: one dot per ZIP in the zones, each its zone\'s color, the base marked, a legend with every zone and its fee from the config; build-pricing --check', run() {
+      const home = read('index.html') || '';
+      const fig = (home.match(/<figure class="area-map"[\s\S]*?<\/figure>/) || [''])[0];
+      if (!fig) return 'no figure.area-map';
+      const dots = [...fig.matchAll(/<circle\b[^>]*data-zip="(\d{5})"[^>]*data-zone="([a-z0-9-]+)"[^>]*fill="([^"]+)"/g)];
+      const want = Object.keys(C.ZIP_ZONES || {});
+      if (dots.length !== want.length) return `${dots.length} dots, want ${want.length}`;
+      const fillOf = {};
+      for (const [, zip, zone, fill] of dots) {
+        const z = C.ZIP_ZONES[zip];
+        if (!z) return `a dot for ${zip}, which is not in a zone`;
+        if (z.zone !== zone) return `${zip} drawn in ${zone}, config says ${z.zone}`;
+        if (fillOf[zone] && fillOf[zone] !== fill) return `zone ${zone} drawn in two colors`;
+        fillOf[zone] = fill;
+      }
+      if (new Set(Object.values(fillOf)).size !== Object.keys(fillOf).length) return 'two zones share a color';
+      if (!/class="map-base"/.test(fig)) return 'the base is not marked';
+      for (const z of C.ZONE_LIST || []) {
+        const li = (fig.match(new RegExp(`<li[^>]*data-zone="${z.key}"[\\s\\S]*?</li>`)) || [''])[0];
+        if (!li) return `no legend row for ${z.key}`;
+        if (z.cents ? !text(li).includes(fmt(z.cents)) : !/no travel charge/i.test(text(li))) return `legend row ${z.key} does not show its fee`;
+      }
+      return run('node', ['scripts/build-pricing.mjs', '--check']).code === 0 || 'build-pricing --check fails';
+    } },
+    { id: 'promises', pts: 5, desc: 'four promise cards with icons; no "say no", star rating or review count anywhere on the site', run() {
+      const home = read('index.html') || '';
+      const sec = (home.match(/<section[^>]*aria-labelledby="promises"[\s\S]*?<\/section>/) || [''])[0];
+      const cards = [...sec.matchAll(/<article class="promise">([\s\S]*?)<\/article>/g)];
+      if (cards.length !== 4) return `${cards.length} promise cards`;
+      for (const [, c] of cards) if (!/<svg/.test(c) || !/<h3>/.test(c) || !/<p>/.test(c)) return 'a promise card lacks its icon, title or line';
+      const pages = scanFiles().filter((f) => f.endsWith('.html') && !f.startsWith('jkr/'));
+      for (const f of pages) {
+        const v = visibleText(read(f));
+        if (/say no/i.test(v)) return `${f} says "say no"`;
+        if (/★|\b\d(\.\d)? ?stars?\b|\b\d[\d,]*\+? (reviews|ratings)\b/i.test(v)) return `${f} shows a rating or a review count`;
+        if (/AggregateRating/.test(read(f))) return `${f} carries AggregateRating`;
+      }
+      return true;
+    } },
+    { id: 'footer', pts: 6, desc: 'footer columns: Get my price, Send a photo, Property managers, Service areas, six towns, FAQ, Blog, Terms, Privacy, call and text; on every page (build-chrome --check)', run() {
+      const home = read('index.html') || '';
+      const foot = (home.match(/<footer>[\s\S]*?<\/footer>/) || [''])[0];
+      if (!/class="foot-cols"/.test(foot)) return 'no .foot-cols in the footer';
+      for (const h of ['book/quote.html"', 'book/quote.html#photos"', 'book/commercial.html"', 'service-areas.html"', 'faq.html"', 'blog/index.html"', 'terms.html"', 'privacy.html"', 'tel:', 'sms:']) {
+        if (!foot.includes(`href="${h}`)) return `footer does not link ${h.replace('"', '')}`;
+      }
+      const slugs = new Set(towns().map((t) => t.slug));
+      const townLinks = [...foot.matchAll(/href="([a-z-]+)\.html"/g)].filter((m) => slugs.has(m[1]));
+      if (townLinks.length < 6) return `${townLinks.length} town links in the footer, want 6`;
+      return run('node', ['scripts/build-chrome.mjs', '--check']).code === 0 || 'build-chrome --check fails';
+    } },
+    { id: 'mobile', pts: 8, desc: 'homepage, a town page and the Spanish homepage: at 360px no sideways scroll, text 16px+, taps 48px+; at 1280px no sideways scroll', async run() {
+      if (!CHROME) return 'no Chrome to measure with';
+      for (const f of ['index.html', `${R7_TOWN()}.html`, 'es/index.html']) {
+        if (!exists(f)) return `${f} missing`;
+        const p = probeOf(await dump(`/${f}?__probe=7`));
+        if (!p || p.error) return `${f}: ${p ? p.error : 'did not report'}`;
+        if (p.vw !== 360) return `${f}: measured at ${p.vw}px`;
+        if (p.sw > p.vw) return `${f}: ${p.sw}px wide at 360px`;
+        if (p.small.length) return `${f}: small text ${p.small.slice(0, 2).join('; ')}`;
+        if (p.taps.length) return `${f}: small taps ${p.taps.slice(0, 2).join('; ')}`;
+        const wide = probeOf(await dump(`/${f}?__probe=7`, 1280));
+        if (!wide || wide.sw > wide.vw) return `${f}: ${wide ? wide.sw : '?'}px wide at 1280px`;
+      }
+      return true;
+    } },
+    { id: 'service', pts: 10, desc: 'the service standard (nine parts, the four priorities in order, the steps when something goes wrong), the draft only complaint helper, the research note with its sources', run() {
+      const s = mdText(R7_STANDARD);
+      if (!s) return `${R7_STANDARD} missing`;
+      const parts = [...s.matchAll(/^## (\d)\. /gm)].map((m) => +m[1]);
+      if (parts.join() !== '1,2,3,4,5,6,7,8,9') return `want parts 1 to 9 as "## N. ", found ${parts.join(',') || 'none'}`;
+      if (!/safe[^\n]*kind[^\n]*tidy[^\n]*on time/i.test(sectionOf(s, /^## 1\. /m))) return 'part 1 does not name safe, kind, tidy, on time in that order';
+      const wrong = sectionOf(s, /^## 8\. /m);
+      if (!/listen[\s\S]*understand[\s\S]*sorry[\s\S]*fix[\s\S]*why/i.test(wrong)) return 'part 8 lacks listen, understand, sorry, fix, why in that order';
+      if (!/class="guess"|\[\[/.test(wrong) && !/GUESS\*/.test(s)) return 'the on the spot limit is not marked as a guess';
+      const h = mdText(R7_HELPER);
+      if (!h) return `${R7_HELPER} missing`;
+      if (!/^---\nname: complaint-reply\ndescription: .+\n---/m.test(h)) return 'helper: no frontmatter';
+      if (!/MODE/.test(h) || !/draft/.test(h) || !/never send/i.test(h)) return 'helper: not draft only';
+      if (!h.includes('_shared/jkr-context.md')) return 'helper: does not point to the shared context';
+      if (!/quiet hours/i.test(h)) return 'helper: no quiet hours';
+      if (!/listen[\s\S]*understand[\s\S]*sorry[\s\S]*fix[\s\S]*why/i.test(h)) return 'helper: not in the listen, understand, sorry, fix, why order';
+      if (!h.includes(R7_STANDARD.replace('docs/', ''))) return 'helper: does not point to the service standard';
+      const r = mdText('docs/superpowers/research/2026-10-11-disneyland-practices.md');
+      if ((sectionOf(r, /^## Sources/m).match(/https:\/\//g) || []).length < 5) return 'research note: fewer than 5 sources';
+      return true;
+    } },
+    { id: 'copy', pts: 6, desc: 'homepage (English and Spanish), the standard and the helper: no dashes, slang, dog words, TODO or Disney words (magic, guest, cast member, onstage, backstage)', run() {
+      const items = [['index.html', visibleText(read('index.html'))], ['es/index.html', visibleText(read('es/index.html'))],
+        [R7_STANDARD, mdText(R7_STANDARD).replace(/<!--[\s\S]*?-->/g, '')], [R7_HELPER, mdText(R7_HELPER)]];
+      for (const [f, s] of items) {
+        if (!s) return `${f} missing`;
+        const bad = copyProblem(f, s);
+        if (bad) return bad;
+        const d = s.match(DISNEY_WORDS);
+        if (d) return `${f} uses "${d[0]}"`;
+      }
+      return true;
+    } },
+  ],
   6: [
     { id: 'tests', pts: 6, desc: 'npm test passes', run() {
       const r = run('npm', ['test']);
@@ -1416,7 +1646,8 @@ return b&&i?{text:f.innerText,button:!b.disabled,input:!i.disabled}:null;})()`;
       for (const f of ['index.html', 'book/quote.html', 'book/thanks.html']) if (!/guess\.css/.test(read(f) || '')) return `${f} does not link guess.css`;
       const co = read('book/checkout.html') || '';
       if (!/guess\.css/.test(co) && !(/http-equiv="refresh"[^>]+quote\.html/i.test(co) && !/\$\d/.test(visibleText(co)))) return 'book/checkout.html does not link guess.css';
-      if (C.GUESS && C.GUESS.prices && !/class="tier-price guess"/.test(read('index.html') || '')) return 'homepage prices are not marked';
+      // Since round 7 the homepage's prices are the five size cards (the tiers that repeated them are gone).
+      if (C.GUESS && C.GUESS.prices && !/class="(tier|size)-price guess"/.test(read('index.html') || '')) return 'homepage prices are not marked';
       return run('node', ['scripts/list-guesses.mjs', '--check']).code === 0 || 'npm run guesses --check fails';
     } },
     // Since round 6 the checkout link lands on the order page, and the checkout's job (summary,
