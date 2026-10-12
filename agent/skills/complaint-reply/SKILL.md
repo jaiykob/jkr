@@ -22,8 +22,9 @@ or a note on a job in the dashboard. It never sweeps the inbox on its own.
 
 This helper **never sends**, whatever `MODE` the others run in. A complaint
 reply can promise money, so the founder reads every one and sends it
-themselves. Drafts that would land in quiet hours (before 8:00 or after 20:00
-America/Los_Angeles) are queued for the morning, not sent at night.
+themselves. A draft written in quiet hours (before 8:00 or after 20:00
+America/Los_Angeles) is marked for the founder to send after 8:00, never at
+night.
 
 ## Stop first
 
@@ -50,10 +51,10 @@ from the row, never from memory, and never guess an amount.
 3. **Sorry**: apologize for the trouble, plainly, even when the crew did
    nothing wrong. No "but".
 4. **Fix**: offer one concrete fix. Within the on the spot limit in the
-   standard, offer it outright (a refund of part of the haul, a return trip
-   for what we missed). Above it, write "we will call you today about making
-   this right" and flag it for the founder. Never promise a refund the founder
-   has not approved, and never argue about who was right.
+   standard, write it as an offer (part of the haul back to their card, a
+   return trip for what we missed); the founder sending the draft is the
+   approval. Above it, write "we will call you today about making this
+   right" and flag it for the founder. Never argue about who was right.
 5. **Why**: for the founder only, below the draft, one line on why it
    happened and what would stop it next time (for the weekly review). It is
    not part of the message.

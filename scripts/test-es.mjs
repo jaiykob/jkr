@@ -141,5 +141,29 @@ try {
   ok(run.status === 1 && run.stderr.includes('Brand new untranslated words here.'), `build-es --check should list the phrase: ${run.stderr.slice(0, 200)}`);
 } finally { fs.writeFileSync(idx, orig); }
 
+// Round 7 review: the ZIP form's action stayed "book/quote.html" on the Spanish pages, which
+// is /es/book/quote.html (a 404) when the script does not run. Every relative link, source and
+// form action on a Spanish page must land on a real file.
+console.log('== every relative href, src and action on a Spanish page resolves ==');
+const esPages = [];
+(function walk(dir) {
+  for (const f of fs.readdirSync(path.join(ROOT, dir))) {
+    const rel = `${dir}/${f}`;
+    if (fs.statSync(path.join(ROOT, rel)).isDirectory()) walk(rel);
+    else if (f.endsWith('.html')) esPages.push(rel);
+  }
+})('es');
+const broken = [];
+for (const f of esPages) {
+  const html = fs.readFileSync(path.join(ROOT, f), 'utf8').replace(/<script\b[\s\S]*?<\/script>/g, '');
+  for (const [, attr, u] of html.matchAll(/\s(href|src|action)="([^"]*)"/g)) {
+    if (!u || /^(?:[a-z]+:|\/\/|#|\/)/i.test(u)) continue;
+    const target = path.posix.normalize(path.posix.join(path.posix.dirname(f), u.split(/[?#]/)[0]));
+    if (!fs.existsSync(path.join(ROOT, target))) broken.push(`${f}: ${attr}="${u}"`);
+  }
+}
+ok(esPages.length > 40, `found ${esPages.length} Spanish pages`);
+ok(!broken.length, `${broken.length} broken: ${broken.slice(0, 3).join('; ')}`);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

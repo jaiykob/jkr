@@ -92,7 +92,7 @@ export function esHref(u) {
   return hasEsTwin(p) ? u : `../${u}`;
 }
 const relinkEs = (html) => html
-  .replace(/(\s(?:href|src)=")([^"]*)"/g, (m, a, u) => `${a}${esHref(u)}"`)
+  .replace(/(\s(?:href|src|action)=")([^"]*)"/g, (m, a, u) => `${a}${esHref(u)}"`)
   .replace(/url\((?!['"]?(?:[a-z]+:|\/|#))(['"]?)/gi, 'url($1../');
 
 /**

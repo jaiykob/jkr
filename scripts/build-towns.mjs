@@ -32,7 +32,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { ZIP_ZONES, ZONES, GUESS, PRICES, ONE_TIME_COL, fmt } from '../pricing.config.mjs';
+import { ZIP_ZONES, ZONES, GUESS, PRICES, ONE_TIME_COL, fmt, BASE } from '../pricing.config.mjs';
 import site from '../api/_lib/site.js';
 import { setLangSwitch, hreflang, hasEsTwin } from './lib/twins.mjs';
 import { toSpanish, loadMap } from './build-es.mjs';
@@ -537,10 +537,11 @@ export function biggestTowns(towns, n = 6) {
 }
 /** "Where we go": every ZIP in the zones as a dot at its real place, colored by its
  *  zone, the base marked, six towns named; the legend gives each zone's fee. */
-export function homeMap(towns, guess = GUESS.zones) {
+export function homeMap(towns, guess = GUESS.zones, base = BASE) {
   if (ZONES.length > MAP_COLORS.length) throw new Error(`build-towns: ${ZONES.length} zones, but MAP_COLORS has ${MAP_COLORS.length} colors`);
   const color = Object.fromEntries(ZONES.map((z, i) => [z.key, MAP_COLORS[i]]));
-  const [lat0, lon0] = POINTS.base;
+  // Projected around the base in pricing.config.mjs, so moving BASE moves the marker.
+  const lat0 = base.lat, lon0 = base.lon;
   const k = Math.cos((lat0 * Math.PI) / 180);
   const xy = ([lat, lon]) => [(lon - lon0) * k, lat0 - lat];
   const zips = Object.keys(ZIP_ZONES);
@@ -555,14 +556,14 @@ export function homeMap(towns, guess = GUESS.zones) {
   const order = [...zips].sort((a, b) => ZONES.findIndex((z) => z.key === ZIP_ZONES[b].zone) - ZONES.findIndex((z) => z.key === ZIP_ZONES[a].zone) || a.localeCompare(b));
   const dots = order.map((z) => { const [x, y] = at(POINTS.zips[z]); return `<circle cx="${x}" cy="${y}" r="7" data-zip="${z}" data-zone="${ZIP_ZONES[z].zone}" fill="${color[ZIP_ZONES[z].zone]}"/>`; });
   // Each label over the middle of its town's ZIPs; one that would overlap a label
-  // already placed moves down or up a line until it is clear (about 11px a letter).
+  // already placed moves down or up a line until it is clear (about 12px a letter at 21px).
   const placed = [];
   const clash = (b) => placed.some((p) => b.x0 < p.x1 && b.x1 > p.x0 && b.y0 < p.y1 && b.y1 > p.y0);
   const labels = biggestTowns(towns).map((t) => {
     const pts = t.zips.map((z) => at(POINTS.zips[z]));
     const x = Math.round(pts.reduce((m, p) => m + p[0], 0) / pts.length);
     const y0 = Math.round(pts.reduce((m, p) => m + p[1], 0) / pts.length) - 14;
-    const half = (t.name.length * 11.5) / 2;
+    const half = (t.name.length * 12) / 2;
     let y = y0;
     for (const dy of [0, 24, -24, 48, -48, 72, -72]) {
       y = y0 + dy;
@@ -571,16 +572,16 @@ export function homeMap(towns, guess = GUESS.zones) {
     placed.push({ x0: x - half, x1: x + half, y0: y - 18, y1: y + 4 });
     return `<text x="${x}" y="${y}">${esc(t.name)}</text>`;
   });
-  const [bx, by] = at(POINTS.base);
-  // The map's spoken name is its caption line (aria-labelledby): build-es translates
-  // text but skips drawings, so a label inside the <svg> would stay English.
+  const [bx, by] = at([base.lat, base.lon]);
+  // The drawing is hidden from screen readers: the caption (the zones, their fees and the
+  // note) says what it shows, in English and, through build-es, in Spanish.
   const key = ZONES.map((z, i) => [
     `          <li data-zone="${z.key}"><span class="key-dot" style="background:${color[z.key]}"></span>`,
     `<span class="key-name">${esc(z.label)}</span> <span class="key-fee">${guessed(zoneFeeText(zoneCents(z)), guess)}</span></li>`,
   ].join(''));
   return [
     '      <figure class="area-map">',
-    `        <svg viewBox="0 0 ${MAP_W} ${H}" role="img" aria-labelledby="map-note">`,
+    `        <svg viewBox="0 0 ${MAP_W} ${H}" aria-hidden="true" focusable="false">`,
     `          <g class="map-dots" stroke="#15171A" stroke-width="1.5">${dots.join('')}</g>`,
     `          <g class="map-base" transform="translate(${bx} ${by})"><circle r="14" fill="#15171A"/><path d="M-7 1 0-6 7 1v7h-14z" fill="#FFD23F"/></g>`,
     `          <g class="map-labels" aria-hidden="true">${labels.join('')}</g>`,
@@ -589,7 +590,7 @@ export function homeMap(towns, guess = GUESS.zones) {
     '          <ul class="map-key">',
     ...key,
     '          </ul>',
-    '          <p class="map-note" id="map-note">Map: each dot is a ZIP code we serve, colored by its travel zone. Our base is in Gresham.</p>',
+    `          <p class="map-note">Map: each dot is a ZIP code we serve, colored by its travel zone. Our base is in ${esc(base.label)}.</p>`,
     '        </figcaption>',
     '      </figure>',
   ].join('\n');

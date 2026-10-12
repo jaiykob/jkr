@@ -85,9 +85,10 @@ It may not be our fault, but it is our problem. Five steps, in this order
 1. **Listen** to all of it. Do not interrupt or explain yet.
 2. **Say we understand**: "I would be frustrated too."
 3. **Say sorry** for the trouble, even when we did not cause it.
-4. **Fix it now.** The crew may give back up to $25 on the spot for a small
-   miss, such as a scuff or arriving past the window. Anything bigger goes to
-   the founder the same day.
+4. **Fix it now.** For a small miss, such as a scuff or arriving past the
+   window, the crew may promise up to $25 back on the spot. The founder
+   refunds it to the customer's card in Stripe the same day and notes it on
+   the job. Anything bigger goes to the founder the same day.
 5. **Find why** and write it in the job's notes, so it does not happen again.
    The founder reads these every week.
 
@@ -99,6 +100,7 @@ the founder sends it.
 
 ## 9. Spanish
 
-Every page on the site has a Spanish version. When a customer writes or
-speaks Spanish, answer in Spanish when we can (plain, with tú), and hand it to
-the founder when we cannot.
+The homepage, the town pages, the FAQ and the blog have Spanish versions;
+the order page, terms, privacy and the commercial form are English only for
+now. When a customer writes or speaks Spanish, answer in Spanish when we can
+(plain, with tú), and hand it to the founder when we cannot.

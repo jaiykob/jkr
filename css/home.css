@@ -306,14 +306,17 @@
    towns; the zone cards (BUILD:home-area) under both. */
 .area-in { display: grid; gap: 36px; align-items: center; grid-template-columns: minmax(0, 1fr); }
 .area-in > * { min-width: 0; }
-@media (min-width: 860px) { .area-in { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 56px; } }
+/* The heading and ZIP box come first in the page (a phone and a screen reader read top down);
+   on a desktop the map takes the left column, as in LoadUp's layout. */
+@media (min-width: 860px) { .area-in { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 56px; } .area-map { order: -1; } }
 .area-map { margin: 0; padding: 18px 18px 16px; border-radius: 22px; background: var(--card); border: 2px solid var(--rg); box-shadow: 8px 8px 0 var(--rg); }
 .area-map svg { display: block; width: 100%; height: auto; }
 .map-dots circle { transition: r .2s, stroke-width .2s; }
 .map-dots circle.is-hit { r: 11px; stroke-width: 3px; }
-.map-labels text { font: 800 20px 'DM Sans', sans-serif; fill: var(--rg); text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
-/* Under 860px the map is too small for its labels to stay 16px: the town chips name the towns. */
-@media (max-width: 859px) { .map-labels { display: none; } }
+.map-labels text { font: 800 21px 'DM Sans', sans-serif; fill: var(--rg); text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+/* The drawing scales with its column: under 1100px its 21px labels would print under 16px,
+   so they hide there (measured by the round 7 map check); the town chips name the towns. */
+@media (max-width: 1099px) { .map-labels { display: none; } }
 .map-key { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 14px 0 0; padding: 0; }
 .map-key li { display: inline-flex; align-items: center; gap: 8px; font-size: 1rem; }
 .key-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--rg); }
@@ -413,9 +416,10 @@
 .cta-ghost:hover { border-color: var(--tan); color: var(--tan); }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Nothing moves: no lifts, bounces, turning chevrons or sliding arrows. */
+  *, *::before, *::after { transition: none !important; animation: none !important; }
   .ticker-track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; }
   .ticker span:nth-child(n+13) { display: none; }
-  .h-cta, .h-ticket, .h-sizes .size-card { transition: none; }
 }
 
 /* ── Town pages (scripts/build-towns.mjs) ─────────────────────────────── */

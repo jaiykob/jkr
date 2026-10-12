@@ -184,7 +184,8 @@ Clark County, WA included. Price = **load price + the zone's travel fee**.
 - **`ZONE_OVERRIDES`**: pin one ZIP to a zone by hand.
 - **`data/zip-miles.mjs`**: road miles from `BASE` to each ZIP's center
   (GeoNames, OSRM), measured once by `node scripts/measure-zips.mjs`; re-run
-  it only if `BASE` moves. Place names are USPS city names (Tigard reads
+  it only if `BASE` moves, then `--points` for the homepage map's ZIP centers
+  (`data/zip-points.mjs`; the map centers itself on `BASE`). Place names are USPS city names (Tigard reads
   "Portland").
 - **`npm run build:pricing`** writes `api/_lib/travel.js` and `js/travel.js`
   (byte identical; `travelFor(zip)` → zone, fee, miles, place, market, or

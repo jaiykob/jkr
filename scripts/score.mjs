@@ -554,10 +554,24 @@ for(var i=1;i<5;i++)if(b[i].top<b[i-1].bottom-1)return 'cards not stacked';retur
       }
       return true;
     } },
-    { id: 'map', pts: 8, desc: 'the metro map: one dot per ZIP in the zones, each its zone\'s color, the base marked, a legend with every zone and its fee from the config; build-towns --check', run() {
+    { id: 'map', pts: 8, desc: 'the metro map: one dot per ZIP in the zones, each its zone\'s color, the base marked, a legend with every zone and its fee from the config, after its heading, named once, labels 16px or hidden; build-towns --check', async run() {
       const home = read('index.html') || '';
       const fig = (home.match(/<figure class="area-map"[\s\S]*?<\/figure>/) || [''])[0];
       if (!fig) return 'no figure.area-map';
+      // Round 7 review: the heading and the ZIP box come before the map (a phone reads top down,
+      // and so does a screen reader), and the drawing is not named twice (the caption names it).
+      if (home.indexOf('class="area-copy"') < 0 || home.indexOf('class="area-copy"') > home.indexOf('<figure class="area-map"')) return 'the map comes before its heading and ZIP box';
+      if (!/<svg\b[^>]*aria-hidden="true"/.test(fig)) return 'the map drawing is not aria-hidden (the caption already says what it shows)';
+      if (C.BASE && !text(fig).includes(`Our base is in ${C.BASE.label}`)) return `the map note does not name the base from the config (${C.BASE.label})`;
+      // Labels are hidden where they would print under 16px (the drawing scales with its column).
+      for (const w of [900, 1024, 1100, 1280]) {
+        const small = await withPage(w, async (p) => {
+          await p.goto(`${ORIGIN}/index.html`, 800);
+          return p.evaluate(`(function(){var s=document.querySelector('.area-map svg');if(!s)return 'no svg';var k=s.getBoundingClientRect().width/s.viewBox.baseVal.width;
+return [].filter.call(document.querySelectorAll('.map-labels text'),function(t){return t.getBoundingClientRect().width>0;}).map(function(t){return parseFloat(getComputedStyle(t).fontSize)*k;}).filter(function(px){return px<15.95;}).map(function(px){return px.toFixed(1)+'px';}).join(', ');})()`);
+        });
+        if (small) return `${w}px: map labels print at ${small}`;
+      }
       const dots = [...fig.matchAll(/<circle\b[^>]*data-zip="(\d{5})"[^>]*data-zone="([a-z0-9-]+)"[^>]*fill="([^"]+)"/g)];
       const want = Object.keys(C.ZIP_ZONES || {});
       if (dots.length !== want.length) return `${dots.length} dots, want ${want.length}`;
@@ -606,7 +620,7 @@ for(var i=1;i<5;i++)if(b[i].top<b[i-1].bottom-1)return 'cards not stacked';retur
       if (townLinks.length < 6) return `${townLinks.length} town links in the footer, want 6`;
       return run('node', ['scripts/build-chrome.mjs', '--check']).code === 0 || 'build-chrome --check fails';
     } },
-    { id: 'mobile', pts: 8, desc: 'homepage, a town page and the Spanish homepage: at 360px no sideways scroll, text 16px+, taps 48px+; at 1280px no sideways scroll', async run() {
+    { id: 'mobile', pts: 8, desc: 'homepage, a town page and the Spanish homepage: at 360px no sideways scroll, text 16px+, taps 48px+; at 1280px no sideways scroll; nothing moves under reduced motion', async run() {
       if (!CHROME) return 'no Chrome to measure with';
       for (const f of ['index.html', `${R7_TOWN()}.html`, 'es/index.html']) {
         if (!exists(f)) return `${f} missing`;
@@ -619,7 +633,18 @@ for(var i=1;i<5;i++)if(b[i].top<b[i-1].bottom-1)return 'cards not stacked';retur
         const wide = probeOf(await dump(`/${f}?__probe=7`, 1280));
         if (!wide || wide.sw > wide.vw) return `${f}: ${wide ? wide.sw : '?'}px wide at 1280px`;
       }
-      return true;
+      // The spec: hover lifts and the ticker only, and all of it off under prefers-reduced-motion.
+      return withPage(1280, async (p) => {
+        await p.media([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+        await p.goto(`${ORIGIN}/index.html`, 800);
+        const moving = await p.evaluate(`(function(){var out=[];
+[['.h-cta',''],['.h-cta','::after'],['.h-ticket',''],['.h-sizes .size-card',''],['.take',''],['.zones li',''],['.faq summary','::after'],
+['.cta-btn',''],['.cta-btn','::after'],['.map-dots circle',''],['.ticker-track',''],['.promise-cta',''],['.town-chips a',''],['.h-pill','']].forEach(function(x){
+var e=document.querySelector(x[0]);if(!e)return;var c=getComputedStyle(e,x[1]||null);
+var t=String(c.transitionDuration).split(',').some(function(d){return parseFloat(d)>0;});var a=c.animationName&&c.animationName!=='none';
+if(t||a)out.push(x[0]+x[1]+(t?' transition '+c.transitionDuration:'')+(a?' animation '+c.animationName:''));});return out;})()`);
+        return (moving && !moving.length) || `moves under reduced motion: ${(moving || ['no answer']).slice(0, 4).join('; ')}`;
+      });
     } },
     { id: 'service', pts: 10, desc: 'the service standard (nine parts, the four priorities in order, the steps when something goes wrong), the draft only complaint helper, the research note with its sources', run() {
       const s = mdText(R7_STANDARD);
@@ -638,6 +663,12 @@ for(var i=1;i<5;i++)if(b[i].top<b[i-1].bottom-1)return 'cards not stacked';retur
       if (!/quiet hours/i.test(h)) return 'helper: no quiet hours';
       if (!/listen[\s\S]*understand[\s\S]*sorry[\s\S]*fix[\s\S]*why/i.test(h)) return 'helper: not in the listen, understand, sorry, fix, why order';
       if (!h.includes(R7_STANDARD.replace('docs/', ''))) return 'helper: does not point to the service standard';
+      // Round 7 review: say only what is true and doable. The order page, terms, privacy and the
+      // commercial form are English only; the on the spot give back needs someone to pay it; and a
+      // helper that never sends does not queue anything.
+      if (/every page/i.test(sectionOf(s, /^## 9\. /m))) return 'part 9 claims every page has Spanish (the order page, terms, privacy and the commercial form are English only)';
+      if (!/refund[\s\S]*(card|Stripe)/i.test(wrong) || !/founder/i.test(wrong)) return 'part 8 does not say who pays the on the spot give back and how';
+      if (/queued/i.test(h)) return 'helper: says drafts are queued, but it never sends';
       const r = mdText('docs/superpowers/research/2026-10-11-disneyland-practices.md');
       if ((sectionOf(r, /^## Sources/m).match(/https:\/\//g) || []).length < 5) return 'research note: fewer than 5 sources';
       return true;

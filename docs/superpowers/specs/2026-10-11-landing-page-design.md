@@ -133,8 +133,9 @@ Plain, one page, for the founder and any crew:
    say sorry for the trouble, fix it now (the crew may give back up to a red
    guess of $25 on the spot), then write down why so it does not happen
    again. The complaint helper drafts the written reply.
-9. **Spanish**: every page has Spanish; answer in the customer's language
-   when we can.
+9. **Spanish**: the homepage, town pages, FAQ and blog have Spanish (the
+   order page, terms, privacy and the commercial form do not yet); answer in
+   the customer's language when we can.
 
 ## The complaint helper (`agent/skills/complaint-reply/SKILL.md`)
 
