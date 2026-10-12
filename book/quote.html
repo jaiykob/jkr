@@ -323,6 +323,7 @@
     <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6.6 3h2.6l1.3 4.2-1.9 1.3a12 12 0 0 0 5.9 5.9l1.3-1.9 4.2 1.3v2.6a2.6 2.6 0 0 1-2.6 2.6A14.4 14.4 0 0 1 4 5.6 2.6 2.6 0 0 1 6.6 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
     <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 5h16v11H9.5L5 19.5V16H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></symbol>
     <symbol id="i-wa" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.1 7.9h.9l1 2.3-.8 1a6 6 0 0 0 2.6 2.6l1-.8 2.3 1v.9c0 .7-.6 1.3-1.3 1.3A6.8 6.8 0 0 1 7.8 9.2c0-.7.6-1.3 1.3-1.3z" fill="currentColor"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
   </defs>
@@ -338,6 +339,24 @@
 </header>
 
 <main id="main" class="o-main">
+  <!-- THE PROGRESS BAR (round 8, founder 2026-10-12: "each have their own page with
+       progress bar at top", "minimize clicks at all costs"): four steps, one page
+       each (#size, #where, #when, #book), held at the top while the page scrolls.
+       Done steps are buttons back to themselves; the current one is
+       aria-current="step"; js/order.js draws it. -->
+  <nav class="o-steps" id="o-steps" aria-label="Booking steps">
+    <div class="o-steps-in">
+      <button type="button" class="o-back" id="o-back" aria-label="Back" hidden><svg aria-hidden="true"><use href="#i-back"/></svg><span>Back</span></button>
+      <ol class="o-steps-list">
+        <li data-step="size"><button type="button" data-go="size"><span class="o-dot" aria-hidden="true"><span>1</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Size</span></button></li>
+        <li data-step="where"><button type="button" data-go="where"><span class="o-dot" aria-hidden="true"><span>2</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Where</span></button></li>
+        <li data-step="when"><button type="button" data-go="when"><span class="o-dot" aria-hidden="true"><span>3</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">When</span></button></li>
+        <li data-step="book"><button type="button" data-go="book"><span class="o-dot" aria-hidden="true"><span>4</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Book</span></button></li>
+      </ol>
+      <p class="o-steps-of" id="o-steps-of">Step 1 of 4</p>
+    </div>
+    <div class="o-steps-bar" aria-hidden="true"><span id="o-steps-fill"></span></div>
+  </nav>
   <div class="o-intro">
     <h1>Book a junk pickup</h1>
     <p class="o-lede">Pick a size, add your ZIP, choose a time.<span class="o-lede-more" data-mode="pay"> You pay when you book.</span><span class="o-lede-more" data-mode="reserve" hidden> No card needed to reserve.</span></p>
@@ -345,13 +364,15 @@
   <p class="sr-only" aria-live="polite" id="o-live"></p>
 
   <div class="o-layout">
-    <!-- One page, five sections that open in turn: a section opens once the
-         one above it is done, so there is no Continue button anywhere.
-         js/order.js keeps one state object; js/size-cards.js runs the cards. -->
+    <!-- Four step pages (data-step): only the current one shows. A step moves
+         on by itself once it is done (a size tap, the fifth ZIP digit, an
+         arrival time), so there is no Continue button anywhere; the details
+         and pay sections share the last page. js/order.js keeps one state
+         object; js/size-cards.js runs the cards. -->
     <form id="order" class="o-form" novalidate>
 
-      <section id="o-size" class="o-sec is-open" aria-labelledby="o-size-h">
-        <div class="o-sec-head"><span class="o-num" aria-hidden="true"><span>1</span><svg><use href="#i-check"/></svg></span><h2 id="o-size-h">How much is going?</h2></div>
+      <section id="o-size" class="o-sec" data-step="size" aria-labelledby="o-size-h">
+        <div class="o-sec-head"><h2 id="o-size-h" tabindex="-1">How much is going?</h2></div>
         <div class="o-sec-body">
           <p class="o-help">Pick the closest size. The crew confirms the price before loading.</p>
           <!-- "Not sure?" is the way out: photos, counted by api/photo-quote.js
@@ -408,9 +429,9 @@
         </div>
       </section>
 
-      <section id="o-zip" class="o-sec is-locked" aria-labelledby="o-zip-h">
-        <div class="o-sec-head"><span class="o-num" aria-hidden="true"><span>2</span><svg><use href="#i-check"/></svg></span><h2 id="o-zip-h">Where is the job?</h2><p class="o-wait">Pick a size first.</p></div>
-        <div class="o-sec-body" hidden>
+      <section id="o-zip" class="o-sec" data-step="where" hidden aria-labelledby="o-zip-h">
+        <div class="o-sec-head"><h2 id="o-zip-h" tabindex="-1">Where is the job?</h2></div>
+        <div class="o-sec-body">
           <div class="o-field o-field-zip">
             <label for="o-zip-in">ZIP code</label>
             <input id="o-zip-in" name="zip" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="97030" aria-describedby="o-zip-msg">
@@ -433,10 +454,11 @@
         </div>
       </section>
 
-      <section id="o-when" class="o-sec is-locked" aria-labelledby="o-when-h">
-        <div class="o-sec-head"><span class="o-num" aria-hidden="true"><span>3</span><svg><use href="#i-check"/></svg></span><h2 id="o-when-h">When should we come?</h2><p class="o-wait">Add your ZIP first.</p></div>
-        <div class="o-sec-body" hidden>
+      <section id="o-when" class="o-sec" data-step="when" hidden aria-labelledby="o-when-h">
+        <div class="o-sec-head"><h2 id="o-when-h" tabindex="-1">When should we come?</h2></div>
+        <div class="o-sec-body">
           <p class="o-help">Pick a day, then a 2 hour arrival window. We text you when the crew is on the way.</p>
+          <p class="o-where-line" id="o-where-line"><span id="o-where-text"></span> <button type="button" class="o-change" data-go="where" data-focus="o-zip-in">Change</button></p>
           <p class="o-label" id="o-days-h">Day</p>
           <div class="o-days" id="o-days" role="group" aria-labelledby="o-days-h"></div>
           <p class="o-label" id="o-wins-h">Arrival window<span id="o-wins-day"></span></p>
@@ -445,9 +467,9 @@
         </div>
       </section>
 
-      <section id="o-you" class="o-sec is-locked" aria-labelledby="o-you-h">
-        <div class="o-sec-head"><span class="o-num" aria-hidden="true"><span>4</span><svg><use href="#i-check"/></svg></span><h2 id="o-you-h">Who are we meeting?</h2><p class="o-wait">Pick a time first.</p></div>
-        <div class="o-sec-body" hidden>
+      <section id="o-you" class="o-sec" data-step="book" hidden aria-labelledby="o-you-h">
+        <div class="o-sec-head"><h2 id="o-you-h" tabindex="-1">Who are we meeting?</h2></div>
+        <div class="o-sec-body">
           <!-- Five boxes and the right autocomplete values, so one autofill tap fills them all. -->
           <div class="o-fields">
             <div class="o-field o-f-wide">
@@ -486,9 +508,9 @@
         </div>
       </section>
 
-      <section id="o-pay" class="o-sec is-locked" aria-labelledby="o-pay-h">
-        <div class="o-sec-head"><span class="o-num" aria-hidden="true"><span>5</span><svg><use href="#i-check"/></svg></span><h2 id="o-pay-h">Pay and book</h2><p class="o-wait">Opens once your details are in.</p></div>
-        <div class="o-sec-body" hidden>
+      <section id="o-pay" class="o-sec" data-step="book" hidden aria-labelledby="o-pay-h">
+        <div class="o-sec-head"><h2 id="o-pay-h" tabindex="-1">Pay and book</h2></div>
+        <div class="o-sec-body">
           <!-- The rule in plain words, beside Book (pay at booking, founder
                2026-10-10). The total, the cancel hours and the fees are filled
                in from window.ORDER (red while guessed). Bookings open shows the

@@ -502,6 +502,9 @@ async function minJourney(width, mode) {
         for (let i = 0; i < 30 && !/thanks\.html/.test(await p.evaluate('location.pathname')); i++) await new Promise((r) => setTimeout(r, 200));
         if (!/thanks\.html/.test(await p.evaluate('location.pathname'))) return `did not reach thanks.html (at ${await p.evaluate('location.pathname')})`;
       } else {
+        // Nothing to tick: the keyboard closes (not a tap) and the bar with Reserve comes back.
+        await p.evaluate('document.activeElement && document.activeElement.blur && document.activeElement.blur()');
+        await new Promise((r) => setTimeout(r, 400));
         await p.click('#o-book', 1200);
         if (!(await p.evaluate(`!!document.getElementById('o-reserved')&&!document.getElementById('o-reserved').hidden`))) return 'Reserve did not show the reserved message';
       }
@@ -541,10 +544,12 @@ const ROUNDS = {
             if (s.current !== step) return `the progress bar marks ${s.current || 'nothing'} as current on #${step}`;
             const n = R8_STEPS.indexOf(step) + 1;
             if (!new RegExp(`Step ${n} of 4`).test(s.nav)) return `the progress bar does not say "Step ${n} of 4" on #${step}`;
-            await p.evaluate('window.scrollTo(0, 3000)');
-            await new Promise((x) => setTimeout(x, 200));
-            const after = await p.evaluate(STEP_STATE);
-            if (!after.navShown || after.navTop < -1 || after.navTop > 140) return `scrolled down on #${step}, the progress bar is at ${Math.round(after.navTop)}px (want it held at the top)`;
+            // Held at the top: sticky at 0, and wherever the page scrolls past it, it stays at the top.
+            await p.evaluate(NO_PREVIEW);
+            const pin = await p.evaluate(`(function(){var n=document.querySelector('.o-steps');var c=getComputedStyle(n);var start=n.getBoundingClientRect().top+scrollY;
+window.scrollTo(0,document.documentElement.scrollHeight);return {pos:c.position,top:c.top,start:start,y:scrollY,now:n.getBoundingClientRect().top};})()`);
+            if (pin.pos !== 'sticky' || parseFloat(pin.top) !== 0) return `the progress bar is not held at the top (position ${pin.pos}, top ${pin.top}) on #${step}`;
+            if (pin.y > pin.start + 1 && Math.abs(pin.now) > 1) return `scrolled down on #${step}, the progress bar is at ${Math.round(pin.now)}px, want 0`;
           }
           await p.click(R8_WIN);
           const s = await onStep(p, 'book');
@@ -584,14 +589,16 @@ const ROUNDS = {
     } },
     { id: 'skip', pts: 8, desc: '?size= and a known ZIP open on When; ?size= alone on Where; nothing on Size; a hash for a step not reachable yet opens the first step to do', async run() {
       if (!CHROME) return 'no Chrome to measure with';
-      return withPage(360, async (p) => {
-        for (const [url, want] of [[ORDER_WITH_ZIP(), 'when'], [ORDER_URL(), 'where'], ['/book/quote.html', 'size'], [`${ORDER_URL()}#book`, 'where'], ['/book/quote.html#book', 'size'], ['/book/quote.html#when', 'size']]) {
+      // A fresh tab for each address: a ZIP kept in one tab's sessionStorage would skip Where.
+      for (const [url, want] of [[ORDER_WITH_ZIP(), 'when'], [ORDER_URL(), 'where'], ['/book/quote.html', 'size'], [`${ORDER_URL()}#book`, 'where'], ['/book/quote.html#book', 'size'], ['/book/quote.html#when', 'size']]) {
+        const r = await withPage(360, async (p) => {
           await p.goto(ORIGIN + url, 1200);
           const s = await onStep(p, want);
-          if (s.hash !== `#${want}`) return `${url} opened ${s.hash || 'no step'}, want #${want}`;
-        }
-        return true;
-      });
+          return s.hash === `#${want}` || `${url} opened ${s.hash || 'no step'}, want #${want}`;
+        });
+        if (r !== true) return r;
+      }
+      return true;
     } },
     { id: 'back', pts: 8, desc: 'the browser Back goes to the step before, the ZIP and size kept; a done step in the progress bar goes back to it', async run() {
       if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';

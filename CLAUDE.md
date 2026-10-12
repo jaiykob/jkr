@@ -250,7 +250,7 @@ the order module and the two travel modules whole.
 asks Claude (`claude-opus-5`, structured output limited to the `ITEMS` keys)
 to count them, and the page picks the smallest size whose `fits` holds the
 items' units (`ORDER.sizeForUnits`; past a full truck, call us) and says
-"From your photos: 1/2 truck. Change it if that looks wrong." Claude only
+"From your photos: 1/2 truck. Tap it to go on, or pick the size that looks right." Claude only
 counts; prices never come from it. The photos are kept in the private
 `visit-photos` bucket under `quotes/`, ride with the booking as
 `metadata.photos` (the server keeps only paths it named, `QUOTE_PHOTO_RE`),

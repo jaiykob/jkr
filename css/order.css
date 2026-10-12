@@ -1,7 +1,9 @@
-/* The order page (book/quote.html). Phones first: one column, the five size
-   cards stacked full width, the total in a bar fixed to the bottom. From
-   900px: two columns, the sections on the left (about 640px) and a summary
-   on the right that stays in view, cards three to a row, no bar.
+/* The order page (book/quote.html). Four step pages (Size, Where, When,
+   Book), one on screen at a time, under a progress bar held at the top.
+   Phones first: one column, the five size cards stacked full width, the
+   total in a bar fixed to the bottom. From 900px: two columns, the step on
+   the left (about 640px) and a summary on the right that stays in view,
+   cards three to a row, no bar.
 
    The site's palette and type: charcoal, hi vis yellow as the one accent,
    Bricolage Grotesque for headings and prices, DM Sans for the rest.
@@ -59,21 +61,48 @@ button { font: inherit; }
 .o-layout { margin-top: 14px; }
 .o-form { display: grid; gap: 12px; min-width: 0; }
 
-/* ── sections: a white card each; a locked one shows only its heading ── */
-.o-sec { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px 12px 16px; scroll-margin-top: 12px; scroll-margin-bottom: calc(var(--bar-h) + 12px); }
-.o-sec.is-locked { background: transparent; border-style: dashed; border-color: var(--line-2); padding-block: 12px; }
+/* ── the progress bar (round 8): four steps, one page each, held at the top
+   while the page scrolls. Done steps are yellow with a tick and go back to
+   themselves; the current one is charcoal; the bar under them fills by step. */
+.o-steps { position: sticky; top: 0; z-index: 40; margin: -20px calc(-1 * var(--gutter)) 0; padding: 6px var(--gutter) 0; background: var(--page); }
+.o-steps-in { display: flex; align-items: center; gap: 4px; }
+.o-back { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 48px; min-height: 48px; padding: 0 6px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); font: 700 16px/1 'DM Sans', sans-serif; cursor: pointer; }
+.o-back svg { width: 24px; height: 24px; flex: none; }
+.o-back span { display: none; }
+.o-steps-list { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin: 0; padding: 0; list-style: none; }
+.o-steps-list button {
+  width: 100%; min-height: 54px; display: grid; justify-items: center; align-content: center; gap: 3px; padding: 4px 2px;
+  border: 0; border-radius: 12px; background: transparent; color: var(--muted); font: 700 16px/1.1 'DM Sans', sans-serif; cursor: pointer;
+}
+.o-steps-list button:disabled { cursor: default; }
+.o-dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #E7E2D7; color: var(--muted); font: 800 16px/1 'Bricolage Grotesque', 'DM Sans', sans-serif; }
+.o-dot svg { display: none; width: 16px; height: 16px; }
+.o-steps-list li.is-done button, .o-steps-list li.is-current button { color: var(--ink); }
+.o-steps-list li.is-done .o-dot { background: var(--yellow); color: var(--ink); }
+.o-steps-list li.is-done .o-dot span { display: none; }
+.o-steps-list li.is-done .o-dot svg { display: block; }
+.o-steps-list li.is-current .o-dot { background: var(--ink); color: var(--yellow); }
+/* "Step N of 4": said to screen readers on a phone, shown from 600px. */
+.o-steps-of { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; font-size: 16px; font-weight: 700; color: var(--muted); }
+.o-steps-bar { height: 4px; margin: 4px calc(-1 * var(--gutter)) 0; background: var(--line); }
+.o-steps-bar span { display: block; height: 100%; width: 25%; background: var(--ink); transition: width .3s; }
+@media (min-width: 600px) {
+  .o-steps-of { position: static; width: auto; height: auto; overflow: visible; clip: auto; flex: none; padding-left: 8px; }
+  .o-back span { display: inline; }
+  .o-back { padding: 0 12px 0 6px; }
+  .o-steps-list button { grid-auto-flow: column; justify-content: center; gap: 8px; }
+}
+
+/* ── sections: a white card each; only the current step's show ── */
+.o-sec { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px 12px 16px; scroll-margin-top: 84px; scroll-margin-bottom: calc(var(--bar-h) + 12px); }
 .o-sec-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .o-sec h2 { margin: 0; flex: 1; min-width: 0; font: 800 21px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; color: var(--ink); }
-.o-num { flex: none; position: relative; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: var(--yellow); font: 800 16px/1 'Bricolage Grotesque', sans-serif; }
-.o-num svg { display: none; width: 18px; height: 18px; color: var(--ink); }
-.o-sec.is-done .o-num { background: var(--yellow); }
-.o-sec.is-done .o-num span { display: none; }
-.o-sec.is-done .o-num svg { display: block; }
-.o-sec.is-locked .o-num { background: #E7E2D7; color: var(--muted); }
-.o-sec.is-locked h2 { color: var(--muted); }
-.o-wait { flex-basis: 100%; margin: 0; padding-left: 44px; color: var(--muted); font-size: 16px; }
-.o-sec:not(.is-locked) .o-wait { display: none; }
+.o-sec h2:focus { outline: none; }
+.o-sec h2:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 6px; }
 .o-sec-body { margin-top: 10px; }
+/* The When page says where the job is, one tap from changing it. */
+.o-where-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; margin: 0 0 10px; padding: 2px 4px 2px 14px; border-radius: 12px; background: var(--soft); color: var(--ink); font-weight: 700; }
+.o-change { min-height: 48px; min-width: 48px; padding: 0 10px; border: 0; background: none; color: var(--ink); font: 700 16px/1 'DM Sans', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .o-help { margin: 0 0 10px; color: var(--muted); }
 .o-label { margin: 14px 0 8px; font-weight: 700; color: var(--ink); }
 .o-label:first-of-type { margin-top: 0; }
@@ -290,9 +319,8 @@ body.o-typing .o-bar { transform: translateY(115%); visibility: hidden; transiti
   .o-layout { display: grid; grid-template-columns: minmax(0, 640px) 360px; justify-content: space-between; gap: 32px; margin-top: 24px; }
   .o-sec { padding: 22px 24px 24px; }
   .o-sec-body { margin-top: 12px; }
-  .o-sec.is-locked { padding-block: 16px; }
   .o-sec h2 { font-size: 24px; }
-  .o-wait { flex-basis: auto; padding-left: 0; text-align: right; }
+  .o-steps { margin-top: -32px; padding-top: 10px; }
   .size-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .size-card { grid-template-columns: 1fr; align-items: start; align-content: start; gap: 10px; padding: 10px 10px 14px; }
   .size-name { padding-right: 0; }
@@ -301,7 +329,7 @@ body.o-typing .o-bar { transform: translateY(115%); visibility: hidden; transiti
   .size-card::after { top: 18px; right: 18px; }
   .o-wins { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .o-side { display: block; }
-  .o-summary { position: sticky; top: 24px; padding: 22px; border-radius: 22px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(21,23,26,.08); }
+  .o-summary { position: sticky; top: 96px; padding: 22px; border-radius: 22px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(21,23,26,.08); }
   .o-bar { display: none !important; }
   body.o-has-bar { padding-bottom: 0; }
   html:has(body.o-has-bar) { scroll-padding-bottom: 0; }
