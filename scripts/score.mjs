@@ -619,6 +619,27 @@ function crumbProblem(f) {
   }
   return null;
 }
+/** A typed price ($ and a digit) in this text, as is and with $ entities decoded and tags dropped
+ *  ($<strong>75</strong> reads $75): the words around it, or null. */
+function typedPrice(s) {
+  const raw = String(s || ''), flat = raw.replace(/&#0*36;|&#x0*24;|&dollar;/gi, '$').replace(/<[^>]+>/g, '');
+  for (const t of [raw, flat]) {
+    const m = t.match(/\$\s*\d/);
+    if (m) return t.slice(Math.max(0, m.index - 20), m.index + 10).replace(/\s+/g, ' ');
+  }
+  return null;
+}
+// The policy spans build-pricing rewrites from POLICY: the same pattern as policySpans() in
+// scripts/build-pricing.mjs (line 285). That script runs its build on import, so it is copied here.
+const POLICY_SPAN = /<span(?: class="guess")? data-policy="(cancel|late|refusal)">[^<]*<\/span>/g;
+/** Whether build-pricing rewrites this page's policy spans: its TARGETS entry says policy: true. */
+function policyTarget(file) {
+  const src = read('scripts/build-pricing.mjs') || '';
+  const at = src.indexOf(`file: '${file}'`);
+  if (at < 0) return false;
+  const rest = src.slice(at + 1), end = rest.search(/file:\s*'|\n\];/);
+  return /\bpolicy:\s*true\b/.test(end < 0 ? rest : rest.slice(0, end));
+}
 function orderModule() {
   const f = path.join(ROOT, 'api/_lib/order-config.js');
   delete require.cache[require.resolve(f)];
@@ -911,7 +932,7 @@ if(r.bottom>innerHeight)return 'after the tap the heading ends at '+Math.round(r
       }
       return bad.length ? bad.join('; ') : true;
     } },
-    { id: 'copy', pts: 7, desc: 'the service files, Before we come, the help pages and the piano posts: no dashes, slang, dog words, TODO or Disney words; no typed price ($ and a digit) in content/services or on Before we come (outside the data-policy spans the config writes); GUESSES.md current', run() {
+    { id: 'copy', pts: 7, desc: 'the service files, Before we come, the help pages and the piano posts: no dashes, slang, dog words, TODO or Disney words; no typed price ($ and a digit) in content/services, the piano posts or on Before we come (outside the policy spans build-pricing rewrites there); GUESSES.md current', run() {
       const md = (f) => mdText(f).replace(/<!--[\s\S]*?-->/g, '');
       const items = [...R9_SERVICES.map((s) => [`${R9_SVC_DIR}/${s}.md`, md(`${R9_SVC_DIR}/${s}.md`)]),
         ...['before-we-come.html', 'es/before-we-come.html', 'faq.html', 'es/faq.html'].map((f) => [f, visibleText(read(f))]),
@@ -925,16 +946,23 @@ if(r.bottom>innerHeight)return 'after the tap the heading ends at '+Math.round(r
       }
       const walk = (d) => { try { return fs.readdirSync(path.join(ROOT, d), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${d}/${e.name}`) : [`${d}/${e.name}`])); } catch { return []; } };
       for (const f of walk('content/services')) {
-        const m = (read(f) || '').match(/\$\s*\d/);
-        if (m) return `${f} types a price ("${(read(f) || '').slice(Math.max(0, m.index - 20), m.index + 10).replace(/\s+/g, ' ')}"); prices come from the config`;
+        const t = typedPrice(read(f));
+        if (t) return `${f} types a price ("${t}"); prices come from the config`;
       }
-      // Before we come: the fees print only through data-policy spans (build-pricing writes them from the config);
-      // scripts, styles and comments are not copy.
+      // The piano posts, whole (title, description, summary and body).
+      for (const l of ['en', 'es']) {
+        const f = `content/blog/${l}/${R9_PIANO}.md`, t = typedPrice(read(f));
+        if (t) return `${f} types a price ("${t}"); a post names no price`;
+      }
+      // Before we come: a fee prints only through the policy spans build-pricing keeps current, so each page
+      // must be one of its policy targets, and only those exact spans are skipped. Scripts, styles and
+      // comments are not copy.
       for (const f of ['before-we-come.html', 'es/before-we-come.html']) {
+        if (!policyTarget(f)) return `${f} is not a policy target in scripts/build-pricing.mjs (TARGETS, policy: true), so nothing keeps its fees current`;
         const s = (read(f) || '').replace(/<script\b[\s\S]*?<\/script>/gi, ' ').replace(/<style\b[\s\S]*?<\/style>/gi, ' ').replace(/<!--[\s\S]*?-->/g, ' ')
-          .replace(/<([a-z0-9]+)\b[^>]*\sdata-policy="[^"]*"[^>]*>[\s\S]*?<\/\1>/gi, ' ');
-        const m = s.match(/\$\s*\d/);
-        if (m) return `${f} types a price ("${s.slice(Math.max(0, m.index - 20), m.index + 10).replace(/\s+/g, ' ')}"); a fee prints through a data-policy span`;
+          .replace(POLICY_SPAN, ' ');
+        const t = typedPrice(s);
+        if (t) return `${f} types a price ("${t}"); a fee prints through a build-pricing policy span`;
       }
       return run('node', ['scripts/list-guesses.mjs', '--check']).code === 0 || 'GUESSES.md is stale (npm run guesses)';
     } },
