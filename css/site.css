@@ -66,7 +66,7 @@ body {
 img { max-width: 100%; }
 :focus-visible { outline: 2px solid var(--dtan); outline-offset: 2px; }
 /* On the charcoal parts the dark ring is too faint (2.8:1): yellow there (12.4:1). */
-.site-nav :focus-visible, .h-hero :focus-visible, .band.is-dark :focus-visible, .price-card :focus-visible,
+.site-nav :focus-visible, .band.is-dark :focus-visible, .price-card :focus-visible,
 .town-zones :focus-visible, footer :focus-visible, .legal-footer :focus-visible, .sticky-cta:focus-visible { outline: 3px solid var(--tan); outline-offset: 2px; }
 .skip-link { position: absolute; left: -9999px; top: 8px; z-index: 200; background: var(--card); color: var(--rg); padding: 10px 16px; border-radius: var(--r-sm); font-weight: 700; }
 .skip-link:focus { left: 8px; }
@@ -275,7 +275,7 @@ footer a { color: var(--tan); text-decoration: none; }
   background: var(--rg); color: var(--tan);
   box-shadow: 0 14px 36px rgba(21,23,26,.32);
   text-align: center; text-decoration: none;
-  font-size: 14px; font-weight: 700; letter-spacing: .06em;
+  font-size: 16px; font-weight: 700; letter-spacing: .04em;
   border: 1px solid rgba(255,210,63,.32);
   transform: translateY(120%);
   transition: transform .35s cubic-bezier(.34,1.56,.64,1);

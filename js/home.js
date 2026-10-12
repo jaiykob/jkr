@@ -1,9 +1,8 @@
-/* Homepage: the size cards' travel line, the card tilt, the price tier fill
-   and the ZIP check. Each piece is optional; without JS the page is plain and
-   every link still goes to the quote. */
+/* Homepage: the travel line on the size cards and the price ticket, and the
+   ZIP check. Each piece is optional; without JS the page is plain and every
+   link still goes to the quote. */
 (function () {
   'use strict';
-  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var T = window.TRAVEL;
   // The site root, from this script's own address: the Spanish homepage lives
   // in /es/, and the quote and the API are one level up from it.
@@ -19,39 +18,20 @@
   };
   function zoneName(l) { return ES ? String(l).replace(/^Home zone$/, 'Zona base').replace(/^Zone /, 'Zona ') : l; }
 
-  // Hero: the five size cards are links to the order page. Once the ZIP is known each
-  // card says what travel adds (js/size-cards.js); until then it says "+ travel".
-  var hero = window.SizeCards ? SizeCards.mount(document.getElementById('homeSizes'), {
-    words: ES ? { none: 'Sin cargo de viaje', suffix: ' de viaje' } : null
-  }) : null;
-  // Each card opens the order page with its size picked, and with the ZIP once we
-  // know it (the order page reads quoteZip too; the link carries it if storage is off).
-  var cardLinks = [].slice.call(document.querySelectorAll('#homeSizes a.size-card'));
+  // The five size cards (the sizes band) and the hero's price ticket are links to the
+  // order page. Once the ZIP is known each says what travel adds (js/size-cards.js);
+  // until then "+ travel".
+  var words = ES ? { none: 'Sin cargo de viaje', suffix: ' de viaje' } : null;
+  var lists = window.SizeCards ? [
+    SizeCards.mount(document.getElementById('homeSizes'), { words: words }),
+    SizeCards.mount(document.querySelector('.h-art'), { words: words, selector: '.h-ticket' })
+  ].filter(Boolean) : [];
+  var hero = lists.length ? { setTravel: function (t, g) { lists.forEach(function (l) { l.setTravel(t, g); }); } } : null;
+  // Each opens the order page with its size picked, and with the ZIP once we know it
+  // (the order page reads quoteZip too; the link carries it if storage is off).
+  var cardLinks = [].slice.call(document.querySelectorAll('#homeSizes a.size-card, a.h-ticket'));
   var cardHrefs = cardLinks.map(function (a) { return a.getAttribute('href'); });
   function cardsZip(zip) { cardLinks.forEach(function (a, i) { a.setAttribute('href', cardHrefs[i] + (zip ? '&zip=' + zip : '')); }); }
-
-  // What we take: cards tilt toward the pointer.
-  if (!reduce && matchMedia('(hover: hover)').matches) {
-    document.querySelectorAll('.take').forEach(function (card) {
-      card.addEventListener('pointermove', function (e) {
-        var b = card.getBoundingClientRect();
-        var x = (e.clientX - b.left) / b.width - 0.5, y = (e.clientY - b.top) / b.height - 0.5;
-        card.style.transform = 'rotateX(' + (-y * 10).toFixed(2) + 'deg) rotateY(' + (x * 12).toFixed(2) + 'deg)';
-      });
-      card.addEventListener('pointerleave', function () { card.style.transform = ''; });
-    });
-  }
-
-  // Price tiers: the little trucks fill when they scroll into view.
-  var tiers = document.querySelector('.tiers');
-  if (tiers) {
-    if ('IntersectionObserver' in window && !reduce) {
-      var io = new IntersectionObserver(function (es) {
-        if (es[0].isIntersecting) { tiers.classList.add('is-in'); io.disconnect(); }
-      }, { threshold: 0.3 });
-      io.observe(tiers);
-    } else tiers.classList.add('is-in');
-  }
 
   // ZIP check: the answer as you type (zone and travel), its zone lights up,
   // and the size cards add the travel to their prices.

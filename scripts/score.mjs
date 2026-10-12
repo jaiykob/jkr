@@ -106,7 +106,7 @@ PROBE_SETS[6] = { text: ['.size-card', '#order label', '#order input', '#o-bar',
 // Round 7: the whole landing page (homepage, town pages, the Spanish homepage). Inline links inside
 // a sentence (the zone list's towns, an FAQ answer) are text, not buttons: they are not measured as taps.
 PROBE_SETS[7] = { text: ['main', 'footer'],
-  taps: ['.h-hero a', '.h-ticket', '.size-card', '.sizes-after a', '.promise-cta', '.price-band a', '.town-chips a', '.zip input', '.zip button',
+  taps: ['.h-hero a', '.h-ticket', '.size-card', '.h-order-alt a', '.h-contact a', '.promise-cta', '.price-band a', '.town-chips a', '.zip input', '.zip button',
     '.faq summary', '.closer a', '.site-nav a', '.site-nav button', 'footer a'] };
 /* The probe as one function of the set id, returning { sw, vw, small, taps }. PROBE runs it once the
    page settles; probeNow(set) runs it now, for a page measured after a scripted walk (the pay step). */

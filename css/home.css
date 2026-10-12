@@ -1,5 +1,7 @@
-/* Homepage only: hero with the size cards, ticker, how it works, what we
-   take, price tiers, ZIP check, FAQ, closer. Tokens come from css/site.css. */
+/* Homepage only (round 7, LoadUp's layout in our colors): the hero with the
+   pile and its price ticket, the ticker, how it works, the sizes band, what
+   we take, the promises, the price band, where we go with the map, the FAQ,
+   the closer. Tokens come from css/site.css. */
 
 .logo-mark {
   width: 30px; height: 30px; border-radius: 8px; flex: none;
@@ -11,47 +13,151 @@
 }
 .nav-logo { gap: 10px; }
 
-.h-eyebrow { font-size: 1rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--tan); margin-bottom: 14px; }
-.h-eyebrow.dark { color: var(--dtan); }
+/* Eyebrows are pills (round 7, LoadUp's tags): the ticker's diamond, then the
+   words. Yellow on the charcoal bands; charcoal on pale yellow on light ones. */
+.h-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px; max-width: 100%;
+  padding: 8px 16px; margin-bottom: 18px; border-radius: 18px;
+  font-size: 1rem; font-weight: 800; line-height: 1.3; letter-spacing: .08em; text-transform: uppercase;
+  background: rgba(255,210,63,.12); color: var(--tan); border: 1px solid rgba(255,210,63,.4);
+}
+.h-eyebrow::before { content: ''; flex: none; width: 9px; height: 9px; background: currentColor; transform: rotate(45deg); }
+.h-eyebrow.dark, .h-hero .h-eyebrow { background: var(--ltan); color: var(--rg); border-color: rgba(21,23,26,.14); }
 
 /* ── HERO ─────────────────────────────────────────────────────────────── */
+/* LoadUp's hero in our colors: cream, the copy and one big button on the
+   left, the pile of junk with its price ticket on the right; stacked on a
+   phone, the copy first. Town pages swap the eyebrow, headline and line. */
 .h-hero {
   position: relative; overflow: hidden; isolation: isolate;
-  background: var(--rg); color: var(--on-dark);
-  padding: 56px var(--gutter) 64px;
+  background: var(--page); color: var(--tx);
+  padding: 40px var(--gutter) 56px;
 }
 .h-hero::before {
-  content: ''; position: absolute; inset: 0; z-index: -1; opacity: .5;
-  background:
-    radial-gradient(60% 60% at 85% 10%, rgba(255,210,63,.18), transparent 70%),
-    repeating-linear-gradient(135deg, rgba(255,255,255,.035) 0 2px, transparent 2px 22px);
+  content: ''; position: absolute; z-index: -1; width: 760px; height: 760px; right: -260px; top: -160px;
+  background: radial-gradient(closest-side, rgba(255,210,63,.34), rgba(255,210,63,0));
 }
-.h-hero-in { max-width: var(--w-wide); margin: 0 auto; display: grid; gap: 36px; grid-template-columns: minmax(0, 1fr); }
+.h-hero-in { max-width: var(--w-wide); margin: 0 auto; display: grid; gap: 44px; grid-template-columns: minmax(0, 1fr); align-items: center; }
 .h-hero-in > * { min-width: 0; }
 .h-title {
   font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; font-weight: 800;
-  font-size: clamp(2.6rem, 7.5vw, 5.4rem); line-height: .95; letter-spacing: -.04em; color: #fff;
+  font-size: clamp(2.5rem, 6.4vw, 4.9rem); line-height: 1.02; letter-spacing: -.04em; color: var(--rg);
 }
-.h-title span { display: block; color: var(--tan); }
-.h-lede { margin-top: 20px; max-width: 520px; font-size: 1.15rem; line-height: 1.6; color: var(--on-dark-m); }
-.h-proof { list-style: none; margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px; }
-.h-proof li {
-  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px;
-  border-radius: 99px; border: 1px solid rgba(255,210,63,.35); font-size: 1rem; font-weight: 600;
+/* The second line on a yellow marker: a thick underline drawn behind the
+   lower half of the letters, so it follows the words even when they wrap. */
+.h-title span {
+  display: block; margin-top: .04em;
+  text-decoration: underline; text-decoration-color: var(--tan); text-decoration-thickness: .36em;
+  text-underline-offset: -.22em; text-decoration-skip-ink: none;
 }
-.h-proof li::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--tan); }
-/* The five size cards: links to the order page, one stacked column on a phone,
-   one row of five on a desktop. Same class names as the order page's cards. */
-.h-order { min-width: 0; }
+.h-lede { margin-top: 20px; max-width: 540px; font-size: 1.15rem; line-height: 1.6; color: var(--txm); }
+.h-founding { margin: 18px 0 0; font-size: 1rem; font-weight: 700; color: var(--dtan); }
+.h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 30px; }
+.h-cta {
+  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+  min-height: 60px; padding: 0 30px; border-radius: 14px;
+  background: var(--tan); color: var(--rg); border: 2px solid var(--rg);
+  box-shadow: 6px 6px 0 var(--rg); text-decoration: none;
+  font: 800 1.15rem/1 'DM Sans', system-ui, sans-serif;
+  transition: transform .12s, box-shadow .12s;
+}
+.h-cta::after { content: '\2192'; font-size: 1.2em; transition: transform .2s; }
+.h-cta:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--rg); }
+.h-cta:hover::after { transform: translateX(4px); }
+.h-cta:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0 var(--rg); }
+.h-check { display: inline-flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 700; color: var(--rg); }
+.h-check svg { width: 26px; height: 26px; flex: none; color: var(--tan); }
+.h-rule { border: 0; border-top: 1px solid var(--bdr); margin: 30px 0 22px; max-width: 540px; }
+.h-pill {
+  display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 20px;
+  border-radius: var(--r-pill); background: var(--card); border: 1px solid var(--bdr); box-shadow: var(--sh-sm);
+  color: var(--rg); font-size: 1rem; font-weight: 700; text-decoration: none;
+}
+.h-pill svg { width: 18px; height: 18px; flex: none; }
+.h-pill:hover { border-color: var(--rg); }
+
+/* The pile: the "what we take" colors as blocks with the site's offset
+   shadow (a sofa, a fridge, a mattress leaning on it, boxes, a yard bag, a
+   chair, a TV). Drawn, not a photo; screen readers skip it. */
+.h-art { position: relative; width: 100%; max-width: 520px; margin: 0 auto; }
+.h-pile { position: relative; aspect-ratio: 10 / 8; }
+.h-pile::before { content: ''; position: absolute; left: 2%; right: 6%; bottom: 7%; height: 7%; border-radius: 50%; background: rgba(21,23,26,.13); }
+.h-block {
+  position: absolute; left: var(--x); top: var(--y); width: var(--w); height: var(--h); transform: rotate(var(--r, 0deg));
+  border-radius: 10px; background: var(--sw); border: 2px solid var(--rg); box-shadow: 7px 7px 0 var(--rg);
+}
+.b-sofa     { --x: 4%;  --y: 61%; --w: 50%; --h: 22%; --r: -1deg; }
+.b-sofa::before { content: ''; position: absolute; left: 6%; right: 6%; top: -42%; height: 46%; border-radius: 10px 10px 0 0; background: inherit; border: 2px solid var(--rg); border-bottom: 0; }
+.b-fridge   { --x: 54%; --y: 21%; --w: 20%; --h: 62%; --r: 1.5deg; }
+.b-fridge::after { content: ''; position: absolute; left: 10%; right: 10%; top: 34%; height: 2px; background: var(--rg); }
+.b-mattress { --x: 75%; --y: 11%; --w: 11%; --h: 70%; --r: 9deg; border-radius: 14px; }
+.b-box      { --x: 8%;  --y: 40%; --w: 22%; --h: 19%; --r: -5deg; border-radius: 6px; }
+.b-box::after { content: ''; position: absolute; left: 0; right: 0; top: 30%; height: 2px; background: var(--rg); }
+.b-crate    { --x: 31%; --y: 45%; --w: 18%; --h: 15%; --r: 4deg; border-radius: 6px; }
+.b-bag      { --x: 27%; --y: 22%; --w: 17%; --h: 21%; --r: -9deg; border-radius: 42% 42% 30% 30%; }
+.b-chair    { --x: 12%; --y: 19%; --w: 12%; --h: 19%; --r: 10deg; }
+.b-tv       { --x: 36%; --y: 4%;  --w: 21%; --h: 16%; --r: -4deg; }
+.b-tv::after { content: ''; position: absolute; inset: 14%; border-radius: 4px; background: rgba(255,255,255,.16); }
+
+/* The price ticket pinned to the pile: the half truck at its config price,
+   a link to the order page with that size picked (BUILD:home-ticket). */
+.h-ticket {
+  position: absolute; right: -2%; bottom: -2%; width: 60%; min-width: 250px;
+  display: grid; gap: 2px; padding: 16px 18px 14px; border-radius: 16px;
+  background: var(--card); color: var(--rg); text-decoration: none;
+  border: 2px solid var(--rg); box-shadow: 8px 8px 0 var(--rg);
+  transform: rotate(-3deg); transition: transform .2s;
+}
+.h-ticket:hover { transform: rotate(-1.5deg) translateY(-3px); }
+.h-ticket-top { font-size: 1rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--dtan); }
+.h-ticket .size-name { font: 800 1.3rem/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em; }
+.h-ticket .size-note { font-size: 1rem; line-height: 1.35; color: var(--txm); }
+.h-ticket .size-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 4px; }
+.h-ticket .size-price { font: 800 1.9rem/1.1 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; }
+.h-ticket .size-travel { font-size: 1rem; color: var(--txm); }
+.h-ticket-go {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-top: 10px; padding-top: 10px; border-top: 2px dashed var(--bdr);
+  font-size: 1rem; font-weight: 800;
+}
+.h-ticket-go::after { content: '\2192'; font-size: 1.2em; }
+
+@media (min-width: 960px) {
+  .h-hero { padding: 72px var(--gutter) 96px; }
+  .h-hero-in { grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 56px; }
+}
+@media (max-width: 599px) {
+  .h-hero { padding: 32px 16px 48px; }
+  .h-art { max-width: 420px; }
+  .h-pile { aspect-ratio: 10 / 7; }
+  /* The ticket sits under the pile, overlapping its foot, at full size. */
+  .h-ticket { position: relative; right: auto; bottom: auto; width: auto; min-width: 0; max-width: 320px; margin: -34px 6px 0 auto; transform: rotate(-2deg); }
+}
+@media (max-width: 379px) {
+  .h-actions { flex-direction: column; align-items: stretch; }
+}
+
+/* ── SIZES AND PRICES ─────────────────────────────────────────────────── */
+/* LoadUp's dark services row: the five size cards on charcoal, one row on a
+   desktop (photo on top), stacked rows on a phone. Same class names as the
+   order page's cards. */
+.sizes-head { display: grid; gap: 12px 48px; margin-bottom: 32px; }
+.sizes-head .section-sub { margin-top: 0; }
+@media (min-width: 860px) { .sizes-head { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: end; } }
+.h-from { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 1rem; font-weight: 700; font-style: italic; color: var(--on-dark); }
+.h-from::before {
+  content: ''; flex: none; width: 18px; height: 18px; background: var(--tan);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9zM8 9.5A1.5 1.5 0 1 0 8 6.5a1.5 1.5 0 0 0 0 3z' fill='black'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9zM8 9.5A1.5 1.5 0 1 0 8 6.5a1.5 1.5 0 0 0 0 3z' fill='black'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .h-sizes { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .h-sizes .size-card {
   position: relative; display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: center; gap: 12px;
   min-height: 84px; padding: 8px 12px 8px 8px; border-radius: 16px;
   background: var(--card); color: var(--rg); text-decoration: none;
-  border: 2px solid transparent; box-shadow: 0 10px 30px rgba(0,0,0,.28);
-  transition: transform .15s, border-color .15s;
+  border: 2px solid transparent; transition: transform .15s, border-color .15s, box-shadow .15s;
 }
-.h-sizes .size-card:hover { border-color: var(--tan); transform: translateY(-2px); }
+.h-sizes .size-card:hover { border-color: var(--tan); transform: translateY(-3px); box-shadow: 0 6px 0 var(--tan); }
 .h-sizes .size-card:focus-visible { outline: 3px solid var(--tan); outline-offset: 3px; }
 .h-sizes .size-photo { display: block; width: 68px; height: 68px; object-fit: cover; border-radius: 10px; background: #E4E4E4; }
 .h-sizes .size-body { display: grid; gap: 1px; min-width: 0; }
@@ -60,10 +166,20 @@
 .h-sizes .size-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 2px; }
 .h-sizes .size-price { font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; }
 .h-sizes .size-travel { font-size: 1rem; color: var(--txm); }
-.h-order-alt { margin-top: 18px; font-size: 1.05rem; color: var(--on-dark-m); }
+@media (min-width: 960px) {
+  .h-sizes { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+  .h-sizes .size-card { grid-template-columns: 1fr; align-items: start; align-content: start; gap: 12px; padding: 10px 10px 18px; }
+  .h-sizes .size-photo { width: 100%; height: auto; aspect-ratio: 16 / 10; }
+  .h-sizes .size-body { padding: 0 6px; }
+  .h-sizes .size-price { font-size: 1.5rem; }
+}
+.sizes-after { margin-top: 28px; display: grid; gap: 6px; justify-items: start; }
+@media (min-width: 960px) { .sizes-after { justify-items: center; text-align: center; } }
+.h-order-alt, .tiers-travel, .tiers-more { font-size: 1rem; line-height: 1.5; color: var(--on-dark-m); }
 .h-order-alt a { color: var(--tan); font-weight: 700; text-underline-offset: 3px; display: inline-block; padding: 12px 0; }
-.h-order-alt a:hover { color: #fff; }
-.h-contact { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.h-order-alt a:hover, .tiers-travel a:hover, .tiers-more a:hover { color: #fff; }
+.tiers-travel a, .tiers-more a { color: var(--tan); font-weight: 700; }
+.h-contact { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .h-chip {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: 48px; min-width: 48px; padding: 0 18px; border-radius: 99px;
@@ -72,28 +188,6 @@
 }
 .h-chip svg { width: 20px; height: 20px; flex: none; }
 .h-chip:hover { background: rgba(255,210,63,.14); }
-.h-chip:focus-visible { outline: 3px solid var(--tan); outline-offset: 2px; }
-@media (min-width: 960px) {
-  .h-hero { padding: 72px var(--gutter) 88px; }
-  .h-hero-in { grid-template-columns: 1fr; }
-  .h-hero-copy { display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px 48px; align-items: end; }
-  .h-hero-copy .h-eyebrow, .h-hero-copy .h-title { grid-column: 1; }
-  .h-hero-copy .h-lede { grid-column: 2; grid-row: 2; margin: 0; }
-  .h-hero-copy .h-proof { grid-column: 1 / -1; }
-  .h-sizes { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
-  .h-sizes .size-card { grid-template-columns: 1fr; align-items: start; align-content: start; gap: 10px; padding: 10px 10px 16px; }
-  .h-sizes .size-photo { width: 100%; height: auto; aspect-ratio: 16 / 10; }
-  .h-sizes .size-body { padding: 0 4px; }
-}
-@media (max-width: 599px) {
-  .h-hero { padding: 36px 16px 44px; }
-  /* Phones: the first size card shows on the first screen (360x760 with the
-     bookings banner up). The proof chips move down, under the contact buttons. */
-  .h-hero-in { gap: 0; }
-  .h-hero-copy { display: contents; }
-  .h-order { order: 1; margin-top: 28px; }
-  .h-proof { order: 2; margin-top: 28px; }
-}
 
 /* ── TICKER ───────────────────────────────────────────────────────────── */
 .ticker { overflow: hidden; background: var(--tan); border-block: 3px solid var(--rg); }
@@ -106,11 +200,37 @@
 @keyframes ticker { to { transform: translateX(-50%); } }
 
 /* ── HOW IT WORKS ─────────────────────────────────────────────────────── */
-/* The three steps, still: the numbered steps of css/site.css (a charcoal
-   disc with a yellow number), stacked on a phone, three across from 760px,
-   the headings in the homepage's heavy type. */
-.steps h3 { font-weight: 800; font-size: 1.25rem; letter-spacing: -.02em; line-height: 1.25; }
-@media (min-width: 760px) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; } }
+/* LoadUp's steps: three numbered circles joined by a line (yellow, then
+   outlined, then charcoal), across from 760px, down the left on a phone with
+   the words beside each circle. The line is the list's ::before. */
+#how-it-works .steps { position: relative; gap: 30px; }
+#how-it-works .steps::before {
+  content: ''; position: absolute; z-index: 0; left: 31px; top: 32px; bottom: 32px; width: 3px; border-radius: 3px;
+  background: linear-gradient(var(--tan), var(--rg));
+}
+#how-it-works .steps > li {
+  z-index: 1; display: grid; grid-template-columns: 64px minmax(0, 1fr); align-content: start; gap: 2px 18px;
+  padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none;
+}
+#how-it-works .steps > li::before {
+  position: static; grid-row: span 2; width: 64px; height: 64px;
+  font: 800 1.5rem/1 'Bricolage Grotesque', 'DM Sans', sans-serif;
+  box-shadow: 0 0 0 8px var(--card);
+}
+#how-it-works .steps > li:nth-child(1)::before { background: var(--tan); color: var(--rg); }
+#how-it-works .steps > li:nth-child(2)::before { background: var(--card); color: var(--rg); border: 3px solid var(--rg); }
+#how-it-works .steps > li:nth-child(3)::before { background: var(--rg); color: var(--tan); }
+#how-it-works .steps h3 { font-weight: 800; font-size: 1.3rem; letter-spacing: -.02em; line-height: 1.25; margin: 6px 0 2px; }
+@media (min-width: 760px) {
+  #how-it-works .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+  #how-it-works .steps::before {
+    left: 16.67%; right: 16.67%; top: 31px; bottom: auto; width: auto; height: 3px;
+    background: linear-gradient(90deg, var(--tan), var(--rg));
+  }
+  #how-it-works .steps > li { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 4px; }
+  #how-it-works .steps > li::before { grid-row: auto; margin-bottom: 14px; }
+  #how-it-works .steps p { max-width: 300px; }
+}
 
 /* ── WHAT WE TAKE ─────────────────────────────────────────────────────── */
 .take-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); perspective: 900px; }
@@ -128,32 +248,6 @@
 .take h3 { font: 800 1.25rem/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; margin-bottom: 6px; }
 .take p { color: var(--txm); font-size: 1rem; }
 .take-no { margin-top: 24px; text-align: center; color: var(--txm); font-size: 1rem; }
-
-/* ── PRICE TIERS (generated markup) ───────────────────────────────────── */
-.tiers { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
-.tier {
-  display: flex; flex-direction: column; gap: 4px; padding: 22px 20px; border-radius: 20px;
-  background: var(--card); border: 1.5px solid var(--bdr); color: var(--rg); text-decoration: none;
-  transition: transform .2s, box-shadow .2s, border-color .2s;
-}
-.tier:hover { transform: translateY(-6px); border-color: var(--rg); box-shadow: 0 8px 0 var(--rg); }
-.tier-truck {
-  position: relative; display: block; height: 58px; margin-bottom: 14px; border-radius: 8px;
-  border: 3px solid var(--rg); background: var(--surf); overflow: hidden;
-}
-.tier-truck::after { content: ''; position: absolute; right: -3px; top: 16px; width: 26%; bottom: -3px; background: var(--tan); border: 3px solid var(--rg); border-radius: 0 8px 6px 0; }
-.tier-load {
-  position: absolute; left: 0; bottom: 0; width: 74%; height: 0;
-  background: repeating-linear-gradient(90deg, #E4572E 0 18%, #4C8BF5 18% 34%, #D9B26F 34% 58%, #9AA5B1 58% 76%, #3FA34D 76% 100%);
-  transition: height .6s cubic-bezier(.34,1.4,.64,1);
-}
-.tiers.is-in .tier-load { height: var(--fill); }
-.tier:hover .tier-load { filter: saturate(1.3); }
-.tier-name { font: 800 1.3rem/1.2 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; }
-.tier-note { font-size: 1rem; color: var(--txm); line-height: 1.4; flex: 1; }
-.tier-price { margin-top: 10px; font: 800 2rem/1 'Bricolage Grotesque', sans-serif; letter-spacing: -.03em; }
-.tiers-more { margin-top: 24px; text-align: center; font-size: 1rem; color: var(--txm); }
-.tiers-more a { color: var(--rg); font-weight: 700; }
 
 /* ── AREA ─────────────────────────────────────────────────────────────── */
 .area-in { display: grid; gap: 36px; align-items: center; }
@@ -184,8 +278,6 @@
 .zones li.is-hit { background: var(--tan); color: var(--rg); transform: scale(1.02) rotate(-.5deg); }
 .zones li.is-hit .zone-name, .zones li.is-hit .zone-fee { color: var(--rg); }
 .zones li.is-hit .guess { color: #9B1C1C; }
-.tiers-travel { margin-top: 18px; text-align: center; font-size: 1rem; line-height: 1.5; color: var(--txm); }
-.tiers-travel a { color: var(--rg); font-weight: 700; }
 
 /* ── FAQ ──────────────────────────────────────────────────────────────── */
 .faq { display: grid; gap: 10px; }
@@ -219,7 +311,7 @@
 @media (prefers-reduced-motion: reduce) {
   .ticker-track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; }
   .ticker span:nth-child(n+13) { display: none; }
-  .tier-load { transition: none; }
+  .h-cta, .h-ticket, .h-sizes .size-card { transition: none; }
 }
 
 /* ── Town pages (scripts/build-towns.mjs) ─────────────────────────────── */

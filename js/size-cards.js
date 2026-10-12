@@ -7,7 +7,9 @@
    the homepage (cards are links to the order page with that size picked), so
    it knows nothing about either page.
 
-   SizeCards.mount(root, { onPick(row, how), words: { none, suffix } }) -> {  (words: another language)
+   SizeCards.mount(root, { onPick(row, how), words: { none, suffix }, selector }) -> {
+                          (words: another language; selector: the cards, '.size-card' by
+                          default, '.h-ticket' for the homepage's price ticket)
      pick(row)            mark one card picked (aria-pressed), no callback
      setTravel(trip, guess)  the travel line on every card: "+ travel" until the
                           ZIP is known (trip null), then the fee or "No travel charge"
@@ -21,7 +23,7 @@
     opts = opts || {};
     var W = opts.words || { none: 'No travel charge', suffix: ' travel' };
     if (!root) return null;
-    var cards = [].slice.call(root.querySelectorAll('.size-card'));
+    var cards = [].slice.call(root.querySelectorAll(opts.selector || '.size-card'));
     var current = null;
     var rowOf = function (card) { return parseInt(card.getAttribute('data-size'), 10); };
 
