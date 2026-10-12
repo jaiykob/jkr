@@ -15,6 +15,16 @@
       "source": "/book/checkout",
       "destination": "/book/quote.html",
       "permanent": true
+    },
+    {
+      "source": "/portland/",
+      "destination": "/service-areas.html",
+      "permanent": true
+    },
+    {
+      "source": "/portland/index.html",
+      "destination": "/service-areas.html",
+      "permanent": true
     }
   ],
   "headers": [

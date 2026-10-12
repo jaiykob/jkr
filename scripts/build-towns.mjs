@@ -50,8 +50,9 @@ const plain = (s) => String(s).replace(/\[\[|\]\]/g, '');
 /** Visible HTML to the plain text structured data carries. */
 const textOf = (html) => String(html).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
   .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
-/** FAQPage JSON-LD from the same question list the page shows, so the two cannot disagree. */
-const faqPage = (url, items) => ({
+/** FAQPage JSON-LD from the same question list the page shows, so the two cannot disagree
+ *  (the service pages use it too, scripts/build-services.mjs). */
+export const faqPage = (url, items) => ({
   '@type': 'FAQPage',
   '@id': `${url}#faq`,
   mainEntity: items.map((i) => ({ '@type': 'Question', name: textOf(i.q), acceptedAnswer: { '@type': 'Answer', text: textOf(i.a) } })),

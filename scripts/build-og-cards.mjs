@@ -26,6 +26,7 @@ import { GUESS, fmt } from '../pricing.config.mjs';
 import { pages } from './build-sitemap.mjs';
 import { loadTowns, townTravel } from './build-towns.mjs';
 import { loadPosts, T as BLOG } from './build-blog.mjs';
+import { loadServices, sizesOf } from './build-services.mjs';
 import { openBrowser } from './lib/browser.mjs';
 import { serve } from './lib/serve.mjs';
 
@@ -35,7 +36,7 @@ const MANIFEST = path.join(OUT, 'manifest.json');
 const check = process.argv.includes('--check');
 const VERSION = 1;   // bump when the card design changes, so every card redraws
 
-/** The card's file name for a page: home, faq, portland, es-portland, blog-x, es-blog-x, quote, commercial. */
+/** The card's file name for a page: home, faq, portland, es-portland, blog-x, es-blog-x, portland-x (a service), quote, commercial. */
 export function cardSlug(rel) {
   if (rel === 'index.html') return 'home';
   if (rel === 'es/index.html') return 'es-home';
@@ -46,6 +47,8 @@ const townList = loadTowns();
 // Every town page, English and Spanish: rel → [town, lang].
 const towns = new Map(townList.flatMap((t) => [[`${t.slug}.html`, [t, 'en']], ...(t.es ? [[`es/${t.slug}.html`, [t, 'es']]] : [])]));
 const posts = new Map(['en', 'es'].flatMap((l) => loadPosts(l).map((p) => [`${BLOG[l].dir}/${p.slug}.html`, p])));
+// Every service page (round 9): rel → service.
+const services = new Map(loadServices().map((s) => [`${s.metro}/${s.slug}.html`, s]));
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const zoneEs = (label) => String(label).replace(/^Home zone$/, 'Zona base').replace(/^Zone /, 'Zona ');
 
@@ -62,6 +65,8 @@ function cardFor(rel) {
     const fee = tr.length > 1 ? 'Travel set by your ZIP' : tr[0].cents ? `${tr[0].label}: travel +${fmt(tr[0].cents)}` : 'No travel charge';
     return { kicker: 'Junk removal', title: `${t.name}, ${t.state}`, sub: 'Snap a photo, see your price, we haul it away.', fee, guess: GUESS.zones };
   }
+  const svc = services.get(rel);
+  if (svc) return { kicker: 'Junk removal in Portland', title: svc.name, sub: 'Pick a size or send a photo. We do the lifting.', fee: `From ${fmt(sizesOf(svc)[0].cents)} plus travel`, guess: GUESS.prices };
   const post = posts.get(rel);
   if (post) return { kicker: post.lang === 'es' ? 'Del blog' : 'From the blog', title: post.title, sub: post.summary, fee: null, guess: false, small: true };
   const fixed = {

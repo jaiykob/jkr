@@ -1,0 +1,10 @@
+# The service pages, highest priority first (round 9 spec). A slug with no
+# <slug>.md yet is skipped; every <slug>.md here must be listed.
+garage-cleanout
+furniture-removal
+estate-cleanout
+hot-tub-removal
+mattress-removal
+appliance-removal
+yard-debris-removal
+hoarder-cleanout
