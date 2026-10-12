@@ -50,7 +50,12 @@ order). The SEO pass moves to round 9, CRM and KPIs to 10, Sacramento to 11.
   changed, the ZIP is outside the area), the page goes to that step and says
   why, as the one page flow did.
 - Each page gets its own tab title ("When should we come? | Book a junk
-  pickup"), and the focus moves to the page's heading for screen readers.
+  pickup"). The focus goes where the next keystroke goes, so nobody taps
+  into a box: the ZIP box on Where, the first empty field on Book, the
+  heading on When; the step is said aloud for screen readers.
+- On a phone the days swipe in one row and the page title steps aside after
+  Size, so the arrival times (the one tap When needs) are on the first
+  screen.
 
 ## What does not change
 
@@ -71,9 +76,9 @@ the section headings). The order page stays English.
 | back | 8 | the browser Back goes to the step before with the ZIP and size kept; a done step in the progress bar goes back to it |
 | taps | 15 | scripted bookings from a homepage card against the real API: card 5 taps or fewer at 360 and 1280, wallet 4 or fewer, gates closed 4 or fewer; one create-booking call each |
 | refusal | 7 | a window that fills at Book takes the page to When with the message; a stale price stays on Book with the new total |
-| mobile | 10 | each step at 360px: no sideways scroll, text 16px+, taps 48px+; the progress bar 48px taps |
+| mobile | 10 | each step at 360px: no sideways scroll, text 16px+, taps 48px+; the progress bar 48px taps; the first arrival time on the first screen, above the bar |
 | desktop | 5 | at 1280px the steps on the left and the summary on the right, the summary in view on every step |
-| a11y | 5 | the current step's heading takes the focus on a step change; the progress list has `aria-current="step"`; each step's title is in the tab |
+| a11y | 5 | the focus goes to the ZIP box on Where, the first empty field on Book and the heading on When; the progress list has `aria-current="step"`; each step's title is in the tab |
 
 Total 100. Round 6's checks that measured the one page (cards stacked on
 the size section, the contact fields after a window tap, the day chip
