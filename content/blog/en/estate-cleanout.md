@@ -23,7 +23,7 @@ Clear one room completely before starting the next. It is slower in the first ho
 
 ## What we handle
 
-We carry everything out, from the attic to the basement, including furniture that has not moved in decades. Usable things go to donation, metals and electronics to recycling, and the rest to the transfer station. Mark anything that stays with tape, and we leave it exactly where it is.
+We carry everything out, from the attic to the basement, including furniture that has not moved in decades. Usable things go to donation, metals and electronics to recycling, and the rest to the transfer station. Mark anything that stays with tape, and we leave it exactly where it is. Our [estate cleanout page](/portland/estate-cleanout.html) walks through the day itself, from the first room to the last sweep.
 
 ## Estate cleanouts across the metro
 

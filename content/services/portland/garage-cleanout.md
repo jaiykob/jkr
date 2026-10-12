@@ -26,7 +26,7 @@ Almost anything that ends up in a garage can ride in our truck. Most garage load
 - A spare fridge or chest freezer
 - Moving boxes, bagged trash and broken holiday decorations
 
-A few things stay off the truck because they need special handling: wet paint, fuel, motor oil, propane tanks, pool chemicals and pesticides. Set them aside before we arrive and we will tell you where each one can go. Paint cans that are empty and dried out are fine.
+A few things stay off the truck because they need special handling: wet paint, fuel, motor oil, propane tanks, pool chemicals and pesticides. Set them aside before we arrive and we will tell you where each one can go. [[Paint cans that are empty and dried out are fine.]]
 
 ## Where it goes
 We sort every garage load on the way out, and the landfill is the last stop, not the first.
@@ -57,7 +57,7 @@ Pick a day and an arrival window, and we text you when we are on the way.
 
 When we arrive, we walk the garage with you and confirm the size before anything is lifted. If the pile is bigger than the size you booked, we show you the new price first and charge the difference only if you agree. If it is smaller, we refund the difference.
 
-[[Two of us]] carry everything out, load the truck, and sweep the floor where the pile stood. You get before and after photos by email. You do not have to be there if the garage is open or the things are out on the driveway; just leave a note when you book.
+[[Two of us]] carry everything out, load the truck, and sweep the floor where the pile stood. You get before and after photos by email. You do not have to be there if the garage is open or the things are out on the driveway; just leave a note when you book. If the pile turns out bigger while you are away, we text you the new price first and load the bigger size only if you agree.
 
 ## FAQ
 Q: Do I have to sort everything before you come?
@@ -73,4 +73,4 @@ Q: Will you take down the shelves on the wall?
 A: [[Yes, if they come off with a drill or a screwdriver. We leave anything wired or plumbed in, like a garage door opener or a utility sink.]]
 
 Q: Do I need to be home for a garage cleanout?
-A: No, as long as we can get in. Leave the garage door open or set everything on the driveway, add a note when you book, and we text you when we are on the way and send photos when we are done.
+A: No, as long as we can get in. Leave the garage door open or set everything on the driveway, add a note when you book, and we text you when we are on the way and send photos when we are done. If the pile is bigger than you booked, we text you the new price and wait for your yes.
