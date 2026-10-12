@@ -38,7 +38,13 @@ export async function openBrowser() {
   const portFile = path.join(profile, 'DevToolsActivePort');
   for (let i = 0; i < 150 && !fs.existsSync(portFile); i++) await sleep(100);
   if (!fs.existsSync(portFile)) { proc.kill(); return null; }
-  const [port, wsPath] = fs.readFileSync(portFile, 'utf8').trim().split(/\r?\n/);
+  // Chrome may still hold the file open for a moment on Windows (EBUSY): read it again.
+  let portText = '';
+  for (let i = 0; i < 50 && !portText; i++) {
+    try { portText = fs.readFileSync(portFile, 'utf8').trim(); } catch (e) { if (e.code !== 'EBUSY') throw e; }
+    if (!portText) await sleep(100);
+  }
+  const [port, wsPath] = portText.split(/\r?\n/);
   const ws = new WebSocket(`ws://127.0.0.1:${port}${wsPath}`);
   await new Promise((res, rej) => { ws.onopen = res; ws.onerror = rej; });
 

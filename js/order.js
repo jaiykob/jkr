@@ -1,8 +1,15 @@
 /* The order page (book/quote.html): size, ZIP, day and window, contact, pay.
 
-   One page, five sections that open in turn: a section opens once the one
-   above it is done, so there is no Continue button. One state object holds
-   the order; render() redraws the page from it.
+   Four step pages, one at a time (round 8, founder: "each have their own
+   page with progress bar at top", "minimize clicks at all costs"): Size
+   (#size), Where (#where), When (#when), and Book (#book: the contact and
+   pay sections together). A step moves on by itself once it is done (a size
+   tap, the fifth digit of a ZIP we serve, an arrival time tap), so there is
+   no Continue button; steps already done are skipped on arrival (a homepage
+   size card, a ZIP typed earlier). Each step has its own hash in the history,
+   so the phone's Back button goes to the step before; the progress bar at
+   the top shows where you are. One state object holds the order; render()
+   redraws the page from it.
 
    Everything it knows comes from generated modules, so this file types no
    price, window or fee:
@@ -112,8 +119,15 @@
     return msg;
   }
 
-  /* ── which sections are done ─────────────────────────────────────────── */
+  /* ── the steps: one page each ────────────────────────────────────────── */
   var SECTIONS = ['o-size', 'o-zip', 'o-when', 'o-you', 'o-pay'];
+  var STEPS = ['size', 'where', 'when', 'book'];
+  var STEP_OF = { 'o-size': 'size', 'o-zip': 'where', 'o-when': 'when', 'o-you': 'book', 'o-pay': 'book' };
+  var step = null;          // the step on screen
+  // This page's own history entries: each carries its step and its place (i), so a
+  // Back or Forward knows which way it went, and trail[i] is the step written there.
+  var hist = 0, trail = [], lastDir = -1;
+  var BASE_TITLE = document.title;
   function done(id) {
     if (id === 'o-size') return state.size != null;
     if (id === 'o-zip') return !!state.trip;
@@ -121,30 +135,71 @@
     if (id === 'o-you') return Object.keys(FIELDS).every(function (k) { return !FIELDS[k].check(FIELDS[k].el.value); });
     return false;   // the pay step is never "done" on its own: Book finishes it
   }
-  var wasOpen = {};
-  /* Open every section whose sections above are done. Returns the ids that just opened. */
-  function layout() {
-    var open = true, opened = [];
-    SECTIONS.forEach(function (id) {
-      var sec = $(id), isDone = open && done(id);
-      sec.classList.toggle('is-open', open);
-      sec.classList.toggle('is-locked', !open);
-      sec.classList.toggle('is-done', isDone);
-      sec.querySelector('.o-sec-body').hidden = !open;
-      if (open && !wasOpen[id]) opened.push(id);
-      wasOpen[id] = open;
-      open = isDone;
+  var stepDone = function (s) { return s === 'size' ? done('o-size') : s === 'where' ? done('o-zip') : s === 'when' ? done('o-when') : false; };
+  /* The first step still to do (Book once the rest are done). */
+  function firstToDo() { for (var i = 0; i < STEPS.length; i++) if (!stepDone(STEPS[i])) return STEPS[i]; return 'book'; }
+  /* A step can be shown once every step before it is done. */
+  function reachable(s) {
+    var i = STEPS.indexOf(s);
+    if (i < 0) return false;
+    for (var k = 0; k < i; k++) if (!stepDone(STEPS[k])) return false;
+    return true;
+  }
+  /* Show a step. how: 'start' (on arrival: replace the history entry), 'replace'
+     (this entry becomes the step), 'pop' (Back or Forward: the history already
+     moved), anything else a new page in the history. A step not reachable yet
+     opens the first one still to do. A new page starts at the top, and the focus
+     goes where the next keystroke goes. Its heading names the tab. */
+  function go(s, how, focusId) {
+    if (!reachable(s)) s = firstToDo();
+    var moved = s !== step;
+    step = s;
+    try {
+      if (how === 'start' || how === 'replace' || (how === 'pop' && location.hash !== '#' + s)) { history.replaceState({ orderStep: s, i: hist }, '', '#' + s); trail[hist] = s; }
+      else if (how !== 'pop' && moved) { hist++; trail.length = hist; trail[hist] = s; history.pushState({ orderStep: s, i: hist }, '', '#' + s); }
+    } catch (e) { /* a page without history still shows the step */ }
+    showStep();
+    if (OPEN && s === 'book') mountPay();
+    // The focus goes where the next keystroke goes, so nobody taps into a box: the ZIP
+    // box on Where (its ZIP selected, to type over), the first empty field on Book; else
+    // the page's heading. The step is said aloud, since the focus may skip the heading.
+    var heading = $(SECTIONS.filter(function (id) { return STEP_OF[id] === s; })[0] + '-h');
+    var typeHere = s === 'where' ? zipIn : s === 'book' ? Object.keys(FIELDS).map(function (k) { return FIELDS[k].el; }).filter(function (f) { return !f.value.trim(); })[0] : null;
+    var put = function (el) { el.focus({ preventScroll: true }); if (el === zipIn && zipIn.value) try { zipIn.select(); } catch (e) { /* not selectable */ } };
+    if (how === 'start') { if (typeHere) put(typeHere); return; }
+    if (!moved && !focusId) return;
+    window.scrollTo(0, 0);
+    var target = (focusId && $(focusId)) || typeHere || heading;
+    if (target) put(target);
+    if (target !== heading && heading) say('Step ' + (STEPS.indexOf(s) + 1) + ' of ' + STEPS.length + '. ' + heading.textContent.trim());
+    track('order_step', { step: s, how: how || 'tap' });
+  }
+  /* The step on screen: its sections, the progress bar, the tab title, Book. */
+  function showStep() {
+    if (!step) return;
+    var at = STEPS.indexOf(step);
+    SECTIONS.forEach(function (id) { $(id).hidden = STEP_OF[id] !== step; });
+    document.querySelectorAll('.o-steps-list li').forEach(function (li) {
+      var s = li.getAttribute('data-step'), i = STEPS.indexOf(s), b = li.querySelector('button');
+      li.classList.toggle('is-current', i === at);
+      li.classList.toggle('is-done', i !== at && stepDone(s));
+      if (i === at) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+      // Any other step that can be shown is a way back (or forward) to it.
+      b.disabled = i !== at && !reachable(s);
     });
-    return opened;
+    $('o-steps-of').textContent = 'Step ' + (at + 1) + ' of ' + STEPS.length;
+    $('o-steps-fill').style.width = ((at + 1) / STEPS.length * 100) + '%';
+    $('o-back').hidden = at === 0;
+    document.querySelector('.o-intro').classList.toggle('is-quiet', at > 0);
+    // The Size page keeps the page's own title (the address search engines list); the
+    // later pages name themselves in the tab.
+    var h = $(SECTIONS.filter(function (id) { return STEP_OF[id] === step; })[0] + '-h');
+    document.title = step === 'size' || !h ? BASE_TITLE : h.textContent.trim() + ' | ' + BASE_TITLE;
+    // Book shows on the Book page only: on the pages before it, it could only send people back.
+    $('o-book').hidden = step !== 'book';
   }
-  /* After a tap opens sections, bring the first one still to do into view (phones mostly). */
-  function reveal(opened) {
-    var id = opened.filter(function (x) { return !$(x).classList.contains('is-done'); })[0] || opened[opened.length - 1];
-    var sec = id && $(id);
-    if (!sec) return;
-    var r = sec.getBoundingClientRect();
-    if (r.top > window.innerHeight * 0.55) sec.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: 'start' });
-  }
+  /* The next page after a step is done: the first one still to do. */
+  function next() { go(firstToDo()); }
 
   /* ── render: every number on the page comes from here ─────────────────── */
   function render() {
@@ -202,16 +257,17 @@
 
     // The city line under the street comes from the ZIP.
     $('o-city').textContent = t ? 'City: ' + t.place + ', ' + t.state + ' ' + t.zip + ' (from your ZIP)' : '';
+    // The When page says where the job is and what travel adds (the ZIP page moved on by itself).
+    if (t) fill($('o-where-text'), [t.place + ' ' + t.zip + ' · ', t.cents ? guessy('+' + fmt(t.cents) + ' travel', TRAVEL_GUESS) : guessy('No travel charge', TRAVEL_GUESS)]);
 
     // WhatsApp opens a chat with the size and ZIP filled in.
     var msg = 'Hello, I would like to book a junk pickup' + (s ? ': ' + s.label : '') + (state.zip.length === 5 ? ' in ' + state.zip : '') + '.';
     document.querySelectorAll('a[data-wa]').forEach(function (a) { a.href = a.getAttribute('data-wa') + '?text=' + encodeURIComponent(msg); });
 
-    var opened = layout();
-    // Bookings open: the card form loads the first time the pay step opens.
-    if (OPEN && $('o-pay').classList.contains('is-open')) mountPay();
+    showStep();
+    // Bookings open: the card form loads the first time the Book page shows.
+    if (OPEN && step === 'book') mountPay();
     save();
-    return opened;
   }
 
   function save() {
@@ -243,10 +299,12 @@
     var before = state.size;
     state.size = row;
     if (before !== row) changed();
-    var opened = render();
-    if (how === 'tap' && opened.length) reveal(opened);
+    render();
     if (before !== row) { track('order_size', { size: sizeOf(row).label, how: how }); say(sizeOf(row).label + ' picked.'); }
     var m = $('o-size-msg'); m.textContent = ''; m.className = 'o-msg';
+    // A tap on a card (the same one again too) is the whole Size page: on to the next.
+    // The photo quote picks a card but stays, so its "From your photos" line is read first.
+    if (how === 'tap') next();
   }
 
   /* The photo quote: Claude counts, ORDER.sizeForUnits picks the smallest size that holds it. */
@@ -273,7 +331,7 @@
         var row = ORDER.sizeForUnits(units);
         if (row == null) return { text: 'From your photos: more than a full truck. Call or text us and we price it by hand.', kind: 'err' };
         setSize(row, 'photo');
-        return { text: 'From your photos: ' + sizeOf(row).label + '. Change it if that looks wrong.', kind: 'done' };
+        return { text: 'From your photos: ' + sizeOf(row).label + '. Tap it to go on, or pick the size that looks right.', kind: 'done' };
       },
     });
   }
@@ -311,9 +369,19 @@
     }
     // Any edit to the ZIP clears an old failure or price note (like every other field).
     if (edited || (before && before.zip) !== (state.trip && state.trip.zip)) changed();
-    return render();
+    render();
+    // The fifth digit of a ZIP we serve is the whole Where page: on to the next.
+    // (The When page names the place, with a Change link back.)
+    if (how === 'typed' && edited && state.trip && step === 'where') next();
   }
   zipIn.addEventListener('input', function () { setZip(zipIn.value, 'typed'); });
+  // Enter (Go on a phone keyboard) on a ZIP we serve moves on, e.g. back on Where to check it.
+  // The form has more than one box and no submit button, so the browser sends no submit itself.
+  zipIn.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    if (state.trip && step === 'where') next(); else zipIn.blur();
+  });
   zipIn.addEventListener('blur', function () {
     if (zipIn.value && zipIn.value.length < 5) { zipMsg.textContent = 'Enter a 5 digit ZIP.'; zipMsg.className = 'o-msg is-err'; zipIn.setAttribute('aria-invalid', 'true'); }
   });
@@ -379,6 +447,7 @@
       settleDay();
       drawWhen();
       render();
+      arrivedReady();
     });
     drawWhen();
   }
@@ -471,8 +540,9 @@
     if (state.window !== key) { state.window = key; changed(); track('order_window', { window: key }); say(winOf(state.date, key).label + ' picked.'); }
     var m = $('o-when-msg'); m.textContent = ''; m.className = 'o-msg';
     drawWhen();
-    var opened = render();
-    if (opened.length) reveal(opened);
+    render();
+    // An arrival time is the whole When page (the soonest day is picked already): on to Book.
+    next();
   });
   function whenError(text) { var m = $('o-when-msg'); m.textContent = text; m.className = 'o-msg is-err'; }
 
@@ -521,6 +591,8 @@
   }
   function guide(m) {
     var sec = $(m[0]), msgEl = { 'o-size': $('o-size-msg'), 'o-zip': zipMsg, 'o-when': $('o-when-msg'), 'o-you': null }[m[0]];
+    // The page with the missing piece comes back on screen first.
+    if (STEP_OF[m[0]] !== step) go(STEP_OF[m[0]]);
     if (msgEl) { msgEl.textContent = m[1]; msgEl.className = 'o-msg is-err'; }
     say(m[1]);
     if (m[2] && m[2].focus) {
@@ -539,7 +611,8 @@
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     // Enter in the ZIP box closes the keyboard; anywhere else it is Book.
-    if (document.activeElement === zipIn) { zipIn.blur(); return; }
+    // On Where with a ZIP we serve it moves on (back on this page to check the ZIP, Enter or Go is the way on).
+    if (document.activeElement === zipIn) { if (state.trip && step === 'where') next(); else zipIn.blur(); return; }
     $('o-book').click();
   });
 
@@ -841,6 +914,8 @@
   function showFailure(f) {
     drawWhen(); render();   // a refused window or day, or a new price, shows at once
     if (f.where === 'consent') { needConsent(); return; }
+    // A refused window or day goes back to the When page, an address outside the area to Where.
+    if (f.where === 'o-when' || f.where === 'o-zip') go(STEP_OF[f.where]);
     var at = f.where === 'card' ? $('o-card-err') : f.where === 'o-when' ? $('o-when-msg') : f.where === 'o-zip' ? zipMsg : $('o-pay-msg');
     if (f.where === 'card') cardErr(f.text);
     else if (at === $('o-pay-msg')) payMsg(f.text, f.kind || 'err');
@@ -888,12 +963,70 @@
   state.date = saved.date || null;
   state.window = saved.window || null;
   state.size = startSize;
+  var arrived = location.hash.slice(1);
   if (startZip) setZip(startZip, 'start');
   render();
-  // Sections already open when the page loads count as seen, so nothing jumps.
-  SECTIONS.forEach(function (id) { wasOpen[id] = $(id).classList.contains('is-open'); });
+  // The page lands at the top of the step, never where the browser last scrolled.
+  try { history.scrollRestoration = 'manual'; } catch (e) { /* older browsers */ }
+  // The step to open: the one the address names if it can be shown (#photos is the
+  // Size page), else the first one still to do, so a homepage card skips Size and a
+  // ZIP typed earlier skips Where.
+  var want = arrived === 'photos' ? 'size' : STEPS.indexOf(arrived) > -1 ? arrived : firstToDo();
+  go(want, 'start');
+  // A reload (an iPhone restoring the tab) on a later page than the days allow yet,
+  // e.g. #book with the window kept: once the days load and the window is still free,
+  // that page opens, unless the customer has moved on by then.
+  var arrival = { want: want, fell: step };
+  function arrivedReady() {
+    var a = arrival;
+    arrival = null;
+    if (a && a.want !== a.fell && step === a.fell && reachable(a.want)) go(a.want, 'start');
+  }
   // "Send us a photo" on the homepage lands here (#photos): the photo picker comes
   // into view with the focus on it, one tap from the camera or the photo library.
-  var photoPick = location.hash === '#photos' && $('o-photo-panel') && $('o-photo-panel').querySelector('input[type="file"]');
+  var photoPick = arrived === 'photos' && $('o-photo-panel') && $('o-photo-panel').querySelector('input[type="file"]');
   if (photoPick) { $('photos').scrollIntoView({ block: 'center' }); photoPick.focus({ preventScroll: true }); }
+
+  // Back and Forward (the phone's Back button too) walk the step pages, and never go
+  // dead: an entry whose page cannot be shown any more (a window that filled, a ZIP
+  // changed to one past the zones) is walked past, the same way the press went.
+  window.addEventListener('popstate', function (e) {
+    var st = e.state;
+    if (!st || typeof st.i !== 'number') {
+      // Not one of this page's entries: a step typed in the address goes there.
+      var typed = location.hash.slice(1);
+      if (STEPS.indexOf(typed) > -1) { hist++; trail.length = hist; go(typed, 'replace'); } else history.go(lastDir);
+      return;
+    }
+    var dir = st.i < hist ? -1 : 1;
+    lastDir = dir;
+    hist = st.i;
+    var target = reachable(st.orderStep) ? st.orderStep : firstToDo();
+    if (target === step) { history.go(dir); return; }
+    go(st.orderStep, 'pop');
+  });
+  // The progress bar: any step that can be shown is one tap away; Change on the
+  // When page goes back to the ZIP with the box ready to type over.
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-go]');
+    if (!b || b.disabled) return;
+    go(b.getAttribute('data-go'), 'tap', b.getAttribute('data-focus'));
+  });
+  // The skip link jumps to the order without writing a history entry (one that Back
+  // would have to walk past).
+  var skip = document.querySelector('a.skip');
+  if (skip) skip.addEventListener('click', function (e) {
+    e.preventDefault();
+    var h = $(SECTIONS.filter(function (id) { return STEP_OF[id] === step; })[0] + '-h');
+    if (h) h.focus();
+  });
+  // The Back button at the left of the progress bar: the step before. When the entry
+  // behind this one is that step, it is the browser's Back (so the two never disagree);
+  // otherwise this entry becomes the step before.
+  $('o-back').addEventListener('click', function () {
+    var prev = STEPS[Math.max(0, STEPS.indexOf(step) - 1)];
+    if (hist > 0 && trail[hist - 1] === prev) { history.back(); return; }
+    go(prev, 'replace');
+    window.scrollTo(0, 0);
+  });
 })();

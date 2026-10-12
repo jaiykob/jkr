@@ -108,6 +108,9 @@ PROBE_SETS[6] = { text: ['.size-card', '#order label', '#order input', '#o-bar',
 PROBE_SETS[7] = { text: ['main', 'footer'],
   taps: ['.h-hero a', '.h-ticket', '.size-card', '.h-order-alt a', '.h-contact a', '.promise-cta', '.price-band a', '.town-chips a', '.zip input', '.zip button',
     '.faq summary', '.closer a', '.site-nav a', '.site-nav button', 'footer a'] };
+// Round 8: the order page one step at a time, measured on each step (probeNow after a walk).
+PROBE_SETS[8] = { text: ['.o-steps', '#order', '#o-bar', '#o-summary'],
+  taps: ['.o-steps button', '.o-steps a', '#order button', '.size-card', '#o-bar a', '#o-bar button', '.o-change'] };
 /* The probe as one function of the set id, returning { sw, vw, small, taps }. PROBE runs it once the
    page settles; probeNow(set) runs it now, for a page measured after a scripted walk (the pay step). */
 const PROBE_FN = `function(id){
@@ -447,7 +450,365 @@ const DISNEY_WORDS = /\b(magic(al)?|guests?|cast members?|onstage|backstage)\b/i
 const R7_STANDARD = 'docs/service-standard.md', R7_HELPER = 'agent/skills/complaint-reply/SKILL.md';
 const sectionOf = (md, re) => { const s = String(md); const i = s.search(re); if (i < 0) return ''; const rest = s.slice(i + 1); const j = rest.search(/^## /m); return j < 0 ? s.slice(i) : s.slice(i, i + 1 + j); };
 
+/* ── round 8 helpers: the order page one step per page ─────────────────────── */
+const R8_STEPS = ['size', 'where', 'when', 'book'];
+const R8_SECTIONS = { size: ['o-size'], where: ['o-zip'], when: ['o-when'], book: ['o-you', 'o-pay'] };
+const R8_WIN = '#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)';
+/** Where the order page is: its hash, the sections showing, the progress bar's current step and words, the title, the focus. */
+const STEP_STATE = `(function(){var vis=function(e){if(!e)return false;var r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden';};
+var nav=document.querySelector('.o-steps');var cur=nav&&nav.querySelector('[aria-current="step"]');var nr=nav&&nav.getBoundingClientRect();
+return {hash:location.hash,shown:['o-size','o-zip','o-when','o-you','o-pay'].filter(function(id){return vis(document.getElementById(id));}),
+current:cur?(cur.getAttribute('data-step')||(cur.closest('[data-step]')||{getAttribute:function(){return null;}}).getAttribute('data-step')):null,
+nav:nav?nav.innerText.replace(/\\s+/g,' '):'',navTop:nr?nr.top:null,navShown:vis(nav),title:document.title,
+focus:document.activeElement?(document.activeElement.id||document.activeElement.tagName):null,
+zip:(document.getElementById('o-zip-in')||{}).value||'',path:location.pathname};})()`;
+/** Wait until the order page is on a step (its hash), up to about 3 seconds. */
+async function onStep(p, step) {
+  for (let i = 0; i < 30; i++) {
+    const s = await p.evaluate(STEP_STATE);
+    if (s && s.hash === `#${step}`) return s;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return p.evaluate(STEP_STATE);
+}
+const sameSet = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+/** Homepage size card to booked, the fewest taps the page allows: the ZIP typed, one arrival time
+ *  (the soonest day is already picked), the details by autofill (one tap), the box, Book or the wallet.
+ *  mode: 'card' | 'wallet' | 'closed'. Returns { taps, hits, done } or a reason. */
+async function minJourney(width, mode) {
+  resetState();
+  const open = mode !== 'closed';
+  return withPage(width, async (p) => {
+    try {
+      await p.goto(`${ORIGIN}/index.html?__fakepay=1${open ? '&__open=1' : ''}&__sticky=1`, 1200);
+      const tagged = await p.evaluate(`(function(){var c=[].filter.call(document.querySelectorAll('.size-card'),function(e){return (e.querySelector('.size-price')||e).textContent.indexOf(${JSON.stringify(fmt(LOAD_CENTS).replace(/\.00$/, ''))})>-1;})[0];if(!c)return false;c.setAttribute('data-score-pick','1');return true;})()`);
+      if (!tagged) return 'no homepage size card shows the half truck price';
+      await p.click('[data-score-pick]', 1800);
+      if (!open) await p.evaluate(`window.__leads=[];if(window.SiteLeads)window.SiteLeads.capture=function(a){window.__leads.push(a);return Promise.resolve({});};`);
+      // Round 8 review: typing is free only where the cursor already is; a box it is not in
+      // costs the tap into it (browser.mjs type() focuses by script, a person taps).
+      let boxTaps = 0;
+      const focusedOn = (sel) => p.evaluate(`document.activeElement===document.querySelector(${JSON.stringify(sel)})`);
+      let s = await onStep(p, 'where');
+      if (s.hash !== '#where') return `a homepage card opened ${s.hash || 'no step'}, want #where`;
+      if (!(await focusedOn('#o-zip-in'))) boxTaps++;
+      await p.type('#o-zip-in', Z2);
+      s = await onStep(p, 'when');
+      if (s.hash !== '#when') return `the ZIP did not move on to When (at ${s.hash})`;
+      for (let i = 0; i < 30 && !(await p.evaluate(`!!document.querySelector(${JSON.stringify(R8_WIN)})`)); i++) await new Promise((r) => setTimeout(r, 100));
+      await p.click(R8_WIN);
+      s = await onStep(p, 'book');
+      if (s.hash !== '#book') return `an arrival time did not move on to Book (at ${s.hash})`;
+      // The details: one autofill pick fills name, phone, email and street (one tap on every path,
+      // the wallet's too: the page asks for them before the wallet sheet), plus the tap into the
+      // name box when the cursor is not already there.
+      if (!(await focusedOn('#o-name'))) boxTaps++;
+      for (const [sel, v] of [['#o-name', SAMPLE_CONTACT.name], ['#o-phone', SAMPLE_CONTACT.phone], ['#o-email', SAMPLE_CONTACT.email], ['#o-street', SAMPLE_CONTACT.addr]]) await p.type(sel, v);
+      if (open) {
+        // The card number: the founder's five tap model leaves out the tap into the card box (round 6 did too).
+        if (mode === 'card') await p.type('#o-pay .fake-card', '4242424242424242');
+        await p.click('#o-pay input[type="checkbox"]');
+        await p.click(mode === 'wallet' ? '.fake-wallet' : '#o-book', 1800);
+        for (let i = 0; i < 30 && !/thanks\.html/.test(await p.evaluate('location.pathname')); i++) await new Promise((r) => setTimeout(r, 200));
+        if (!/thanks\.html/.test(await p.evaluate('location.pathname'))) return `did not reach thanks.html (at ${await p.evaluate('location.pathname')})`;
+      } else {
+        // Nothing to tick: the keyboard closes (not a tap) and the bar with Reserve comes back.
+        await p.evaluate('document.activeElement && document.activeElement.blur && document.activeElement.blur()');
+        await new Promise((r) => setTimeout(r, 400));
+        await p.click('#o-book', 1200);
+        if (!(await p.evaluate(`!!document.getElementById('o-reserved')&&!document.getElementById('o-reserved').hidden`))) return 'Reserve did not show the reserved message';
+      }
+      return { taps: p.taps() + 1 + boxTaps, hits: STATE.bookingHits, leads: open ? null : await p.evaluate('window.__leads.length') };
+    } catch (e) { return `journey stopped: ${e.message}`; }
+    finally { await p.evaluate(`document.cookie='jkr_flags=; Path=/; Max-Age=0'`).catch(() => {}); }
+  });
+}
+
 const ROUNDS = {
+  8: [
+    { id: 'tests', pts: 10, desc: 'npm test passes', run() {
+      const r = run('npm', ['test']);
+      return r.code === 0 || `npm test failed: ${r.out.split('\n').filter((l) => /FAIL|Error|STALE|stale/.test(l)).slice(0, 3).join(' | ')}`;
+    } },
+    { id: 'earlier', pts: 5, desc: 'rounds 1 to 7 each still score 100', run() {
+      for (const n of [1, 2, 3, 4, 5, 6, 7]) {
+        const r = run('node', ['scripts/score.mjs', '--round', String(n), '--json', '--no-earlier'], { timeout: 1500000 });
+        let j = null; try { j = JSON.parse(r.out.slice(r.out.indexOf('{'))); } catch { /* not json */ }
+        if (!j || j.score !== 100) return `round ${n} scores ${j ? j.score : '?'}: ${j ? j.checks.filter((c) => !c.got).map((c) => c.id).join(', ') : r.out.slice(0, 80)}`;
+      }
+      return true;
+    } },
+    { id: 'one-step', pts: 12, desc: 'one step showing at a time at 360 and 1280px, each with its hash; the progress bar at the top on every step (sticky), naming four steps, marking the current one, "Step N of 4"', async run() {
+      if (!CHROME) return 'no Chrome to measure with';
+      for (const w of [360, 1280]) {
+        const r = await withPage(w, async (p) => {
+          const visits = [['size', '/book/quote.html'], ['where', ORDER_URL()], ['when', ORDER_WITH_ZIP()]];
+          for (const [step, url] of visits) {
+            await p.goto(ORIGIN + url, 1200);
+            const s = await onStep(p, step);
+            if (s.hash !== `#${step}`) return `${url} opened ${s.hash || 'no hash'}, want #${step}`;
+            if (!sameSet(s.shown, R8_SECTIONS[step])) return `on #${step} the page shows ${s.shown.join(', ') || 'nothing'}, want ${R8_SECTIONS[step].join(', ')}`;
+            if (!s.navShown) return `no progress bar (.o-steps) on #${step}`;
+            for (const name of ['Size', 'Where', 'When', 'Book']) if (!new RegExp(`\\b${name}\\b`).test(s.nav)) return `the progress bar does not name ${name}`;
+            if (s.current !== step) return `the progress bar marks ${s.current || 'nothing'} as current on #${step}`;
+            const n = R8_STEPS.indexOf(step) + 1;
+            if (!new RegExp(`Step ${n} of 4`).test(s.nav)) return `the progress bar does not say "Step ${n} of 4" on #${step}`;
+            // Held at the top: sticky at 0, and wherever the page scrolls past it, it stays at the top.
+            await p.evaluate(NO_PREVIEW);
+            const pin = await p.evaluate(`(function(){var n=document.querySelector('.o-steps');var c=getComputedStyle(n);var start=n.getBoundingClientRect().top+scrollY;
+window.scrollTo(0,document.documentElement.scrollHeight);return {pos:c.position,top:c.top,start:start,y:scrollY,now:n.getBoundingClientRect().top};})()`);
+            if (pin.pos !== 'sticky' || parseFloat(pin.top) !== 0) return `the progress bar is not held at the top (position ${pin.pos}, top ${pin.top}) on #${step}`;
+            if (pin.y > pin.start + 1 && Math.abs(pin.now) > 1) return `scrolled down on #${step}, the progress bar is at ${Math.round(pin.now)}px, want 0`;
+          }
+          await p.click(R8_WIN);
+          const s = await onStep(p, 'book');
+          if (s.hash !== '#book' || !sameSet(s.shown, R8_SECTIONS.book)) return `after a time the page shows ${s.shown.join(', ')} at ${s.hash}, want the details and pay at #book`;
+          return /Step 4 of 4/.test(s.nav) || 'the progress bar does not say "Step 4 of 4" on #book';
+        });
+        if (r !== true) return `${w}px: ${r}`;
+      }
+      return true;
+    } },
+    { id: 'advance', pts: 15, desc: 'a size tap goes to Where; the fifth ZIP digit goes to When, which names the place; an arrival time goes to Book; no Next or Continue button', async run() {
+      if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
+      const page = read('book/quote.html') || '';
+      const buttons = [...page.matchAll(/<(button|a)\b[^>]*>([\s\S]*?)<\/\1>/g)].map((m) => text(m[2]));
+      const nexts = buttons.filter((b) => /^(next|continue)\b/i.test(b));
+      if (nexts.length) return `a ${nexts[0]} button on the order page`;
+      return withPage(360, async (p) => {
+        await p.goto(`${ORIGIN}/book/quote.html`, 1200);
+        await p.click(`#o-size .size-card[data-size="${LOAD_ROW}"]`);
+        let s = await onStep(p, 'where');
+        if (s.hash !== '#where') return `a size tap stayed at ${s.hash}`;
+        const hint = await p.evaluate(`(function(){var z=document.getElementById('o-zip-in');return (z.getAttribute('aria-describedby')||'').split(' ').map(function(id){var e=id&&document.getElementById(id);return e?e.textContent:'';}).join(' ');})()`);
+        if (!/(go|move) on/i.test(hint) || !/time/i.test(hint)) return `the ZIP box does not say the page moves on to the times once the ZIP is in (WCAG 3.2.2): "${hint.trim()}"`;
+        await p.type('#o-zip-in', Z2.slice(0, 4));
+        s = await p.evaluate(STEP_STATE);
+        if (s.hash !== '#where') return 'four ZIP digits already moved on';
+        await p.type('#o-zip-in', Z2);
+        s = await onStep(p, 'when');
+        if (s.hash !== '#when') return `the fifth ZIP digit did not move on to When (at ${s.hash})`;
+        const when = await p.evaluate(`document.getElementById('o-when').innerText`);
+        if (!when.includes(C.ZIP_ZONES[Z2].place)) return `the When page does not name ${C.ZIP_ZONES[Z2].place}`;
+        if (!(await p.evaluate(`!!document.querySelector('#o-when .o-change')`))) return 'the When page has no Change link for the ZIP';
+        const pre = await p.evaluate(`!!document.querySelector('#o-when [data-date][aria-pressed="true"]')`);
+        if (!pre) return 'no day is picked already on the When page';
+        await p.click(R8_WIN);
+        s = await onStep(p, 'book');
+        return s.hash === '#book' || `an arrival time did not move on to Book (at ${s.hash})`;
+      });
+    } },
+    { id: 'skip', pts: 8, desc: '?size= and a known ZIP open on When; ?size= alone on Where; nothing on Size; a hash for a step not reachable yet opens the first step to do', async run() {
+      if (!CHROME) return 'no Chrome to measure with';
+      // A fresh tab for each address: a ZIP kept in one tab's sessionStorage would skip Where.
+      for (const [url, want] of [[ORDER_WITH_ZIP(), 'when'], [ORDER_URL(), 'where'], ['/book/quote.html', 'size'], [`${ORDER_URL()}#book`, 'where'], ['/book/quote.html#book', 'size'], ['/book/quote.html#when', 'size']]) {
+        const r = await withPage(360, async (p) => {
+          await p.goto(ORIGIN + url, 1200);
+          const s = await onStep(p, want);
+          return s.hash === `#${want}` || `${url} opened ${s.hash || 'no step'}, want #${want}`;
+        });
+        if (r !== true) return r;
+      }
+      return true;
+    } },
+    { id: 'back', pts: 8, desc: 'the browser Back goes to the step before, the ZIP and size kept, never a dead press (one Back after a refusal reaches Where); a reload on Book stays; a done step in the progress bar goes back; Change selects the ZIP, Enter on Where moves on', async run() {
+      if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
+      const r1 = await withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_URL(), 1200);
+        await onStep(p, 'where');
+        await p.type('#o-zip-in', Z2);
+        let s = await onStep(p, 'when');
+        if (s.hash !== '#when') return 'could not reach When';
+        await p.evaluate('history.back()');
+        s = await onStep(p, 'where');
+        if (s.hash !== '#where') return `Back from When went to ${s.hash}`;
+        if (s.zip !== Z2) return `Back lost the ZIP (box reads "${s.zip}")`;
+        const size = await p.evaluate(`(document.querySelector('#o-sizes [aria-pressed="true"]')||{getAttribute:function(){return null;}}).getAttribute('data-size')`);
+        if (String(size) !== String(LOAD_ROW)) return 'Back lost the size';
+        await p.click('.o-steps [data-go="size"]');
+        s = await onStep(p, 'size');
+        if (s.hash !== '#size') return `the progress bar's Size did not go back to Size (at ${s.hash})`;
+        await p.evaluate('history.back()');
+        s = await onStep(p, 'where');
+        if (s.hash !== '#where') return `Back from Size went to ${s.hash}, want #where`;
+        // Change on When selects the ZIP (type over it); Enter on Where with a ZIP we serve moves on.
+        await p.goto(ORIGIN + ORDER_WITH_ZIP(), 1200);
+        await onStep(p, 'when');
+        await p.click('#o-when .o-change');
+        await onStep(p, 'where');
+        const sel = await p.evaluate(`(function(){var z=document.getElementById('o-zip-in');return {f:document.activeElement===z,a:z.selectionStart,b:z.selectionEnd,n:z.value.length};})()`);
+        if (!sel.f || sel.a !== 0 || sel.b !== sel.n) return 'Change does not put the cursor in the ZIP box with the ZIP selected';
+        await p.evaluate(`document.getElementById('order').requestSubmit()`);
+        s = await onStep(p, 'when');
+        return s.hash === '#when' || `Enter on Where with a ZIP we serve stayed at ${s.hash}`;
+      });
+      if (r1 !== true) return r1;
+      // Round 8 review: Back never goes dead. A window that filled at Book sends the page to When;
+      // one Back then reaches Where, not the When page again.
+      resetState();
+      const r2 = await withPage(360, async (p) => {
+        await p.goto(`${ORIGIN}${ORDER_URL('__fakepay=1&__open=1')}`, 1200);
+        await onStep(p, 'where');
+        await p.type('#o-zip-in', Z2);
+        await onStep(p, 'when');
+        await p.click(R8_WIN);
+        await onStep(p, 'book');
+        for (const [sl, v] of [['#o-name', SAMPLE_CONTACT.name], ['#o-phone', SAMPLE_CONTACT.phone], ['#o-email', SAMPLE_CONTACT.email], ['#o-street', SAMPLE_CONTACT.addr]]) await p.type(sl, v);
+        await p.type('#o-pay .fake-card', '4242424242424242');
+        await p.click('#o-pay input[type="checkbox"]');
+        await p.evaluate(`(function(){var f=window.fetch;window.fetch=function(u,o){if(String(u).indexOf('create-booking')>-1)return Promise.resolve(new Response(JSON.stringify({error:'full',code:'window_full'}),{status:409,headers:{'Content-Type':'application/json'}}));return f.apply(this,arguments);};})()`);
+        await p.click('#o-book', 1200);
+        let s = await onStep(p, 'when');
+        if (s.hash !== '#when') return `the refusal left the page at ${s.hash}`;
+        await p.evaluate('history.back()');
+        s = await onStep(p, 'where');
+        return s.hash === '#where' || `one Back after a refusal stayed at ${s.hash} (want #where)`;
+      });
+      resetState();
+      if (r2 !== true) return r2;
+      // A reload (an iPhone restoring the tab) on Book stays on Book once the days load.
+      return withPage(360, async (p) => {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP(), 1200);
+        await onStep(p, 'when');
+        await p.click(R8_WIN);
+        await onStep(p, 'book');
+        await p.type('#o-name', SAMPLE_CONTACT.name);
+        await p.evaluate('location.reload()');
+        await new Promise((x) => setTimeout(x, 1500));
+        const s = await onStep(p, 'book');
+        return s.hash === '#book' || `a reload on Book opened ${s.hash}`;
+      });
+    } },
+    { id: 'taps', pts: 15, desc: 'homepage card to booked against the real API, every tap counted (a box the cursor is not in, the autofill pick): card 5 or fewer at 360 and 1280, wallet 5 or fewer, gates closed 4 or fewer; one create-booking call each (none closed)', async run() {
+      if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
+      for (const [width, mode, max] of [[360, 'card', 5], [1280, 'card', 5], [360, 'wallet', 5], [360, 'closed', 4]]) {
+        const r = await minJourney(width, mode);
+        const label = `${mode} at ${width}px`;
+        if (typeof r === 'string') return `${label}: ${r}`;
+        if (r.taps > max) return `${label}: ${r.taps} taps, want ${max} or fewer`;
+        if (mode !== 'closed' && r.hits !== 1) return `${label}: ${r.hits} create-booking calls, want exactly 1`;
+        if (mode === 'closed' && (r.hits !== 0 || r.leads !== 1)) return `${label}: ${r.hits} booking calls and ${r.leads} leads, want 0 and 1`;
+      }
+      resetState();
+      return true;
+    } },
+    { id: 'refusal', pts: 7, desc: 'a window that fills at Book takes the page to When with the message; a stale price stays on Book with the new total', async run() {
+      if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
+      const fill = async (p) => {
+        await p.goto(`${ORIGIN}${ORDER_WITH_ZIP('__fakepay=1&__open=1')}`, 1200);
+        await onStep(p, 'when');
+        await p.click(R8_WIN);
+        await onStep(p, 'book');
+        for (const [sel, v] of [['#o-name', SAMPLE_CONTACT.name], ['#o-phone', SAMPLE_CONTACT.phone], ['#o-email', SAMPLE_CONTACT.email], ['#o-street', SAMPLE_CONTACT.addr]]) await p.type(sel, v);
+        await p.type('#o-pay .fake-card', '4242424242424242');
+        await p.click('#o-pay input[type="checkbox"]');
+      };
+      resetState();
+      const full = await withPage(360, async (p) => {
+        await fill(p);
+        await p.evaluate(`(function(){var f=window.fetch;window.fetch=function(u,o){if(String(u).indexOf('create-booking')>-1)return Promise.resolve(new Response(JSON.stringify({error:'full',code:'window_full'}),{status:409,headers:{'Content-Type':'application/json'}}));return f.apply(this,arguments);};})()`);
+        await p.click('#o-book', 1200);
+        const s = await onStep(p, 'when');
+        if (s.hash !== '#when') return `a window that filled at Book left the page at ${s.hash}`;
+        const msg = await p.evaluate(`document.getElementById('o-when-msg').textContent`);
+        return /filled up|pick another/i.test(msg) || `the When page does not say the window filled: "${msg}"`;
+      });
+      resetState();
+      if (full !== true) return full;
+      STATE.stale = true;
+      const stale = await withPage(360, async (p) => {
+        await fill(p);
+        await p.click('#o-book', 1500);
+        const s = await p.evaluate(STEP_STATE);
+        if (s.hash !== '#book') return `a stale price moved the page to ${s.hash}`;
+        const t = await p.evaluate(`document.getElementById('o-pay').innerText`);
+        return /price (has )?changed|new total/i.test(t) || 'a stale price shows no new total on Book';
+      });
+      resetState();
+      return stale;
+    } },
+    { id: 'mobile', pts: 10, desc: 'each step at 360px: no sideways scroll, text 16px+, taps 48px+ (the progress bar too); the first arrival time on a 360x640 first screen, banner up, above the bar', async run() {
+      if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
+      const r = await withPage(360, async (p) => {
+        const steps = [['size', '/book/quote.html'], ['where', ORDER_URL()], ['when', ORDER_WITH_ZIP()], ['book', null]];
+        for (const [step, url] of steps) {
+          if (url) await p.goto(ORIGIN + url, 1200); else { await p.click(R8_WIN); }
+          await onStep(p, step);
+          await new Promise((x) => setTimeout(x, 300));
+          const pr = await p.evaluate(probeNow(8));
+          if (!pr || pr.error) return `#${step}: ${pr ? pr.error : 'no answer'}`;
+          if (pr.vw !== 360) return `#${step}: measured at ${pr.vw}px`;
+          if (pr.sw > pr.vw) return `#${step}: ${pr.sw}px wide`;
+          if (pr.small.length) return `#${step}: small text ${pr.small.slice(0, 2).join('; ')}`;
+          if (pr.taps.length) return `#${step}: small taps ${pr.taps.slice(0, 2).join('; ')}`;
+        }
+        return true;
+      });
+      if (r !== true) return r;
+      // Round 8 review: the one tap the When page needs is on a real phone's first screen
+      // (360x640, the bookings banner up), above the bar.
+      const p = await browser.page({ width: 360, height: 640 });
+      try {
+        await p.goto(ORIGIN + ORDER_WITH_ZIP(), 1200);
+        await onStep(p, 'when');
+        await new Promise((x) => setTimeout(x, 400));
+        const fs1 = await p.evaluate(`(function(){var x=document.querySelector('[aria-label="Local preview"]');if(x)x.remove();window.scrollTo(0,0);
+var w=document.querySelector(${JSON.stringify(R8_WIN)});var bar=document.getElementById('o-bar');if(!w)return null;
+var bt=bar&&!bar.hidden?bar.getBoundingClientRect().top:innerHeight;return {bottom:w.getBoundingClientRect().bottom,limit:bt,banner:!!document.getElementById('maint-banner')};})()`);
+        if (!fs1) return '#when at 360x640: no arrival time to tap';
+        return fs1.bottom <= fs1.limit || `#when at 360x640${fs1.banner ? ' (banner up)' : ''}: the first arrival time ends at ${Math.round(fs1.bottom)}px, under the bar at ${Math.round(fs1.limit)}px`;
+      } finally { await p.close(); }
+    } },
+    { id: 'desktop', pts: 5, desc: 'at 1280px the steps on the left and the summary on the right, the summary in view on every step', async run() {
+      if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
+      return withPage(1280, async (p) => {
+        for (const [step, url] of [['where', ORDER_URL()], ['when', ORDER_WITH_ZIP()], ['book', null]]) {
+          if (url) await p.goto(ORIGIN + url, 1200); else await p.click(R8_WIN);
+          await onStep(p, step);
+          await p.evaluate('window.scrollTo(0, 3000)');
+          await new Promise((x) => setTimeout(x, 300));
+          const form = await p.evaluate(rectOf('#order')), sum = await p.evaluate(rectOf('#o-summary'));
+          if (!shown(form) || !shown(sum)) return `#${step}: no #order and #o-summary to measure`;
+          if (sum.left < form.right - 2) return `#${step}: the summary is not on the right`;
+          if (sum.bottom < 0 || sum.top > 800) return `#${step}: the summary is out of view`;
+        }
+        return true;
+      });
+    } },
+    { id: 'a11y', pts: 5, desc: 'a step change puts the focus where the next keystroke or tap goes: the ZIP box on Where, the first empty field on Book, the heading on When; aria-current="step"; each step names itself in the tab title', async run() {
+      if (!CHROME || !Z2) return 'no Chrome or no zone 2 ZIP';
+      return withPage(360, async (p) => {
+        // Fewest taps: the cursor is already where the customer types next, so no tap into a box.
+        await p.goto(`${ORIGIN}/book/quote.html`, 1200);
+        await p.click(`#o-size .size-card[data-size="${LOAD_ROW}"]`);
+        const w = await onStep(p, 'where');
+        if (w.focus !== 'o-zip-in') return `on Where the focus is on ${w.focus}, want the ZIP box (no tap into it)`;
+        // One walk in one tab (a second visit would open on When: the ZIP is kept in the tab).
+        await p.type('#o-zip-in', Z2);
+        const s = await onStep(p, 'when');
+        if (s.focus !== 'o-when-h') return `after the ZIP the focus is on ${s.focus}, want the When heading (#o-when-h)`;
+        if (!s.current) return 'no aria-current="step" in the progress bar';
+        const h = await p.evaluate(`document.getElementById('o-when-h').textContent.trim()`);
+        if (!s.title.startsWith(h)) return `the tab title "${s.title}" does not start with the step's heading "${h}"`;
+        await p.click(R8_WIN);
+        const bk = await onStep(p, 'book');
+        if (bk.focus !== 'o-name') return `on Book the focus is on ${bk.focus}, want the first empty field (#o-name)`;
+        return true;
+      }).then((r) => (r !== true ? r : withPage(360, async (p) => {
+        // Arriving on Where from a homepage card (a fresh tab): the cursor already in the ZIP box.
+        await p.goto(ORIGIN + ORDER_URL(), 1200);
+        const arr = await onStep(p, 'where');
+        if (arr.focus !== 'o-zip-in') return `arriving on Where the focus is on ${arr.focus}, want the ZIP box`;
+        return true;
+      }))).then((r) => (r !== true ? r : withPage(360, async (p) => {
+        // The Size page (the address in the sitemap, a fresh tab) keeps the page's own title for search engines.
+        await p.goto(`${ORIGIN}/book/quote.html`, 1200);
+        const sz = await onStep(p, 'size');
+        const own = text(((read('book/quote.html') || '').match(/<title>([\s\S]*?)<\/title>/) || [])[1] || '');
+        return sz.title === own || `the Size page's title is "${sz.title}", want the page's own "${own}"`;
+      })));
+    } },
+  ],
   7: [
     { id: 'tests', pts: 10, desc: 'npm test passes', run() {
       const r = run('npm', ['test']);
@@ -750,6 +1111,10 @@ if(t||a)out.push(x[0]+x[1]+(t?' transition '+c.transitionDuration:'')+(a?' anima
         if (probe.sw > probe.vw) return `${probe.sw}px wide in a ${probe.vw}px window`;
         if (probe.small.length) return `small text ${probe.small.slice(0, 2).join('; ')}`;
         if (probe.taps.length) return `small taps ${probe.taps.slice(0, 2).join('; ')}`;
+        // Since round 8 the page opens on the first step still to do (When, with the size and ZIP
+        // known): the cards are measured on the Size page, reached through the progress bar.
+        await p.evaluate(`(function(){var b=document.querySelector('.o-steps [data-go="size"]');if(b)b.click();})()`);
+        await new Promise((r) => setTimeout(r, 300));
         const cards = await p.evaluate(`[].map.call(document.querySelectorAll('#o-size .size-card'),function(e){var r=e.getBoundingClientRect();return [r.left,r.top,r.width];})`);
         if (!cards || cards.length !== R6_ROWS.length) return `${cards ? cards.length : 0} size cards on the order page`;
         for (let i = 1; i < cards.length; i++) if (cards[i][1] <= cards[i - 1][1] || Math.abs(cards[i][0] - cards[0][0]) > 2) return 'size cards are not stacked in one column';
@@ -759,7 +1124,10 @@ if(t||a)out.push(x[0]+x[1]+(t?' transition '+c.transitionDuration:'')+(a?' anima
         if (!barText.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `bar does not show the total ${fmt(TOTAL)}: "${text(barText).slice(0, 80)}"`;
         const book = await p.evaluate(`(document.querySelector('#o-book')||{}).textContent`);
         if (!book || !book.includes(fmt(TOTAL).replace(/\.00$/, ''))) return `Book button reads "${text(book)}", want the amount`;
-        // Sections open in turn (spec): the contact fields open once a day and a window are picked.
+        // The contact fields open once a day and a window are picked (since round 8: the When page,
+        // then the Book page after the window).
+        await p.evaluate(`(function(){var b=document.querySelector('.o-steps [data-go="when"]');if(b)b.click();})()`);
+        await new Promise((r) => setTimeout(r, 300));
         try {
           await p.click('#o-when [data-date]:not([disabled]):not([aria-disabled="true"])');
           await p.click('#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)');
@@ -779,11 +1147,14 @@ if(t||a)out.push(x[0]+x[1]+(t?' transition '+c.transitionDuration:'')+(a?' anima
         const probe = probeOf(await p.html());
         if (!probe) return 'order page did not report (no #order page yet?)';
         if (probe.sw > probe.vw) return `order page ${probe.sw}px wide in a ${probe.vw}px window`;
-        const size = await p.evaluate(rectOf('#o-size')), sum = await p.evaluate(rectOf('#o-summary'));
-        if (!shown(size) || !shown(sum)) return 'no #o-size and #o-summary to measure';
+        // Since round 8 one step shows at a time: the steps column (#order) is what sits beside the summary.
+        const size = await p.evaluate(rectOf('#order')), sum = await p.evaluate(rectOf('#o-summary'));
+        if (!shown(size) || !shown(sum)) return 'no #order and #o-summary to measure';
         if (sum.left < size.right - 2) return 'the summary is not in a second column';
         const bar = await p.evaluate(rectOf('#o-bar'));
         if (shown(bar)) return 'the bottom bar still shows at 1280px';
+        // The pay step is the Book page since round 8: an arrival time opens it.
+        await p.click('#o-when [data-window]:not([disabled]):not([aria-disabled="true"]):not(.full)');
         await p.evaluate(`document.querySelector('#o-pay').scrollIntoView({block:'center'})`);
         await new Promise((r) => setTimeout(r, 400));
         const after = await p.evaluate(rectOf('#o-summary'));

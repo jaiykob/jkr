@@ -7,7 +7,9 @@ pictures only; the founder will write the copy.
 
 Redesigned 2026-09-28: charcoal and hi-vis yellow, Bricolage Grotesque for
 display type. Since round 6 (2026-10-11) there is no truck and no game, and
-booking is one order page, paid when the customer books. Since round 7
+booking is one order page, paid when the customer books; since round 8
+(2026-10-12) it shows one step per page (Size, Where, When, Book) under a
+progress bar, moving on by itself, 5 taps from a homepage card. Since round 7
 (2026-10-11, founder: "use loadup as inspo") the homepage follows LoadUp's
 landing page layout in our colors: a cream hero with one big button and a
 pile of junk drawn in blocks with a price ticket, the five size cards in a
@@ -60,15 +62,18 @@ junk removal words (`docs/service-standard.md`, the `complaint-reply`
 helper; research `docs/superpowers/research/2026-10-11-disneyland-practices.md`,
 founder: "check disney land customer service and seo practices and copy them
 just dont copy the magical langiage"). Spec
-`docs/superpowers/specs/2026-10-11-landing-page-design.md`.
+`docs/superpowers/specs/2026-10-11-landing-page-design.md`. **Round 8 is
+done** (2026-10-12, `feat/order-steps`): the order page one step per page with
+a progress bar, 5 taps from a homepage card (founder picked "4 pages, 5 taps";
+spec `docs/superpowers/specs/2026-10-12-order-steps-design.md`).
 
-**Next (rounds renumbered in the order they are built, 2026-10-11; all
-authorized to run and merge):** round 8, the full SEO pass and service pages
+**Next (rounds numbered in the order they are built; all authorized to run
+and merge):** round 9, the full SEO pass and service pages
 (Portland only at first; `docs/superpowers/research/2026-10-10-service-pages.md`)
 with Disneyland's search practices from the research note (task named menus,
 a help center by topic, a "Before we come" page, questions in the customer's
-words); round 9, CRM and KPIs (`docs/superpowers/specs/2026-10-10-crm-kpis-design.md`);
-round 10, the Sacramento metro as a second service area. Part 2, the
+words); round 10, CRM and KPIs (`docs/superpowers/specs/2026-10-10-crm-kpis-design.md`);
+round 11, the Sacramento metro as a second service area. Part 2, the
 walkthrough with the founder, is still to come (add a reviews block once
 there are real Google reviews; never invent one).
 
@@ -91,7 +96,8 @@ i18n/es.json           every phrase of index.html in Spanish (build-es stops on 
 blog/                  GENERATED from content/blog/en/*.md (es/blog/ from content/blog/es/)
 content/blog/en|es/    one plain text post per file, same slug in both languages
 book/
-  quote.html             THE order page: size, ZIP, day and window, contact, pay
+  quote.html             THE order page, four step pages (#size #where #when #book): size,
+                         ZIP, day and window, then contact and pay together
   checkout.html          a redirect to quote.html (vercel.json answers first)
   thanks.html            confirmation (bookingSummary from sessionStorage)
   commercial.html        property managers, realtors, contractors (api/commercial-lead.js)
@@ -150,9 +156,15 @@ Stripe payment_intent.succeeded (own metadata.kind 'booking') → /api/stripe-we
 After the job: /jkr/ Finish → charge (kind 'difference') or refund the difference
 ```
 
-The order page (English only) opens five sections in turn, with a bar fixed to
-the bottom on phones and a summary card on desktop; `?size=` picks a size,
-`#photos` opens the photo picker. With the gates closed, Book saves a
+The order page (English only) shows one step per page (round 8, founder:
+"minimize clicks at all costs"): Size, Where, When, Book (contact and pay
+together), each with its hash, under a sticky progress bar, with a bar fixed
+to the bottom on phones and a summary card on desktop. A step moves on by
+itself (a size tap, the fifth digit of a ZIP we serve, an arrival time; the
+soonest day is picked already); steps already done are skipped on arrival
+(`?size=`, a ZIP kept in `quoteZip`); the cursor waits in the ZIP box and the
+first empty Book field; there is no Continue button anywhere. `#photos` opens
+the photo picker on Size. With the gates closed, Book saves a
 reservation lead (size, ZIP, day, window, contact) and no card form shows.
 The server reprices (size plus travel) and refuses a stale quote, a closed
 day, a full window, a ZIP outside the zones, or no consent (`consent.agreed`
@@ -250,7 +262,7 @@ the order module and the two travel modules whole.
 asks Claude (`claude-opus-5`, structured output limited to the `ITEMS` keys)
 to count them, and the page picks the smallest size whose `fits` holds the
 items' units (`ORDER.sizeForUnits`; past a full truck, call us) and says
-"From your photos: 1/2 truck. Change it if that looks wrong." Claude only
+"From your photos: 1/2 truck. Tap it to go on, or pick the size that looks right." Claude only
 counts; prices never come from it. The photos are kept in the private
 `visit-photos` bucket under `quotes/`, ride with the booking as
 `metadata.photos` (the server keeps only paths it named, `QUOTE_PHOTO_RE`),
@@ -353,7 +365,8 @@ build's `--check`, GUESSES.md, titles, the domain on one host, schema true,
 FAQ JSON-LD, sitemap, indexability, share cards, photo sizes).
 
 `npm run score -- --round N`: the round's scorecard (0 to 100), including the
-pages in headless Chrome at a real 360px (round 7 also measures contrast and
+pages in headless Chrome at a real 360px (round 8 walks every order step and
+books from a homepage card in 5 taps or fewer; round 7 also measures contrast and
 the first screen; round 6 also at 1280px, and books
 on the order page by script in 10 taps or fewer). Generations are logged in
 `docs/superpowers/evolution.md`.
