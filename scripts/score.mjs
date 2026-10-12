@@ -554,7 +554,7 @@ for(var i=1;i<5;i++)if(b[i].top<b[i-1].bottom-1)return 'cards not stacked';retur
       }
       return true;
     } },
-    { id: 'map', pts: 8, desc: 'the metro map: one dot per ZIP in the zones, each its zone\'s color, the base marked, a legend with every zone and its fee from the config; build-pricing --check', run() {
+    { id: 'map', pts: 8, desc: 'the metro map: one dot per ZIP in the zones, each its zone\'s color, the base marked, a legend with every zone and its fee from the config; build-towns --check', run() {
       const home = read('index.html') || '';
       const fig = (home.match(/<figure class="area-map"[\s\S]*?<\/figure>/) || [''])[0];
       if (!fig) return 'no figure.area-map';
@@ -576,7 +576,8 @@ for(var i=1;i<5;i++)if(b[i].top<b[i-1].bottom-1)return 'cards not stacked';retur
         if (!li) return `no legend row for ${z.key}`;
         if (z.cents ? !text(li).includes(fmt(z.cents)) : !/no travel charge/i.test(text(li))) return `legend row ${z.key} does not show its fee`;
       }
-      return run('node', ['scripts/build-pricing.mjs', '--check']).code === 0 || 'build-pricing --check fails';
+      // The map is written by build-towns (it alone reads the town files that name the labels).
+      return run('node', ['scripts/build-towns.mjs', '--check']).code === 0 || 'build-towns --check fails';
     } },
     { id: 'promises', pts: 5, desc: 'four promise cards with icons; no "say no", star rating or review count anywhere on the site', run() {
       const home = read('index.html') || '';

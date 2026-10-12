@@ -33,18 +33,20 @@
   var cardHrefs = cardLinks.map(function (a) { return a.getAttribute('href'); });
   function cardsZip(zip) { cardLinks.forEach(function (a, i) { a.setAttribute('href', cardHrefs[i] + (zip ? '&zip=' + zip : '')); }); }
 
-  // ZIP check: the answer as you type (zone and travel), its zone lights up,
-  // and the size cards add the travel to their prices.
+  // ZIP check: the answer as you type (zone and travel), its zone card lights up,
+  // its dot on the map grows, and the size cards add the travel to their prices.
+  // Without this script the form opens the order page with the ZIP (action, name="zip").
   var zin = document.getElementById('zipIn'), zout = document.getElementById('zipOut');
   var form = document.getElementById('zipCheck');
   function money(c) { return '$' + (c / 100).toFixed(2); }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   if (zin && T) {
-    form.addEventListener('submit', function (e) { e.preventDefault(); });
+    form.addEventListener('submit', function (e) { e.preventDefault(); zin.dispatchEvent(new Event('input')); zin.focus(); });
     zin.addEventListener('input', function () {
       zin.value = zin.value.replace(/\D/g, '').slice(0, 5);
       var t = zin.value.length === 5 ? T.travelFor(zin.value) : null;
       document.querySelectorAll('#zoneList li').forEach(function (li) { li.classList.toggle('is-hit', !!t && li.getAttribute('data-zone') === t.zone); });
+      document.querySelectorAll('.map-dots circle').forEach(function (c) { c.classList.toggle('is-hit', !!t && c.getAttribute('data-zip') === t.zip); });
       zout.className = 'zip-out';
       zout.textContent = '';
       if (zin.value.length < 5) { if (hero) hero.setTravel(null); cardsZip(''); return; }

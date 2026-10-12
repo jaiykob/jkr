@@ -226,6 +226,21 @@ footer a { color: var(--tan); text-decoration: none; }
 .footer-links { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 6px; margin: 8px auto 4px; padding: 0; }
 .footer-links a { display: inline-flex; align-items: center; min-height: 48px; min-width: 48px; padding: 0 10px; font-size: 1rem; color: rgba(245,242,234,.92); text-decoration: underline; text-decoration-color: rgba(255,210,63,.45); text-underline-offset: 4px; }
 .footer-links a:hover { color: var(--tan); }
+/* Round 7: LoadUp's column footer. The name, one line and call and text first,
+   then Book, Where we go and Help, each a column of 48px links: one column on
+   a phone, two from 600px, four from 960px. */
+footer { padding: 56px var(--gutter) 24px; }
+.foot-cols { display: grid; gap: 28px 32px; max-width: var(--w-wide); margin: 0 auto 32px; text-align: left; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 600px) { .foot-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 960px) { .foot-cols { grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); } }
+.foot-brand .footer-logo { justify-content: flex-start; }
+.foot-brand p { max-width: 320px; }
+.foot-h { font: 800 1rem/1.3 'DM Sans', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--tan); margin-bottom: 4px; }
+.foot-col .footer-links { display: grid; justify-content: start; gap: 0; margin: 0; }
+.foot-col .footer-links a { padding: 0; text-decoration: none; }
+.foot-col .footer-links a:hover { text-decoration: underline; }
+.foot-contact { display: flex; flex-wrap: wrap; gap: 0 20px; }
+.foot-contact a { display: inline-flex; align-items: center; min-height: 48px; min-width: 48px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 
 /* NAV collapses at 1099 (959 until round 6 added the text and WhatsApp
    buttons, 900 until 2026-09-27; see the laptop note), not 760, and gets its own query for it.

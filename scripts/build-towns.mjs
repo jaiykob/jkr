@@ -36,6 +36,7 @@ import { ZIP_ZONES, ZONES, GUESS, PRICES, ONE_TIME_COL, fmt } from '../pricing.c
 import site from '../api/_lib/site.js';
 import { setLangSwitch, hreflang, hasEsTwin } from './lib/twins.mjs';
 import { toSpanish, loadMap } from './build-es.mjs';
+import POINTS from '../data/zip-points.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TOWN_DIR = path.join(ROOT, 'content/towns');
@@ -331,7 +332,7 @@ function faqItems(t, travel, guess, lang = 'en') {
 function faq(t, items, lang = 'en') {
   const w = W[lang];
   return [
-    '<section class="band is-card" aria-labelledby="faq">',
+    '<section class="band is-surf faq-band" aria-labelledby="faq">',
     '  <div class="wrap-text">',
     '    <div class="section-head center">',
     `      <p class="h-eyebrow dark">${w.faqEyebrow(esc(t.name))}</p>`,
@@ -508,7 +509,7 @@ export function buildHub(index, towns, guess = GUESS.zones, lang = 'en') {
     '</section>',
   ].join('\n');
   const faqR = [
-    '<section class="band is-card" aria-labelledby="faq">',
+    '<section class="band is-surf faq-band" aria-labelledby="faq">',
     '  <div class="wrap-text">',
     '    <div class="section-head center">',
     `      <p class="h-eyebrow dark">${h.faqEyebrow}</p>`,
@@ -524,14 +525,109 @@ export function buildHub(index, towns, guess = GUESS.zones, lang = 'en') {
   return swapRegions(index, { head: headR, hero: heroR, local: localR, faq: faqR });
 }
 
-/** index.html with its BUILD:home-area block (the zone list) rewritten. */
-function withHomeArea(index, towns) {
-  const s = eol(index);
-  const open = '<!-- BUILD:home-area -->', close = '<!-- /BUILD:home-area -->';
+/* ── the homepage map, town chips and footer towns (round 7) ─────────────── */
+/* Zone colors, nearest to farthest: yellow, orange, slate, charcoal. A fifth
+   zone needs a fifth color here (the build stops until it has one). */
+const MAP_COLORS = ['#FFD23F', '#F2A541', '#9AA5B1', '#2E3440'];
+const MAP_W = 600, MAP_PAD = 30;
+/** The towns with the most ZIPs we serve, nearest first on a tie: the map labels, chips and footer. */
+export function biggestTowns(towns, n = 6) {
+  const near = (t) => Math.min(...t.zips.map((z) => ZIP_ZONES[z].miles));
+  return [...towns].sort((a, b) => b.zips.length - a.zips.length || near(a) - near(b)).slice(0, n);
+}
+/** "Where we go": every ZIP in the zones as a dot at its real place, colored by its
+ *  zone, the base marked, six towns named; the legend gives each zone's fee. */
+export function homeMap(towns, guess = GUESS.zones) {
+  if (ZONES.length > MAP_COLORS.length) throw new Error(`build-towns: ${ZONES.length} zones, but MAP_COLORS has ${MAP_COLORS.length} colors`);
+  const color = Object.fromEntries(ZONES.map((z, i) => [z.key, MAP_COLORS[i]]));
+  const [lat0, lon0] = POINTS.base;
+  const k = Math.cos((lat0 * Math.PI) / 180);
+  const xy = ([lat, lon]) => [(lon - lon0) * k, lat0 - lat];
+  const zips = Object.keys(ZIP_ZONES);
+  for (const z of zips) if (!POINTS.zips[z]) throw new Error(`build-towns: no map point for ZIP ${z} (run node scripts/measure-zips.mjs --points)`);
+  const raw = [[0, 0], ...zips.map((z) => xy(POINTS.zips[z]))];
+  const minX = Math.min(...raw.map((p) => p[0])), maxX = Math.max(...raw.map((p) => p[0]));
+  const minY = Math.min(...raw.map((p) => p[1])), maxY = Math.max(...raw.map((p) => p[1]));
+  const s = (MAP_W - 2 * MAP_PAD) / (maxX - minX);
+  const H = Math.round((maxY - minY) * s + 2 * MAP_PAD);
+  const at = (p) => { const [x, y] = xy(p); return [Math.round((x - minX) * s + MAP_PAD), Math.round((y - minY) * s + MAP_PAD)]; };
+  // Farthest zones first, so the nearer dots sit on top.
+  const order = [...zips].sort((a, b) => ZONES.findIndex((z) => z.key === ZIP_ZONES[b].zone) - ZONES.findIndex((z) => z.key === ZIP_ZONES[a].zone) || a.localeCompare(b));
+  const dots = order.map((z) => { const [x, y] = at(POINTS.zips[z]); return `<circle cx="${x}" cy="${y}" r="7" data-zip="${z}" data-zone="${ZIP_ZONES[z].zone}" fill="${color[ZIP_ZONES[z].zone]}"/>`; });
+  // Each label over the middle of its town's ZIPs; one that would overlap a label
+  // already placed moves down or up a line until it is clear (about 11px a letter).
+  const placed = [];
+  const clash = (b) => placed.some((p) => b.x0 < p.x1 && b.x1 > p.x0 && b.y0 < p.y1 && b.y1 > p.y0);
+  const labels = biggestTowns(towns).map((t) => {
+    const pts = t.zips.map((z) => at(POINTS.zips[z]));
+    const x = Math.round(pts.reduce((m, p) => m + p[0], 0) / pts.length);
+    const y0 = Math.round(pts.reduce((m, p) => m + p[1], 0) / pts.length) - 14;
+    const half = (t.name.length * 11.5) / 2;
+    let y = y0;
+    for (const dy of [0, 24, -24, 48, -48, 72, -72]) {
+      y = y0 + dy;
+      if (!clash({ x0: x - half, x1: x + half, y0: y - 18, y1: y + 4 })) break;
+    }
+    placed.push({ x0: x - half, x1: x + half, y0: y - 18, y1: y + 4 });
+    return `<text x="${x}" y="${y}">${esc(t.name)}</text>`;
+  });
+  const [bx, by] = at(POINTS.base);
+  // The map's spoken name is its caption line (aria-labelledby): build-es translates
+  // text but skips drawings, so a label inside the <svg> would stay English.
+  const key = ZONES.map((z, i) => [
+    `          <li data-zone="${z.key}"><span class="key-dot" style="background:${color[z.key]}"></span>`,
+    `<span class="key-name">${esc(z.label)}</span> <span class="key-fee">${guessed(zoneFeeText(zoneCents(z)), guess)}</span></li>`,
+  ].join(''));
+  return [
+    '      <figure class="area-map">',
+    `        <svg viewBox="0 0 ${MAP_W} ${H}" role="img" aria-labelledby="map-note">`,
+    `          <g class="map-dots" stroke="#15171A" stroke-width="1.5">${dots.join('')}</g>`,
+    `          <g class="map-base" transform="translate(${bx} ${by})"><circle r="14" fill="#15171A"/><path d="M-7 1 0-6 7 1v7h-14z" fill="#FFD23F"/></g>`,
+    `          <g class="map-labels" aria-hidden="true">${labels.join('')}</g>`,
+    '        </svg>',
+    '        <figcaption>',
+    '          <ul class="map-key">',
+    ...key,
+    '          </ul>',
+    '          <p class="map-note" id="map-note">Map: each dot is a ZIP code we serve, colored by its travel zone. Our base is in Gresham.</p>',
+    '        </figcaption>',
+    '      </figure>',
+  ].join('\n');
+}
+/** The biggest towns as chips beside the ZIP check, and every town at the end. */
+export function homeChips(towns) {
+  return [
+    '        <ul class="town-chips">',
+    ...biggestTowns(towns).map((t) => `          <li><a href="${t.slug}.html">${esc(t.name)}</a></li>`),
+    '          <li><a class="is-all" href="service-areas.html">All service areas</a></li>',
+    '        </ul>',
+  ].join('\n');
+}
+/** The footer's "Where we go" column: the hub and the biggest towns. */
+export function footTowns(towns) {
+  return [
+    '      <li><a href="service-areas.html">Service areas</a></li>',
+    ...biggestTowns(towns).map((t) => `      <li><a href="${t.slug}.html">${esc(t.name)}</a></li>`),
+  ].join('\n');
+}
+
+/** One BUILD block of a page rewritten, at the indent of its opening marker. */
+function spliceBlock(s, name, body) {
+  const open = `<!-- BUILD:${name} -->`, close = `<!-- /BUILD:${name} -->`;
   const a = s.indexOf(open), b = s.indexOf(close);
-  if (a < 0 || b < 0) throw new Error('index.html: BUILD:home-area markers not found');
+  if (a < 0 || b < 0) throw new Error(`index.html: BUILD:${name} markers not found`);
   const indent = (s.slice(0, a).match(/[ \t]*$/) || [''])[0];
-  return s.slice(0, a + open.length) + '\n' + homeArea(towns) + '\n' + indent + s.slice(b);
+  return s.slice(0, a + open.length) + '\n' + body + '\n' + indent + s.slice(b);
+}
+/** index.html with the blocks this builder owns rewritten: the zone list, the map,
+ *  the town chips and the footer's towns. */
+function withHomeArea(index, towns) {
+  let s = eol(index);
+  s = spliceBlock(s, 'home-area', homeArea(towns));
+  s = spliceBlock(s, 'home-map', homeMap(towns));
+  s = spliceBlock(s, 'home-chips', homeChips(towns));
+  s = spliceBlock(s, 'foot-towns', footTowns(towns));
+  return s;
 }
 
 /* ── main ──────────────────────────────────────────────────────────────── */
@@ -546,11 +642,12 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     if (check) stale.push(rel);
     else { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, out); written.push(rel); }
   };
-  // The homepage zone list first, since every page below is a copy of index.html.
+  // The homepage blocks this builder owns first (the zone list, the map, the town
+  // chips, the footer towns), since every page below is a copy of index.html.
   const homeBefore = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const index = withHomeArea(homeBefore, towns);
   if (eol(homeBefore) !== index) {
-    if (check) stale.push('index.html (zone list)');
+    if (check) stale.push('index.html (zone list, map, town chips, footer towns)');
     else { fs.writeFileSync(path.join(ROOT, 'index.html'), homeBefore.includes('\r\n') ? index.replace(/\n/g, '\r\n') : index); written.push('index.html'); }
   }
   // The Spanish template: the homepage (with its new zone list) in Spanish.

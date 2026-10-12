@@ -156,7 +156,7 @@ promises a refund the founder has not approved.
 | contrast | 6 | headline, highlighted line, buttons, band text and pill text at 4.5:1 or better (3:1 for text 24px and up), measured in Chrome |
 | steps | 6 | three numbered steps joined by a line, side by side at 1280px, stacked at 360px |
 | sizes | 10 | the five cards in a charcoal band with `id="pricing"`, one row at 1280px, stacked at 360px; the "Starting at" line is the smallest config price; travel note, photo link and contact chips under them |
-| map | 8 | one dot per ZIP in the travel zones, each the color of its zone, the base marked, a legend with every zone and its fee from the config; `build-pricing --check` covers it |
+| map | 8 | one dot per ZIP in the travel zones, each the color of its zone, the base marked, a legend with every zone and its fee from the config; `build-towns --check` covers it |
 | promises | 5 | four promise cards with icons; no "say no", no star rating or review count anywhere on the site |
 | footer | 6 | footer columns with Get my price, Send a photo, Property managers, Service areas, six town links, FAQ, Blog, Terms, Privacy, call and text; on every page through `build-chrome --check` |
 | mobile | 8 | homepage, a town page and the Spanish homepage at 360px: no sideways scroll, text 16px or more, taps 48px or more; same pages at 1280px: no sideways scroll |
