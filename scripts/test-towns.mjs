@@ -5,8 +5,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { ZIP_ZONES, ZONES } from '../pricing.config.mjs';
-import { parseTown, loadTowns, buildPage, townTravel, inline } from './build-towns.mjs';
+import { ZIP_ZONES, ZONES, BASE } from '../pricing.config.mjs';
+import { parseTown, loadTowns, buildPage, townTravel, inline, homeMap } from './build-towns.mjs';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 let pass = 0, fail = 0;
@@ -80,6 +80,19 @@ if (first && fs.existsSync(first)) {
   fs.writeFileSync(first, before);
   ok(r.status === 1 && r.stderr.includes(`${towns[0].slug}.html`), 'build-towns --check missed a hand edit');
 } else ok(false, 'no generated town page to edit');
+
+// Round 7 review: the map's base marker and its note follow BASE in pricing.config.mjs, so
+// moving the base (the real yard is still a guess) moves the marker instead of leaving it at Gresham.
+console.log('== the homepage map follows BASE ==');
+{
+  const at = (svg) => (svg.match(/class="map-base" transform="translate\((\d+) (\d+)\)"/) || []).slice(1).map(Number);
+  const here = homeMap(towns, true);
+  const moved = homeMap(towns, true, { label: 'Troutdale', lat: BASE.lat + 0.05, lon: BASE.lon - 0.1 });
+  ok(here.includes(`Our base is in ${BASE.label}.`), 'the map note names BASE.label');
+  ok(moved.includes('Our base is in Troutdale.'), 'a moved base renames the note');
+  const [x0, y0] = at(here), [x1, y1] = at(moved);
+  ok(Number.isFinite(x0) && Number.isFinite(x1) && (x0 !== x1 || y0 !== y1), `a moved base moves the marker (${x0},${y0} then ${x1},${y1})`);
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

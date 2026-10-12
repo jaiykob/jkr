@@ -117,6 +117,8 @@ e.scrollIntoView({block:'center',behavior:'instant'});var b=e.getBoundingClientR
         await s('Fetch.enable', { patterns: [{ urlPattern: '*' }] });
       },
       html: () => evaluate('document.documentElement.outerHTML'),
+      /** Emulate media features, e.g. [{ name: 'prefers-reduced-motion', value: 'reduce' }]. */
+      media: (features) => s('Emulation.setEmulatedMedia', { features }),
       /** The whole page, the first screen, or (selector) the part starting at that element. */
       async screenshot(file, { full = true, selector = null, tall = height } = {}) {
         const m = await s('Page.getLayoutMetrics');

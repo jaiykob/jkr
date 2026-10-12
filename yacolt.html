@@ -137,8 +137,9 @@
 
 <main id="main">
 
-<!-- HERO: the five size cards are the hero. Each card is a link to the order
-     page (book/quote.html) with that size picked. -->
+<!-- HERO (round 7, LoadUp's layout in our colors): the copy and one big button on
+     the left; on the right a pile of junk drawn in the "what we take" colors, with a
+     price ticket on it that is a real link (BUILD:home-ticket, from the config). -->
 <section class="h-hero" aria-labelledby="hero-title">
   <div class="h-hero-in">
     <div class="h-hero-copy">
@@ -149,66 +150,34 @@
 <!-- /CITY:hero -->
       <!-- Founding member offer: hidden unless /api/founding-spots says it is open (js/founding.js). -->
       <p class="h-founding" data-founding hidden>Founding member offer: <span data-founding-pct></span>% off your first haul. <span data-founding-left></span> of <span data-founding-spots></span> <span data-founding-noun></span> left.</p>
-      <ul class="h-proof">
-        <li>Price before you book</li>
-        <li>We do the lifting</li>
-        <li>Portland metro and Vancouver</li>
-      </ul>
+      <div class="h-actions" data-hides-sticky>
+        <a class="h-cta" href="book/quote.html">Get my price</a>
+        <p class="h-check"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="#15171A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>Price before you book</p>
+      </div>
+      <hr class="h-rule">
+      <a class="h-pill" href="tel:+19254086053"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span>Call or text</span> <span class="h-pill-num">(925) 408-6053</span></a>
     </div>
-    <div class="h-order" data-hides-sticky>
-      <div class="size-list h-sizes" id="homeSizes">
-        <!-- GENERATED from pricing.config.mjs by `npm run build:pricing`. Never type prices here. -->
-        <!-- BUILD:home-sizes -->
-        <a class="size-card" data-size="0" href="book/quote.html?size=0">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
-          <span class="size-body">
-            <span class="size-name">Single item</span>
-            <span class="size-note">A couch, a mattress, an appliance</span>
-            <span class="size-cost"><span class="size-price guess">$99.00</span> <span class="size-travel">+ travel</span></span>
-          </span>
-        </a>
-        <a class="size-card" data-size="1" href="book/quote.html?size=1">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
-          <span class="size-body">
-            <span class="size-name">1/4 truck</span>
-            <span class="size-note">A few pieces or a room corner</span>
-            <span class="size-cost"><span class="size-price guess">$199.00</span> <span class="size-travel">+ travel</span></span>
-          </span>
-        </a>
-        <a class="size-card" data-size="2" href="book/quote.html?size=2">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
-          <span class="size-body">
-            <span class="size-name">1/2 truck</span>
-            <span class="size-note">A small room or a garage corner</span>
-            <span class="size-cost"><span class="size-price guess">$349.00</span> <span class="size-travel">+ travel</span></span>
-          </span>
-        </a>
-        <a class="size-card" data-size="3" href="book/quote.html?size=3">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
-          <span class="size-body">
-            <span class="size-name">3/4 truck</span>
-            <span class="size-note">A full room or a small garage</span>
-            <span class="size-cost"><span class="size-price guess">$479.00</span> <span class="size-travel">+ travel</span></span>
-          </span>
-        </a>
-        <a class="size-card" data-size="4" href="book/quote.html?size=4">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
-          <span class="size-body">
-            <span class="size-name">Full truck</span>
-            <span class="size-note">A garage, basement or estate</span>
-            <span class="size-cost"><span class="size-price guess">$599.00</span> <span class="size-travel">+ travel</span></span>
-          </span>
-        </a>
-        <!-- /BUILD:home-sizes -->
+    <div class="h-art">
+      <div class="h-pile" aria-hidden="true">
+        <span class="h-block b-sofa" style="--sw:#E4572E"></span>
+        <span class="h-block b-fridge" style="--sw:#9AA5B1"></span>
+        <span class="h-block b-mattress" style="--sw:#4C8BF5"></span>
+        <span class="h-block b-box" style="--sw:#D9B26F"></span>
+        <span class="h-block b-crate" style="--sw:#F2A541"></span>
+        <span class="h-block b-bag" style="--sw:#3FA34D"></span>
+        <span class="h-block b-chair" style="--sw:#8E6CCF"></span>
+        <span class="h-block b-tv" style="--sw:#2E3440"></span>
       </div>
-      <p class="h-order-alt">Not sure? <a href="book/quote.html#photos">Send us a photo</a> and we pick the size for you.</p>
-      <div class="h-contact">
-        <a class="h-chip" href="tel:+19254086053"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>Call</a>
-        <a class="h-chip" href="sms:+19254086053"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9.5L5 19.5V16H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>Text</a>
-        <!-- WhatsApp: the number is a guess (WHATSAPP in api/_lib/site.js), so the label prints red. -->
-        <a class="h-chip" href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.1 7.9h.9l1 2.3-.8 1a6 6 0 0 0 2.6 2.6l1-.8 2.3 1v.9c0 .7-.6 1.3-1.3 1.3A6.8 6.8 0 0 1 7.8 9.2c0-.7.6-1.3 1.3-1.3z" fill="currentColor"/></svg><span class="guess">WhatsApp</span></a>
-      </div>
-      <p class="h-order-alt">Need regular pickups? <a href="book/commercial.html">Talk to us about a regular schedule</a></p>
+      <!-- GENERATED from pricing.config.mjs by `npm run build:pricing`. Never type prices here. -->
+      <!-- BUILD:home-ticket -->
+      <a class="h-ticket" data-size="2" href="book/quote.html?size=2">
+        <span class="h-ticket-top">Your price</span>
+        <span class="size-name">1/2 truck</span>
+        <span class="size-note">A small room or a garage corner</span>
+        <span class="size-cost"><span class="size-price guess">$349.00</span> <span class="size-travel">+ travel</span></span>
+        <span class="h-ticket-go">Book this size</span>
+      </a>
+      <!-- /BUILD:home-ticket -->
     </div>
   </div>
 </section>
@@ -269,13 +238,14 @@
 </section>
 <!-- /CITY:local -->
 
-<!-- HOW IT WORKS: the three steps as a plain numbered list (.steps in
-     css/site.css draws the numbers); nothing moves. -->
-<section class="band" id="how-it-works" aria-labelledby="how-title">
+<!-- HOW IT WORKS (round 7): three numbered circles joined by a line, LoadUp style
+     (the line and the circles are drawn in css/home.css); nothing moves. -->
+<section class="band is-card" id="how-it-works" aria-labelledby="how-title">
   <div class="wrap">
     <div class="section-head center">
       <p class="h-eyebrow dark">How it works</p>
       <h2 class="section-title" id="how-title">Three steps. That's the whole thing.</h2>
+      <p class="section-sub">Pick a size, pick a day, and we do the rest.</p>
     </div>
     <ol class="steps">
       <li><h3>Pick your size</h3><p>Choose the size that looks like your pile, or send a photo. Your price shows up right away.</p></li>
@@ -285,88 +255,188 @@
   </div>
 </section>
 
-<section class="band is-card" aria-labelledby="what-we-take">
+<!-- SIZES AND PRICES (round 7, LoadUp's dark "services" row): the five size cards,
+     one row on a desktop and stacked on a phone. Each opens the order page with that
+     size picked. The section keeps id="pricing" so the menu's Pricing link lands here. -->
+<section class="band is-dark sizes-band" id="pricing" aria-labelledby="pricing-title">
+  <div class="wrap">
+    <div class="sizes-head">
+      <div>
+        <p class="h-eyebrow">Pricing</p>
+        <h2 class="section-title" id="pricing-title">You pay for the space you use.</h2>
+        <!-- BUILD:home-from -->
+        <p class="h-from">Starting at <span class="guess">$99.00</span> for a single item</p>
+        <!-- /BUILD:home-from -->
+      </div>
+      <p class="section-sub">One flat price per load size, plus travel by zone. Labor, loading and the haul are all in it.</p>
+    </div>
+    <div class="size-list h-sizes" id="homeSizes" data-hides-sticky>
+      <!-- GENERATED from pricing.config.mjs by `npm run build:pricing`. Never type prices here. -->
+      <!-- BUILD:home-sizes -->
+        <a class="size-card" data-size="0" href="book/quote.html?size=0">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">Single item</span>
+            <span class="size-note">A couch, a mattress, an appliance</span>
+            <span class="size-cost"><span class="size-price guess">$99.00</span> <span class="size-travel">+ travel</span></span>
+          </span>
+        </a>
+        <a class="size-card" data-size="1" href="book/quote.html?size=1">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">1/4 truck</span>
+            <span class="size-note">A few pieces or a room corner</span>
+            <span class="size-cost"><span class="size-price guess">$199.00</span> <span class="size-travel">+ travel</span></span>
+          </span>
+        </a>
+        <a class="size-card" data-size="2" href="book/quote.html?size=2">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">1/2 truck</span>
+            <span class="size-note">A small room or a garage corner</span>
+            <span class="size-cost"><span class="size-price guess">$349.00</span> <span class="size-travel">+ travel</span></span>
+          </span>
+        </a>
+        <a class="size-card" data-size="3" href="book/quote.html?size=3">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">3/4 truck</span>
+            <span class="size-note">A full room or a small garage</span>
+            <span class="size-cost"><span class="size-price guess">$479.00</span> <span class="size-travel">+ travel</span></span>
+          </span>
+        </a>
+        <a class="size-card" data-size="4" href="book/quote.html?size=4">
+          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <span class="size-body">
+            <span class="size-name">Full truck</span>
+            <span class="size-note">A garage, basement or estate</span>
+            <span class="size-cost"><span class="size-price guess">$599.00</span> <span class="size-travel">+ travel</span></span>
+          </span>
+        </a>
+      <!-- /BUILD:home-sizes -->
+    </div>
+    <div class="sizes-after">
+      <p class="h-order-alt">Not sure? <a href="book/quote.html#photos">Send us a photo</a> and we pick the size for you.</p>
+      <!-- BUILD:home-travel-note -->
+      <p class="tiers-travel">Travel is added by zone: <span class="guess">no charge</span> within <span class="guess">10 road miles</span> of Gresham, up to <span class="guess">+$75.00</span> at <span class="guess">40 miles</span>. <a href="#area">Find your zone</a></p>
+      <!-- /BUILD:home-travel-note -->
+      <p class="tiers-more">More than a full truck? Call or text <a href="tel:+19254086053">(925) 408-6053</a> and we'll price it for you.</p>
+      <div class="h-contact">
+        <a class="h-chip" href="tel:+19254086053"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>Call</a>
+        <a class="h-chip" href="sms:+19254086053"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9.5L5 19.5V16H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>Text</a>
+        <!-- WhatsApp: the number is a guess (WHATSAPP in api/_lib/site.js), so the label prints red. -->
+        <a class="h-chip" href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.1 7.9h.9l1 2.3-.8 1a6 6 0 0 0 2.6 2.6l1-.8 2.3 1v.9c0 .7-.6 1.3-1.3 1.3A6.8 6.8 0 0 1 7.8 9.2c0-.7.6-1.3 1.3-1.3z" fill="currentColor"/></svg><span class="guess">WhatsApp</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT WE TAKE: eight kinds of junk as cards, each with its block and icon. -->
+<section class="band" aria-labelledby="what-we-take">
   <div class="wrap">
     <div class="section-head center">
       <p class="h-eyebrow dark">What we take</p>
       <h2 class="section-title" id="what-we-take">If it fits in the truck, it can go.</h2>
     </div>
     <div class="take-grid">
-      <article class="take" style="--sw:#E4572E"><span class="take-block"></span><h3>Furniture</h3><p>Couches, chairs, tables, dressers, desks.</p></article>
-      <article class="take" style="--sw:#9AA5B1"><span class="take-block"></span><h3>Appliances</h3><p>Fridges, freezers, washers, dryers, stoves.</p></article>
-      <article class="take" style="--sw:#4C8BF5"><span class="take-block"></span><h3>Mattresses</h3><p>Any size, with or without the box spring.</p></article>
-      <article class="take" style="--sw:#D9B26F"><span class="take-block"></span><h3>Garage and basement</h3><p>Boxes, shelves, tools and everything in between.</p></article>
-      <article class="take" style="--sw:#3FA34D"><span class="take-block"></span><h3>Yard debris</h3><p>Branches, clippings, old fencing, sheds taken apart.</p></article>
-      <article class="take" style="--sw:#8E6CCF"><span class="take-block"></span><h3>Move outs</h3><p>What didn't make the moving truck.</p></article>
-      <article class="take" style="--sw:#2E3440"><span class="take-block"></span><h3>Electronics</h3><p>TVs, monitors, computers, printers.</p></article>
-      <article class="take" style="--sw:#F2A541"><span class="take-block"></span><h3>Estate cleanouts</h3><p>A whole home, handled with care.</p></article>
+      <!-- Each kind as a block in its pile color (the hero's pile) with a line icon in it. -->
+      <article class="take" style="--sw:#E4572E"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/><path d="M5 18v2M19 18v2"/></svg></span><h3>Furniture</h3><p>Couches, chairs, tables, dressers, desks.</p></article>
+      <article class="take" style="--sw:#9AA5B1"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 10h12M9 5v2M9 13v3"/></svg></span><h3>Appliances</h3><p>Fridges, freezers, washers, dryers, stoves.</p></article>
+      <article class="take" style="--sw:#4C8BF5"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 18V6M2 14h20v4M22 14v-2a3 3 0 0 0-3-3h-8v5"/><circle cx="6.5" cy="11" r="2"/></svg></span><h3>Mattresses</h3><p>Any size, with or without the box spring.</p></article>
+      <article class="take" style="--sw:#D9B26F"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg></span><h3>Garage and basement</h3><p>Boxes, shelves, tools and everything in between.</p></article>
+      <article class="take" style="--sw:#3FA34D"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-14 15-15-1 10-7 15-15 15z"/><path d="M5 19l8-8"/></svg></span><h3>Yard debris</h3><p>Branches, clippings, old fencing, sheds taken apart.</p></article>
+      <article class="take" style="--sw:#8E6CCF"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="8" height="8" rx="1"/><rect x="13" y="12" width="8" height="8" rx="1"/><rect x="8" y="3" width="8" height="8" rx="1"/></svg></span><h3>Move outs</h3><p>What didn't make the moving truck.</p></article>
+      <article class="take is-dark" style="--sw:#2E3440"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="13" rx="2"/><path d="M8 21h8M12 18v3"/></svg></span><h3>Electronics</h3><p>TVs, monitors, computers, printers.</p></article>
+      <article class="take" style="--sw:#F2A541"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><h3>Estate cleanouts</h3><p>A whole home, handled with care.</p></article>
     </div>
     <p class="take-no">We can't take paint, chemicals, fuel, asbestos or medical waste.</p>
   </div>
 </section>
 
-<section class="band" aria-labelledby="pricing">
-  <div class="wrap">
-    <div class="section-head center">
-      <p class="h-eyebrow dark">Pricing</p>
-      <h2 class="section-title" id="pricing">You pay for the space you use.</h2>
-      <p class="section-sub">One flat price per load size, plus travel by zone. Labor, loading and the haul are all in it.</p>
+<!-- PROMISES (round 7, LoadUp's "why us" cards): four things every job gets. Each is
+     already true in how we book and work (the order page's rule, the On my way text,
+     the crew, the "all done" email's photos); docs/service-standard.md is how the crew
+     keeps them. Promise only what we do: never a rating or a review count we lack. -->
+<section class="band is-card promises" aria-labelledby="promises">
+  <div class="wrap promises-in">
+    <div class="promises-head">
+      <p class="h-eyebrow dark">Why us</p>
+      <h2 class="section-title" id="promises">What you can count on, <em>every job.</em></h2>
+      <p class="section-sub">Four things every job gets, from your price to the last sweep.</p>
+      <a class="promise-cta" href="book/quote.html">Get my price</a>
     </div>
-    <!-- GENERATED from pricing.config.mjs by `npm run build:pricing`. Never type prices here. -->
-    <div class="tiers">
-      <!-- BUILD:home-prices -->
-      <a class="tier" href="book/quote.html?load=0&amp;freq=0" style="--fill:15%">
-        <span class="tier-truck" aria-hidden="true"><span class="tier-load"></span></span>
-        <span class="tier-name">Single item</span>
-        <span class="tier-note">A couch, a mattress, an appliance</span>
-        <span class="tier-price guess">$99.00</span>
-      </a>
-      <a class="tier" href="book/quote.html?load=1&amp;freq=0" style="--fill:25%">
-        <span class="tier-truck" aria-hidden="true"><span class="tier-load"></span></span>
-        <span class="tier-name">1/4 truck</span>
-        <span class="tier-note">A few pieces or a room corner</span>
-        <span class="tier-price guess">$199.00</span>
-      </a>
-      <a class="tier" href="book/quote.html?load=2&amp;freq=0" style="--fill:50%">
-        <span class="tier-truck" aria-hidden="true"><span class="tier-load"></span></span>
-        <span class="tier-name">1/2 truck</span>
-        <span class="tier-note">A small room or a garage corner</span>
-        <span class="tier-price guess">$349.00</span>
-      </a>
-      <a class="tier" href="book/quote.html?load=3&amp;freq=0" style="--fill:75%">
-        <span class="tier-truck" aria-hidden="true"><span class="tier-load"></span></span>
-        <span class="tier-name">3/4 truck</span>
-        <span class="tier-note">A full room or a small garage</span>
-        <span class="tier-price guess">$479.00</span>
-      </a>
-      <a class="tier" href="book/quote.html?load=4&amp;freq=0" style="--fill:100%">
-        <span class="tier-truck" aria-hidden="true"><span class="tier-load"></span></span>
-        <span class="tier-name">Full truck</span>
-        <span class="tier-note">A garage, basement or estate</span>
-        <span class="tier-price guess">$599.00</span>
-      </a>
-      <!-- /BUILD:home-prices -->
+    <div class="promise-grid">
+      <article class="promise"><span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/></svg></span><div><h3>Your price first</h3><p>You see the price before you book. If your load is bigger, we show you the new price before we lift anything and charge it only if you agree.</p></div></article>
+      <article class="promise"><span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9.5L5 19.5V16H4z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01"/></svg></span><div><h3>A text before we arrive</h3><p>You pick a day and an arrival window, and we text you when we are on the way.</p></div></article>
+      <article class="promise"><span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg></span><div><h3>We do all the lifting</h3><p>From the attic, the basement or the backyard. You never carry a thing.</p></div></article>
+      <article class="promise"><span class="promise-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 21l7-7M14 4l6 6-8 8H6v-6z"/><path d="M16 20h5"/></svg></span><div><h3>We leave it clean</h3><p>We sweep up when we finish and send you a before and after photo.</p></div></article>
     </div>
-    <!-- BUILD:home-travel-note -->
-    <p class="tiers-travel">Travel is added by zone: <span class="guess">no charge</span> within <span class="guess">10 road miles</span> of Gresham, up to <span class="guess">+$75.00</span> at <span class="guess">40 miles</span>. <a href="#area">Find your zone</a></p>
-    <!-- /BUILD:home-travel-note -->
-    <p class="tiers-more">More than a full truck? Call or text <a href="tel:+19254086053">(925) 408-6053</a> and we'll price it for you.</p>
   </div>
 </section>
 
-<section class="band is-dark area" aria-labelledby="area">
-  <div class="wrap area-in">
-    <div>
-      <p class="h-eyebrow">Where we go</p>
-      <h2 class="section-title" id="area">Do we come to you?</h2>
-      <p class="section-sub">Type your ZIP to see your zone and what travel adds. We are based in Gresham and go across the Portland metro.</p>
-      <form class="zip" id="zipCheck" novalidate>
-        <label class="visually-hidden" for="zipIn">Your ZIP code</label>
-        <input id="zipIn" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="97030">
-        <p class="zip-out" id="zipOut" aria-live="polite"></p>
-      </form>
+<!-- PRICE BAND (round 7, LoadUp's colored band): one line and one button. -->
+<section class="price-band" id="price-band" aria-labelledby="price-band-title">
+  <div class="price-band-in" data-hides-sticky>
+    <p class="price-band-eyebrow">No estimate visit</p>
+    <h2 id="price-band-title">See your price in seconds.</h2>
+    <p class="price-band-line">Pick a size and add your ZIP. The total with travel shows before you book.</p>
+    <a class="cta-btn" href="book/quote.html">Get my price</a>
+    <p class="price-band-alt">Or call or text <a href="tel:+19254086053">(925) 408-6053</a></p>
+  </div>
+</section>
+
+<!-- WHERE WE GO (round 7, LoadUp's coverage section): our map of every ZIP we serve,
+     colored by zone, beside the ZIP check and the biggest towns; the zone cards under
+     both. Without JS the ZIP form opens the order page with that ZIP. -->
+<section class="band area" aria-labelledby="area">
+  <div class="wrap">
+    <div class="area-in">
+      <div class="area-copy">
+        <p class="h-eyebrow dark">Where we go</p>
+        <h2 class="section-title" id="area">Do we come to you?</h2>
+        <p class="section-sub">Type your ZIP to see your zone and what travel adds. We are based in Gresham and go across the Portland metro.</p>
+        <!-- BUILD:home-chips -->
+        <ul class="town-chips">
+          <li><a href="portland.html">Portland</a></li>
+          <li><a href="vancouver.html">Vancouver</a></li>
+          <li><a href="beaverton.html">Beaverton</a></li>
+          <li><a href="gresham.html">Gresham</a></li>
+          <li><a href="milwaukie.html">Milwaukie</a></li>
+          <li><a href="lake-oswego.html">Lake Oswego</a></li>
+          <li><a class="is-all" href="service-areas.html">All service areas</a></li>
+        </ul>
+        <!-- /BUILD:home-chips -->
+        <form class="zip" id="zipCheck" action="book/quote.html" method="get" novalidate>
+          <label class="visually-hidden" for="zipIn">Your ZIP code</label>
+          <div class="zip-row">
+            <input id="zipIn" name="zip" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="97030">
+            <button class="zip-go" type="submit">Check</button>
+          </div>
+          <p class="zip-out" id="zipOut" aria-live="polite"></p>
+        </form>
+      </div>
+      <!-- GENERATED by `npm run build` (scripts/build-towns.mjs) from ZONES, data/zip-points.mjs and the town files.
+           After the heading in the page, on the left on a desktop (css/home.css). -->
+      <!-- BUILD:home-map -->
+      <figure class="area-map">
+        <svg viewBox="0 0 600 620" aria-hidden="true" focusable="false">
+          <g class="map-dots" stroke="#15171A" stroke-width="1.5"><circle cx="111" cy="516" r="7" data-zip="97002" data-zone="z4" fill="#2E3440"/><circle cx="81" cy="360" r="7" data-zip="97007" data-zone="z4" fill="#2E3440"/><circle cx="570" cy="206" r="7" data-zip="97014" data-zone="z4" fill="#2E3440"/><circle cx="297" cy="566" r="7" data-zip="97017" data-zone="z4" fill="#2E3440"/><circle cx="93" cy="522" r="7" data-zip="97020" data-zone="z4" fill="#2E3440"/><circle cx="109" cy="548" r="7" data-zip="97032" data-zone="z4" fill="#2E3440"/><circle cx="223" cy="590" r="7" data-zip="97038" data-zone="z4" fill="#2E3440"/><circle cx="243" cy="527" r="7" data-zip="97042" data-zone="z4" fill="#2E3440"/><circle cx="547" cy="433" r="7" data-zip="97049" data-zone="z4" fill="#2E3440"/><circle cx="67" cy="140" r="7" data-zip="97056" data-zone="z4" fill="#2E3440"/><circle cx="128" cy="467" r="7" data-zip="97070" data-zone="z4" fill="#2E3440"/><circle cx="36" cy="327" r="7" data-zip="97123" data-zone="z4" fill="#2E3440"/><circle cx="32" cy="298" r="7" data-zip="97124" data-zone="z4" fill="#2E3440"/><circle cx="32" cy="298" r="7" data-zip="97129" data-zone="z4" fill="#2E3440"/><circle cx="30" cy="459" r="7" data-zip="97132" data-zone="z4" fill="#2E3440"/><circle cx="85" cy="430" r="7" data-zip="97140" data-zone="z4" fill="#2E3440"/><circle cx="281" cy="32" r="7" data-zip="98601" data-zone="z4" fill="#2E3440"/><circle cx="264" cy="98" r="7" data-zip="98622" data-zone="z4" fill="#2E3440"/><circle cx="199" cy="59" r="7" data-zip="98629" data-zone="z4" fill="#2E3440"/><circle cx="520" cy="229" r="7" data-zip="98639" data-zone="z4" fill="#2E3440"/><circle cx="550" cy="194" r="7" data-zip="98648" data-zone="z4" fill="#2E3440"/><circle cx="156" cy="30" r="7" data-zip="98674" data-zone="z4" fill="#2E3440"/><circle cx="296" cy="72" r="7" data-zip="98675" data-zone="z4" fill="#2E3440"/><circle cx="83" cy="311" r="7" data-zip="97003" data-zone="z3" fill="#9AA5B1"/><circle cx="272" cy="494" r="7" data-zip="97004" data-zone="z3" fill="#9AA5B1"/><circle cx="113" cy="328" r="7" data-zip="97005" data-zone="z3" fill="#9AA5B1"/><circle cx="83" cy="311" r="7" data-zip="97006" data-zone="z3" fill="#9AA5B1"/><circle cx="113" cy="356" r="7" data-zip="97008" data-zone="z3" fill="#9AA5B1"/><circle cx="456" cy="267" r="7" data-zip="97010" data-zone="z3" fill="#9AA5B1"/><circle cx="504" cy="420" r="7" data-zip="97011" data-zone="z3" fill="#9AA5B1"/><circle cx="170" cy="500" r="7" data-zip="97013" data-zone="z3" fill="#9AA5B1"/><circle cx="169" cy="389" r="7" data-zip="97034" data-zone="z3" fill="#9AA5B1"/><circle cx="151" cy="385" r="7" data-zip="97035" data-zone="z3" fill="#9AA5B1"/><circle cx="186" cy="395" r="7" data-zip="97036" data-zone="z3" fill="#9AA5B1"/><circle cx="131" cy="415" r="7" data-zip="97062" data-zone="z3" fill="#9AA5B1"/><circle cx="525" cy="438" r="7" data-zip="97067" data-zone="z3" fill="#9AA5B1"/><circle cx="111" cy="335" r="7" data-zip="97075" data-zone="z3" fill="#9AA5B1"/><circle cx="111" cy="335" r="7" data-zip="97076" data-zone="z3" fill="#9AA5B1"/><circle cx="111" cy="335" r="7" data-zip="97077" data-zone="z3" fill="#9AA5B1"/><circle cx="118" cy="359" r="7" data-zip="97078" data-zone="z3" fill="#9AA5B1"/><circle cx="118" cy="359" r="7" data-zip="97079" data-zone="z3" fill="#9AA5B1"/><circle cx="158" cy="355" r="7" data-zip="97219" data-zone="z3" fill="#9AA5B1"/><circle cx="149" cy="331" r="7" data-zip="97221" data-zone="z3" fill="#9AA5B1"/><circle cx="123" cy="367" r="7" data-zip="97223" data-zone="z3" fill="#9AA5B1"/><circle cx="112" cy="389" r="7" data-zip="97224" data-zone="z3" fill="#9AA5B1"/><circle cx="123" cy="327" r="7" data-zip="97225" data-zone="z3" fill="#9AA5B1"/><circle cx="99" cy="292" r="7" data-zip="97229" data-zone="z3" fill="#9AA5B1"/><circle cx="94" cy="227" r="7" data-zip="97231" data-zone="z3" fill="#9AA5B1"/><circle cx="244" cy="122" r="7" data-zip="98604" data-zone="z3" fill="#9AA5B1"/><circle cx="268" cy="164" r="7" data-zip="98606" data-zone="z3" fill="#9AA5B1"/><circle cx="302" cy="251" r="7" data-zip="98607" data-zone="z3" fill="#9AA5B1"/><circle cx="165" cy="126" r="7" data-zip="98642" data-zone="z3" fill="#9AA5B1"/><circle cx="172" cy="226" r="7" data-zip="98660" data-zone="z3" fill="#9AA5B1"/><circle cx="199" cy="226" r="7" data-zip="98661" data-zone="z3" fill="#9AA5B1"/><circle cx="220" cy="191" r="7" data-zip="98662" data-zone="z3" fill="#9AA5B1"/><circle cx="181" cy="219" r="7" data-zip="98663" data-zone="z3" fill="#9AA5B1"/><circle cx="181" cy="193" r="7" data-zip="98665" data-zone="z3" fill="#9AA5B1"/><circle cx="181" cy="228" r="7" data-zip="98666" data-zone="z3" fill="#9AA5B1"/><circle cx="181" cy="228" r="7" data-zip="98668" data-zone="z3" fill="#9AA5B1"/><circle cx="353" cy="258" r="7" data-zip="98671" data-zone="z3" fill="#9AA5B1"/><circle cx="250" cy="210" r="7" data-zip="98682" data-zone="z3" fill="#9AA5B1"/><circle cx="167" cy="174" r="7" data-zip="98685" data-zone="z3" fill="#9AA5B1"/><circle cx="195" cy="177" r="7" data-zip="98686" data-zone="z3" fill="#9AA5B1"/><circle cx="181" cy="228" r="7" data-zip="98687" data-zone="z3" fill="#9AA5B1"/><circle cx="387" cy="310" r="7" data-zip="97019" data-zone="z2" fill="#F2A541"/><circle cx="339" cy="425" r="7" data-zip="97022" data-zone="z2" fill="#F2A541"/><circle cx="345" cy="475" r="7" data-zip="97023" data-zone="z2" fill="#F2A541"/><circle cx="216" cy="403" r="7" data-zip="97027" data-zone="z2" fill="#F2A541"/><circle cx="226" cy="439" r="7" data-zip="97045" data-zone="z2" fill="#F2A541"/><circle cx="396" cy="410" r="7" data-zip="97055" data-zone="z2" fill="#F2A541"/><circle cx="187" cy="419" r="7" data-zip="97068" data-zone="z2" fill="#F2A541"/><circle cx="167" cy="320" r="7" data-zip="97201" data-zone="z2" fill="#F2A541"/><circle cx="193" cy="337" r="7" data-zip="97202" data-zone="z2" fill="#F2A541"/><circle cx="145" cy="263" r="7" data-zip="97203" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="313" r="7" data-zip="97204" data-zone="z2" fill="#F2A541"/><circle cx="167" cy="311" r="7" data-zip="97205" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97207" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97208" data-zone="z2" fill="#F2A541"/><circle cx="169" cy="307" r="7" data-zip="97209" data-zone="z2" fill="#F2A541"/><circle cx="160" cy="304" r="7" data-zip="97210" data-zone="z2" fill="#F2A541"/><circle cx="189" cy="280" r="7" data-zip="97211" data-zone="z2" fill="#F2A541"/><circle cx="190" cy="295" r="7" data-zip="97212" data-zone="z2" fill="#F2A541"/><circle cx="212" cy="299" r="7" data-zip="97213" data-zone="z2" fill="#F2A541"/><circle cx="193" cy="316" r="7" data-zip="97214" data-zone="z2" fill="#F2A541"/><circle cx="170" cy="274" r="7" data-zip="97217" data-zone="z2" fill="#F2A541"/><circle cx="211" cy="283" r="7" data-zip="97218" data-zone="z2" fill="#F2A541"/><circle cx="232" cy="297" r="7" data-zip="97220" data-zone="z2" fill="#F2A541"/><circle cx="204" cy="369" r="7" data-zip="97222" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="291" r="7" data-zip="97227" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97228" data-zone="z2" fill="#F2A541"/><circle cx="193" cy="305" r="7" data-zip="97232" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97238" data-zone="z2" fill="#F2A541"/><circle cx="166" cy="327" r="7" data-zip="97239" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97240" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97242" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97250" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97251" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97252" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97253" data-zone="z2" fill="#F2A541"/><circle cx="214" cy="258" r="7" data-zip="97254" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97256" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97258" data-zone="z2" fill="#F2A541"/><circle cx="204" cy="394" r="7" data-zip="97267" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97268" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97269" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97280" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97281" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97282" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97283" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97286" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97290" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97291" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97292" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97293" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97294" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97296" data-zone="z2" fill="#F2A541"/><circle cx="174" cy="309" r="7" data-zip="97298" data-zone="z2" fill="#F2A541"/><circle cx="222" cy="239" r="7" data-zip="98664" data-zone="z2" fill="#F2A541"/><circle cx="253" cy="253" r="7" data-zip="98683" data-zone="z2" fill="#F2A541"/><circle cx="252" cy="230" r="7" data-zip="98684" data-zone="z2" fill="#F2A541"/><circle cx="319" cy="375" r="7" data-zip="97009" data-zone="home" fill="#FFD23F"/><circle cx="250" cy="385" r="7" data-zip="97015" data-zone="home" fill="#FFD23F"/><circle cx="289" cy="292" r="7" data-zip="97024" data-zone="home" fill="#FFD23F"/><circle cx="299" cy="315" r="7" data-zip="97030" data-zone="home" fill="#FFD23F"/><circle cx="322" cy="308" r="7" data-zip="97060" data-zone="home" fill="#FFD23F"/><circle cx="301" cy="338" r="7" data-zip="97080" data-zone="home" fill="#FFD23F"/><circle cx="242" cy="364" r="7" data-zip="97086" data-zone="home" fill="#FFD23F"/><circle cx="280" cy="383" r="7" data-zip="97089" data-zone="home" fill="#FFD23F"/><circle cx="212" cy="337" r="7" data-zip="97206" data-zone="home" fill="#FFD23F"/><circle cx="211" cy="315" r="7" data-zip="97215" data-zone="home" fill="#FFD23F"/><circle cx="232" cy="316" r="7" data-zip="97216" data-zone="home" fill="#FFD23F"/><circle cx="260" cy="292" r="7" data-zip="97230" data-zone="home" fill="#FFD23F"/><circle cx="261" cy="316" r="7" data-zip="97233" data-zone="home" fill="#FFD23F"/><circle cx="256" cy="333" r="7" data-zip="97236" data-zone="home" fill="#FFD23F"/><circle cx="231" cy="342" r="7" data-zip="97266" data-zone="home" fill="#FFD23F"/></g>
+          <g class="map-base" transform="translate(294 327)"><circle r="14" fill="#15171A"/><path d="M-7 1 0-6 7 1v7h-14z" fill="#FFD23F"/></g>
+          <g class="map-labels" aria-hidden="true"><text x="188" y="292">Portland</text><text x="208" y="199">Vancouver</text><text x="98" y="325">Beaverton</text><text x="300" y="313">Gresham</text><text x="204" y="368">Milwaukie</text><text x="160" y="397">Lake Oswego</text></g>
+        </svg>
+        <figcaption>
+          <ul class="map-key">
+          <li data-zone="home"><span class="key-dot" style="background:#FFD23F"></span><span class="key-name">Home zone</span> <span class="key-fee"><span class="guess">No travel charge</span></span></li>
+          <li data-zone="z2"><span class="key-dot" style="background:#F2A541"></span><span class="key-name">Zone 2</span> <span class="key-fee"><span class="guess">+$25.00 per visit</span></span></li>
+          <li data-zone="z3"><span class="key-dot" style="background:#9AA5B1"></span><span class="key-name">Zone 3</span> <span class="key-fee"><span class="guess">+$50.00 per visit</span></span></li>
+          <li data-zone="z4"><span class="key-dot" style="background:#2E3440"></span><span class="key-name">Zone 4</span> <span class="key-fee"><span class="guess">+$75.00 per visit</span></span></li>
+          </ul>
+          <p class="map-note">Map: each dot is a ZIP code we serve, colored by its travel zone. Our base is in Gresham.</p>
+        </figcaption>
+      </figure>
+      <!-- /BUILD:home-map -->
     </div>
-    <!-- GENERATED from ZONES in pricing.config.mjs by `npm run build:pricing`. -->
+    <!-- GENERATED from ZONES in pricing.config.mjs by `npm run build` (scripts/build-towns.mjs). -->
     <!-- BUILD:home-area -->
     <ol class="zones" id="zoneList">
       <li data-zone="home">
@@ -395,7 +465,7 @@
 </section>
 
 <!-- CITY:faq -->
-<section class="band is-card" aria-labelledby="faq">
+<section class="band is-surf faq-band" aria-labelledby="faq">
   <div class="wrap-text">
     <div class="section-head center">
       <p class="h-eyebrow dark">Yacolt questions</p>
@@ -412,11 +482,15 @@
 </section>
 <!-- /CITY:faq -->
 
+<!-- CLOSER (round 7, LoadUp's dark closer): one big line and two buttons. -->
 <section class="closer" aria-label="Get a price">
   <div class="closer-in" data-hides-sticky>
     <h2>Ready when your junk is.</h2>
-    <a class="cta-btn" href="book/quote.html">Get my price</a>
-    <p>Or call or text <a href="tel:+19254086053">(925) 408-6053</a></p>
+    <p class="closer-line">See your price now and pick a day that works for you.</p>
+    <div class="closer-actions">
+      <a class="cta-btn is-yellow" href="book/quote.html">Get my price</a>
+      <a class="cta-ghost" href="tel:+19254086053"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>(925) 408-6053</a>
+    </div>
   </div>
 </section>
 
@@ -424,16 +498,46 @@
 </main>
 
 <footer>
-  <div class="footer-logo"><span class="logo-mark" aria-hidden="true"></span><span class="nav-wordmark">Brand Name</span></div>
-  <p>Based in Gresham. Junk removal across the Portland metro and Vancouver.</p>
-  <ul class="footer-links">
-    <li><a href="service-areas.html">Service areas</a></li>
-    <li><a href="faq.html">FAQ</a></li>
-    <li><a href="blog/index.html">Blog</a></li>
-    <li><a href="book/commercial.html">Property managers</a></li>
-    <li><a href="privacy.html">Privacy</a></li>
-    <li><a href="terms.html">Terms</a></li>
-  </ul>
+  <!-- Round 7: LoadUp's column footer, named by what people came to do. build-chrome
+       copies it to every page; the towns come from build-towns (the biggest six). -->
+  <div class="foot-cols">
+    <div class="foot-brand">
+      <div class="footer-logo"><span class="logo-mark" aria-hidden="true"></span><span class="nav-wordmark">Brand Name</span></div>
+      <p>Based in Gresham. Junk removal across the Portland metro and Vancouver.</p>
+      <p class="foot-contact"><a href="tel:+19254086053">Call (925) 408-6053</a><a href="sms:+19254086053">Text us</a></p>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Book</h2>
+      <ul class="footer-links">
+        <li><a href="book/quote.html">Get my price</a></li>
+        <li><a href="book/quote.html#photos">Send a photo</a></li>
+        <li><a href="book/commercial.html">Property managers</a></li>
+      </ul>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Where we go</h2>
+      <ul class="footer-links">
+      <!-- BUILD:foot-towns -->
+      <li><a href="service-areas.html">Service areas</a></li>
+      <li><a href="portland.html">Portland</a></li>
+      <li><a href="vancouver.html">Vancouver</a></li>
+      <li><a href="beaverton.html">Beaverton</a></li>
+      <li><a href="gresham.html">Gresham</a></li>
+      <li><a href="milwaukie.html">Milwaukie</a></li>
+      <li><a href="lake-oswego.html">Lake Oswego</a></li>
+      <!-- /BUILD:foot-towns -->
+      </ul>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Help</h2>
+      <ul class="footer-links">
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="blog/index.html">Blog</a></li>
+        <li><a href="terms.html">Terms</a></li>
+        <li><a href="privacy.html">Privacy</a></li>
+      </ul>
+    </div>
+  </div>
   <div class="legal-footer">
     &copy; 2026 Brand Name &nbsp;·&nbsp;
     <a href="tel:+19254086053">(925) 408-6053</a>

@@ -565,3 +565,77 @@ graph TD
 | 11 | gen 10 | Task 10 review fixes: the last tap wording out (the town page descriptions in `build-towns`, the Corbett, Troutdale and Happy Valley ledes, two posts, both languages) and `no-truck` made stricter to catch it ("tap or snap", "as you tap", "photos or taps", "a few taps", "toca lo", "tocaste", "mientras tocas", "unos toques"); round 5 `spanish-js` now wants the exact travel line the script writes for the seeded ZIP, priced by the travel module (the built "+ viaje" no longer passes); `build-pricing` writes every `https://wa.me/` number in index.html and the order page from `WHATSAPP` in `api/_lib/site.js`, so `npm test` catches a drift | 100 | 100 |
 | 12 | gen 11 | Task 10b, the game and the driving truck leave (founder, 2026-10-11: "remove the game from all instances plus the banner that drives the car"): Junk Toss gone (its homepage band, `js/junk-toss.js`, `css/junk-toss.css`, their tags, its nine Spanish phrases, the `build-es` comment naming it); the sticky road gone (the lane, the dashes, the truck drawing with its cargo and wheels, the tall scroll section, its JS in `js/home.js` and its CSS in `css/home.css`); "How it works" stays at `#how-it-works` as three still steps in the site's numbered steps pattern (`.steps` in `css/site.css`), stacked on a phone and three across from 760px, retitled "Three steps. That's the whole thing." ("Tres pasos. Así de sencillo.") since there is no road to stop on; town, hub and Spanish pages follow from the build; every phrase left in `i18n/es.json` is used; no scorecard check measured the game or the road, so no check changed | 100 | 100 |
 | 13 | gen 12 | Task 11, the final whole-branch review and the accessibility and copy review, fixed in one pass (rulings R26, R27, R30): Customer said no refunds a job under way (a before photo sets `in_progress`), and neither refund path runs once Finish has written a final size; Book again after a lost payment answer asks Stripe about the last PaymentIntent first (`lastPay` in `js/order.js`), so it never charges twice, and the page says it could not confirm the payment instead of "nothing was booked"; the late cancel prompt on the dashboard reads the right way round; the homepage tiers and FAQ drop the monthly price; no "you can say no" anywhere a customer reads it: one rule on the pay step, thanks and the confirmation email (the crew checks the size, a bigger load charged only if the customer agrees, a smaller one refunded), the refusal fee line only while the fee is above $0, cancel and move worded the same everywhere with the late fee, terms and both FAQs state the decline policy plainly, consent version `2026-10-11`; gates closed, the pay step is "Reserve your day" with "Nothing is charged to reserve" and Book reads "Reserve, no card"; a refused payment on thanks retitles the tab and drops the check; order page: day and window buttons keep the keyboard focus and say what was picked, Tab scrolls clear of the bar, the bar keeps Book only on a short screen, field borders at 4:1, a far ZIP said aloud and its bad email explained, the street field `address-line1`; a yellow focus ring on the charcoal parts of the site. Scorecard: `clear` holds the new rule as strictly (the reserve story alone with the gates closed, the pay now rule with them open, no "say no"), `failures-ui` adds the lost answer retry (one create-booking call, then thanks), the street field selector follows the new autocomplete | 100 | 100 |
+
+## Round 7: the landing page (LoadUp layout) and the service standard (Disneyland)
+
+Spec: `docs/superpowers/specs/2026-10-11-landing-page-design.md`. Founder,
+2026-10-11: "just use loadup as inspo i really like hero and ladning page",
+then "check disney land customer service and seo practices and copy them just
+dont copy the magical langiage". Research:
+`docs/superpowers/research/2026-10-11-disneyland-practices.md`. Rubric: the
+round 6 columns with **Look** (how close the page comes to LoadUp's layout
+and order in our colors) in place of Authority, and **Risk** (what it puts at
+stake in rounds 1 to 6, the town pages and the Spanish site) in place of
+Failures.
+
+### Plan A: restyle in place
+
+Keep `index.html`'s sections and their order; rewrite `css/home.css` to
+LoadUp's look (light hero, pill eyebrows, offset shadow button, joined step
+circles, card FAQ); the hero gains the block pile; the price tiers, the zone
+cards and the footer stay as they are.
+
+| Coverage | One source | Copies | Testable | Style | Look | Clear | Guesses | Risk | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 6 | 9 | 9 | 8 | 9 | 5 | 7 | 9 | 9 | 9 | **80** |
+
+Prices still show twice (hero cards and tiers), no map, no "why us"
+promises, the footer stays a single row: LoadUp's order is not there.
+
+### Plan B: a new page assembled from section files
+
+A new `scripts/build-home.mjs` assembles `index.html` from `content/home/*.html`
+section files in LoadUp's order; one size set in a dark band; a map
+generator; promise cards; a column footer.
+
+| Coverage | One source | Copies | Testable | Style | Look | Clear | Guesses | Risk | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 9 | 7 | 9 | 6 | 10 | 9 | 9 | 6 | 6 | **81** |
+
+A fifth generator in front of four that already read `index.html`
+(`build-pricing`, `build-towns`, `build-es`, `build-chrome`), new ids that
+break the round 1, 2 and 6 checks, and one large switch.
+
+### Child (A × B), plan `docs/superpowers/plans/2026-10-11-round-7-landing-page.md`
+
+From B: LoadUp's order, one size set in a charcoal band (the tiers go), the
+metro map, the promise cards, the yellow price band, the column footer.
+From A: no new generator; `index.html` edited section by section with its ids,
+classes and phrases kept (`#pricing`, `#area`, `#zoneList`, `.size-card`,
+`CITY:` regions), so the town pages, the Spanish site and the earlier
+scorecards follow without new rules; the map and the "Starting at" line are
+two more `BUILD:` blocks of `build-pricing`.
+
+| Coverage | One source | Copies | Testable | Style | Look | Clear | Guesses | Risk | Steps | **Total** |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 10 | 10 | 9 | 9 | 9 | 10 | 9 | 9 | 8 | 8 | **91** |
+
+Risk 8: town pages and the Spanish homepage change with every section.
+Steps 8: `css/home.css` is rewritten in four pieces, not one.
+
+```mermaid
+graph TD
+  A7["Plan A · restyle in place · 80"] --> C7["Child · 91"]
+  B7["Plan B · section files · 81"] --> C7
+```
+
+### Build generations
+
+| Gen | Parent | What changed | Score | Best so far |
+| --- | --- | --- | --- | --- |
+| 0 | main (26bedbb) | nothing yet: the round 7 scorecard alone (thirteen checks; contrast measured in Chrome; the first screen measured without the local preview bar); round 1 `guesses` accepts the size cards' red prices once the tiers go; only `tests` passes on its own (the sticky button's 14px text fails `mobile`) | 15 | 15 |
+| 1 | gen 0 | Tasks 1 to 3: the cream hero (pill eyebrow, the headline's second line on a yellow marker, one offset shadow button with the check line beside it, the phone pill, the pile of junk in the what-we-take colors with a generated price ticket, `BUILD:home-ticket`); three numbered circles joined by a line; the five size cards in a charcoal band (`id="pricing"`, `BUILD:home-from`), the price tiers gone; guess red stays dark red on white cards; the sticky button at 16px; round 1 `guesses` reads the cards' red prices | 37 | 37 |
+| 2 | gen 1 | Task 4: what we take as cards with icon blocks; four promise cards (each already true in how we book and work); the yellow price band | 47 | 47 |
+| 3 | gen 2 | Tasks 5 and 6: the metro map (`data/zip-points.mjs` from `measure-zips --points`, no routing; one dot per ZIP colored by zone, the base marked, six towns named, labels moved apart, hidden under 860px), town chips, the ZIP form posting to the order page without JS and lighting its dot and zone with it; FAQ cards on light grey; the charcoal closer with two buttons; the column footer on every page; `build-towns` writes the map, chips and footer towns; the map column held to the screen at 360px | 84 | 84 |
+| 4 | gen 3 | Task 7: `docs/service-standard.md` (nine parts, Disneyland's practice in our words, a red guess of a $25 on the spot limit) and `agent/skills/complaint-reply` (draft only, never sends); CLAUDE.md: round 7 done, rounds renumbered | 100 | 100 |
+| 5 | gen 4 | Final review fixes (fresh reviewer, "with fixes"): the Spanish ZIP form action relinked (it was a 404 without JS on 42 pages; `test-es` checks every relative link, source and action under `es/`); map labels 21px and hidden under 1100px; nothing moves under reduced motion (the `mobile` check emulates it); the heading and ZIP box before the map, the drawing `aria-hidden`; the map centers on and marks `BASE` (a `test-towns` case moves it); the service standard and helper say only what is true and doable. Checks added to `map`, `mobile` and `service` (each failed first) | 100 | 100 |
