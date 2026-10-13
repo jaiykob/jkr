@@ -26,6 +26,28 @@
   <script src="../js/leads.js" defer></script>
   <script src="../js/analytics.js" defer></script>
   <script src="../js/maintenance-banner.js" defer></script>
+  <!-- BUILD:crumbs-ld -->
+  <script type="application/ld+json">
+  {
+    "@type": "BreadcrumbList",
+    "@id": "https://www.example.com/book/commercial.html#breadcrumb",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.example.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Property managers",
+        "item": "https://www.example.com/book/commercial.html"
+      }
+    ]
+  }
+  </script>
+  <!-- /BUILD:crumbs-ld -->
 </head>
 <body>
 <!-- BUILD:site-header -->
@@ -58,7 +80,7 @@
 
 <main id="main">
   <article class="article">
-    <nav class="trail" aria-label="Breadcrumb"><ol><li><a href="../index.html">Home</a></li><li><span aria-current="page">Property managers and businesses</span></li></ol></nav>
+    <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../index.html">Home</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li aria-current="page">Property managers</li></ol></nav>
     <h1>Junk removal for properties, <span>on your schedule.</span></h1>
     <p class="a-lede">Unit turnovers, listings, remodels, offices and estates across the Portland metro. Tell us about the property and what you need, and we will send a plan and a price within <span class="guess">one business day</span>. Regular work can be a monthly pickup at a set load size, travel for your zone included.</p>
 

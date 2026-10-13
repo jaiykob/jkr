@@ -43,6 +43,32 @@
     }
   }
   </script>
+  <script type="application/ld+json">
+  {
+    "@type": "BreadcrumbList",
+    "@id": "https://www.example.com/blog/choosing-a-junk-removal-company.html#breadcrumb",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.example.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": "https://www.example.com/blog/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "How to choose a junk removal company",
+        "item": "https://www.example.com/blog/choosing-a-junk-removal-company.html"
+      }
+    ]
+  }
+  </script>
   <style>
     @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(../fonts/dm-sans.woff2) format('woff2'); }
     @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(../fonts/bricolage.woff2) format('woff2'); }
@@ -85,7 +111,7 @@
 
 <main id="main">
   <article class="article post">
-    <nav class="trail" aria-label="Breadcrumb"><ol><li><a href="../index.html">Home</a></li><li><a href="index.html">Blog</a></li><li><span aria-current="page">How to choose a junk removal company</span></li></ol></nav>
+    <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="../index.html">Home</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li><a href="index.html">Blog</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li aria-current="page">How to choose a junk removal company</li></ol></nav>
     <h1>How to choose a junk removal company</h1>
     <p class="post-meta"><time datetime="2026-09-27">September 27, 2026</time> · 2 minute read</p>
     <p>There are many ways to get a pile hauled in the Portland metro, from national franchises to a neighbor with a pickup. Prices and service vary widely. These six questions sort them out quickly.</p>

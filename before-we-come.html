@@ -20,21 +20,7 @@
   <meta name="theme-color" content="#15171A" />
   <!-- The checklist for a booked job (round 9), written by hand: keep es/before-we-come.html in step.
        The cancel hours and late fee print only through the data-policy spans build-pricing rewrites.
-       How-to shaped in the visible text only: no HowTo JSON-LD (Google retired its rich results).
-       The breadcrumb and its BreadcrumbList are scripts/lib/crumbs.mjs's output, pasted until
-       build-chrome writes them (round 9, Task 6). -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "@id": "https://www.example.com/before-we-come.html#breadcrumb",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.example.com/" },
-      { "@type": "ListItem", "position": 2, "name": "Help", "item": "https://www.example.com/faq.html" },
-      { "@type": "ListItem", "position": 3, "name": "Before we come", "item": "https://www.example.com/before-we-come.html" }
-    ]
-  }
-  </script>
+       How-to shaped in the visible text only: no HowTo JSON-LD (Google retired its rich results). -->
   <style>
     @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(fonts/dm-sans.woff2) format('woff2'); }
     @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(fonts/bricolage.woff2) format('woff2'); }
@@ -45,6 +31,34 @@
   <script src="js/site.js" defer></script>
   <script src="js/analytics.js" defer></script>
   <script src="js/maintenance-banner.js" defer></script>
+  <!-- BUILD:crumbs-ld -->
+  <script type="application/ld+json">
+  {
+    "@type": "BreadcrumbList",
+    "@id": "https://www.example.com/before-we-come.html#breadcrumb",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.example.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Help",
+        "item": "https://www.example.com/faq.html"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "Before we come",
+        "item": "https://www.example.com/before-we-come.html"
+      }
+    ]
+  }
+  </script>
+  <!-- /BUILD:crumbs-ld -->
 </head>
 <body>
 <!-- BUILD:site-header -->

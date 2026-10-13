@@ -25,6 +25,28 @@
   <script src="js/site.js" defer></script>
   <script src="js/analytics.js" defer></script>
   <script src="js/maintenance-banner.js" defer></script>
+  <!-- BUILD:crumbs-ld -->
+  <script type="application/ld+json">
+  {
+    "@type": "BreadcrumbList",
+    "@id": "https://www.example.com/privacy.html#breadcrumb",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.example.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Privacy policy",
+        "item": "https://www.example.com/privacy.html"
+      }
+    ]
+  }
+  </script>
+  <!-- /BUILD:crumbs-ld -->
 </head>
 <body>
 <!-- BUILD:site-header -->
@@ -57,7 +79,7 @@
 
 <main id="main">
   <article class="article">
-    <nav class="trail" aria-label="Breadcrumb"><ol><li><a href="index.html">Home</a></li><li><span aria-current="page">Privacy</span></li></ol></nav>
+    <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="index.html">Home</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li aria-current="page">Privacy policy</li></ol></nav>
     <h1>Privacy policy</h1>
     <p class="updated">Last updated: <span class="guess">October 7, 2026</span></p>
     <p class="a-lede">Brand Name ("we", "us") is a junk removal business based in Gresham, Oregon. This page says what we collect when you get a price or book with us, what we do with it, and the choices you have.</p>

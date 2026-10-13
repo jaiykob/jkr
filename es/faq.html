@@ -193,6 +193,28 @@
   <script src="../js/site.js" defer></script>
   <script src="../js/analytics.js" defer></script>
   <script src="../js/maintenance-banner.js" defer></script>
+  <!-- BUILD:crumbs-ld -->
+  <script type="application/ld+json">
+  {
+    "@type": "BreadcrumbList",
+    "@id": "https://www.example.com/es/faq.html#breadcrumb",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Inicio",
+        "item": "https://www.example.com/es/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Ayuda",
+        "item": "https://www.example.com/es/faq.html"
+      }
+    ]
+  }
+  </script>
+  <!-- /BUILD:crumbs-ld -->
 </head>
 <body>
 
@@ -226,7 +248,7 @@
 
 <main id="main">
   <article class="article">
-    <nav class="trail" aria-label="Ruta"><ol><li><a href="index.html">Inicio</a></li><li><span aria-current="page">Preguntas</span></li></ol></nav>
+    <nav class="crumbs" aria-label="Ruta"><ol><li><a href="index.html">Inicio</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li aria-current="page">Ayuda</li></ol></nav>
     <h1>¿Cómo te ayudamos?</h1>
     <p class="a-lede">Elige un tema abajo, o pregúntanos. Te contesta una persona, no un menú.</p>
 

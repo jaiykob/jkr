@@ -949,3 +949,17 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 .faq-list details > p { padding: 0 22px 22px; font-size: 1rem; line-height: 1.75; color: var(--txm); }
 .faq-list details > p a { color: var(--dtan); font-weight: 600; text-decoration: underline; text-decoration-color: var(--bdrt); text-underline-offset: 3px; }
 
+/* ── The breadcrumb (scripts/lib/crumbs.mjs) ─────────────────────────── */
+/* Every page below the homepage (round 9): Home › … › the page. Wraps on a phone; each link is a 48px
+   tap; the › is drawn for the eye and hidden from screen readers. */
+.crumbs { font-size: 1rem; line-height: 1.4; margin: 0 0 12px; }
+.crumbs ol { list-style: none; display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; }
+.crumbs li { display: inline-flex; align-items: center; min-width: 0; color: var(--txm); }
+.crumbs a {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px;
+  color: var(--dtan); font-weight: 700; text-decoration: underline; text-decoration-color: var(--tan);
+  text-decoration-thickness: 2px; text-underline-offset: 4px;
+}
+.crumbs a:hover { color: var(--rg); }
+.crumbs-sep { flex: none; margin: 0 10px; color: var(--txd); }
+.crumbs [aria-current] { font-weight: 600; color: var(--rg); }

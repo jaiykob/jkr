@@ -6,20 +6,6 @@
    list. Every line of text 16px or more, every tap 48px or more. Tokens come
    from css/site.css. */
 
-/* ── The breadcrumb (scripts/lib/crumbs.mjs) ─────────────────────────── */
-/* Home › Portland metro › the page. Wraps on a phone; each link is a 48px
-   tap; the › is drawn for the eye and hidden from screen readers. */
-.crumbs { font-size: 1rem; line-height: 1.4; margin: 0 0 12px; }
-.crumbs ol { list-style: none; display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; }
-.crumbs li { display: inline-flex; align-items: center; min-width: 0; color: var(--txm); }
-.crumbs a {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px;
-  color: var(--dtan); font-weight: 700; text-decoration: underline; text-decoration-color: var(--tan);
-  text-decoration-thickness: 2px; text-underline-offset: 4px;
-}
-.crumbs a:hover { color: var(--rg); }
-.crumbs-sep { flex: none; margin: 0 10px; color: var(--txd); }
-.crumbs [aria-current] { font-weight: 600; color: var(--rg); }
 
 /* ── The hero ──────────────────────────────────────────────────────────── */
 /* The homepage hero in one column: the trail, the eyebrow, the headline,

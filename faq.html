@@ -192,6 +192,28 @@
   <script src="js/site.js" defer></script>
   <script src="js/analytics.js" defer></script>
   <script src="js/maintenance-banner.js" defer></script>
+  <!-- BUILD:crumbs-ld -->
+  <script type="application/ld+json">
+  {
+    "@type": "BreadcrumbList",
+    "@id": "https://www.example.com/faq.html#breadcrumb",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.example.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Help",
+        "item": "https://www.example.com/faq.html"
+      }
+    ]
+  }
+  </script>
+  <!-- /BUILD:crumbs-ld -->
 </head>
 <body>
 <!-- BUILD:site-header -->
@@ -224,7 +246,7 @@
 
 <main id="main">
   <article class="article">
-    <nav class="trail" aria-label="Breadcrumb"><ol><li><a href="index.html">Home</a></li><li><span aria-current="page">FAQ</span></li></ol></nav>
+    <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="index.html">Home</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li aria-current="page">Help</li></ol></nav>
     <h1>How can we help?</h1>
     <p class="a-lede">Pick a topic below, or ask us. A person answers, not a menu.</p>
 

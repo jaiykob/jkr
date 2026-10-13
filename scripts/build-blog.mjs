@@ -33,6 +33,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import site from '../api/_lib/site.js';
+import { crumbs } from './lib/crumbs.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const eol = (s) => s.replace(/\r\n/g, '\n');
@@ -104,7 +105,7 @@ const words = (md) => md.replace(/[#*[\]()]/g, ' ').split(/\s+/).filter(Boolean)
 const absUrl = (rel) => `${site.SITE_URL}/${rel.replace(/(^|\/)index\.html$/, '$1')}`;
 const fmtDate = (d, loc) => new Date(`${d}T12:00:00Z`).toLocaleDateString(loc, { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 
-function head({ title, desc, rel, lang, enRel, esRel, card, ld }) {
+function head({ title, desc, rel, lang, enRel, esRel, card, ld, crumbLd = null }) {
   const up = '../'.repeat(rel.split('/').length - 1);
   return [
     '<!DOCTYPE html>',
@@ -131,6 +132,7 @@ function head({ title, desc, rel, lang, enRel, esRel, card, ld }) {
     '  <meta name="twitter:card" content="summary_large_image" />',
     '  <meta name="theme-color" content="#15171A" />',
     ...(ld ? ['  <script type="application/ld+json">', JSON.stringify(ld, null, 2).replace(/^/gm, '  '), '  </script>'] : []),
+    ...(crumbLd ? ['  <script type="application/ld+json">', JSON.stringify(crumbLd, null, 2).replace(/^/gm, '  '), '  </script>'] : []),
     '  <style>',
     `    @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(${up}fonts/dm-sans.woff2) format('woff2'); }`,
     `    @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(${up}fonts/bricolage.woff2) format('woff2'); }`,
@@ -174,11 +176,11 @@ export function postPage(p, twin) {
     author: { '@type': 'Organization', '@id': `${site.SITE_URL}/#business`, name: site.NAME },
     publisher: { '@type': 'Organization', '@id': `${site.SITE_URL}/#business`, name: site.NAME },
   };
-  const homeHref = p.lang === 'es' ? `${up}es/index.html` : `${up}index.html`;
+  const trail = crumbs([{ name: t.blog, href: `${t.dir}/index.html` }, { name: p.title }], { rel, lang: p.lang });
   return [
-    head({ title: `${p.title} | ${site.NAME}`, desc: p.description, rel, lang: p.lang, enRel, esRel, card, ld }),
+    head({ title: `${p.title} | ${site.NAME}`, desc: p.description, rel, lang: p.lang, enRel, esRel, card, ld, crumbLd: trail.ld }),
     '  <article class="article post">',
-    `    <nav class="trail" aria-label="Breadcrumb"><ol><li><a href="${homeHref}">${t.home}</a></li><li><a href="index.html">${t.blog}</a></li><li><span aria-current="page">${esc(p.title)}</span></li></ol></nav>`,
+    `    ${trail.html}`,
     `    <h1>${esc(p.title)}</h1>`,
     `    <p class="post-meta"><time datetime="${p.date}">${fmtDate(p.date, t.dateFmt)}</time> · ${t.read(Math.max(2, Math.round(words(p.body) / 220)))}</p>`,
     renderMd(p.body, up).replace(/^/gm, '    '),
@@ -203,9 +205,9 @@ export function indexPage(lang, posts, hasTwin) {
   const up = '../'.repeat(rel.split('/').length - 1);
   const card = lang === 'es' ? 'es-blog' : 'blog';
   return [
-    head({ title: t.indexTitle.replace('Brand Name', site.NAME), desc: t.indexDesc, rel, lang, enRel: hasTwin ? 'blog/index.html' : null, esRel: hasTwin ? 'es/blog/index.html' : null, card, ld: null }),
+    head({ title: t.indexTitle.replace('Brand Name', site.NAME), desc: t.indexDesc, rel, lang, enRel: hasTwin ? 'blog/index.html' : null, esRel: hasTwin ? 'es/blog/index.html' : null, card, ld: null, crumbLd: crumbs([{ name: t.blog }], { rel, lang }).ld }),
     '  <article class="article">',
-    `    <nav class="trail" aria-label="Breadcrumb"><ol><li><a href="${lang === 'es' ? `${up}es/index.html` : `${up}index.html`}">${t.home}</a></li><li><span aria-current="page">${t.blog}</span></li></ol></nav>`,
+    `    ${crumbs([{ name: t.blog }], { rel, lang }).html}`,
     `    <h1>${t.blogTitle}</h1>`,
     `    <p class="a-lede">${t.blogLede}</p>`,
     '    <ul class="post-list">',
