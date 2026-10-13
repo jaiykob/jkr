@@ -142,7 +142,7 @@ ok(page.includes('href="../blog/garage-cleanout-in-a-weekend.html"') && page.inc
 ok(page.includes('href="../book/quote.html#photos"') && page.includes('href="../book/quote.html"'), 'no Get my price or Send a photo');
 ok(page.includes('<span class="guess">a guess</span>') && page.includes('<span class="guess">a place we guess at</span>'), 'a [[guess]] is not red');
 const main = (page.match(/<main\b[^>]*>([\s\S]*?)<\/main>/) || [])[1] || '';
-ok(/class="svc-own"/.test(main) && /class="faq-list"/.test(main), 'no .svc-own or .faq-list in main');
+ok(/class="svc-own"/.test(main) && /class="[^"]*faq-list[^"]*"/.test(main), 'no .svc-own or .faq-list in main');
 ok((main.match(/<details>/g) || []).length === 3, 'the FAQ does not show three questions');
 ok(/<!-- BUILD:site-header -->[\s\S]*<!-- BUILD:site-sticky -->[\s\S]*<!-- BUILD:site-footer -->/.test(page), 'the shared header, sticky and footer markers are missing');
 const g = graph(page);
