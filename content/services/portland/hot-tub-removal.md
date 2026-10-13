@@ -30,7 +30,7 @@ A hot tub is several very different materials in one box, and each one goes its 
 - The motor, the pump, the heater and any steel frame go to a scrap metal recycler.
 - The acrylic or fiberglass shell, the foam insulation and the waterlogged cover go to a transfer station: [[Metro Central or Metro South]] for Oregon jobs, [[a Clark County transfer station]] for Washington.
 - A cedar skirt in good shape can go to [[wood recycling]]; painted or rotted panels ride along with the shell.
-- A tub that still runs and is fairly new may suit donation or resale, so tell us if yours works.
+- A tub that still runs and is fairly new may find a new owner, so tell us if yours works.
 
 The fee the transfer station charges for the shell is built into the load price, so the bill does not grow after we weigh in.
 

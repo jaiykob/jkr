@@ -1,7 +1,7 @@
 name: Mattress removal
-h1: Mattress removal in Portland, from the bedroom to recycling
-description: Mattress and box spring removal in Portland, Gresham, Tigard and nearby. We carry it out of the bedroom and take it to recycling. See your price first.
-lede: A mattress is floppy, heavy and hard to fit in a car. We carry it out of the bedroom, down the stairs and onto our truck, then take it to be recycled. Your price shows before you book.
+h1: Mattress removal in Portland, from the bedroom to the truck
+description: Mattress and box spring removal in Portland, Gresham, Tigard and nearby. We carry it out of the bedroom and haul it away. See your price first.
+lede: A mattress is floppy, heavy and hard to fit in a car. We carry it out of the bedroom, down the stairs and onto our truck, then send it to recycling wherever a program will take it. Your price shows before you book.
 sizes: single, quarter
 towns:
 - gresham: A mattress set out after a move is one of the calls we get most at home base.
@@ -29,9 +29,8 @@ A mattress and its box spring count as one item, so a whole bed set is a Single 
 ## Where it goes
 Most of a mattress can be used again once it is taken apart.
 
-- The steel springs go to scrap metal recycling.
-- The foam, cotton and fabric are [[separated at a mattress recycler and turned into carpet padding and other products]].
-- [[Oregon mattresses go through the state's mattress recycling program]]; [[Washington ones go to a Clark County transfer station]].
+- [[Oregon mattresses go through the state's mattress recycling program, where the steel springs go to scrap metal and the foam, cotton and fabric become carpet padding and other products.]]
+- [[Washington mattresses go to a Clark County transfer station.]]
 - Wooden and metal bed frames go to donation when they are sound, and to scrap or the transfer station when they are not.
 
 Used mattresses almost never go to donation. [[Most charities in the metro stopped taking them because of bedbug and hygiene rules.]]
@@ -44,11 +43,11 @@ Used mattresses almost never go to donation. [[Most charities in the metro stopp
 If none of those fit, or the mattress is upstairs and you would rather not wrestle it down, a pickup is the easy way.
 
 ## How the job goes
-Pick Single item for one bed, mattress and box spring together. For two or three beds, or a bed with its frame and a dresser, a 1/4 truck is usually the size; send a photo and we choose it for you.
+Pick Single item for one bed, mattress and box spring together. [[Two beds, or a bed with its frame and a dresser, usually fit a 1/4 truck.]] Send a photo and we choose the size for you.
 
 Strip the sheets and clear out whatever is under the bed. There is no need to bring anything downstairs: we carry it from the bedroom, with straps for the stairs and care for the walls at every turn. Pick a day and a two hour window, and watch for our text when we leave for your place.
 
-When we arrive, we look at the bed or beds with you and confirm the size. If there is more to haul than you booked, the new price comes first and the choice is yours; if there is less, we refund the difference. [[A single mattress pickup usually takes us about fifteen minutes.]]
+When we arrive, we look at the bed or beds with you and confirm the size. If there is more to haul than you booked, you see the new price first and we charge it only if you agree; if there is less, we refund the difference. [[A single mattress pickup usually takes us about fifteen minutes.]]
 
 ## FAQ
 Q: Does the box spring count as a second item?

@@ -47,7 +47,7 @@ If there is a deadline, like a landlord's inspection, a sale or a move into care
 ## How the job goes
 It starts with a quiet conversation. Call or text, or send a few photos, and tell us what you hope to get done and what has to stay. Nobody needs to explain how the home got this way.
 
-Most homes like this fill at least one full truck. For more than that, we plan a few visits on days that suit you, so it never has to happen all at once. [[We come in one truck with no large signs, park close to the door, and keep the work quiet.]]
+[[Most of these jobs fill at least one full truck.]] For more than that, we plan a few visits on days that suit you, so it never has to happen all at once. [[We come in one truck with no large signs, park close to the door, and keep the work quiet.]]
 
 On the day, we confirm the size with you before lifting, and anything beyond what you booked is charged only once you agree to its price. We work one room or one corner at a time, show you anything we are unsure about, and stop whenever you want to look through a box. [[Two or three of us]] come, and we sweep each space as it empties.
 
@@ -56,7 +56,7 @@ Q: Do I have to clean or sort before you come?
 A: No. Leave everything as it is. We sort as we go, and you only tell us what stays.
 
 Q: Will anyone else know about my house?
-A: No. What we see stays with us. [[We never post photos of a job]], and the before and after photos go only to you.
+A: Not from us. Your job photos are kept in private storage, and we do not sell your information. [[We never post photos of a job]], and the before and after photos are sent only to you.
 
 Q: Can we go slowly and keep some things?
 A: Yes. You set the pace and you decide what stays. We can split the work over several visits and stop any time you need a break.

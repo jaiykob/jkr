@@ -15,7 +15,7 @@ Q: Do you charge sales tax on Vancouver jobs?
 A: [[We are confirming how Washington sales tax applies to junk removal. Until then, the price you see is the price you pay.]]
 
 Q: Can you take a hot tub from a Vancouver backyard?
-A: Usually, yes. A hot tub is cut apart and carried out in pieces, which takes [[about two hours]]. Send photos of the tub and the path to the street so we can price it.
+A: Usually, yes. [[We cut a tub into pieces only when it cannot get through the gate whole, and most take about two hours.]] Send photos of the tub and the path to the street so we can price it.
 
 ## Local (es)
 Vancouver es la ciudad más grande de nuestro lado de Washington, y el puente de la I-205 deja su lado este más cerca de Gresham de lo que muchos creen. Fisher's Landing, Cascade Park y el corredor de Mill Plain caen en la Zona 2, mientras que el centro, Hazel Dell, Felida y Salmon Creek están en la Zona 3.
@@ -27,4 +27,4 @@ Q: ¿Cobran impuesto sobre la venta en los trabajos de Vancouver?
 A: [[Estamos confirmando cómo se aplica el impuesto sobre la venta de Washington al retiro de basura. Mientras tanto, el precio que ves es el precio que pagas.]]
 
 Q: ¿Pueden llevarse un jacuzzi de un patio en Vancouver?
-A: Casi siempre, sí. El jacuzzi se corta y se saca en pedazos, lo que toma [[unas dos horas]]. Manda fotos del jacuzzi y del camino hasta la calle para darte el precio.
+A: Casi siempre, sí. [[Cortamos el jacuzzi en pedazos solo si no pasa entero por el portón, y la mayoría toma unas dos horas.]] Manda fotos del jacuzzi y del camino hasta la calle para darte el precio.

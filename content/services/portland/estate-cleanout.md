@@ -40,7 +40,7 @@ Nothing can come back off a load once it has left the driveway, so we only carry
 Part of a home can leave without a paid haul, and it is worth starting there.
 
 - Family first. Give each person a set time to walk through and tag what they want.
-- An estate sale company sells the antiques, collections and good furniture and keeps a share of what sells, so nothing is paid up front. [[Many of them clear only what sells]], so plan for what remains.
+- An estate sale company sells the antiques, collections and good furniture and keeps a share of what sells. [[Many of them clear only what sells]], so plan for what remains.
 - [[Charities in the metro pick up furniture and household goods in good condition at no charge.]]
 - Neighbors and Buy Nothing groups are quick to take garden tools, canning jars and craft supplies.
 
