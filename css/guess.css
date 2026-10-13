@@ -6,10 +6,18 @@
    in GUESSES.md. Prices and fees are marked by flags in pricing.config.mjs
    (GUESS), so setting a flag to false and rebuilding clears them.
 
-   Red that reads on both page colors: #C62828 is 5.3:1 on the cream page and
-   5.6:1 on white; #FF8A80 is 7.5:1 on the charcoal bands. */
-.guess { color: #C62828; }
-.guess::after { content: "*"; font-weight: 700; margin-left: 1px; }
-.band.is-dark .guess, .h-contact .guess, .on-dark .guess { color: #FF8A80; }
-/* White cards on a charcoal band (the size cards) take the light page red again. */
-.band.is-dark .size-card .guess { color: #C62828; }
+   Founder 2026-10-13: the red was "kinda jarring". So a guess now reads like the
+   text around it, with a small faint asterisk. To review them, add ?guesses to
+   any address: every guess turns red again for the rest of the visit (js/site.js,
+   js/guesses.js on the booking pages), and ?guesses=0 turns it off.
+
+   The review red reads on every page color: #C62828 is 5.6:1 on white; #FF8A80
+   is 7.5:1 on the black bands. */
+.guess { color: inherit; }
+.guess::after { content: "*"; margin-left: 1px; font-size: .7em; font-weight: 600; line-height: 0; vertical-align: super; opacity: .5; }
+
+html.show-guesses .guess { color: #C62828; }
+html.show-guesses .guess::after { font-size: 1em; font-weight: 700; vertical-align: baseline; opacity: 1; }
+html.show-guesses .band.is-dark .guess, html.show-guesses .h-contact .guess, html.show-guesses .on-dark .guess { color: #FF8A80; }
+/* White cards on a black band (the size cards) take the light page red again. */
+html.show-guesses .band.is-dark .size-card .guess { color: #C62828; }

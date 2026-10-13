@@ -33,7 +33,7 @@
 .p-from-unit { margin-left: 8px; font: 500 18px/1 var(--font); letter-spacing: 0; color: rgba(255,255,255,.6); }
 .p-from-good { margin: 0 0 22px; padding-bottom: 22px; border-bottom: 1px solid rgba(255,255,255,.12); font-weight: 500; color: var(--yellow); }
 .p-from-note { margin: 0; color: rgba(255,255,255,.72); }
-.p-from .guess, .p-total .guess, .p-wide .guess, .p-zone[aria-checked="true"] .guess { color: #FF8A80; }
+html.show-guesses .p-from .guess, html.show-guesses .p-total .guess, html.show-guesses .p-wide .guess, html.show-guesses .p-zone[aria-checked="true"] .guess { color: #FF8A80; }
 
 /* ── the breadcrumb strip under the hero ── */
 .p-crumbs { background: var(--page); border-bottom: 1px solid var(--bdr); }

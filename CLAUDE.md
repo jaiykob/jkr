@@ -24,10 +24,11 @@ Clark County, WA included, priced by travel zone.
   to 40 now); apply at the pricing review (`ZONES` in `pricing.config.mjs`,
   then delete the town files the build names).
 
-## Guesses are red
+## Guesses are marked
 
-The founder's rule: anything not yet known is guessed, shown red with an
-asterisk (`class="guess"`, `css/guess.css`) and listed in `GUESSES.md`
+The founder's rule: anything not yet known is guessed, marked with a small
+asterisk (`class="guess"`, `css/guess.css`; red was "kinda jarring", 2026-10-13;
+add `?guesses` to an address to see them all red for a review) and listed in `GUESSES.md`
 (`npm run guesses`; `npm test` fails if stale). Whole tables are flagged in
 `GUESS` in `pricing.config.mjs`; anything else gets a `GUESS*` comment.
 Placeholders to replace: "example.com", `pk_test_REPLACE_ME`,
