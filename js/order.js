@@ -126,12 +126,13 @@
 
   /* ── the steps: one page each ────────────────────────────────────────── */
   // Each step's page (its section).
-  // Copied from Scoops Co.'s flow: the questions, View quote, your quote, Continue to
-  // payment, the payment, then the booking page (thanks.html).
-  var SEC = { size: 'o-size', day: 'o-day', time: 'o-time', contact: 'o-you', quote: 'o-quote', book: 'o-pay' };
-  var STEPS = ['size', 'day', 'time', 'contact', 'quote', 'book'];
-  // What Next says on each page (Scoops Co.: View quote, then Continue to payment).
-  var NEXT_LABEL = { contact: 'View quote', quote: 'Continue to payment' };
+  // Four pages (founder 2026-10-13: "maximum 4 pages in which to input information"):
+  // the size, when (day and time), contact information, then checkout (your price and
+  // the payment), then the booking page (thanks.html).
+  var SEC = { size: 'o-size', when: 'o-when', contact: 'o-you', book: 'o-pay' };
+  var STEPS = ['size', 'when', 'contact', 'book'];
+  // What Next says on each page (Scoops Co.: View quote).
+  var NEXT_LABEL = { contact: 'View quote' };
   var STEP_OF = {};
   STEPS.forEach(function (s) { STEP_OF[SEC[s]] = s; });
   var step = null;          // the step on screen
@@ -141,16 +142,14 @@
   var BASE_TITLE = document.title;
   function stepDone(s) {
     if (s === 'size') return state.size != null;
-    if (s === 'day') { var d = dayOf(state.date); return !!(d && !d.full); }
-    if (s === 'time') return !!(state.date && state.window && windowFree(state.date, state.window));
+    if (s === 'when') { var d = dayOf(state.date); return !!(d && !d.full && state.window && windowFree(state.date, state.window)); }
     if (s === 'contact') return !!state.trip && !firstBadField();
-    if (s === 'quote') return stepDone('contact');   // a page to read: done once there is a quote
-    return false;   // the payment page is never "done" on its own: Book finishes it
+    return false;   // the checkout page is never "done" on its own: Book finishes it
   }
   /* The first step still to do (Book once the rest are done). */
   function firstToDo() {
-    for (var i = 0; i < STEPS.length; i++) if (STEPS[i] === 'quote' || !stepDone(STEPS[i])) return STEPS[i];
-    return 'quote';
+    for (var i = 0; i < STEPS.length; i++) if (!stepDone(STEPS[i])) return STEPS[i];
+    return 'book';
   }
   /* A step can be shown once every step before it is done. */
   function reachable(s) {
@@ -219,16 +218,14 @@
     $('o-next').setAttribute('aria-disabled', String(!stepDone(step)));
     $('o-next').textContent = NEXT_LABEL[step] || 'Next';
   }
-  /* The page after this one: the next one still to do (a ZIP always shows its days,
-     and a day its times, so a change there is never passed over). */
+  /* The page after this one: the next one still to do. */
   function after(s) {
     var i = STEPS.indexOf(s);
-    if (s === 'day') return 'time';
-    for (var k = i + 1; k < STEPS.length; k++) if (STEPS[k] === 'quote' || STEPS[k] === 'book' || !stepDone(STEPS[k])) return STEPS[k];
+    for (var k = i + 1; k < STEPS.length; k++) if (STEPS[k] === 'book' || !stepDone(STEPS[k])) return STEPS[k];
     return 'book';
   }
   /* What a page says when Next is tapped before it is answered. */
-  var UNANSWERED = { size: 'Pick a size to go on.', day: 'Pick a day to go on.', time: 'Pick an arrival time to go on.' };
+  var UNANSWERED = { size: 'Pick a size to go on.', day: 'Pick a day to go on.', when: 'Pick an arrival time to go on.' };
   /* Next (or Enter): this page's answer is checked, then on to the page after it. */
   function nextFrom(s) {
     if (s !== step) return;
@@ -243,8 +240,10 @@
       Object.keys(FIELDS).forEach(function (k) { if (fieldError(k, true) && !bad) bad = k; });
       if (bad) { say(FIELDS[bad].err.textContent); FIELDS[bad].el.focus({ preventScroll: true }); track('order_missing', { step: s }); return; }
     } else if (!stepDone(s)) {
-      var m = $({ size: 'o-size-msg', day: 'o-day-msg', time: 'o-when-msg' }[s]);
-      if (m) { m.textContent = UNANSWERED[s]; m.className = 'o-msg is-err'; say(m.textContent); }
+      // On When: no day yet asks for the day, else for the time.
+      var k = s === 'when' && !dayOf(state.date) ? 'day' : s;
+      var m = $({ size: 'o-size-msg', day: 'o-day-msg', when: 'o-when-msg' }[k]);
+      if (m) { m.textContent = UNANSWERED[k]; m.className = 'o-msg is-err'; say(m.textContent); }
       track('order_missing', { step: s });
       return;
     }
@@ -530,8 +529,9 @@
     if (days.every(function (d) { return d.full; })) { dayMsg.textContent = 'Every day we show is full. Call or text us and we will find a time.'; dayMsg.className = 'o-msg is-err'; }
     else if (dayMsg.classList.contains('is-err') && dayOf(state.date)) { dayMsg.textContent = ''; dayMsg.className = 'o-msg'; }
     var day = dayOf(state.date);
-    // The Time page names its day in the question.
-    $('o-time-h').textContent = day ? 'What time on ' + day.label + '?' : 'What time should we arrive?';
+    // The times show under the days once a day is picked, and name that day.
+    $('o-wins-box').hidden = !day;
+    $('o-wins-day').textContent = day ? ' on ' + day.label : '';
     if (!day) return;
     day.windows.forEach(function (w) {
       var full = day.full || w.full;
@@ -560,6 +560,9 @@
     }
     var m = $('o-day-msg'); m.textContent = ''; m.className = 'o-msg';
     drawWhen(); render();
+    // The times are under the days: on a phone they come into view.
+    var box = $('o-wins-box'), r = box.getBoundingClientRect();
+    if (!box.hidden && r.bottom > window.innerHeight) box.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: 'end' });
   });
   $('o-wins').addEventListener('click', function (e) {
     var b = e.target.closest('[data-window]');
@@ -613,15 +616,15 @@
   /* The first thing still missing, in page order: [section, message, element to focus]. */
   function missing() {
     if (state.size == null) return ['o-size', 'Pick a size first.', document.querySelector('#o-sizes .size-card')];
-    if (!state.date || !dayOf(state.date)) return ['o-day', 'Pick a day.', document.querySelector('#o-days [data-date]:not([aria-disabled="true"])')];
-    if (!state.window || !windowFree(state.date, state.window)) return ['o-time', 'Pick an arrival window.', document.querySelector('#o-wins [data-window]:not([aria-disabled="true"])')];
+    if (!state.date || !dayOf(state.date)) return ['o-when', 'Pick a day.', document.querySelector('#o-days [data-date]:not([aria-disabled="true"])'), 'o-day-msg'];
+    if (!state.window || !windowFree(state.date, state.window)) return ['o-when', 'Pick an arrival window.', document.querySelector('#o-wins [data-window]:not([aria-disabled="true"])'), 'o-when-msg'];
     if (!state.trip) return ['o-you', state.zip.length === 5 ? 'We do not price that ZIP online. Call or text us for a price.' : 'Enter the ZIP code of the job.', zipIn];
     var keys = Object.keys(FIELDS);
     for (var i = 0; i < keys.length; i++) if (fieldError(keys[i], true)) return ['o-you', FIELDS[keys[i]].err.textContent, FIELDS[keys[i]].el];
     return null;
   }
   function guide(m) {
-    var sec = $(m[0]), msgEl = m[2] === zipIn ? zipMsg : { 'o-size': $('o-size-msg'), 'o-day': $('o-day-msg'), 'o-time': $('o-when-msg') }[m[0]];
+    var sec = $(m[0]), msgEl = m[2] === zipIn ? zipMsg : m[3] ? $(m[3]) : m[0] === 'o-size' ? $('o-size-msg') : null;
     // The page with the missing piece comes back on screen first.
     if (STEP_OF[m[0]] !== step) go(STEP_OF[m[0]]);
     if (msgEl) { msgEl.textContent = m[1]; msgEl.className = 'o-msg is-err'; }
@@ -929,14 +932,14 @@
       markRefused(days);
       state.window = null;
       refreshDays();
-      return { where: 'o-time', text: 'That arrival window just filled up. Pick another one.' };
+      return { where: 'o-when', msg: 'o-when-msg', text: 'That arrival window just filled up. Pick another one.' };
     }
     if (code === 'closed_day') {
       days = (days || []).filter(function (d) { return d.date !== state.date; });
       settleDay();
       state.window = null;
       refreshDays();
-      return { where: 'o-day', text: 'We are not booking that day any more. Pick another day.' };
+      return { where: 'o-when', msg: 'o-day-msg', text: 'We are not booking that day any more. Pick another day.' };
     }
     if (code === 'outside_area') return { where: 'o-you', text: 'We do not book that address online. Please ' + CALL_US + ' for a price.' };
     if (code === 'consent_required') return consentBox.checked ? { where: 'pay', text: 'This page is out of date. Reload it, then book again.' } : { where: 'consent' };
@@ -946,11 +949,11 @@
   function showFailure(f) {
     drawWhen(); render();   // a refused window or day, or a new price, shows at once
     if (f.where === 'consent') { needConsent(); return; }
-    // A refused window goes back to the Time page, a refused day to Day, an address
-    // outside the area to Where.
+    // A refused window or day goes back to the When page, an address outside the
+    // area to Contact.
     var page = STEP_OF[f.where];
     if (page) go(page);
-    var at = f.where === 'card' ? $('o-card-err') : ({ 'o-time': $('o-when-msg'), 'o-day': $('o-day-msg'), 'o-you': zipMsg })[f.where] || $('o-pay-msg');
+    var at = f.where === 'card' ? $('o-card-err') : f.msg ? $(f.msg) : f.where === 'o-you' ? zipMsg : $('o-pay-msg');
     if (f.where === 'card') cardErr(f.text);
     else if (at === $('o-pay-msg')) payMsg(f.text, f.kind || 'err');
     else { at.textContent = f.text; at.className = 'o-msg is-err'; }
@@ -975,7 +978,8 @@
   document.querySelectorAll('[data-o="refusal-fee"]').forEach(function (n) { fill(n, [guessy(fmt(P.refusalFeeCents), !!G.policy)]); });
   // One story: bookings open shows the pay wording, closed the reserve wording.
   document.querySelectorAll('[data-mode]').forEach(function (n) { n.hidden = n.getAttribute('data-mode') !== (OPEN ? 'pay' : 'reserve'); });
-  $('o-pay-h').textContent = OPEN ? 'Pay and book' : 'Reserve your day';
+  // The label over the payment part says what Book does.
+  $('o-pay-sub').textContent = OPEN ? 'Payment' : 'Reserve your day';
   // The refusal fee is printed only while there is one, so a fee is never kept that was not shown.
   document.querySelectorAll('[data-o="refusal"]').forEach(function (n) { n.hidden = !OPEN || !(P.refusalFeeCents > 0); });
   $('o-closed').hidden = OPEN;
@@ -998,8 +1002,9 @@
   state.window = saved.window || null;
   state.size = startSize;
   var arrived = location.hash.slice(1);
-  // Old links: the one When page, the ZIP page and the one entry pages before contact was one page.
-  arrived = { when: 'day', where: 'contact', name: 'contact', phone: 'contact', email: 'contact', address: 'contact' }[arrived] || arrived;
+  // Old links: the Day and Time pages, the ZIP page, the one entry pages before contact
+  // was one page, and the quote page before it joined the checkout.
+  arrived = { day: 'when', time: 'when', where: 'contact', name: 'contact', phone: 'contact', email: 'contact', address: 'contact', quote: 'book' }[arrived] || arrived;
   // The days come before the ZIP now (as Scoops Co. asks the ZIP on the contact page):
   // read them for our one market; a ZIP in another market reads its own.
   loadDays('portland');
@@ -1044,8 +1049,7 @@
     if (target === step) { history.go(dir); return; }
     go(st.orderStep, 'pop');
   });
-  // Change (on the Day, Time and Book pages) goes back to that page; on the Day page
-  // it goes to the ZIP with the box ready to type over.
+  // Edit (on the checkout page) goes back to that page.
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-go]');
     if (!b || b.disabled) return;

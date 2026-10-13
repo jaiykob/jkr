@@ -342,15 +342,15 @@
   <!-- Laid out like Scoops Co.'s quote (founder 2026-10-13: "scoops co booking flow
        is perfect", "designed beautifully", "needs to be like that"): one centered
        column. Copied from Scoops Co.'s flow (founder: "i said to copy scoops co"):
-       the questions a page each (#size, #day, #time, then #contact with the ZIP
-       first, "Step N of 4"), View quote, your quote (#quote), Continue to
-       payment, the payment (#book), then the booking page (thanks.html). Back
-       and Next under each. THE PROGRESS BAR ("the progress bar should be dynamic and
+       four pages (founder: "maximum 4 pages in which to input information"):
+       #size, #when (day and time), #contact (the ZIP first; View quote), #book
+       (your price, your details and the payment), then the booking page
+       (thanks.html). Back and Next under each. THE PROGRESS BAR ("the progress bar should be dynamic and
        filled") is one bar across the top that fills as the pages go by.
        js/order.js keeps one state object; js/size-cards.js runs the cards. -->
   <div class="o-shell">
     <h1 class="sr-only">Book a junk pickup</h1>
-    <div class="o-progress" id="o-progress" role="progressbar" aria-label="Booking progress" aria-valuemin="1" aria-valuemax="6" aria-valuenow="1" aria-valuetext="Step 1 of 6"><span id="o-progress-fill"></span></div>
+    <div class="o-progress" id="o-progress" role="progressbar" aria-label="Booking progress" aria-valuemin="1" aria-valuemax="4" aria-valuenow="1" aria-valuetext="Step 1 of 4"><span id="o-progress-fill"></span></div>
     <p class="sr-only" aria-live="polite" id="o-live"></p>
     <form id="order" class="o-form" novalidate>
 
@@ -413,22 +413,20 @@
         </div>
       </section>
 
-      <!-- The day, then the arrival window, a page each (founder 2026-10-13: "split
-           to two pages"). The Day page says where the job is; the Time page says
-           which day. -->
-      <section id="o-day" class="o-sec" data-step="day" hidden aria-labelledby="o-day-h">
-        <div class="o-sec-head"><p class="o-pill">Step 2 of 4</p><h2 id="o-day-h" tabindex="-1">What day works for you?</h2></div>
+      <!-- When: the day, then its 2 hour arrival windows, on one page (founder
+           2026-10-13: at most 4 pages that ask for something). The times show
+           once a day is picked. -->
+      <section id="o-when" class="o-sec" data-step="when" hidden aria-labelledby="o-when-h">
+        <div class="o-sec-head"><p class="o-pill">Step 2 of 4</p><h2 id="o-when-h" tabindex="-1">When should we come?</h2></div>
         <div class="o-sec-body">
-          <div class="o-days" id="o-days" role="group" aria-labelledby="o-day-h"></div>
+          <p class="o-sub" id="o-days-h">Pick a day</p>
+          <div class="o-days" id="o-days" role="group" aria-labelledby="o-days-h"></div>
           <p class="o-msg" id="o-day-msg" aria-live="polite"></p>
-        </div>
-      </section>
-
-      <section id="o-time" class="o-sec" data-step="time" hidden aria-labelledby="o-time-h">
-        <div class="o-sec-head"><p class="o-pill">Step 3 of 4</p><h2 id="o-time-h" tabindex="-1">What time should we arrive?</h2></div>
-        <div class="o-sec-body">
-          <p class="o-help">We arrive within this 2 hour window and text you when we are on the way.</p>
-          <div class="o-wins" id="o-wins" role="group" aria-labelledby="o-time-h"></div>
+          <div class="o-wins-box" id="o-wins-box" hidden>
+            <p class="o-sub" id="o-wins-h">Arrival time<span id="o-wins-day"></span></p>
+            <p class="o-help">We arrive within this 2 hour window and text you when we are on the way.</p>
+            <div class="o-wins" id="o-wins" role="group" aria-labelledby="o-wins-h"></div>
+          </div>
           <p class="o-msg" id="o-when-msg" aria-live="polite"></p>
         </div>
       </section>
@@ -438,7 +436,7 @@
            then the right autocomplete values, so one autofill tap fills the rest.
            Its button reads View quote. -->
       <section id="o-you" class="o-sec" data-step="contact" hidden aria-labelledby="o-you-h">
-        <div class="o-sec-head"><p class="o-pill">Step 4 of 4</p><h2 id="o-you-h" tabindex="-1">Contact information</h2></div>
+        <div class="o-sec-head"><p class="o-pill">Step 3 of 4</p><h2 id="o-you-h" tabindex="-1">Contact information</h2></div>
         <div class="o-sec-body">
           <p class="o-help">Start with your ZIP so we can confirm we serve it. Your quote is on the next screen.</p>
           <div class="o-fields">
@@ -497,13 +495,14 @@
         </div>
       </section>
 
-      <!-- Your quote, as on Scoops Co.'s quote page: thanks by name, the price and
-           what it covers, the contact details with Edit, then Continue to payment.
-           js/order.js fills it. -->
-      <section id="o-quote" class="o-sec" data-step="quote" hidden aria-labelledby="o-quote-h">
-        <div class="o-sec-head"><p class="o-pill">Summary</p><h2 id="o-quote-h" tabindex="-1">Thanks, <span id="o-q-first">there</span>! Here is your price.</h2></div>
+      <!-- Checkout: your price and your details, as on Scoops Co.'s quote page
+           (Edit goes back), then the payment on the same page (founder 2026-10-13:
+           at most 4 pages). The total is paid now, before the crew goes out (founder
+           2026-10-10 and 2026-10-13: "we take payments before we go out"). Then the
+           booking page (thanks.html). js/order.js fills it. -->
+      <section id="o-pay" class="o-sec" data-step="book" hidden aria-labelledby="o-pay-h">
+        <div class="o-sec-head"><p class="o-pill">Step 4 of 4</p><h2 id="o-pay-h" tabindex="-1">Thanks, <span id="o-q-first">there</span>! Here is your price.</h2></div>
         <div class="o-sec-body">
-          <p class="o-help">No waiting, no surprises. If the price works for you, continue to payment. Before loading, the crew checks the size with you.</p>
           <div class="o-qcard">
             <p class="o-qcard-k">Your price</p>
             <p class="o-qcard-sub">One time haul, loading and sweep up included</p>
@@ -523,16 +522,7 @@
               <div><dt>Address</dt><dd id="o-q-address"></dd></div>
             </dl>
           </div>
-          <p class="o-secure-note"><svg aria-hidden="true"><use href="#i-lock"/></svg>Secure checkout powered by Stripe. Nothing is charged until you confirm on the next screen.</p>
-        </div>
-      </section>
-
-      <!-- Payment: the total is paid now, before the crew goes out (founder
-           2026-10-10 and 2026-10-13: "we take payments before we go out"). Then
-           the booking page (thanks.html). -->
-      <section id="o-pay" class="o-sec" data-step="book" hidden aria-labelledby="o-pay-h">
-        <div class="o-sec-head"><p class="o-pill">Checkout</p><h2 id="o-pay-h" tabindex="-1">Payment</h2></div>
-        <div class="o-sec-body">
+          <p class="o-sub o-pay-sub" id="o-pay-sub">Payment</p>
           <!-- The rule in plain words, beside Book (pay at booking, founder
                2026-10-10). The total, the cancel hours and the fees are filled
                in from window.ORDER (red while guessed). Bookings open shows the
