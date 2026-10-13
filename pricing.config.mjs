@@ -57,11 +57,11 @@ export const PRICE_TABLE = [
  * "6+ dogs").
  */
 export const LOADS = {
-  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance', fits: 15, photo: '/images/placeholder.svg' },
-  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner',     fits: 25, photo: '/images/placeholder.svg' },
-  half:    { label: '1/2 truck',    note: 'A small room or a garage corner',   fits: 50, photo: '/images/placeholder.svg' },
-  three:   { label: '3/4 truck',    note: 'A full room or a small garage',     fits: 75, photo: '/images/placeholder.svg' },
-  full:    { label: 'Full truck',   note: 'A garage, basement or estate',      fits: 100, photo: '/images/placeholder.svg' },
+  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance', fits: 15, photo: '/images/photos/size-single-480.jpg' },
+  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner',     fits: 25, photo: '/images/photos/size-quarter-480.jpg' },
+  half:    { label: '1/2 truck',    note: 'A small room or a garage corner',   fits: 50, photo: '/images/photos/size-half-480.jpg' },
+  three:   { label: '3/4 truck',    note: 'A full room or a small garage',     fits: 75, photo: '/images/photos/size-three-480.jpg' },
+  full:    { label: 'Full truck',   note: 'A garage, basement or estate',      fits: 100, photo: '/images/photos/size-full-480.jpg' },
 };
 
 /**

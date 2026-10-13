@@ -11,6 +11,7 @@ towns:
 - washougal: Appliance pickups are a regular call here, along with storm debris from the Gorge wind.
 - scappoose: In town homes, with appliance pickups grouped on set days because of the drive.
 posts: fridge-and-freezer-disposal, where-hauled-junk-goes, what-junk-haulers-cant-take
+photo: An old washing machine set out beside the bins
 
 ## What we take
 Large or small, working or broken.

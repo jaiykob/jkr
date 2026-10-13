@@ -12,6 +12,7 @@ towns:
 - oregon-city: Century old houses near the falls, with attics and cellars to empty along with the rooms.
 - aurora: Long held properties, where the barn and the attic have to be emptied as well.
 posts: estate-cleanout, where-hauled-junk-goes, what-junk-removal-costs
+photo: Two movers carrying a sofa down a staircase
 
 ## What we take
 Everything that remains once the family has chosen what to keep. We clear a home from top to bottom: attic, bedrooms, kitchen, basement, garage and shed.

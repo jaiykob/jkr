@@ -11,6 +11,7 @@ towns:
 - camas: Hilly streets where your photos help us choose a spot for the truck before the day.
 - damascus: Long gravel drives, which we take the truck down so it can load close to the tub.
 posts: where-hauled-junk-goes, what-junk-removal-costs, junk-removal-or-dumpster
+photo: A man loading a large piece into the back of a van
 
 ## What we take
 We take the whole setup, not only the shell.

@@ -12,6 +12,7 @@ towns:
 - clackamas: Apartment move outs and storage units near the Town Center.
 - beaverton: Apartment communities with tight loading areas, so tell us where the truck can stop.
 posts: mattress-disposal, clearing-a-rental-between-tenants, where-hauled-junk-goes
+photo: A man carrying a mattress over his head down a sidewalk
 
 ## What we take
 Every kind of bed, in every size from a crib to a California king.
