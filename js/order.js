@@ -1,15 +1,17 @@
 /* The order page (book/quote.html): size, ZIP, day and window, contact, pay.
 
-   Four step pages, one at a time (round 8, founder: "each have their own
-   page with progress bar at top", "minimize clicks at all costs"): Size
-   (#size), Where (#where), When (#when), and Book (#book: the contact and
-   pay sections together). A step moves on by itself once it is done (a size
-   tap, the fifth digit of a ZIP we serve, an arrival time tap), so there is
-   no Continue button; steps already done are skipped on arrival (a homepage
-   size card, a ZIP typed earlier). Each step has its own hash in the history,
-   so the phone's Back button goes to the step before; the progress bar at
-   the top shows where you are. One state object holds the order; render()
-   redraws the page from it.
+   Eight step pages, one question each (round 8 made the pages, founder:
+   "each have their own page with progress bar at top", "minimize clicks at
+   all costs"; 2026-10-13: "one piece of info per page"): Size (#size), Where
+   (#where), When (#when), Name (#name), Phone (#phone), Email (#email),
+   Address (#address), and Book (#book: the answers read back, then pay). A
+   tap page moves on by itself once it is done (a size tap, the fifth digit
+   of a ZIP we serve, an arrival time tap, the last digit of a phone number);
+   a typed page moves on with Next or Enter. Steps already done are skipped
+   (a homepage size card, a ZIP typed earlier, details kept in this tab).
+   Each step has its own hash in the history, so the phone's Back button goes
+   to the step before; the progress bar at the top shows where you are. One
+   state object holds the order; render() redraws the page from it.
 
    Everything it knows comes from generated modules, so this file types no
    price, window or fee:
@@ -105,13 +107,16 @@
   var winOf = function (date, key) { var d = dayOf(date); return d ? d.windows.filter(function (w) { return w.key === key; })[0] || null : null; };
   var windowFree = function (date, key) { var d = dayOf(date), w = winOf(date, key); return !!(d && w && !d.full && !w.full); };
 
-  /* ── contact fields: checked when the customer leaves one, cleared on the next keystroke ── */
+  /* ── contact fields, one page each: checked when the customer leaves one or
+     taps Next, cleared on the next keystroke ── */
   var FIELDS = {
-    name:   { el: $('o-name'),   err: $('o-name-err'),   check: function (v) { return v.trim().length >= 2 ? '' : 'Enter your name.'; } },
-    phone:  { el: $('o-phone'),  err: $('o-phone-err'),  check: function (v) { return v.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '').length === 10 ? '' : 'Enter a 10 digit phone number.'; } },
-    email:  { el: $('o-email'),  err: $('o-email-err'),  check: function (v) { return EMAIL_RE.test(v.trim()) ? '' : 'Enter an email like you@example.com.'; } },
-    street: { el: $('o-street'), err: $('o-street-err'), check: function (v) { return v.trim().length >= 4 ? '' : 'Enter the street address for the job.'; } },
+    name:   { step: 'name',    el: $('o-name'),   err: $('o-name-err'),   check: function (v) { return v.trim().length >= 2 ? '' : 'Enter your name.'; } },
+    phone:  { step: 'phone',   el: $('o-phone'),  err: $('o-phone-err'),  check: function (v) { return v.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '').length === 10 ? '' : 'Enter a 10 digit phone number.'; } },
+    email:  { step: 'email',   el: $('o-email'),  err: $('o-email-err'),  check: function (v) { return EMAIL_RE.test(v.trim()) ? '' : 'Enter an email like you@example.com.'; } },
+    street: { step: 'address', el: $('o-street'), err: $('o-street-err'), check: function (v) { return v.trim().length >= 4 ? '' : 'Enter the street address for the job.'; } },
   };
+  /* The box a typed page asks for (null on a page without one). */
+  var fieldFor = function (s) { return Object.keys(FIELDS).filter(function (k) { return FIELDS[k].step === s; })[0] || null; };
   var OPTIONAL = { unit: $('o-unit'), notes: $('o-notes') };
   function fieldError(key, show) {
     var f = FIELDS[key], msg = f.check(f.el.value);
@@ -120,22 +125,24 @@
   }
 
   /* ── the steps: one page each ────────────────────────────────────────── */
-  var SECTIONS = ['o-size', 'o-zip', 'o-when', 'o-you', 'o-pay'];
-  var STEPS = ['size', 'where', 'when', 'book'];
-  var STEP_OF = { 'o-size': 'size', 'o-zip': 'where', 'o-when': 'when', 'o-you': 'book', 'o-pay': 'book' };
+  // Each step's page (its section).
+  var SEC = { size: 'o-size', where: 'o-zip', when: 'o-when', name: 'o-you-name', phone: 'o-you-phone', email: 'o-you-email', address: 'o-you-addr', book: 'o-pay' };
+  var STEPS = ['size', 'where', 'when', 'name', 'phone', 'email', 'address', 'book'];
+  var STEP_OF = {};
+  STEPS.forEach(function (s) { STEP_OF[SEC[s]] = s; });
   var step = null;          // the step on screen
   // This page's own history entries: each carries its step and its place (i), so a
   // Back or Forward knows which way it went, and trail[i] is the step written there.
   var hist = 0, trail = [], lastDir = -1;
   var BASE_TITLE = document.title;
-  function done(id) {
-    if (id === 'o-size') return state.size != null;
-    if (id === 'o-zip') return !!state.trip;
-    if (id === 'o-when') return !!(state.date && state.window && windowFree(state.date, state.window));
-    if (id === 'o-you') return Object.keys(FIELDS).every(function (k) { return !FIELDS[k].check(FIELDS[k].el.value); });
-    return false;   // the pay step is never "done" on its own: Book finishes it
+  function stepDone(s) {
+    if (s === 'size') return state.size != null;
+    if (s === 'where') return !!state.trip;
+    if (s === 'when') return !!(state.date && state.window && windowFree(state.date, state.window));
+    var k = fieldFor(s);
+    if (k) return !FIELDS[k].check(FIELDS[k].el.value);
+    return false;   // the Pay page is never "done" on its own: Book finishes it
   }
-  var stepDone = function (s) { return s === 'size' ? done('o-size') : s === 'where' ? done('o-zip') : s === 'when' ? done('o-when') : false; };
   /* The first step still to do (Book once the rest are done). */
   function firstToDo() { for (var i = 0; i < STEPS.length; i++) if (!stepDone(STEPS[i])) return STEPS[i]; return 'book'; }
   /* A step can be shown once every step before it is done. */
@@ -152,19 +159,20 @@
      goes where the next keystroke goes. Its heading names the tab. */
   function go(s, how, focusId) {
     if (!reachable(s)) s = firstToDo();
-    var moved = s !== step;
+    var moved = s !== step, from = step;
     step = s;
     try {
       if (how === 'start' || how === 'replace' || (how === 'pop' && location.hash !== '#' + s)) { history.replaceState({ orderStep: s, i: hist }, '', '#' + s); trail[hist] = s; }
       else if (how !== 'pop' && moved) { hist++; trail.length = hist; trail[hist] = s; history.pushState({ orderStep: s, i: hist }, '', '#' + s); }
     } catch (e) { /* a page without history still shows the step */ }
     showStep();
+    if (moved && from && how !== 'start') slideIn($(SEC[s]), STEPS.indexOf(s) > STEPS.indexOf(from) ? 'is-fwd' : 'is-back');
     if (OPEN && s === 'book') mountPay();
     // The focus goes where the next keystroke goes, so nobody taps into a box: the ZIP
-    // box on Where (its ZIP selected, to type over), the first empty field on Book; else
-    // the page's heading. The step is said aloud, since the focus may skip the heading.
-    var heading = $(SECTIONS.filter(function (id) { return STEP_OF[id] === s; })[0] + '-h');
-    var typeHere = s === 'where' ? zipIn : s === 'book' ? Object.keys(FIELDS).map(function (k) { return FIELDS[k].el; }).filter(function (f) { return !f.value.trim(); })[0] : null;
+    // box on Where (its ZIP selected, to type over), the box on a typed page; else the
+    // page's heading. The step is said aloud, since the focus may skip the heading.
+    var heading = $(SEC[s] + '-h');
+    var typeHere = s === 'where' ? zipIn : fieldFor(s) ? FIELDS[fieldFor(s)].el : null;
     var put = function (el) { el.focus({ preventScroll: true }); if (el === zipIn && zipIn.value) try { zipIn.select(); } catch (e) { /* not selectable */ } };
     if (how === 'start') { if (typeHere) put(typeHere); return; }
     if (!moved && !focusId) return;
@@ -174,11 +182,19 @@
     if (target !== heading && heading) say('Step ' + (STEPS.indexOf(s) + 1) + ' of ' + STEPS.length + '. ' + heading.textContent.trim());
     track('order_step', { step: s, how: how || 'tap' });
   }
-  /* The step on screen: its sections, the progress bar, the tab title, Book. */
+  /* A page coming on screen slides in a little from the side it is on, so moving
+     on and going back read as such (none with reduced motion: css/order.css). */
+  function slideIn(sec, cls) {
+    sec.classList.remove('is-fwd', 'is-back');
+    void sec.offsetWidth;   // restart the animation
+    sec.classList.add(cls);
+  }
+  document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('o-sec')) e.target.classList.remove('is-fwd', 'is-back'); });
+  /* The step on screen: its section, the progress bar, the tab title, Book. */
   function showStep() {
     if (!step) return;
     var at = STEPS.indexOf(step);
-    SECTIONS.forEach(function (id) { $(id).hidden = STEP_OF[id] !== step; });
+    STEPS.forEach(function (s) { $(SEC[s]).hidden = s !== step; });
     document.querySelectorAll('.o-steps-list li').forEach(function (li) {
       var s = li.getAttribute('data-step'), i = STEPS.indexOf(s), b = li.querySelector('button');
       li.classList.toggle('is-current', i === at);
@@ -187,13 +203,19 @@
       // Any other step that can be shown is a way back (or forward) to it.
       b.disabled = i !== at && !reachable(s);
     });
+    // The bar: one segment a page, filled up to the page on screen.
+    document.querySelectorAll('#o-steps-bar span').forEach(function (seg) {
+      var i = STEPS.indexOf(seg.getAttribute('data-step'));
+      seg.classList.toggle('is-on', i <= at);
+    });
+    var name = document.querySelector('.o-steps-list li[data-step="' + step + '"] .o-step-t');
+    $('o-steps-name').textContent = name ? name.textContent : '';
     $('o-steps-of').textContent = 'Step ' + (at + 1) + ' of ' + STEPS.length;
-    $('o-steps-fill').style.width = ((at + 1) / STEPS.length * 100) + '%';
     $('o-back').hidden = at === 0;
     document.querySelector('.o-intro').classList.toggle('is-quiet', at > 0);
     // The Size page keeps the page's own title (the address search engines list); the
     // later pages name themselves in the tab.
-    var h = $(SECTIONS.filter(function (id) { return STEP_OF[id] === step; })[0] + '-h');
+    var h = $(SEC[step] + '-h');
     document.title = step === 'size' || !h ? BASE_TITLE : h.textContent.trim() + ' | ' + BASE_TITLE;
     // Book shows on the Book page only: on the pages before it, it could only send people back.
     $('o-book').hidden = step !== 'book';
@@ -257,6 +279,19 @@
 
     // The city line under the street comes from the ZIP.
     $('o-city').textContent = t ? 'City: ' + t.place + ', ' + t.state + ' ' + t.zip + ' (from your ZIP)' : '';
+    // The Book page reads every answer back, each one tap from its page.
+    syncContact();
+    var recap = {
+      size: s ? s.label : '',
+      where: t ? t.place + ', ' + t.state + ' ' + t.zip : '',
+      when: d && w && state.window ? [d.label + ', ', guessy(w.label, !!G.schedule)] : '',
+      name: FIELDS.name.el.value.trim(), phone: FIELDS.phone.el.value.trim(), email: FIELDS.email.el.value.trim(),
+      address: t && FIELDS.street.el.value.trim() ? fullAddress() : '',
+    };
+    document.querySelectorAll('[data-recap]').forEach(function (n) {
+      var v = recap[n.getAttribute('data-recap')];
+      fill(n, Array.isArray(v) ? v : [v || 'Not given yet']);
+    });
     // The When page says where the job is and what travel adds (the ZIP page moved on by itself).
     if (t) fill($('o-where-text'), [t.place + ' ' + t.zip + ' · ', t.cents ? guessy('+' + fmt(t.cents) + ' travel', TRAVEL_GUESS) : guessy('No travel charge', TRAVEL_GUESS)]);
 
@@ -270,11 +305,15 @@
     save();
   }
 
-  function save() {
+  /* The boxes into the state (they are the record while being typed in). */
+  function syncContact() {
     var c = state.contact;
     Object.keys(FIELDS).forEach(function (k) { c[k] = FIELDS[k].el.value; });
     c.unit = OPTIONAL.unit.value; c.notes = OPTIONAL.notes.value;
-    write(STORE, { size: state.size, zip: state.zip, date: state.date, window: state.window, contact: c });
+  }
+  function save() {
+    syncContact();
+    write(STORE, { size: state.size, zip: state.zip, date: state.date, window: state.window, contact: state.contact });
   }
   /* Any change to the order (size, ZIP, day, window, contact): an old failure
      or price note no longer applies, and after a reservation the next Book
@@ -541,21 +580,55 @@
     var m = $('o-when-msg'); m.textContent = ''; m.className = 'o-msg';
     drawWhen();
     render();
-    // An arrival time is the whole When page (the soonest day is picked already): on to Book.
+    // An arrival time is the whole When page (the soonest day is picked already): on to the next.
     next();
   });
   function whenError(text) { var m = $('o-when-msg'); m.textContent = text; m.className = 'o-msg is-err'; }
 
-  /* ── 4. contact ──────────────────────────────────────────────────────── */
+  /* ── 4. contact: name, phone, email, address, a page each ───────────────── */
+  /* Next on a typed page (or Enter, or Go on a phone keyboard): the answer is
+     checked, then on to the first step still to do. */
+  function nextFrom(s) {
+    var k = fieldFor(s);
+    if (k && fieldError(k, true)) {
+      say(FIELDS[k].err.textContent);
+      FIELDS[k].el.focus({ preventScroll: true });
+      track('order_missing', { step: s });
+      return;
+    }
+    next();
+  }
+  /* A whole US phone number: ten digits with the area code not starting 0 or 1,
+     or eleven with the leading 1 (so a 1 typed first waits for the eleventh).
+     The Phone page moves on at it, and says so first. */
+  function wholePhone(v) { return /^1?[2-9]\d{9}$/.test(v.replace(/\D/g, '')); }
   Object.keys(FIELDS).forEach(function (k) {
     var f = FIELDS[k];
     f.el.addEventListener('blur', function () { if (f.el.value.trim()) fieldError(k, true); });
     f.el.addEventListener('input', function () {
+      var was = f.last || '';
+      f.last = f.el.value;
       if (f.el.getAttribute('aria-invalid') === 'true') { f.err.textContent = ''; f.el.removeAttribute('aria-invalid'); }
       changed(); render();
+      // The last digit of a phone number is the whole Phone page: on to the next.
+      if (k === 'phone' && step === 'phone' && f.el.value !== was && wholePhone(f.el.value)) next();
+    });
+    f.el.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' || e.isComposing) return;
+      e.preventDefault();
+      nextFrom(f.step);
     });
   });
-  [OPTIONAL.unit, OPTIONAL.notes].forEach(function (n) { n.addEventListener('input', function () { changed(); save(); }); });
+  // Enter in the unit box moves on too (the notes box keeps Enter for a new line).
+  OPTIONAL.unit.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || e.isComposing) return;
+    e.preventDefault();
+    nextFrom('address');
+  });
+  document.querySelectorAll('[data-next]').forEach(function (b) {
+    b.addEventListener('click', function () { nextFrom(b.getAttribute('data-next')); });
+  });
+  [OPTIONAL.unit, OPTIONAL.notes].forEach(function (n) { n.addEventListener('input', function () { changed(); render(); }); });
   $('o-notes-btn').addEventListener('click', function () {
     var box = $('o-notes-box'), open = box.hidden;
     box.hidden = !open;
@@ -586,11 +659,11 @@
     if (!state.date || !dayOf(state.date)) return ['o-when', 'Pick a day.', document.querySelector('#o-days [data-date]')];
     if (!state.window || !windowFree(state.date, state.window)) return ['o-when', 'Pick an arrival window.', document.querySelector('#o-wins [data-window]:not([aria-disabled="true"])')];
     var keys = Object.keys(FIELDS);
-    for (var i = 0; i < keys.length; i++) if (fieldError(keys[i], true)) return ['o-you', FIELDS[keys[i]].err.textContent, FIELDS[keys[i]].el];
+    for (var i = 0; i < keys.length; i++) if (fieldError(keys[i], true)) return [SEC[FIELDS[keys[i]].step], FIELDS[keys[i]].err.textContent, FIELDS[keys[i]].el];
     return null;
   }
   function guide(m) {
-    var sec = $(m[0]), msgEl = { 'o-size': $('o-size-msg'), 'o-zip': zipMsg, 'o-when': $('o-when-msg'), 'o-you': null }[m[0]];
+    var sec = $(m[0]), msgEl = { 'o-size': $('o-size-msg'), 'o-zip': zipMsg, 'o-when': $('o-when-msg') }[m[0]];
     // The page with the missing piece comes back on screen first.
     if (STEP_OF[m[0]] !== step) go(STEP_OF[m[0]]);
     if (msgEl) { msgEl.textContent = m[1]; msgEl.className = 'o-msg is-err'; }
@@ -743,7 +816,7 @@
         express.on('confirm', walletConfirm);
         express.mount('#o-express');
       } catch (e) { $('o-wallet').hidden = true; }
-      // The card form. Name, email and phone come from the contact step and
+      // The card form. Name, email and phone come from their own pages and
       // are passed at confirm, so nobody types them twice.
       var payment = elements.create('payment', {
         fields: { billingDetails: { name: 'never', email: 'never', phone: 'never' } },
@@ -797,7 +870,7 @@
       },
     };
   }
-  /* Billing details for the card: the contact step's (the wallet's as a fallback). */
+  /* Billing details for the card: the ones typed on their pages (the wallet's as a fallback). */
   function billing(ev) {
     var c = state.contact, w = (ev && ev.billingDetails) || {};
     return { name: c.name.trim() || w.name || '', email: c.email.trim() || w.email || '', phone: c.phone.trim() || w.phone || '' };
@@ -942,6 +1015,8 @@
   // One story: bookings open shows the pay wording, closed the reserve wording.
   document.querySelectorAll('[data-mode]').forEach(function (n) { n.hidden = n.getAttribute('data-mode') !== (OPEN ? 'pay' : 'reserve'); });
   $('o-pay-h').textContent = OPEN ? 'Pay and book' : 'Reserve your day';
+  // The last page's name in the progress bar says what it does.
+  document.querySelector('.o-steps-list li[data-step="book"] .o-step-t').textContent = OPEN ? 'Pay' : 'Reserve';
   // The refusal fee is printed only while there is one, so a fee is never kept that was not shown.
   document.querySelectorAll('[data-o="refusal"]').forEach(function (n) { n.hidden = !OPEN || !(P.refusalFeeCents > 0); });
   $('o-closed').hidden = OPEN;
@@ -1017,7 +1092,7 @@
   var skip = document.querySelector('a.skip');
   if (skip) skip.addEventListener('click', function (e) {
     e.preventDefault();
-    var h = $(SECTIONS.filter(function (id) { return STEP_OF[id] === step; })[0] + '-h');
+    var h = $(SEC[step] + '-h');
     if (h) h.focus();
   });
   // The Back button at the left of the progress bar: the step before. When the entry

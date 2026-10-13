@@ -340,22 +340,29 @@
 
 <main id="main" class="o-main">
   <!-- THE PROGRESS BAR (round 8, founder 2026-10-12: "each have their own page with
-       progress bar at top", "minimize clicks at all costs"): four steps, one page
-       each (#size, #where, #when, #book), held at the top while the page scrolls.
-       Done steps are buttons back to themselves; the current one is
-       aria-current="step"; js/order.js draws it. -->
+       progress bar at top"; 2026-10-13: "one piece of info per page and have
+       progress bar on top", "each data entry needs to be spread out between pages
+       to reduce cognitive fatigue"): eight pages, one entry each (#size, #where,
+       #when, #name, #phone, #email, #address, #book), held at the top while the
+       page scrolls. Phones: Back, the page's name, "Step N of 8" and eight
+       segments. From 900px the steps by name too, done ones buttons back to
+       themselves, the current one aria-current="step". js/order.js draws it. -->
   <nav class="o-steps" id="o-steps" aria-label="Booking steps">
     <div class="o-steps-in">
       <button type="button" class="o-back" id="o-back" aria-label="Back" hidden><svg aria-hidden="true"><use href="#i-back"/></svg><span>Back</span></button>
+      <p class="o-steps-now"><span class="o-steps-name" id="o-steps-name">Size</span> <span class="o-steps-of" id="o-steps-of">Step 1 of 8</span></p>
       <ol class="o-steps-list">
         <li data-step="size"><button type="button" data-go="size"><span class="o-dot" aria-hidden="true"><span>1</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Size</span></button></li>
         <li data-step="where"><button type="button" data-go="where"><span class="o-dot" aria-hidden="true"><span>2</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Where</span></button></li>
         <li data-step="when"><button type="button" data-go="when"><span class="o-dot" aria-hidden="true"><span>3</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">When</span></button></li>
-        <li data-step="book"><button type="button" data-go="book"><span class="o-dot" aria-hidden="true"><span>4</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Book</span></button></li>
+        <li data-step="name"><button type="button" data-go="name"><span class="o-dot" aria-hidden="true"><span>4</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Name</span></button></li>
+        <li data-step="phone"><button type="button" data-go="phone"><span class="o-dot" aria-hidden="true"><span>5</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Phone</span></button></li>
+        <li data-step="email"><button type="button" data-go="email"><span class="o-dot" aria-hidden="true"><span>6</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Email</span></button></li>
+        <li data-step="address"><button type="button" data-go="address"><span class="o-dot" aria-hidden="true"><span>7</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Address</span></button></li>
+        <li data-step="book"><button type="button" data-go="book"><span class="o-dot" aria-hidden="true"><span>8</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Pay</span></button></li>
       </ol>
-      <p class="o-steps-of" id="o-steps-of">Step 1 of 4</p>
     </div>
-    <div class="o-steps-bar" aria-hidden="true"><span id="o-steps-fill"></span></div>
+    <div class="o-steps-bar" id="o-steps-bar" aria-hidden="true"><span data-step="size"></span><span data-step="where"></span><span data-step="when"></span><span data-step="name"></span><span data-step="phone"></span><span data-step="email"></span><span data-step="address"></span><span data-step="book"></span></div>
   </nav>
   <div class="o-intro">
     <h1>Book a junk pickup</h1>
@@ -364,10 +371,10 @@
   <p class="sr-only" aria-live="polite" id="o-live"></p>
 
   <div class="o-layout">
-    <!-- Four step pages (data-step): only the current one shows. A step moves
-         on by itself once it is done (a size tap, the fifth ZIP digit, an
-         arrival time), so there is no Continue button anywhere; the details
-         and pay sections share the last page. js/order.js keeps one state
+    <!-- Eight step pages (data-step), one question each: only the current one
+         shows. A tap page moves on by itself (a size, the fifth ZIP digit, an
+         arrival time, the last phone digit); a typed one has Next. The last
+         page reads the answers back, then pays. js/order.js keeps one state
          object; js/size-cards.js runs the cards. -->
     <form id="order" class="o-form" novalidate>
 
@@ -469,50 +476,85 @@
         </div>
       </section>
 
-      <section id="o-you" class="o-sec" data-step="book" hidden aria-labelledby="o-you-h">
-        <div class="o-sec-head"><h2 id="o-you-h" tabindex="-1">Who are we meeting?</h2></div>
+      <!-- The details, one entry a page (founder 2026-10-13: "each data entry needs
+           to be spread out between pages to reduce cognitive fatigue"). The
+           question is the box's label. Next (or Enter, or Go on a phone keyboard)
+           moves on; the phone page also moves on by itself once the whole number
+           is in, and says so first, like the ZIP. Each box keeps its autocomplete
+           value for the keyboard's suggestion. -->
+      <section id="o-you-name" class="o-sec" data-step="name" hidden aria-labelledby="o-you-name-h">
+        <div class="o-sec-head"><h2 id="o-you-name-h" tabindex="-1"><label for="o-name">What is your name?</label></h2></div>
         <div class="o-sec-body">
-          <!-- Five boxes and the right autocomplete values, so one autofill tap fills them all. -->
-          <div class="o-fields">
-            <div class="o-field o-f-wide">
-              <label for="o-name">Name</label>
-              <input id="o-name" name="name" type="text" autocomplete="name" placeholder="Jane Smith" aria-describedby="o-name-err">
-              <p class="o-err" id="o-name-err"></p>
-            </div>
-            <div class="o-field">
-              <label for="o-phone">Phone</label>
-              <input id="o-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(503) 555 0100" aria-describedby="o-phone-why o-phone-err">
-              <p class="o-hint" id="o-phone-why">We text you when the crew is on the way.</p>
-              <p class="o-err" id="o-phone-err"></p>
-            </div>
-            <div class="o-field">
-              <label for="o-email">Email</label>
-              <input id="o-email" name="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" aria-describedby="o-email-why o-email-err">
-              <p class="o-hint" id="o-email-why">For your confirmation and receipt.</p>
-              <p class="o-err" id="o-email-err"></p>
-            </div>
-            <div class="o-field o-f-street">
-              <label for="o-street">Street address</label>
-              <input id="o-street" name="street" type="text" autocomplete="address-line1" maxlength="200" placeholder="123 Oak Lane" aria-describedby="o-city o-street-err">
-              <p class="o-hint" id="o-city"></p>
-              <p class="o-err" id="o-street-err"></p>
-            </div>
-            <div class="o-field o-f-unit">
-              <label for="o-unit">Unit <span class="o-opt">(optional)</span></label>
-              <input id="o-unit" name="unit" type="text" autocomplete="address-line2" placeholder="Apt 4">
-            </div>
+          <div class="o-field">
+            <input id="o-name" name="name" type="text" autocomplete="name" enterkeyhint="next" placeholder="Jane Smith" aria-describedby="o-name-err">
+            <p class="o-err" id="o-name-err"></p>
+          </div>
+          <button type="button" class="o-next" data-next="name">Next</button>
+        </div>
+      </section>
+
+      <section id="o-you-phone" class="o-sec" data-step="phone" hidden aria-labelledby="o-you-phone-h">
+        <div class="o-sec-head"><h2 id="o-you-phone-h" tabindex="-1"><label for="o-phone">What number should we text?</label></h2></div>
+        <div class="o-sec-body">
+          <div class="o-field">
+            <input id="o-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" enterkeyhint="next" placeholder="(503) 555 0100" aria-describedby="o-phone-why o-phone-err">
+            <!-- The page moves on by itself at the last digit: said before it happens (WCAG 3.2.2). -->
+            <p class="o-hint" id="o-phone-why">We text you when the crew is on the way. Once your number is in, we go on.</p>
+            <p class="o-err" id="o-phone-err"></p>
+          </div>
+          <button type="button" class="o-next" data-next="phone">Next</button>
+        </div>
+      </section>
+
+      <section id="o-you-email" class="o-sec" data-step="email" hidden aria-labelledby="o-you-email-h">
+        <div class="o-sec-head"><h2 id="o-you-email-h" tabindex="-1"><label for="o-email">What is your email?</label></h2></div>
+        <div class="o-sec-body">
+          <div class="o-field">
+            <input id="o-email" name="email" type="email" autocomplete="email" inputmode="email" enterkeyhint="next" placeholder="you@example.com" aria-describedby="o-email-why o-email-err">
+            <p class="o-hint" id="o-email-why">For your confirmation and receipt.</p>
+            <p class="o-err" id="o-email-err"></p>
+          </div>
+          <button type="button" class="o-next" data-next="email">Next</button>
+        </div>
+      </section>
+
+      <section id="o-you-addr" class="o-sec" data-step="address" hidden aria-labelledby="o-you-addr-h">
+        <div class="o-sec-head"><h2 id="o-you-addr-h" tabindex="-1"><label for="o-street">What is the street address?</label></h2></div>
+        <div class="o-sec-body">
+          <div class="o-field">
+            <input id="o-street" name="street" type="text" autocomplete="address-line1" enterkeyhint="next" maxlength="200" placeholder="123 Oak Lane" aria-describedby="o-city o-street-err">
+            <p class="o-hint" id="o-city"></p>
+            <p class="o-err" id="o-street-err"></p>
+          </div>
+          <div class="o-field o-f-unit">
+            <label for="o-unit">Unit <span class="o-opt">(optional)</span></label>
+            <input id="o-unit" name="unit" type="text" autocomplete="address-line2" enterkeyhint="next" placeholder="Apt 4">
           </div>
           <button type="button" class="o-link" id="o-notes-btn" aria-expanded="false" aria-controls="o-notes-box">Anything we should know?</button>
           <div class="o-field o-notes" id="o-notes-box" hidden>
             <label for="o-notes">Notes for the crew <span class="o-opt">(optional)</span></label>
             <textarea id="o-notes" name="notes" rows="3" maxlength="500" placeholder="Stairs, a gate code, where the pile is"></textarea>
           </div>
+          <button type="button" class="o-next" data-next="address">Next</button>
         </div>
       </section>
 
       <section id="o-pay" class="o-sec" data-step="book" hidden aria-labelledby="o-pay-h">
         <div class="o-sec-head"><h2 id="o-pay-h" tabindex="-1">Pay and book</h2></div>
         <div class="o-sec-body">
+          <!-- The answers from the pages before, each one tap from its page, read
+               over before paying (js/order.js fills them). From 900px the summary
+               beside it shows the size, the place and the time, so this lists the
+               details only. -->
+          <ul class="o-recap" id="o-recap" aria-label="Your booking">
+            <li class="o-recap-row is-order"><span class="o-recap-k">Size</span><span class="o-recap-v" data-recap="size"></span><button type="button" class="o-change" data-go="size" aria-label="Change size">Change</button></li>
+            <li class="o-recap-row is-order"><span class="o-recap-k">Where</span><span class="o-recap-v" data-recap="where"></span><button type="button" class="o-change" data-go="where" data-focus="o-zip-in" aria-label="Change ZIP">Change</button></li>
+            <li class="o-recap-row is-order"><span class="o-recap-k">When</span><span class="o-recap-v" data-recap="when"></span><button type="button" class="o-change" data-go="when" aria-label="Change day and time">Change</button></li>
+            <li class="o-recap-row"><span class="o-recap-k">Name</span><span class="o-recap-v" data-recap="name"></span><button type="button" class="o-change" data-go="name" aria-label="Change name">Change</button></li>
+            <li class="o-recap-row"><span class="o-recap-k">Phone</span><span class="o-recap-v" data-recap="phone"></span><button type="button" class="o-change" data-go="phone" aria-label="Change phone">Change</button></li>
+            <li class="o-recap-row"><span class="o-recap-k">Email</span><span class="o-recap-v" data-recap="email"></span><button type="button" class="o-change" data-go="email" aria-label="Change email">Change</button></li>
+            <li class="o-recap-row"><span class="o-recap-k">Address</span><span class="o-recap-v" data-recap="address"></span><button type="button" class="o-change" data-go="address" aria-label="Change address">Change</button></li>
+          </ul>
           <!-- The rule in plain words, beside Book (pay at booking, founder
                2026-10-10). The total, the cancel hours and the fees are filled
                in from window.ORDER (red while guessed). Bookings open shows the

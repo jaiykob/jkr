@@ -1,5 +1,6 @@
-/* The order page (book/quote.html). Four step pages (Size, Where, When,
-   Book), one on screen at a time, under a progress bar held at the top.
+/* The order page (book/quote.html). Eight step pages, one entry each (Size,
+   Where, When, Name, Phone, Email, Address, Pay), one on screen at a time,
+   under a progress bar held at the top.
    Phones first: one column, the five size cards stacked full width, the
    total in a bar fixed to the bottom. From 900px: two columns, the step on
    the left (about 640px) and a summary on the right that stays in view,
@@ -66,15 +67,23 @@ button { font: inherit; }
 .o-layout { margin-top: 14px; }
 .o-form { display: grid; gap: 12px; min-width: 0; }
 
-/* ── the progress bar (round 8): four steps, one page each, held at the top
-   while the page scrolls. Done steps are yellow with a tick and go back to
-   themselves; the current one is charcoal; the bar under them fills by step. */
-.o-steps { position: sticky; top: 0; z-index: 40; margin: -20px calc(-1 * var(--gutter)) 0; padding: 6px var(--gutter) 0; background: var(--page); }
-.o-steps-in { display: flex; align-items: center; gap: 4px; }
-.o-back { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 48px; min-height: 48px; padding: 0 6px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); font: 700 16px/1 'DM Sans', sans-serif; cursor: pointer; }
+/* ── the progress bar: eight pages, one entry each, held at the top while the
+   page scrolls. Phones: Back, the page's name and "Step N of 8" over eight
+   segments that fill page by page. From 900px the eight steps by name too:
+   done ones yellow with a tick and back to themselves, the current one
+   charcoal. */
+.o-steps { position: sticky; top: 0; z-index: 40; margin: -20px calc(-1 * var(--gutter)) 0; padding: 4px var(--gutter) 8px; background: var(--page); }
+.o-steps-in { display: flex; align-items: center; gap: 4px; min-height: 48px; }
+.o-back { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 48px; min-height: 48px; margin-left: -8px; padding: 0 6px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); font: 700 16px/1 'DM Sans', sans-serif; cursor: pointer; }
 .o-back svg { width: 24px; height: 24px; flex: none; }
 .o-back span { display: none; }
-.o-steps-list { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; margin: 0; padding: 0; list-style: none; }
+.o-steps-now { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0; }
+.o-steps-name { font: 800 20px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em; color: var(--ink); }
+.o-steps-of { flex: none; font-size: 16px; font-weight: 700; color: var(--muted); }
+.o-steps-bar { display: flex; gap: 4px; margin-top: 4px; }
+.o-steps-bar span { flex: 1; height: 6px; border-radius: 3px; background: var(--line-2); transition: background .25s; }
+.o-steps-bar span.is-on { background: var(--ink); }
+.o-steps-list { display: none; flex: 1; min-width: 0; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 2px; margin: 0; padding: 0; list-style: none; }
 .o-steps-list button {
   width: 100%; min-height: 54px; display: grid; justify-items: center; align-content: center; gap: 3px; padding: 4px 2px;
   border: 0; border-radius: 12px; background: transparent; color: var(--muted); font: 700 16px/1.1 'DM Sans', sans-serif; cursor: pointer;
@@ -87,15 +96,16 @@ button { font: inherit; }
 .o-steps-list li.is-done .o-dot span { display: none; }
 .o-steps-list li.is-done .o-dot svg { display: block; }
 .o-steps-list li.is-current .o-dot { background: var(--ink); color: var(--yellow); }
-/* "Step N of 4": said to screen readers on a phone, shown from 600px. */
-.o-steps-of { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; font-size: 16px; font-weight: 700; color: var(--muted); }
-.o-steps-bar { height: 4px; margin: 4px calc(-1 * var(--gutter)) 0; background: var(--line); }
-.o-steps-bar span { display: block; height: 100%; width: 25%; background: var(--ink); transition: width .3s; }
 @media (min-width: 600px) {
-  .o-steps-of { position: static; width: auto; height: auto; overflow: visible; clip: auto; flex: none; padding-left: 8px; }
   .o-back span { display: inline; }
   .o-back { padding: 0 12px 0 6px; }
-  .o-steps-list button { grid-auto-flow: column; justify-content: center; align-items: center; gap: 8px; }
+}
+/* From 900px the steps by name: the list names the page, so the name line keeps
+   only "Step N of 8". */
+@media (min-width: 900px) {
+  .o-steps-list { display: grid; order: 1; }
+  .o-steps-now { flex: none; order: 2; padding-left: 8px; }
+  .o-steps-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 
 /* ── sections: a white card each; only the current step's show ── */
@@ -104,7 +114,22 @@ button { font: inherit; }
 .o-sec h2 { margin: 0; flex: 1; min-width: 0; font: 800 21px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; color: var(--ink); }
 .o-sec h2:focus { outline: none; }
 .o-sec h2:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 6px; }
+/* A one entry page asks its question in the heading, and the heading is the box's label. */
+.o-sec h2 label { display: block; }
 .o-sec-body { margin-top: 10px; }
+/* A page coming on screen slides in a little from the side it is on. */
+.o-sec.is-fwd { animation: o-in-fwd .22s ease-out; }
+.o-sec.is-back { animation: o-in-back .22s ease-out; }
+@keyframes o-in-fwd { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes o-in-back { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+/* Next on a typed page: right under the box, so it sits above a phone's keyboard. */
+.o-next {
+  display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; margin-top: 16px; padding: 0 16px;
+  border: 0; border-radius: 14px; cursor: pointer; background: var(--ink); color: #fff;
+  font: 800 19px/1.1 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em;
+}
+.o-next:hover { background: var(--ink-2); }
+@media (min-width: 560px) { .o-next { width: auto; min-width: 200px; } }
 /* The When page says where the job is, one tap from changing it. */
 .o-where-line { display: flex; align-items: center; justify-content: space-between; gap: 0 8px; margin: 0 0 10px; padding: 2px 2px 2px 14px; border-radius: 12px; background: var(--soft); color: var(--ink); font-weight: 700; line-height: 1.3; }
 .o-where-line > span { flex: 1; min-width: 0; }
@@ -224,15 +249,19 @@ button { font: inherit; }
 .o-day.full .o-day-md { color: #5F636A; font-weight: 700; }
 .o-win.full .guess { color: #8C2A22; }
 
-/* ── 4. contact ── */
-.o-fields { display: grid; gap: 14px; }
-@media (min-width: 560px) {
-  .o-fields { grid-template-columns: 1fr 1fr; }
-  .o-f-wide { grid-column: 1 / -1; }
-  .o-f-street { grid-column: 1 / -1; }
-}
+/* ── 4. contact: name, phone, email, address, a page each ── */
+.o-f-unit { margin-top: 14px; }
 .o-link { display: inline-flex; align-items: center; min-height: 48px; min-width: 48px; margin-top: 6px; padding: 0 2px; background: none; border: 0; color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .o-notes { margin-top: 4px; }
+
+/* ── 5. pay: the answers read back, each one tap from its page ── */
+.o-recap { margin: 0 0 14px; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.o-recap-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 0 10px; min-height: 52px; border-bottom: 1px solid var(--line); }
+.o-recap-k { color: var(--muted); }
+.o-recap-v { min-width: 0; overflow-wrap: anywhere; font-weight: 700; color: var(--ink); line-height: 1.3; padding: 6px 0; }
+.o-recap .o-change { padding: 0 2px 0 10px; }
+/* From 900px the summary beside the page shows the size, the place and the time. */
+@media (min-width: 900px) { .o-recap-row.is-order { display: none; } }
 
 /* ── 5. pay: the rule in plain words ── */
 .o-rule { padding: 14px 16px; border-radius: 14px; background: var(--yel-50); border: 1px solid #EBD98F; }
