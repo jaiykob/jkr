@@ -60,11 +60,11 @@
 }
 .article .help-topics a:hover { border-color: var(--rg); color: var(--rg); }
 .article .help-topics a:focus-visible { outline: 3px solid var(--rg); outline-offset: 2px; }
-.help-contact { background: var(--rg); color: #FBF8F2; border-radius: 16px; padding: 16px 18px; }
+.help-contact { background: var(--rg); color: #FFFFFF; border-radius: 16px; padding: 16px 18px; }
 .help-contact h2 { margin: 0 0 4px; font-size: 1.15rem; color: #FFD23F; }
 .help-contact ul { list-style: none; margin: 0; padding: 0; }
 .help-contact li { margin: 0; }
-.article .help-contact a { display: flex; align-items: center; min-height: 48px; color: #FBF8F2; font-weight: 600; font-size: 1rem; text-decoration: underline; text-decoration-color: #FFD23F; text-decoration-thickness: 2px; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.article .help-contact a { display: flex; align-items: center; min-height: 48px; color: #FFFFFF; font-weight: 600; font-size: 1rem; text-decoration: underline; text-decoration-color: #FFD23F; text-decoration-thickness: 2px; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .article .help-contact a:hover { color: #FFD23F; }
 .article .faq-list details { background: var(--card); }
 .article .faq-answer p { margin-bottom: 12px; }

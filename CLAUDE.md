@@ -112,10 +112,12 @@ after the job, Cancel and refund, Customer said no). Auth is
 
 - Mobile first: text 16px or more, tap targets 48px or more, no sideways scroll.
 - Copy: "we / us / our", plain words, no dashes as punctuation.
+- Colors: black, yellow (#FFD23F, `--yellow`) and white (founder 2026-10-13); yellow
+  fills buttons and marks things on black, never text on white.
 - Look: Novah's design language (novah.fi, founder 2026-10-13): Google Sans
-  (fonts/google-sans.woff2), near black #0C0B09 and warm white #FBF9F5 with warm
-  grey bands, big tight headings, small spaced capitals over them, pill buttons
-  with an arrow, big rounded photos. No yellow in the UI. Tokens in css/site.css.
+  (fonts/google-sans.woff2), black #0B0B0B and white with light grey bands, big
+  tight headings, small spaced capitals over them, pill buttons
+  with an arrow, big rounded photos. Tokens in css/site.css.
 - Spanish is paused (founder 2026-10-13: "save that for later"): don't translate;
   a phrase with no Spanish stays in English and the build only warns.
 
