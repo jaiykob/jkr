@@ -9,6 +9,14 @@
 .article .trail { font-size: 1rem; margin: 0 0 12px; }
 .article .trail ol { margin: 0; padding: 0; }
 .article .trail a { display: inline-flex; align-items: center; min-height: 48px; color: var(--dtan); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+/* The round 9 trail (scripts/lib/crumbs.mjs, .crumbs) on a reading page, first on Before we come:
+   the same look as the trail above, its list kept clear of the article's list spacing. */
+.article .crumbs { font-size: 1rem; margin: 0 0 12px; }
+.article .crumbs ol { list-style: none; display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; }
+.article .crumbs li { display: inline-flex; align-items: center; margin: 0; font-size: 1rem; line-height: 1.4; color: var(--txm); }
+.article .crumbs li a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px; color: var(--dtan); font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.article .crumbs-sep { margin: 0 10px; color: var(--txd); }
+.article .crumbs [aria-current] { font-weight: 600; color: var(--rg); }
 
 .article h1 {
   font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; font-weight: 800; letter-spacing: -.03em;

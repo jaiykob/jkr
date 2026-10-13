@@ -25,6 +25,26 @@
       "source": "/portland/index.html",
       "destination": "/service-areas.html",
       "permanent": true
+    },
+    {
+      "source": "/blog/getting-ready-for-a-pickup.html",
+      "destination": "/before-we-come.html",
+      "permanent": true
+    },
+    {
+      "source": "/blog/getting-ready-for-a-pickup",
+      "destination": "/before-we-come.html",
+      "permanent": true
+    },
+    {
+      "source": "/es/blog/getting-ready-for-a-pickup.html",
+      "destination": "/es/before-we-come.html",
+      "permanent": true
+    },
+    {
+      "source": "/es/blog/getting-ready-for-a-pickup",
+      "destination": "/es/before-we-come.html",
+      "permanent": true
     }
   ],
   "headers": [

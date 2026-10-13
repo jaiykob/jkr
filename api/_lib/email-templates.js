@@ -147,6 +147,12 @@ function layout({ preheader = '', heading, bodyHtml, marketing = false, unsubscr
 </body></html>`;
 }
 
+// The Before we come page (round 9): the checklist for a booked job, linked by its full address
+// from the booked and reminder emails, in the HTML and the plain text alike.
+const READY_URL = `${BRAND.site}/before-we-come.html`;
+const readyHtml = () => `<p style="margin:12px 0;">How to get ready: <a href="${READY_URL}" style="color:${BRAND.green};font-weight:700;">our Before we come checklist</a>, with what to set out, the path, parking and pets.</p>`;
+const readyText = () => `How to get ready: ${READY_URL}`;
+
 // Small helper for a labeled detail row inside the card.
 function detail(label, value) {
   if (value == null || value === '') return '';
@@ -216,12 +222,13 @@ function bookedConfirmation(ctx = {}) {
     <p style="margin:12px 0;"><strong>${escapeHtml(rule)}</strong></p>
     <p style="margin:12px 0;">${escapeHtml(consent)}</p>
     <p style="margin:12px 0;">We do all the lifting and loading. Anything still usable goes to donation, metal and electronics go to recycling, and the rest goes to the transfer station.</p>
+    ${readyHtml()}
     <p style="margin:12px 0;">Questions? Reply to this email or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   const when = [dayLabel, windowLabel].filter(Boolean).join(', ');
   return {
     subject: when ? `You're booked for ${when}` : "You're booked",
     html: layout({ preheader: 'Your haul is booked and paid. Here are the details.', heading, bodyHtml }),
-    text: `You're booked${name ? ', ' + name : ''}!\n\nDay: ${dayLabel || ''}\nWindow: ${windowLabel || ''}\nAddress: ${address || ''}${load ? `\nSize: ${load}` : ''}${travel ? `\nTravel: ${travel}` : ''}\nTotal: ${total || ''}${discount ? `\nFounding discount: ${discount}` : ''}\nPaid today: ${paid || ''}\n\n${rule}\n${consent}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
+    text: `You're booked${name ? ', ' + name : ''}!\n\nDay: ${dayLabel || ''}\nWindow: ${windowLabel || ''}\nAddress: ${address || ''}${load ? `\nSize: ${load}` : ''}${travel ? `\nTravel: ${travel}` : ''}\nTotal: ${total || ''}${discount ? `\nFounding discount: ${discount}` : ''}\nPaid today: ${paid || ''}\n\n${rule}\n${consent}\n\n${readyText()}\n\nQuestions? Reply here or call ${BRAND.phone}.\n${BRAND.name}`,
   };
 }
 
@@ -391,11 +398,12 @@ function visitReminder(ctx = {}) {
   const bodyHtml = `
     <p style="margin:0 0 12px;">Hi${name ? ' ' + escapeHtml(name) : ''}, this is a reminder that ${BRAND.name} is scheduled to come on <strong>${escapeHtml(when)}</strong>${arrival}.</p>
     <p style="margin:12px 0;">To help us get in and out: please make sure the items are easy to reach and there is room for the truck to park. We will text you an arrival window.</p>
+    ${readyHtml()}
     <p style="margin:12px 0;">Need a different day? Reply here or call <a href="tel:+19254086053" style="color:${BRAND.green};">${BRAND.phone}</a>.</p>`;
   return {
     subject: `We're hauling ${when}`,
     html: layout({ preheader: 'Please make sure the items are easy to reach.', heading, bodyHtml, marketing: true, unsubscribeUrl }),
-    text: `Hi${name ? ' ' + name : ''}, a reminder: ${BRAND.name} comes ${when}${windowLabel ? `, ${windowLabel}` : ''}.\nPlease make sure the items are easy to reach and there is room to park.\nNeed a different day? Reply or call ${BRAND.phone}.\n${BRAND.name}`,
+    text: `Hi${name ? ' ' + name : ''}, a reminder: ${BRAND.name} comes ${when}${windowLabel ? `, ${windowLabel}` : ''}.\nPlease make sure the items are easy to reach and there is room to park.\n${readyText()}\nNeed a different day? Reply or call ${BRAND.phone}.\n${BRAND.name}`,
   };
 }
 

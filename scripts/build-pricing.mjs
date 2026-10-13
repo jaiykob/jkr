@@ -9,6 +9,7 @@
  *   book/quote.html           quote-jsonld, order-sizes (the five size cards)
  *   index.html                     home-ticket, home-from, home-sizes
  *   terms.html, faq.html, es/faq.html   the data-policy spans (cancel hours, late fee, refusal fee)
+ *   before-we-come.html, es/before-we-come.html   the same spans (the cancel and late fee rule)
  *   index.html, book/quote.html    every https://wa.me/<number> (WHATSAPP in api/_lib/site.js)
  *   api/photo-quote.js              server-items
  */
@@ -274,7 +275,7 @@ function splice(src, name, body, comment, file) {
   return src.slice(0, a + open.length) + '\n' + body + '\n' + indent + src.slice(b);
 }
 
-/* The cancel hours, late fee and refusal fee printed in the hand written pages (terms, FAQ):
+/* The cancel hours, late fee and refusal fee printed in the hand written pages (terms, FAQ, Before we come):
    <span class="guess" data-policy="cancel|late|refusal">...</span> takes its text from POLICY, so the
    pages can never disagree with the order page. Red while GUESS.policy. */
 const policyText = (key, es) => ({
@@ -296,6 +297,8 @@ const TARGETS = [
   { file: 'terms.html', blocks: [], policy: true },
   { file: 'faq.html', blocks: [], policy: true },
   { file: 'es/faq.html', blocks: [], policy: true },
+  { file: 'before-we-come.html', blocks: [], policy: true },
+  { file: 'es/before-we-come.html', blocks: [], policy: true },
   { file: 'api/photo-quote.js', blocks: [
     { name: 'server-items', body: serverItems, comment: true },
   ] },

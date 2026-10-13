@@ -79,6 +79,8 @@ function cardFor(rel) {
     'blog/index.html': { kicker: 'From the blog', title: 'Junk removal, plainly explained', sub: 'Costs, what can go, and where it ends up.' },
     'es/blog/index.html': { kicker: 'Del blog', title: 'Retiro de basura, explicado claro', sub: 'Precios, qué se puede llevar y a dónde va.' },
     'faq.html': { kicker: 'Questions', title: 'Junk removal, answered plainly', sub: 'Prices, photos, travel, and what we take.' },
+    'before-we-come.html': { kicker: 'Before we come', title: 'Getting ready for your pickup', sub: 'What to set out, the path, parking and pets.' },
+    'es/before-we-come.html': { kicker: 'Antes de que lleguemos', title: 'Cómo prepararte para tu retiro', sub: 'Qué sacar, el camino, dónde estacionarnos y las mascotas.' },
     'privacy.html': { kicker: site.NAME, title: 'Privacy policy', sub: 'What we collect, and what we do with it.' },
     'terms.html': { kicker: site.NAME, title: 'Terms of service', sub: 'Prices, travel, changes on the day, and refunds.' },
   }[rel];

@@ -5,6 +5,7 @@
  *
  *   index.html          ↔ es/index.html           always (scripts/build-es.mjs)
  *   faq.html            ↔ es/faq.html             once es/faq.html exists (hand written)
+ *   before-we-come.html ↔ es/before-we-come.html  once es/before-we-come.html exists (hand written)
  *   <town>.html         ↔ es/<town>.html          once the town file has a "## Local (es)" section
  *   service-areas.html  ↔ es/service-areas.html   once any town has Spanish
  *   blog/index.html     ↔ es/blog/index.html      once any post has Spanish
@@ -39,6 +40,7 @@ export function townNames() {
 export function hasEsTwin(enRel) {
   if (enRel === 'index.html') return true;
   if (enRel === 'faq.html') return exists('es/faq.html');
+  if (enRel === 'before-we-come.html') return exists('es/before-we-come.html');
   if (enRel === 'service-areas.html') return townSlugs().some(townHasEs);
   if (enRel === 'blog/index.html') return esPosts().length > 0;
   const post = enRel.match(/^blog\/([a-z0-9-]+)\.html$/);

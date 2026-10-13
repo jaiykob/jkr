@@ -40,7 +40,7 @@
     .t-steps li::before { content: counter(step); position: absolute; left: 0; top: -1px; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--yellow); font: 800 16px/30px 'Bricolage Grotesque', sans-serif; text-align: center; }
     .t-steps strong { color: var(--ink); }
     .t-move { margin: 16px 0 0; color: var(--muted); }
-    .t-move a, .t-fail a { display: inline-block; padding: 13px 2px; margin: -13px 0; font-weight: 700; color: var(--ink); }
+    .t-move a, .t-fail a, .t-steps a { display: inline-block; padding: 13px 2px; margin: -13px 0; font-weight: 700; color: var(--ink); }
     /* How did you hear about us: chips, a tap each, asked once the booking is done. */
     .ref-ask { margin: 0 0 12px; color: var(--muted); }
     .ref-opts { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -112,6 +112,7 @@
     <h2 id="t-next-h">What happens next</h2>
     <ol class="t-steps">
       <li><strong>Now.</strong> We email your confirmation<span id="t-email"></span>.</li>
+      <li><strong>Before we come.</strong> Set out what goes, clear a path and leave room to park. <a href="../before-we-come.html">How to get ready</a></li>
       <li><strong>The day before.</strong> We send a reminder with your arrival window.</li>
       <li><strong>On the day.</strong> We text <span id="t-phone" class="t-nowrap">you</span> when the crew is on the way.</li>
       <li><strong>Before loading.</strong> The crew checks the size with you. A different size means a different price, shown to you first.</li>
