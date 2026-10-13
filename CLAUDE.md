@@ -44,11 +44,17 @@ before starting any of this work. Three parts, in order:
 3. **Photo first quote with an on site adjustment**: charge more when the job
    is bigger than the photos showed. Its own spec.
 
-How each round is built (founder, 2026-10-07): two competing plans, scored,
-then a child plan that takes the best of both; the build is scored by
-`npm run score -- --round N` (real checks, including the pages in headless
-Chrome at 360px) and a round is done at 100. Every generation's score is in
-`docs/superpowers/evolution.md`.
+How each round is built (founder, 2026-10-12: "remove all process that are
+slowing down product development", "take whats good and leave the bad"):
+a short plan only when the work is big; build directly (one build agent for
+a big chunk at most); `npm test` green; ONE review at the end of the round,
+aimed at customer facing copy and money or booking logic (where reviews
+caught real problems), with one fix pass and no re-review loop; screenshots
+for the founder; then merge and push. Dropped: competing plans, per round
+specs and scorecards, re-scoring earlier rounds, a review per task,
+re-reviews, generation logs. The old scorecards (`npm run score -- --round
+N`, rounds 1 to 9) and `docs/superpowers/evolution.md` stay as history and
+can be run by hand; they are not a gate.
 
 Progress: **Part 1 is done** (rounds 1 to 5, 2026-10-07, each scored 100).
 **Round 6 is done** (2026-10-11, scored 100, merged from `feat/order-flow` at
@@ -72,8 +78,10 @@ and merge):** round 9, the full SEO pass and service pages
 (Portland only at first; `docs/superpowers/research/2026-10-10-service-pages.md`)
 with Disneyland's search practices from the research note (task named menus,
 a help center by topic, a "Before we come" page, questions in the customer's
-words); round 10, CRM and KPIs (`docs/superpowers/specs/2026-10-10-crm-kpis-design.md`);
-round 11, the Sacramento metro as a second service area. Part 2, the
+words). **On hold (founder, 2026-10-12: "we dont need kpi dashboard or
+sacremneto build just yet hold off"):** CRM and KPIs
+(`docs/superpowers/specs/2026-10-10-crm-kpis-design.md`) and the Sacramento
+metro; build neither until the founder asks. Part 2, the
 walkthrough with the founder, is still to come (add a reviews block once
 there are real Google reviews; never invent one).
 
@@ -368,5 +376,6 @@ FAQ JSON-LD, sitemap, indexability, share cards, photo sizes).
 pages in headless Chrome at a real 360px (round 8 walks every order step and
 books from a homepage card in 5 taps or fewer; round 7 also measures contrast and
 the first screen; round 6 also at 1280px, and books
-on the order page by script in 10 taps or fewer). Generations are logged in
+on the order page by script in 10 taps or fewer). History, not a gate since
+2026-10-12 (see How each round is built); generations up to round 9 are in
 `docs/superpowers/evolution.md`.
