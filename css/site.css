@@ -232,7 +232,7 @@ footer a { color: var(--tan); text-decoration: none; }
 footer { padding: 56px var(--gutter) 24px; }
 .foot-cols { display: grid; gap: 28px 32px; max-width: var(--w-wide); margin: 0 auto 32px; text-align: left; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 600px) { .foot-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 960px) { .foot-cols { grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 960px) { .foot-cols { grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr)); } }
 .foot-brand .footer-logo { justify-content: flex-start; }
 .foot-brand p { max-width: 320px; }
 .foot-h { font: 800 1rem/1.3 'DM Sans', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--tan); margin-bottom: 4px; }

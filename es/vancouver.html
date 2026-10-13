@@ -87,6 +87,30 @@
             }
           }
         ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.example.com/es/vancouver.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Inicio",
+            "item": "https://www.example.com/es/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Área de Portland",
+            "item": "https://www.example.com/es/service-areas.html"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Vancouver",
+            "item": "https://www.example.com/es/vancouver.html"
+          }
+        ]
       }
     ]
   }
@@ -115,11 +139,11 @@
     <svg class="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
   </button>
   <ul class="nav-links" id="navLinks">
-    <li><a href="#how-it-works">Cómo funciona</a></li>
-    <li><a href="#what-we-take">Qué llevamos</a></li>
+    <li><a href="service-areas.html#services">Servicios</a></li>
     <li><a href="#pricing">Precios</a></li>
-    <li><a href="service-areas.html">Zonas de servicio</a></li>
-    <li><a href="faq.html">Preguntas</a></li>
+    <li><a href="service-areas.html">A dónde vamos</a></li>
+    <li><a href="before-we-come.html">Antes de que lleguemos</a></li>
+    <li><a href="faq.html">Ayuda</a></li>
     <li class="chat-item"><a href="sms:+19254086053">Mándanos un mensaje</a></li>
     <li class="chat-item"><a href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></li>
     <li class="cta-item"><a class="nav-cta-mobile" href="../book/quote.html">Ver mi precio</a></li>
@@ -144,6 +168,7 @@
   <div class="h-hero-in">
     <div class="h-hero-copy">
       <!-- CITY:hero -->
+      <nav class="crumbs" aria-label="Ruta"><ol><li><a href="index.html">Inicio</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li><a href="service-areas.html">Área de Portland</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li aria-current="page">Vancouver</li></ol></nav>
       <p class="h-eyebrow">Retiro de basura en Vancouver, WA</p>
       <h1 class="h-title" id="hero-title">Retiro de basura en Vancouver.<span>Ve tu precio.</span></h1>
       <p class="h-lede">Cruzamos el puente de la I-205 cada semana para trabajos en Vancouver. El lado este cerca del puente está en la Zona 2, y el resto de la ciudad en la Zona 3.</p>
@@ -228,6 +253,19 @@
         <li>Felida</li>
         <li>Salmon Creek</li>
       </ul>
+      <nav class="town-nearby town-jobs" aria-label="Trabajos que hacemos en Vancouver">
+        <h3 class="town-h3">Trabajos que hacemos en Vancouver</h3>
+        <ul>
+          <li><a href="../portland/garage-cleanout.html">Limpieza de garaje</a></li>
+          <li><a href="../portland/hot-tub-removal.html">Retiro de jacuzzis</a></li>
+          <li><a href="../portland/furniture-removal.html">Retiro de muebles</a></li>
+          <li><a href="../portland/estate-cleanout.html">Limpieza de casas heredadas</a></li>
+          <li><a href="../portland/mattress-removal.html">Retiro de colchones</a></li>
+          <li><a href="../portland/appliance-removal.html">Retiro de electrodomésticos</a></li>
+          <li><a href="../portland/yard-debris-removal.html">Retiro de desechos de jardín</a></li>
+          <li><a href="../portland/hoarder-cleanout.html">Limpieza de acumulación</a></li>
+        </ul>
+      </nav>
       <nav class="town-nearby" aria-label="Otras ciudades en la zona 2">
         <h3 class="town-h3">También en la zona 2</h3>
         <ul>
@@ -346,14 +384,14 @@
     </div>
     <div class="take-grid">
       <!-- Each kind as a block in its pile color (the hero's pile) with a line icon in it. -->
-      <article class="take" style="--sw:#E4572E"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/><path d="M5 18v2M19 18v2"/></svg></span><h3>Muebles</h3><p>Sofás, sillas, mesas, cómodas, escritorios.</p></article>
-      <article class="take" style="--sw:#9AA5B1"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 10h12M9 5v2M9 13v3"/></svg></span><h3>Electrodomésticos</h3><p>Refrigeradores, congeladores, lavadoras, secadoras, estufas.</p></article>
-      <article class="take" style="--sw:#4C8BF5"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 18V6M2 14h20v4M22 14v-2a3 3 0 0 0-3-3h-8v5"/><circle cx="6.5" cy="11" r="2"/></svg></span><h3>Colchones</h3><p>De cualquier tamaño, con o sin base.</p></article>
-      <article class="take" style="--sw:#D9B26F"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg></span><h3>Garaje y sótano</h3><p>Cajas, repisas, herramientas y todo lo demás.</p></article>
-      <article class="take" style="--sw:#3FA34D"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-14 15-15-1 10-7 15-15 15z"/><path d="M5 19l8-8"/></svg></span><h3>Desechos de jardín</h3><p>Ramas, recortes, cercas viejas, cobertizos desarmados.</p></article>
+      <a href="../portland/furniture-removal.html" class="take is-link" style="--sw:#E4572E"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/><path d="M5 18v2M19 18v2"/></svg></span><h3>Muebles</h3><p>Sofás, sillas, mesas, cómodas, escritorios.</p></a>
+      <a href="../portland/appliance-removal.html" class="take is-link" style="--sw:#9AA5B1"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 10h12M9 5v2M9 13v3"/></svg></span><h3>Electrodomésticos</h3><p>Refrigeradores, congeladores, lavadoras, secadoras, estufas.</p></a>
+      <a href="../portland/mattress-removal.html" class="take is-link" style="--sw:#4C8BF5"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 18V6M2 14h20v4M22 14v-2a3 3 0 0 0-3-3h-8v5"/><circle cx="6.5" cy="11" r="2"/></svg></span><h3>Colchones</h3><p>De cualquier tamaño, con o sin base.</p></a>
+      <a href="../portland/garage-cleanout.html" class="take is-link" style="--sw:#D9B26F"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg></span><h3>Garaje y sótano</h3><p>Cajas, repisas, herramientas y todo lo demás.</p></a>
+      <a href="../portland/yard-debris-removal.html" class="take is-link" style="--sw:#3FA34D"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-14 15-15-1 10-7 15-15 15z"/><path d="M5 19l8-8"/></svg></span><h3>Desechos de jardín</h3><p>Ramas, recortes, cercas viejas, cobertizos desarmados.</p></a>
       <article class="take" style="--sw:#8E6CCF"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="8" height="8" rx="1"/><rect x="13" y="12" width="8" height="8" rx="1"/><rect x="8" y="3" width="8" height="8" rx="1"/></svg></span><h3>Mudanzas</h3><p>Lo que no cupo en el camión de la mudanza.</p></article>
       <article class="take is-dark" style="--sw:#2E3440"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="13" rx="2"/><path d="M8 21h8M12 18v3"/></svg></span><h3>Electrónicos</h3><p>Televisores, monitores, computadoras, impresoras.</p></article>
-      <article class="take" style="--sw:#F2A541"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><h3>Vaciado de casas</h3><p>Una casa entera, con cuidado.</p></article>
+      <a href="../portland/estate-cleanout.html" class="take is-link" style="--sw:#F2A541"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><h3>Vaciado de casas</h3><p>Una casa entera, con cuidado.</p></a>
     </div>
     <p class="take-no">No llevamos pintura, químicos, combustible, asbesto ni desechos médicos.</p>
   </div>
@@ -517,7 +555,23 @@
       <ul class="footer-links">
         <li><a href="../book/quote.html">Ver mi precio</a></li>
         <li><a href="../book/quote.html#photos">Manda una foto</a></li>
+        <li><a href="before-we-come.html">Antes de que lleguemos</a></li>
         <li><a href="../book/commercial.html">Administradores de propiedades</a></li>
+      </ul>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Servicios</h2>
+      <ul class="footer-links">
+      <!-- BUILD:foot-services -->
+      <li><a href="../portland/garage-cleanout.html">Limpieza de garaje</a></li>
+      <li><a href="../portland/furniture-removal.html">Retiro de muebles</a></li>
+      <li><a href="../portland/estate-cleanout.html">Limpieza de casas heredadas</a></li>
+      <li><a href="../portland/hot-tub-removal.html">Retiro de jacuzzis</a></li>
+      <li><a href="../portland/mattress-removal.html">Retiro de colchones</a></li>
+      <li><a href="../portland/appliance-removal.html">Retiro de electrodomésticos</a></li>
+      <li><a href="../portland/yard-debris-removal.html">Retiro de desechos de jardín</a></li>
+      <li><a href="../portland/hoarder-cleanout.html">Limpieza de acumulación</a></li>
+      <!-- /BUILD:foot-services -->
       </ul>
     </div>
     <div class="foot-col">
@@ -537,7 +591,7 @@
     <div class="foot-col">
       <h2 class="foot-h">Ayuda</h2>
       <ul class="footer-links">
-        <li><a href="faq.html">Preguntas</a></li>
+        <li><a href="faq.html">Ayuda y preguntas</a></li>
         <li><a href="blog/index.html">Blog</a></li>
         <li><a href="../terms.html">Términos</a></li>
         <li><a href="../privacy.html">Privacidad</a></li>

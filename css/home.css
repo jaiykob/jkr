@@ -250,6 +250,11 @@
   transition: border-color .2s, transform .2s;
 }
 .take:hover { border-color: var(--rg); transform: translateY(-3px); }
+/* Round 9: a block with a service page is a link to it (the whole block is the tap target). */
+a.take { color: inherit; text-decoration: none; }
+a.take h3::after { content: '\00a0\203A'; color: var(--dtan); }
+a.take:focus-visible { outline: 3px solid var(--rg); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .take:hover { transform: none; } }
 .take-icon {
   grid-row: span 2; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 12px;
   background: var(--sw); border: 2px solid var(--rg); box-shadow: 5px 5px 0 var(--rg); color: var(--rg);
