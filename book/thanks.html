@@ -15,6 +15,7 @@
        so a red guess wins. The few rules below are this page's own. -->
   <link rel="stylesheet" href="../css/order.css">
   <link rel="stylesheet" href="../css/guess.css">
+  <script src="../js/guesses.js" defer></script>
   <style>
     .t-main { max-width: 720px; }
     .t-head { margin: 4px 0 16px; }
@@ -165,7 +166,7 @@
     var fmt = function (c) { return '$' + (c / 100).toFixed(2); };
     var num = function (v) { return typeof v === 'number' && isFinite(v) ? v : null; };
     function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
-    /* Text, red with an asterisk when it is a guess (css/guess.css). */
+    /* Text, marked as a guess when it is one (css/guess.css). */
     function guessy(text, on) { return el('span', on ? 'guess' : null, text); }
     function fill(node, parts) { node.textContent = ''; parts.forEach(function (p) { if (p != null && p !== '') node.appendChild(typeof p === 'string' ? document.createTextNode(p) : p); }); }
 

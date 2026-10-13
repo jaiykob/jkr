@@ -222,7 +222,7 @@
 .tz-name { font-weight: 600; font-size: 17px; color: #fff; }
 .tz-zips, .tz-note { line-height: 1.5; color: var(--on-dark-m); }
 .tz-note { margin-top: 14px; }
-.town-zones .guess { color: #FF8A80; }
+html.show-guesses .town-zones .guess { color: #FF8A80; }
 .town-local > .wrap > .town-h3 { margin-top: 40px; }
 .town-areas { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
 .town-areas li { padding: 8px 16px; border-radius: var(--r-pill); background: var(--page); border: 1px solid var(--bdr); color: var(--tx); }

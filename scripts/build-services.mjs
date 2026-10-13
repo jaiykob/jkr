@@ -196,7 +196,7 @@ export function serviceLinks(lang = 'en') {
 
 /* ── the page ──────────────────────────────────────────────────────────── */
 const money = (cents) => (ORDER.GUESS.prices ? `<span class="guess">${fmt(cents)}</span>` : fmt(cents));
-const PHONE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
+const ARROW_UP = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>';
 const indent = (html, pad) => html.split('\n').map((l) => (l ? pad + l : l)).join('\n');
 
 /** A pipeline photo (images/photos/<name>-480|960 .webp|.jpg) as a framed hero picture. */
@@ -388,8 +388,9 @@ export function buildService(s, all = [s]) {
     '    <h2>Ready when your junk is.</h2>',
     '    <p class="closer-line">See your price now and pick a day that works for you.</p>',
     '    <div class="closer-actions">',
-    `      <a class="cta-btn is-yellow" href="${up}book/quote.html">Get my price</a>`,
-    `      <a class="cta-ghost" href="tel:${site.PHONE_TEL}">${PHONE_SVG}${esc(site.PHONE)}</a>`,
+    // The homepage closer's buttons (the old phone icon here had lost its size and showed huge).
+    `      <a class="btn-pill is-light" href="${up}book/quote.html">Get my price${ARROW_UP}</a>`,
+    `      <a class="link-arrow" href="tel:${site.PHONE_TEL}">Call ${esc(site.PHONE)}${ARROW_UP}</a>`,
     '    </div>',
     '  </div>',
     '</section>',

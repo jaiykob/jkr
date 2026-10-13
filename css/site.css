@@ -327,7 +327,7 @@ body .legal-footer > a { display: inline-flex; align-items: center; min-height: 
   background-size: 56px 56px;
 }
 .display {
-  font-family: var(--font); font-weight: 800; letter-spacing: -.03em;
+  font-family: var(--font); font-weight: 600; letter-spacing: -.03em;
   font-size: clamp(2.2rem, 3.6vw, 3.25rem); line-height: 1.1;
   color: var(--rg); text-wrap: balance;
 }

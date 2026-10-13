@@ -189,7 +189,7 @@ button { font: inherit; }
 .o-day[aria-pressed="true"], .o-win[aria-pressed="true"] { border-color: var(--ink); background: linear-gradient(180deg, var(--yel-50), #fff); box-shadow: 0 0 0 1px var(--ink); }
 .o-day.full, .o-win.full { background: #F3F3F3; border-style: dashed; color: #5F636A; cursor: not-allowed; box-shadow: none; }
 .o-day.full .o-day-md { color: #5F636A; font-weight: 700; }
-.o-win.full .guess { color: #8C2A22; }
+html.show-guesses .o-win.full .guess { color: #8C2A22; }
 .o-wins-box { margin-top: 28px; }
 .o-wins-box .o-sub { margin-top: 0; }
 .o-wins-box .o-help { margin-bottom: 12px; }
@@ -253,7 +253,7 @@ button { font: inherit; }
 .o-btn-primary[aria-disabled="true"] { opacity: .45; box-shadow: none; }
 .o-book { background: var(--yellow); color: var(--ink); }
 .o-book:hover { background: var(--yellow-2); }
-.o-book .guess { color: #8C1D18; }
+html.show-guesses .o-book .guess { color: #8C1D18; }
 .o-book.is-done { background: #DDEFE3; color: var(--ok); box-shadow: none; }
 #o-book[aria-busy="true"] { cursor: progress; }
 
