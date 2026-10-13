@@ -68,6 +68,35 @@
     syncDrops();
   }
 
+  // Novah's top bar: the hero's color at the top of the page; once scrolled it turns
+  // frosted, slides away while you scroll down and comes back as soon as you scroll up.
+  // It stays while the phone menu is open or something in it has keyboard focus.
+  var bar = document.querySelector('.site-header') || document.querySelector('body > .site-nav');
+  if (bar) {
+    var lastY = window.scrollY, ticking = false;
+    var onScroll = function () {
+      ticking = false;
+      var y = Math.max(0, window.scrollY), d = y - lastY;
+      bar.classList.toggle('is-scrolled', y > 8);
+      var keep = y < 80 || (links && links.classList.contains('open')) || !!bar.querySelector(':focus-visible');
+      if (keep || d < -6) bar.classList.remove('is-hidden');
+      else if (d > 6) {
+        bar.classList.add('is-hidden');
+        // an open dropdown goes with it, so it is not still open when the bar comes back
+        [].forEach.call(bar.querySelectorAll('.nav-drop.is-open'), function (o) {
+          if (window.matchMedia && !matchMedia('(min-width: 960px)').matches) return;
+          o.classList.remove('is-open');
+          o.querySelector('.nav-drop-btn').setAttribute('aria-expanded', 'false');
+        });
+      }
+      if (keep || Math.abs(d) > 6) lastY = y;
+    };
+    window.addEventListener('scroll', function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
+    }, { passive: true });
+    onScroll();
+  }
+
   // WhatsApp buttons (a[data-wa] holds the chat address): the message says hello and,
   // once the visitor has given a ZIP anywhere on the site, the ZIP. The order page
   // (js/order.js) writes its own message with the size.
