@@ -11,17 +11,18 @@
 @font-face { font-family: 'Google Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(../fonts/google-sans.woff2) format('woff2'); }
 :root {
   --font: 'Google Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  --ink:    #0C0B09;
-  --ink-2:  #34322F;
-  --muted:  #5E5B57;   /* 6.5:1 on the warm white */
-  --yellow: #0C0B09;   /* the one accent is the near black now (Novah has no color) */
-  --yel-50: #F1EEE8;
-  --page:   #FBF9F5;
+  --ink:    #0B0B0B;
+  --ink-2:  #333333;
+  --muted:  #595959;   /* 6.5:1 on the warm white */
+  --yellow: #FFD23F;   /* the brand yellow (founder 2026-10-13: black, yellow and white) */
+  --yellow-2: #F5C400; /* hover */
+  --yel-50: #FFF6D6;   /* a picked choice: the palest yellow */
+  --page:   #FFFFFF;
   --card:   #FFFFFF;
-  --soft:   #F1EEE8;
-  --line:   #E6E0D4;
-  --line-2: #D3CCBD;
-  --line-3: #857F72;   /* field borders: 4.0:1 on white (3:1 needed) */
+  --soft:   #F4F4F4;
+  --line:   #E5E5E5;
+  --line-2: #D0D0D0;
+  --line-3: #808080;   /* field borders: 4.0:1 on white (3:1 needed) */
   --focus:  #0B6BCB;
   --err:    #B42318;
   --ok:     #146C43;
@@ -61,10 +62,10 @@ button { font: inherit; }
 /* ── the progress bar: one bar that fills as the pages go by ── */
 /* It slides to the page on screen and pulses gently (founder: "dynamic and pulsing"):
    a glow that breathes and a light that sweeps along it. None with reduced motion. */
-.o-progress { height: 10px; margin: 0 0 28px; border-radius: 999px; background: #EEEAE1; }
-.o-progress span { position: relative; display: block; height: 100%; width: 25%; border-radius: 999px; overflow: hidden; background: var(--ink); transition: width .5s cubic-bezier(.2,.8,.2,1); animation: o-pulse 4.5s ease-in-out infinite; }
+.o-progress { height: 10px; margin: 0 0 28px; border-radius: 999px; background: #ECECEC; }
+.o-progress span { position: relative; display: block; height: 100%; width: 25%; border-radius: 999px; overflow: hidden; background: var(--yellow); transition: width .5s cubic-bezier(.2,.8,.2,1); animation: o-pulse 4.5s ease-in-out infinite; }
 .o-progress span::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent); transform: translateX(-100%); animation: o-sweep 6s ease-in-out infinite; }
-@keyframes o-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(12,11,9,0); } 50% { box-shadow: 0 0 10px 1px rgba(12,11,9,.35); } }
+@keyframes o-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,210,63,0); } 50% { box-shadow: 0 0 12px 2px rgba(255,210,63,.6); } }
 @keyframes o-sweep { 0%, 35% { transform: translateX(-100%); } 85%, 100% { transform: translateX(100%); } }
 
 /* ── a page: the question, its step tag, then the answer ── */
@@ -79,7 +80,7 @@ button { font: inherit; }
 /* A page's heading takes the focus only so a screen reader starts there; it is not
    something to tap, so it shows no ring. */
 .o-sec h2:focus, .o-sec h2:focus-visible { outline: none; }
-.o-pill { flex: none; display: inline-flex; align-items: center; height: 28px; margin: 2px 0 0; padding: 0 12px; border-radius: 999px; background: #F1EDE3; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.o-pill { flex: none; display: inline-flex; align-items: center; height: 28px; margin: 2px 0 0; padding: 0 12px; border-radius: 999px; background: #F1F1F1; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
 .o-sec-body { margin-top: 8px; }
 .o-help { margin: 0 0 16px; color: var(--muted); }
 /* A label over a part of a page (Pick a day, Arrival time, Payment): small spaced capitals. */
@@ -117,7 +118,7 @@ button { font: inherit; }
 .size-cost { grid-area: cost; display: block; }
 .size-price { font: 600 19px/1.2 var(--font); color: var(--ink); letter-spacing: -.01em; }
 .size-travel { display: none; }
-.size-card[aria-pressed="true"] { border-color: var(--ink); background: var(--soft); }
+.size-card[aria-pressed="true"] { border-color: var(--ink); background: var(--yel-50); }
 .size-card[aria-pressed="true"]::before { border-color: var(--ink); box-shadow: inset 0 0 0 5px var(--card), inset 0 0 0 12px var(--ink); }
 
 /* "Not sure? Send photos" under the tiles (js/photo-quote.js builds the parts) */
@@ -186,7 +187,7 @@ button { font: inherit; }
 .o-win-full { font-weight: 600; color: var(--muted); }
 .o-day:hover, .o-win:hover { border-color: var(--line-2); box-shadow: 0 6px 18px rgba(21,23,26,.07); }
 .o-day[aria-pressed="true"], .o-win[aria-pressed="true"] { border-color: var(--ink); background: linear-gradient(180deg, var(--yel-50), #fff); box-shadow: 0 0 0 1px var(--ink); }
-.o-day.full, .o-win.full { background: #F3F0E9; border-style: dashed; color: #5F636A; cursor: not-allowed; box-shadow: none; }
+.o-day.full, .o-win.full { background: #F3F3F3; border-style: dashed; color: #5F636A; cursor: not-allowed; box-shadow: none; }
 .o-day.full .o-day-md { color: #5F636A; font-weight: 700; }
 .o-win.full .guess { color: #8C2A22; }
 .o-wins-box { margin-top: 28px; }
@@ -194,7 +195,7 @@ button { font: inherit; }
 .o-wins-box .o-help { margin-bottom: 12px; }
 
 /* ── 4. checkout: your price (Scoops Co.'s summary cards), then the payment ── */
-.o-qcard { margin-top: 16px; padding: 20px 20px 6px; border-radius: 16px; border: 1px solid var(--line); background: linear-gradient(180deg, #F7F4EC, #fff 70%); box-shadow: 0 10px 30px -18px rgba(21,23,26,.35); }
+.o-qcard { margin-top: 16px; padding: 20px 20px 6px; border-radius: 16px; border: 1px solid var(--line); background: linear-gradient(180deg, #F7F7F7, #fff 70%); box-shadow: 0 10px 30px -18px rgba(21,23,26,.35); }
 .o-qcard + .o-qcard { margin-top: 14px; }
 .o-qcard-k { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .o-qcard-sub { margin: 2px 0 0; color: var(--muted); }
@@ -245,14 +246,14 @@ button { font: inherit; }
 .o-btn { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 56px; padding: 0 20px; border-radius: 999px; cursor: pointer; font: 700 17px/1.1 var(--font); transition: background .15s, opacity .15s, box-shadow .15s; }
 .o-btn-ghost { background: var(--soft); color: var(--ink); border: 1px solid var(--line); }
 .o-btn-ghost:hover { border-color: var(--line-2); }
-.o-btn-ghost:disabled { background: #FAF8F3; color: #8A877F; cursor: default; }
-.o-btn-primary { background: var(--ink); color: #fff; border: 0; box-shadow: 0 6px 16px rgba(21,23,26,.18); }
-.o-btn-primary:hover { background: var(--ink-2); }
+.o-btn-ghost:disabled { background: #FAFAFA; color: #8A877F; cursor: default; }
+.o-btn-primary { background: var(--yellow); color: var(--ink); border: 0; box-shadow: 0 6px 16px rgba(21,23,26,.18); }
+.o-btn-primary:hover { background: var(--yellow-2); }
 /* Next stays tappable before the page is answered (it says what is missing), dimmed. */
 .o-btn-primary[aria-disabled="true"] { opacity: .45; box-shadow: none; }
-.o-book { background: var(--ink); color: #fff; }
-.o-book:hover { background: var(--ink-2); }
-.o-book .guess { color: #FF9C94; }
+.o-book { background: var(--yellow); color: var(--ink); }
+.o-book:hover { background: var(--yellow-2); }
+.o-book .guess { color: #8C1D18; }
 .o-book.is-done { background: #DDEFE3; color: var(--ok); box-shadow: none; }
 #o-book[aria-busy="true"] { cursor: progress; }
 

@@ -24,9 +24,9 @@
 .h-hero-in { max-width: 1440px; margin: 0 auto; padding: 0 clamp(16px, 3.4vw, 48px); }
 /* the label over everything, the statement on the left, the line and the buttons on the right */
 .h-hero-top { display: grid; gap: 24px 64px; align-items: end; margin-bottom: clamp(32px, 4vw, 56px); }
-.h-hero .h-eyebrow { color: rgba(255,255,255,.62); margin: 0; }
-.h-title { margin: 0; max-width: 12ch; font: 600 clamp(3rem, 7.4vw, 7rem)/.95 var(--font); letter-spacing: -.055em; color: #FBF9F5; text-wrap: balance; }
-.h-lede { margin: 0; max-width: 470px; font-size: clamp(17px, 1.4vw, 19px); line-height: 1.6; color: rgba(251,249,245,.74); }
+.h-hero .h-eyebrow { color: var(--yellow); margin: 0; }
+.h-title { margin: 0; max-width: 12ch; font: 600 clamp(3rem, 7.4vw, 7rem)/.95 var(--font); letter-spacing: -.055em; color: #FFFFFF; text-wrap: balance; }
+.h-lede { margin: 0; max-width: 470px; font-size: clamp(17px, 1.4vw, 19px); line-height: 1.6; color: rgba(255,255,255,.74); }
 .h-founding { margin: 0; font-weight: 600; color: #fff; }
 .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
 .h-hero .link-arrow { color: #fff; }
@@ -38,7 +38,7 @@
   .h-actions { grid-area: actions; }
   .h-founding { grid-area: founding; }
 }
-.h-photo { position: relative; margin: 0; border-radius: var(--r-lg); overflow: hidden; background: #1E1C19; }
+.h-photo { position: relative; margin: 0; border-radius: var(--r-lg); overflow: hidden; background: #1C1C1C; }
 .h-photo img { display: block; width: 100%; height: clamp(320px, 52vw, 680px); object-fit: cover; }
 .h-photo figcaption { position: absolute; left: clamp(16px, 3vw, 32px); bottom: clamp(16px, 3vw, 28px); max-width: 280px; font: 500 13px/1.6 var(--font); letter-spacing: .2em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 12px rgba(0,0,0,.45); }
 .h-photo figcaption span { display: block; }
@@ -55,7 +55,7 @@
 /* ── PRICE FROM PHOTOS: a big rounded photo beside the story ── */
 .split { display: grid; gap: 40px 72px; align-items: center; }
 @media (min-width: 900px) { .split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
-.split-photo { margin: 0; border-radius: var(--r-lg); overflow: hidden; background: #E4E0D8; }
+.split-photo { margin: 0; border-radius: var(--r-lg); overflow: hidden; background: #E6E6E6; }
 .split-photo img { display: block; width: 100%; height: clamp(360px, 46vw, 620px); object-fit: cover; }
 .split-copy .section-title { margin-bottom: 24px; }
 .split-text { margin: 0 0 20px; max-width: 480px; font-size: 18px; line-height: 1.6; color: var(--txm); }
@@ -71,7 +71,7 @@
   transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, border-color .35s;
 }
 .svc:hover { transform: translateY(-6px); box-shadow: var(--sh-lg); border-color: transparent; }
-.svc-img { display: block; overflow: hidden; border-radius: 14px; background: #E4E0D8; }
+.svc-img { display: block; overflow: hidden; border-radius: 14px; background: #E6E6E6; }
 .svc-img img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; transition: transform .7s cubic-bezier(.2,.8,.2,1); }
 .svc:hover .svc-img img { transform: scale(1.06); }
 .svc-name { display: block; margin: 18px 10px 6px; font: 600 20px/1.25 var(--font); letter-spacing: -.015em; }
@@ -92,7 +92,7 @@
   transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, border-color .35s;
 }
 .h-sizes .size-card:hover { transform: translateY(-6px); box-shadow: var(--sh-lg); border-color: transparent; }
-.h-sizes .size-photo { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 14px; background: #E4E0D8; }
+.h-sizes .size-photo { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 14px; background: #E6E6E6; }
 .h-sizes .size-body { display: grid; gap: 4px; padding: 0 8px; }
 .h-sizes .size-name { font: 600 19px/1.25 var(--font); letter-spacing: -.015em; }
 .h-sizes .size-note { color: var(--txm); line-height: 1.45; }
@@ -123,10 +123,10 @@
 /* ── CLOSER: near black, a big two line statement, the buttons ── */
 .closer { background: var(--rg); color: #fff; padding: clamp(96px, 12vw, 160px) 0; }
 .closer-in { max-width: var(--w-wide); margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
-.closer .eyebrow { color: rgba(255,255,255,.55); }
-.closer h2 { margin: 0 0 24px; font: 600 clamp(3rem, 8vw, 7.5rem)/.95 var(--font); letter-spacing: -.055em; color: #FBF9F5; }
+.closer .eyebrow { color: var(--yellow); }
+.closer h2 { margin: 0 0 24px; font: 600 clamp(3rem, 8vw, 7.5rem)/.95 var(--font); letter-spacing: -.055em; color: #FFFFFF; }
 .closer h2 > span { display: block; }
-.closer-line { margin: 0 0 36px; font-size: 18px; color: rgba(251,249,245,.7); }
+.closer-line { margin: 0 0 36px; font-size: 18px; color: rgba(255,255,255,.7); }
 .closer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
 .closer .link-arrow { color: #fff; }
 

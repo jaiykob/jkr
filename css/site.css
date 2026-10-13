@@ -20,7 +20,10 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* Novah's design language (founder 2026-10-13: "copy the entire design scheme"):
+/* Black, yellow and white (founder 2026-10-13: "make color scheme black yellow and white"):
+   black bands, white pages, and yellow for the main buttons, the small labels on black
+   and the highlights. Yellow is never used for text on white (it cannot be read there).
+   Novah's design language (founder 2026-10-13: "copy the entire design scheme"):
    Google Sans, a near black and a warm white with warm grey bands, big tight
    headings, small spaced capitals over them, pill buttons with an arrow, big
    rounded photos. The old names stay so every page follows: --rg is the near
@@ -28,21 +31,23 @@
 @font-face { font-family: 'Google Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(../fonts/google-sans.woff2) format('woff2'); }
 :root {
   --font: 'Google Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  --rg:   #0C0B09;
-  --fg:   #34322F;
-  --tan:  #FBF9F5;
-  --ltan: #F1EEE8;
-  --dtan: #4E4C49;
-  --page: #FBF9F5;
+  --rg:   #0B0B0B;
+  --yellow:   #FFD23F;
+  --yellow-2: #F5C400;   /* hover */
+  --fg:   #333333;
+  --tan:  #FFFFFF;
+  --ltan: #F4F4F4;
+  --dtan: #4A4A4A;
+  --page: #FFFFFF;
   --card: #FFFFFF;
-  --surf: #F1EEE8;
-  --tx:   #0C0B09;
-  --txm:  rgba(12,11,9,.66);
-  --txd:  rgba(12,11,9,.6);
-  --bdr:  rgba(12,11,9,.1);
-  --bdrt: rgba(251,249,245,.18);
-  --on-dark:   rgba(251,249,245,.94);
-  --on-dark-m: rgba(251,249,245,.68);
+  --surf: #F4F4F4;
+  --tx:   #0B0B0B;
+  --txm:  rgba(11,11,11,.66);
+  --txd:  rgba(11,11,11,.6);
+  --bdr:  rgba(11,11,11,.1);
+  --bdrt: rgba(255,255,255,.18);
+  --on-dark:   rgba(255,255,255,.94);
+  --on-dark-m: rgba(255,255,255,.68);
   --w-wide: 1180px;
   --w-text: 760px;
   --w-sub:  560px;
@@ -52,9 +57,9 @@
   --r-md:   20px;
   --r-lg:   28px;
   --r-pill: 999px;
-  --sh-sm:  0 1px 2px rgba(12,11,9,.04);
-  --sh-md:  0 10px 30px -12px rgba(12,11,9,.18);
-  --sh-lg:  0 24px 60px -20px rgba(12,11,9,.25);
+  --sh-sm:  0 1px 2px rgba(11,11,11,.04);
+  --sh-md:  0 10px 30px -12px rgba(11,11,11,.18);
+  --sh-lg:  0 24px 60px -20px rgba(11,11,11,.25);
   --nav-h:  72px;
   --tap:    48px;     /* minimum size of anything you tap */
 }
@@ -92,7 +97,7 @@ body > .site-nav { position: sticky; top: 0; }
 .site-header, body > .site-nav { transition: transform .5s cubic-bezier(.4,0,.2,1), background-color .5s, border-color .5s, box-shadow .5s; }
 .site-header.is-hidden, body > .site-nav.is-hidden { transform: translateY(-100%); }
 .site-header.is-scrolled .site-nav, body > .site-nav.is-scrolled {
-  background: rgba(12,11,9,.85); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  background: rgba(11,11,11,.85); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
   border-bottom-color: rgba(255,255,255,.06); box-shadow: 0 4px 30px rgba(0,0,0,.5);
 }
 @media (prefers-reduced-motion: reduce) { .site-header, body > .site-nav, .site-nav { transition: none; } }
@@ -126,11 +131,11 @@ body .lang-switch .lang-short { display: inline; }
 .nav-phone, .nav-chat { display: none; }
 .nav-cta {
   display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px 0 20px;
-  border-radius: var(--r-pill); background: #fff; color: var(--rg); font-size: 15px; font-weight: 600;
+  border-radius: var(--r-pill); background: var(--yellow); color: var(--rg); font-size: 15px; font-weight: 600;
   text-decoration: none; white-space: nowrap; transition: transform .2s, background .2s;
 }
 .nav-cta::after { content: ''; width: 14px; height: 14px; background: currentColor; -webkit-mask: var(--arrow) center / contain no-repeat; mask: var(--arrow) center / contain no-repeat; transition: transform .2s; }
-.nav-cta:hover { background: #F1EEE8; }
+.nav-cta:hover { background: var(--yellow-2); }
 .nav-cta:hover::after { transform: translate(2px, -2px); }
 .nav-burger { display: none; align-items: center; justify-content: center; width: 48px; height: 48px; padding: 0; border-radius: var(--r-pill); background: none; border: 1px solid rgba(255,255,255,.2); color: #fff; cursor: pointer; }
 .nav-burger svg { width: 20px; height: 20px; }
@@ -146,25 +151,25 @@ body .lang-switch .lang-short { display: inline; }
   .nav-links a { font-size: 17px; color: #fff; }
   .nav-links li.chat-item { display: block; }
   .nav-links li.cta-item { display: block; padding-top: 8px; }
-  .nav-links .nav-cta-mobile { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: var(--r-pill); background: #fff; color: var(--rg); font-weight: 600; }
+  .nav-links .nav-cta-mobile { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: var(--r-pill); background: var(--yellow); color: var(--rg); font-weight: 600; }
 }
 /* ── FOOTER (Novah's): near black, the name, a short line, columns of quiet links,
    then a thin line and the small print. */
 footer { position: relative; isolation: isolate; overflow: hidden; background: var(--rg); color: rgba(255,255,255,.66); padding: 80px clamp(16px, 4vw, 48px) 28px; font-family: var(--font); line-height: 1.6; text-align: left; border: 0; }
 /* Novah's night sky in the footer: a thin shine along the top edge, a soft blue glow
-   under it, and small white and pale blue stars (images/footer-stars*.svg, tiled); the
-   blue ones twinkle slowly. */
+   under it, and small white and pale yellow stars (images/footer-stars*.svg, tiled); the
+   yellow ones twinkle slowly. Novah's glow and stars are blue; ours are the brand yellow. */
 footer:not(.o-foot) {
   background:
     linear-gradient(90deg, transparent, rgba(255,255,255,.18) 30%, rgba(255,255,255,.28) 50%, rgba(255,255,255,.18) 70%, transparent) top / 100% 1px no-repeat,
-    radial-gradient(ellipse 600px 80px at 50% 0, rgba(120,140,220,.18), transparent 70%) no-repeat,
+    radial-gradient(ellipse 600px 80px at 50% 0, rgba(255,210,63,.16), transparent 70%) no-repeat,
     var(--rg);
 }
 footer:not(.o-foot)::before, footer:not(.o-foot)::after {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: url(../images/footer-stars.svg) 50% 0 / 1280px 400px repeat;
 }
-footer:not(.o-foot)::after { background-image: url(../images/footer-stars-blue.svg); animation: foot-twinkle 5s ease-in-out infinite; }
+footer:not(.o-foot)::after { background-image: url(../images/footer-stars-gold.svg); animation: foot-twinkle 5s ease-in-out infinite; }
 @keyframes foot-twinkle { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { footer:not(.o-foot)::after { animation: none; } }
 .foot-cols { display: grid; gap: 32px; max-width: var(--w-wide); margin: 0 auto 48px; grid-template-columns: minmax(0, 1fr); }
@@ -204,7 +209,7 @@ body .legal-footer > a { display: inline-flex; align-items: center; min-height: 
 .nav-drop-btn:hover, .nav-drop.is-open .nav-drop-btn { color: #fff; }
 .nav-chev { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
 .nav-drop.is-open .nav-chev { transform: rotate(180deg); }
-.nav-ico { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #F1EEE8; border: 1px solid rgba(12,11,9,.06); }
+.nav-ico { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #F4F4F4; border: 1px solid rgba(11,11,11,.06); }
 .nav-ico svg, .nav-panel-all svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .nav-panel-list { list-style: none; margin: 0; padding: 0; }
 .nav-links .nav-panel-list a { display: flex; align-items: center; gap: 14px; }
@@ -213,7 +218,7 @@ body .legal-footer > a { display: inline-flex; align-items: center; min-height: 
   .nav-links { gap: 28px; }
   .nav-panel {
     position: absolute; top: calc(100% + 12px); left: -20px; z-index: 110; width: 290px; padding: 8px;
-    border-radius: 16px; background: #fff; color: var(--rg); box-shadow: 0 24px 50px -16px rgba(0,0,0,.45), 0 0 0 1px rgba(12,11,9,.06);
+    border-radius: 16px; background: #fff; color: var(--rg); box-shadow: 0 24px 50px -16px rgba(0,0,0,.45), 0 0 0 1px rgba(11,11,11,.06);
     opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity .2s, transform .25s cubic-bezier(.2,.8,.2,1), visibility 0s .25s;
   }
   /* the little point under the word, and a bridge over the gap so the pointer can cross it */
@@ -221,9 +226,9 @@ body .legal-footer > a { display: inline-flex; align-items: center; min-height: 
   .nav-panel::after { content: ''; position: absolute; top: -6px; left: 44px; width: 12px; height: 12px; background: #fff; transform: rotate(45deg); border-radius: 2px; }
   .nav-drop.is-open .nav-panel { opacity: 1; visibility: visible; transform: none; transition: opacity .2s, transform .25s cubic-bezier(.2,.8,.2,1), visibility 0s; }
   .nav-links .nav-panel-list a { min-height: 54px; padding: 8px 10px; border-radius: 10px; color: var(--rg); font-size: 15px; font-weight: 500; transition: background .2s; }
-  .nav-links .nav-panel-list a:hover, .nav-links .nav-panel-list a:focus-visible { background: #F6F4EF; color: var(--rg); }
-  .nav-links .nav-panel-list a:hover .nav-ico { background: #fff; }
-  .nav-links .nav-panel-all { min-height: 48px; margin: 6px 0 0; padding: 0 10px 0 12px; border-top: 1px solid rgba(12,11,9,.08); color: var(--rg); font-size: 14px; font-weight: 600; }
+  .nav-links .nav-panel-list a:hover, .nav-links .nav-panel-list a:focus-visible { background: #F6F6F6; color: var(--rg); }
+  .nav-links .nav-panel-list a:hover .nav-ico { background: var(--yellow); border-color: var(--yellow); }
+  .nav-links .nav-panel-all { min-height: 48px; margin: 6px 0 0; padding: 0 10px 0 12px; border-top: 1px solid rgba(11,11,11,.08); color: var(--rg); font-size: 14px; font-weight: 600; }
   .nav-links .nav-panel-all:hover { color: var(--rg); }
   .nav-panel-all svg { width: 16px; height: 16px; transition: transform .2s; }
   .nav-panel-all:hover svg { transform: translateX(3px); }
@@ -250,7 +255,7 @@ body .legal-footer > a { display: inline-flex; align-items: center; min-height: 
   letter-spacing: .05em; text-decoration: none; text-align: center; line-height: 1.25;
   transition: background .2s, transform .15s, box-shadow .2s, border-color .2s, color .2s;
 }
-.btn-primary { background: var(--rg); color: #FBF8F2; box-shadow: 0 10px 24px rgba(21,23,26,.18); }
+.btn-primary { background: var(--rg); color: #FFFFFF; box-shadow: 0 10px 24px rgba(21,23,26,.18); }
 .btn-primary:hover { background: #000000; transform: translateY(-2px); box-shadow: 0 14px 32px rgba(21,23,26,.26); }
 .btn-tan { background: var(--tan); color: var(--rg); box-shadow: 0 10px 24px rgba(0,0,0,.2); }
 .btn-tan:hover { background: #F5C400; transform: translateY(-2px); }
@@ -500,18 +505,18 @@ a.chip:hover { background: var(--tan); }
 /* Price card calculator (city pages): the homepage calculator's controls,
    restyled for the dark card. */
 .pc-field { border: 0; margin: 20px 0 0; padding: 0; min-width: 0; }
-.pc-field legend { padding: 0; margin-bottom: 8px; font-size: 1rem; font-weight: 600; color: #F5F2EA; }
+.pc-field legend { padding: 0; margin-bottom: 8px; font-size: 1rem; font-weight: 600; color: #F6F6F6; }
 .pc-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .pc-seg-num { grid-template-columns: repeat(5, 1fr); gap: 4px; }  /* 5 × 48px fits a 360px phone */
 .pc-seg button {
   min-height: var(--tap); padding: 6px 8px; border-radius: 10px; cursor: pointer;
-  font: 600 1rem/1.2 var(--font); color: #F5F2EA;
+  font: 600 1rem/1.2 var(--font); color: #F6F6F6;
   background: transparent; border: 1.5px solid rgba(255,210,63,.5);
   transition: background .15s, color .15s, border-color .15s;
 }
 .pc-seg button:hover { border-color: var(--tan); }
 .pc-seg button[aria-pressed="true"] { background: var(--tan); border-color: var(--tan); color: var(--rg); }
-.pc-seg button:focus-visible { outline: 3px solid #F5F2EA; outline-offset: 2px; }
+.pc-seg button:focus-visible { outline: 3px solid #F6F6F6; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .pc-seg button { transition: none; } }
 .pc-fine { margin-top: 14px; text-align: center; font-size: .82rem; color: rgba(245,242,234,.78); }
 
@@ -862,14 +867,14 @@ h1, h2, h3, h4, .display, .section-title, .card h3, .card-title, .steps h3, .pho
 /* pill buttons with an arrow */
 .btn-primary, .btn-tan, .cta-btn, .btn-pill {
   display: inline-flex; align-items: center; justify-content: center; gap: 14px; min-height: 52px; padding: 0 22px 0 26px;
-  border-radius: var(--r-pill); border: 0; background: var(--rg); color: #fff; font: 600 16px/1 var(--font); letter-spacing: 0;
+  border-radius: var(--r-pill); border: 0; background: var(--yellow); color: var(--rg); font: 600 16px/1 var(--font); letter-spacing: 0;
   text-decoration: none; text-transform: none; box-shadow: none; transition: background .2s, transform .2s;
 }
-.btn-primary:hover, .btn-tan:hover, .cta-btn:hover, .btn-pill:hover { background: #2A2825; transform: none; }
+.btn-primary:hover, .btn-tan:hover, .cta-btn:hover, .btn-pill:hover { background: var(--yellow-2); transform: none; }
 .btn-pill svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; }
 .btn-pill:hover svg, .link-arrow:hover svg { transform: translate(2px, -2px); }
-.btn-pill.is-light, .band.is-dark .btn-tan, .band.is-dark .btn-primary { background: #fff; color: var(--rg); }
-.btn-pill.is-light:hover { background: #F1EEE8; }
+.btn-pill.is-light, .band.is-dark .btn-tan, .band.is-dark .btn-primary { background: var(--yellow); color: var(--rg); }
+.btn-pill.is-light:hover { background: var(--yellow-2); }
 .btn-ghost { border-radius: var(--r-pill); font-family: var(--font); }
 .link-arrow { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; color: inherit; font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; }
 .link-arrow svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; }
