@@ -18,12 +18,12 @@
     },
     {
       "source": "/portland/",
-      "destination": "/service-areas.html",
+      "destination": "/",
       "permanent": true
     },
     {
       "source": "/portland/index.html",
-      "destination": "/service-areas.html",
+      "destination": "/",
       "permanent": true
     },
     {
@@ -44,6 +44,26 @@
     {
       "source": "/es/blog/getting-ready-for-a-pickup",
       "destination": "/es/before-we-come.html",
+      "permanent": true
+    },
+    {
+      "source": "/service-areas.html",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/service-areas",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/es/service-areas.html",
+      "destination": "/es/",
+      "permanent": true
+    },
+    {
+      "source": "/es/service-areas",
+      "destination": "/es/",
       "permanent": true
     }
   ],

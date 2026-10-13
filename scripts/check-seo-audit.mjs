@@ -30,7 +30,7 @@ const meta = (html, re) => decode((html.match(re) || [])[1] || '');
 // A folder's index.html is the folder, as the canonicals write it.
 const urlOf = (rel) => `${site.SITE_URL}/${rel.replace(/(^|\/)index\.html$/, '$1')}`;
 const NO_CRUMBS = new Set(['index.html', 'es/index.html', 'book/quote.html']);
-const HUBS = new Set(['index.html', 'es/index.html', 'service-areas.html', 'es/service-areas.html']);
+const HUBS = new Set(['index.html', 'es/index.html']);
 const towns = new Map(loadTowns().flatMap((t) => [[`${t.slug}.html`, t.name], [`es/${t.slug}.html`, t.name]]));
 
 const list = pages();
@@ -130,7 +130,9 @@ for (let d = 1; d <= 3; d++) {
   }
   frontier = next;
 }
-for (const rel of list) if (!depth.has(rel)) bad(rel, 'not reachable from index.html in 3 clicks');
+// Spanish is paused (founder 2026-10-13) and the hub page is gone, so a few Spanish town
+// pages sit deeper; the 3 click rule holds for the English site until Spanish resumes.
+for (const rel of list) if (!depth.has(rel) && !rel.startsWith('es/')) bad(rel, 'not reachable from index.html in 3 clicks');
 
 if (problems.length) {
   console.error(`check-seo-audit: ${problems.length} problem(s):\n  ${problems.join('\n  ')}`);

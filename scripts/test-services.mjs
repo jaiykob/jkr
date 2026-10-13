@@ -10,7 +10,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import site from '../api/_lib/site.js';
 import { parseService, loadServices, buildService, serviceLinks } from './build-services.mjs';
-import { crumbs, HUB } from './lib/crumbs.mjs';
+import { crumbs } from './lib/crumbs.mjs';
 import { loadTowns, townTravel } from './build-towns.mjs';
 import { twinOf } from './lib/twins.mjs';
 
@@ -152,25 +152,25 @@ const maxFee = Math.max(...s.towns.map((t) => Math.max(...townTravel(loadTowns()
 ok(svc && svc.offers['@type'] === 'AggregateOffer' && svc.offers.priceCurrency === 'USD' && svc.offers.lowPrice === (first.cents / 100).toFixed(2) && svc.offers.highPrice === ((last.cents + maxFee) / 100).toFixed(2), `offers: ${svc && JSON.stringify(svc.offers)}`);
 ok(svc && svc.areaServed.length === 5 && svc.areaServed.every((a) => a['@type'] === 'City') && svc.areaServed[0].name === 'Gresham, OR', `areaServed: ${svc && JSON.stringify(svc.areaServed)}`);
 ok(svc && svc.provider['@type'] === 'LocalBusiness' && svc.provider.telephone === site.PHONE_TEL && svc.provider.name === site.NAME && svc.provider.url, 'provider');
-ok(bl && bl.itemListElement.length === 3 && bl.itemListElement[2].name === 'Sample cleanout', `BreadcrumbList: ${bl && JSON.stringify(bl.itemListElement)}`);
+ok(bl && bl.itemListElement.length === 2 && bl.itemListElement[1].name === 'Sample cleanout', `BreadcrumbList: ${bl && JSON.stringify(bl.itemListElement)}`);
 ok(fq && fq.mainEntity.length === 3 && fq.mainEntity[0].name === 'First question?', 'FAQPage does not match the questions');
 ok(/<nav class="crumbs" aria-label="Breadcrumb">/.test(main), 'no breadcrumb trail in main');
 
 console.log('== the breadcrumb helper ==');
 {
-  const c = crumbs([HUB.en, { name: 'X & Y' }], { rel: 'portland/x.html' });
+  const c = crumbs([{ name: 'Middle', href: 'middle.html' }, { name: 'X & Y' }], { rel: 'portland/x.html' });
   ok(c.html.startsWith('<nav class="crumbs" aria-label="Breadcrumb"><ol>'), `html: ${c.html}`);
   ok(c.html.includes('<a href="../index.html">Home</a>'), 'Home is not ../index.html from portland/');
-  ok(c.html.includes('<a href="../service-areas.html">Portland metro</a>'), 'the hub is not ../service-areas.html from portland/');
+  ok(c.html.includes('<a href="../middle.html">Middle</a>'), 'a middle step is not ../middle.html from portland/');
   ok(c.html.includes('<li aria-current="page">X &amp; Y</li>'), 'the page itself is not the last, unlinked, escaped item');
   ok((c.html.match(/<span[^>]*aria-hidden="true"[^>]*>›<\/span>/g) || []).length === 2, 'want two › separators hidden from screen readers');
   const items = c.ld.itemListElement;
   ok(c.ld['@type'] === 'BreadcrumbList' && items.length === 3 && items.every((it, i) => it['@type'] === 'ListItem' && it.position === i + 1), 'BreadcrumbList shape');
   ok(items.every((it) => String(it.item).startsWith(site.SITE_URL)), 'an item URL is not absolute on site.SITE_URL');
-  ok(items[0].item === `${site.SITE_URL}/` && items[1].item === `${site.SITE_URL}/service-areas.html` && items[2].item === `${site.SITE_URL}/portland/x.html`, `items: ${JSON.stringify(items)}`);
+  ok(items[0].item === `${site.SITE_URL}/` && items[1].item === `${site.SITE_URL}/middle.html` && items[2].item === `${site.SITE_URL}/portland/x.html`, `items: ${JSON.stringify(items)}`);
   ok(items[2].name === 'X & Y', 'the BreadcrumbList name is not plain text');
-  const es = crumbs([HUB.es, { name: 'X' }], { rel: 'es/x.html', lang: 'es' });
-  ok(es.html.startsWith('<nav class="crumbs" aria-label="Ruta">') && es.html.includes('<a href="index.html">Inicio</a>') && es.html.includes('<a href="service-areas.html">Área de Portland</a>'), `Spanish: ${es.html}`);
+  const es = crumbs([{ name: 'Medio', href: 'es/medio.html' }, { name: 'X' }], { rel: 'es/x.html', lang: 'es' });
+  ok(es.html.startsWith('<nav class="crumbs" aria-label="Ruta">') && es.html.includes('<a href="index.html">Inicio</a>') && es.html.includes('<a href="medio.html">Medio</a>'), `Spanish: ${es.html}`);
   ok(es.ld.itemListElement[0].item === `${site.SITE_URL}/es/` && es.ld.itemListElement[0].name === 'Inicio', 'the Spanish home item');
   const blog = crumbs([{ name: 'Blog', href: 'blog/index.html' }, { name: 'A post' }], { rel: 'blog/a-post.html' });
   ok(blog.html.includes('<a href="index.html">Blog</a>') && blog.html.includes('<a href="../index.html">Home</a>'), `a page beside its folder index: ${blog.html}`);

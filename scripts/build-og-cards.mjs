@@ -74,8 +74,6 @@ function cardFor(rel) {
     'es/index.html': { kicker: 'Retiro de basura en el área de Portland', title: 'Elige tu tamaño. Ve tu precio.', sub: 'Elige un tamaño o manda una foto. Nosotros cargamos.' },
     'es/faq.html': { kicker: 'Ayuda', title: '¿Cómo te ayudamos?', sub: 'Precios, fotos, viaje, el día y lo que llevamos.' },
     'book/quote.html': { kicker: 'Get a price', title: 'Snap a photo. See your price.', sub: 'Travel for your ZIP included. Book online in a minute.' },
-    'service-areas.html': { kicker: 'Where we haul', title: 'Every town we serve', sub: `${townList.length} towns in Oregon and Washington, by travel zone.` },
-    'es/service-areas.html': { kicker: 'Dónde trabajamos', title: 'Todas nuestras ciudades', sub: `${townList.length} ciudades en Oregon y Washington, por zona de viaje.` },
     'blog/index.html': { kicker: 'From the blog', title: 'Junk removal, plainly explained', sub: 'Costs, what can go, and where it ends up.' },
     'es/blog/index.html': { kicker: 'Del blog', title: 'Retiro de basura, explicado claro', sub: 'Precios, qué se puede llevar y a dónde va.' },
     'faq.html': { kicker: 'Help', title: 'How can we help?', sub: 'Prices, photos, travel, the day, and what we take.' },
