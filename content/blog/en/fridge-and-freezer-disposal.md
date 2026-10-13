@@ -24,7 +24,7 @@ If it does not work, or you want it gone this week, we can take it. A fridge or 
 
 ## Washers, dryers and water heaters
 
-These have no refrigerant, so they are simpler. A washer or dryer counts as its own item in the quote. A water heater should be drained before we come, which can take an hour or more with a garden hose, so start early.
+These have no refrigerant, so they are simpler. A washer or dryer counts as its own item in the quote. A water heater should be drained before we come, which can take an hour or more with a garden hose, so start early. Our [appliance removal page](/portland/appliance-removal.html) lists every machine we take and where each one goes.
 
 ## Basements and garages
 

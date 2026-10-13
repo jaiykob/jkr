@@ -404,5 +404,18 @@ ok(/10 am to 12 pm/.test(rem.html) && /10 am to 12 pm/.test(rem.text), 'the remi
 const rem0 = tpl.visitReminder({ name: 'Jane', visitDate: 'Tue Oct 14' });
 ok(!/undefined/.test(rem0.html + rem0.text), 'a reminder without a window prints undefined');
 
+// How to get ready (round 9): the booked and reminder emails link the Before we come page by its
+// full address, built from the site address (api/_lib/site.js), in the HTML and the plain text.
+{
+  const site = require('../api/_lib/site.js');
+  const url = `${site.SITE_URL}/before-we-come.html`;
+  const booked = tpl.bookedConfirmation({ name: 'Jane', load: '1/2 truck', total: '$374.00', dayLabel: 'Tue Oct 14', windowLabel: '10 am to 12 pm' });
+  for (const [k, m] of [['booked', booked], ['reminder', rem]]) {
+    ok(m.html.includes(`href="${url}"`), `the ${k} email does not link ${url}`);
+    ok(m.text.includes(url), `the ${k} email's plain text does not give ${url}`);
+    ok(/How to get ready/.test(m.html) && /How to get ready/.test(m.text), `the ${k} email has no "How to get ready" line`);
+  }
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

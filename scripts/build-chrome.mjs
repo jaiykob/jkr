@@ -33,6 +33,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setLangSwitch } from './lib/twins.mjs';
+import { crumbs } from './lib/crumbs.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const check = process.argv.includes('--check');
@@ -90,6 +91,30 @@ function splice(text, name, body, file) {
   return text.slice(0, a + open.length) + '\n' + body + '\n' + indent + text.slice(b);
 }
 
+/** The breadcrumb of each hand written page (round 9): the visible trail replaces the page's
+ *  <nav class="trail|crumbs">, and its BreadcrumbList goes between BUILD:crumbs-ld markers in
+ *  the head (added before </head> the first time). Generated pages get theirs from their builder. */
+const CRUMBS = {
+  'faq.html': [{ name: 'Help' }],
+  'es/faq.html': [{ name: 'Ayuda' }],
+  'before-we-come.html': [{ name: 'Help', href: 'faq.html' }, { name: 'Before we come' }],
+  'es/before-we-come.html': [{ name: 'Ayuda', href: 'es/faq.html' }, { name: 'Antes de que lleguemos' }],
+  'privacy.html': [{ name: 'Privacy policy' }],
+  'terms.html': [{ name: 'Terms of service' }],
+  'book/commercial.html': [{ name: 'Property managers' }],
+};
+function withCrumbs(html, rel) {
+  const trail = CRUMBS[rel];
+  if (!trail) return html;
+  const c = crumbs(trail, { rel, lang: rel.startsWith('es/') ? 'es' : 'en' });
+  const nav = /<nav class="(?:trail|crumbs)"[^>]*>[\s\S]*?<\/nav>/;
+  if (!nav.test(html)) throw new Error(`${rel}: no <nav class="trail"> or <nav class="crumbs"> to put the breadcrumb in`);
+  let out = html.replace(nav, () => c.html);
+  if (!out.includes('<!-- BUILD:crumbs-ld -->')) out = out.replace('</head>', '  <!-- BUILD:crumbs-ld -->\n  <!-- /BUILD:crumbs-ld -->\n</head>');
+  const ld = ['  <script type="application/ld+json">', JSON.stringify(c.ld, null, 2).replace(/^/gm, '  '), '  </script>'].join('\n');
+  return splice(out, 'crumbs-ld', ld, rel);
+}
+
 const stale = [];
 let n = 0;
 for (const abs of htmlFiles()) {
@@ -108,6 +133,7 @@ for (const abs of htmlFiles()) {
   if (out.includes('<!-- BUILD:site-sticky -->')) out = splice(out, 'site-sticky', relink(up, home.sticky), rel);
   // The language switch goes to this page's twin (404's stays root relative).
   if (rel !== '404.html') out = setLangSwitch(out, rel);
+  out = withCrumbs(out, rel);
   n++;
   if (out === eol(before)) continue;
   if (check) stale.push(rel);

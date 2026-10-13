@@ -111,6 +111,12 @@ PROBE_SETS[7] = { text: ['main', 'footer'],
 // Round 8: the order page one step at a time, measured on each step (probeNow after a walk).
 PROBE_SETS[8] = { text: ['.o-steps', '#order', '#o-bar', '#o-summary'],
   taps: ['.o-steps button', '.o-steps a', '#order button', '.size-card', '#o-bar a', '#o-bar button', '.o-change'] };
+// Round 9: the breadcrumb, the service pages (svc-), the help center (help-) and Before we come (bwc-).
+// A link inside a sentence (a town in the service copy, a link in an answer) is text, not a button:
+// only links that are buttons themselves (a class of their own, the trail, the topics) are measured as taps.
+PROBE_SETS[9] = { text: ['.crumbs', '[class*="svc-"]', '[class*="help-"]', '[class*="bwc-"]', 'main .faq-list', 'footer'],
+  taps: ['.crumbs a', '.size-card', '.help-topics a', '.help-contact a', 'a[class*="svc-"]', 'a[class*="bwc-"]', '.faq-list summary', '.cta-btn',
+    '.site-nav a', '.site-nav button', 'footer a'] };
 /* The probe as one function of the set id, returning { sw, vw, small, taps }. PROBE runs it once the
    page settles; probeNow(set) runs it now, for a page measured after a scripted walk (the pay step). */
 const PROBE_FN = `function(id){
@@ -524,7 +530,443 @@ async function minJourney(width, mode) {
   });
 }
 
+/* ── round 9 helpers: service pages, Before we come, the help center, the audit ── */
+const R9_SVC_DIR = 'content/services/portland';
+const R9_SERVICES = ['garage-cleanout', 'furniture-removal', 'estate-cleanout', 'hot-tub-removal', 'mattress-removal', 'appliance-removal', 'yard-debris-removal', 'hoarder-cleanout'];
+const R9_BWC_IDS = ['set-out', 'path', 'parking', 'pets', 'not-home', 'cant-take', 'on-the-day'];
+const R9_OLD_POST = 'getting-ready-for-a-pickup', R9_PIANO = 'piano-removal';
+const R9_VITALS_PAGES = ['index.html', 'gresham.html', 'portland/garage-cleanout.html', 'faq.html'];
+// The pages with no breadcrumb: the homepages and the order page (its progress bar is its trail).
+const R9_NO_CRUMBS = ['index.html', 'es/index.html', 'book/quote.html'];
+let SITE_URL = 'https://www.example.com';
+try { SITE_URL = require(path.join(ROOT, 'api/_lib/site.js')).SITE_URL || SITE_URL; } catch { /* no site module yet */ }
+const SITE_ORIGIN = new URL(SITE_URL).origin;
+/** The header fields of a service file (everything before its first "## "). */
+function svcLite(slug) {
+  const file = `${R9_SVC_DIR}/${slug}.md`;
+  const md = (read(file) || '').replace(/\r\n/g, '\n');
+  const head = md.split(/^## /m)[0];
+  const field = (k) => ((head.match(new RegExp(`^${k}:[ \\t]*(.*)$`, 'm')) || [])[1] || '').trim();
+  return { slug, file, md, name: field('name'), sizes: field('sizes').split(/[,\s]+/).filter(Boolean) };
+}
+/** Every element whose class list holds cls: its opening tag, inner HTML and text (nested tags of
+ *  the same name counted, as byId does). Not for void elements. */
+function byClass(dom, cls) {
+  const s = String(dom || ''), out = [];
+  const open = new RegExp(`<([a-z0-9]+)\\b[^>]*\\sclass="(?:[^"]*\\s)?${cls}(?:\\s[^"]*)?"[^>]*>`, 'gi');
+  let m;
+  while ((m = open.exec(s))) {
+    const tag = m[1].toLowerCase(), start = m.index + m[0].length;
+    const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi');
+    re.lastIndex = start;
+    let depth = 1, t, end = s.length;
+    while ((t = re.exec(s))) { depth += t[1] ? -1 : 1; if (depth === 0) { end = t.index; break; } }
+    out.push({ tag: m[0], inner: s.slice(start, end), text: text(s.slice(start, end)) });
+  }
+  return out;
+}
+const mainOf = (html) => (String(html || '').match(/<main\b[^>]*>([\s\S]*?)<\/main>/i) || [])[1] || '';
+const classOf = (attrs) => (String(attrs).match(/\sclass="([^"]*)"/) || [])[1] || '';
+/** Each <a> in this HTML, its href resolved from the page at rel: path is the site file it opens
+ *  (no leading slash), or null for tel:, sms:, mailto: and other sites. */
+function linksOf(html, rel) {
+  return [...String(html || '').matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)].map((m) => {
+    const href = ((m[1].match(/\shref="([^"]*)"/) || [])[1] || '').replace(/&amp;/g, '&');
+    let u = null;
+    try { u = new URL(href, `http://site.local/${rel}`); } catch { /* not a URL */ }
+    const inside = !!u && (u.host === 'site.local' || u.origin === SITE_ORIGIN);
+    return { href, attrs: m[1], text: text(m[2]), path: inside ? decodeURIComponent(u.pathname.slice(1)) : null,
+      params: u ? u.searchParams : new URLSearchParams(), hash: u ? decodeURIComponent(u.hash.slice(1)) : '' };
+  });
+}
+/** The entities text() leaves alone, so a sentence or a name reads the same in HTML and in a file. */
+const unent = (s) => String(s || '').replace(/&#39;|&#x27;|&apos;/g, '\'').replace(/&rsquo;/g, '’').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+/** A page address as its canonical names it: a folder's index.html is the folder. */
+const canonPath = (p) => String(p).replace(/(^|\/)index\.html$/, '$1');
+/** How many questions (<details>) a help topic group holds: inside the element with this id, or,
+ *  when the id is on the group's heading, from it to the next heading of its level or higher. */
+function groupCount(html, id) {
+  const el = byId(html, id);
+  if (!el) return -1;
+  const tag = el.tag.match(/^<([a-z0-9]+)/i)[1].toLowerCase();
+  if (!/^h[1-6]$/.test(tag)) return (el.inner.match(/<details\b/gi) || []).length;
+  const s = String(html), rest = s.slice(s.indexOf(el.tag) + el.tag.length);
+  const stop = rest.search(new RegExp(`<h[1-${tag[1]}]\\b|</main>`, 'i'));
+  return ((stop < 0 ? rest : rest.slice(0, stop)).match(/<details\b/gi) || []).length;
+}
+/** The breadcrumb rule (the audit's, scored here on its own): a visible .crumbs trail and a
+ *  BreadcrumbList with the same names and addresses, the last item the page itself. */
+function crumbProblem(f) {
+  const html = read(f) || '';
+  const bl = ldOf(html, 'BreadcrumbList'), nav = byClass(html, 'crumbs')[0];
+  if (!bl && !nav) return `${f}: no breadcrumb`;
+  if (!nav) return `${f}: a BreadcrumbList but no visible .crumbs trail`;
+  if (!bl) return `${f}: a .crumbs trail but no BreadcrumbList`;
+  const shown = [...nav.inner.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)].map((m) => {
+    const li = m[1].replace(/<([a-z0-9]+)\b[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/\1>/gi, '');
+    const a = linksOf(li, f)[0];
+    return { name: unent(text(li)).replace(/[›»]/g, '').replace(/\s+/g, ' ').trim(), path: a ? a.path : f };
+  });
+  const items = [...(bl.itemListElement || [])].sort((a, b) => a.position - b.position);
+  if (items.length !== shown.length) return `${f}: the BreadcrumbList has ${items.length} items, the trail shows ${shown.length}`;
+  for (const [i, it] of items.entries()) {
+    const name = String(it.name || (it.item && it.item.name) || '').replace(/\s+/g, ' ').trim();
+    if (name !== shown[i].name) return `${f}: crumb ${i + 1} is "${shown[i].name}" on the page, "${name}" in the BreadcrumbList`;
+    const url = typeof it.item === 'string' ? it.item : it.item && (it.item['@id'] || it.item.url);
+    if (!url) { if (i === items.length - 1) continue; return `${f}: crumb ${i + 1} has no address in the BreadcrumbList`; }
+    if (!String(url).startsWith(SITE_URL)) return `${f}: crumb ${i + 1} points at ${url}, not the site address`;
+    if (shown[i].path === null || canonPath(decodeURIComponent(new URL(url).pathname.slice(1))) !== canonPath(shown[i].path)) return `${f}: crumb ${i + 1} goes to ${shown[i].path} on the page, ${url} in the BreadcrumbList`;
+  }
+  return null;
+}
+/** A typed price ($ and a digit) in this text, as is and with $ entities decoded and tags dropped
+ *  ($<strong>75</strong> reads $75): the words around it, or null. */
+function typedPrice(s) {
+  const raw = String(s || ''), flat = raw.replace(/&#0*36;|&#x0*24;|&dollar;/gi, '$').replace(/<[^>]+>/g, '');
+  for (const t of [raw, flat]) {
+    const m = t.match(/\$\s*\d/);
+    if (m) return t.slice(Math.max(0, m.index - 20), m.index + 10).replace(/\s+/g, ' ');
+  }
+  return null;
+}
+// The policy spans build-pricing rewrites from POLICY: the same pattern as policySpans() in
+// scripts/build-pricing.mjs (line 285). That script runs its build on import, so it is copied here.
+const POLICY_SPAN = /<span(?: class="guess")? data-policy="(cancel|late|refusal)">[^<]*<\/span>/g;
+/** Whether build-pricing rewrites this page's policy spans: its TARGETS entry says policy: true. */
+function policyTarget(file) {
+  const src = read('scripts/build-pricing.mjs') || '';
+  const at = src.indexOf(`file: '${file}'`);
+  if (at < 0) return false;
+  const rest = src.slice(at + 1), end = rest.search(/file:\s*'|\n\];/);
+  return /\bpolicy:\s*true\b/.test(end < 0 ? rest : rest.slice(0, end));
+}
+function orderModule() {
+  const f = path.join(ROOT, 'api/_lib/order-config.js');
+  delete require.cache[require.resolve(f)];
+  return require(f);
+}
+/** Layout shift (no recent input) and the largest contentful paint, read from the buffered entries once the page settles. */
+const R9_VITALS = `new Promise(function(res){var cls=0,lcp=null;
+try{new PerformanceObserver(function(l){l.getEntries().forEach(function(e){if(!e.hadRecentInput)cls+=e.value;});}).observe({type:'layout-shift',buffered:true});}catch(e){}
+try{new PerformanceObserver(function(l){var es=l.getEntries();if(es.length)lcp=es[es.length-1];}).observe({type:'largest-contentful-paint',buffered:true});}catch(e){}
+setTimeout(function(){var el=lcp&&lcp.element;res({cls:cls,lcp:lcp?{tag:el?el.tagName.toLowerCase():'gone',name:el?(el.id||el.className||''):'',lazy:!!el&&el.getAttribute('loading')==='lazy'}:null});},500);})`;
+
 const ROUNDS = {
+  9: [
+    { id: 'tests', pts: 8, desc: 'npm test passes', run() {
+      const r = run('npm', ['test']);
+      return r.code === 0 || `npm test failed: ${r.out.split('\n').filter((l) => /FAIL|Error|STALE|stale/.test(l)).slice(0, 3).join(' | ')}`;
+    } },
+    { id: 'earlier', pts: 5, desc: 'rounds 1 to 8 each still score 100', run() {
+      for (const n of [1, 2, 3, 4, 5, 6, 7, 8]) {
+        const r = run('node', ['scripts/score.mjs', '--round', String(n), '--json', '--no-earlier'], { timeout: 1500000 });
+        let j = null; try { j = JSON.parse(r.out.slice(r.out.indexOf('{'))); } catch { /* not json */ }
+        if (!j || j.score !== 100) return `round ${n} scores ${j ? j.score : '?'}: ${j ? j.checks.filter((c) => !c.got).map((c) => c.id).join(', ') : r.out.slice(0, 80)}`;
+      }
+      return true;
+    } },
+    { id: 'services', pts: 15, desc: 'eight Portland service pages built from content/services/portland (build-services --check): the H1 names the service and Portland, 400+ own words in main .svc-own, the first listed size\'s config price in .svc-price (red while guessed), a .size-card to the order page for each listed size (the first opens it with its size picked), 5+ town pages and a post linked, 3+ questions', async run() {
+      for (const slug of R9_SERVICES) if (!exists(`${R9_SVC_DIR}/${slug}.md`)) return `${R9_SVC_DIR}/${slug}.md missing`;
+      if (!exists('scripts/build-services.mjs')) return 'scripts/build-services.mjs missing';
+      if (run('node', ['scripts/build-services.mjs', '--check']).code !== 0) return 'build-services --check fails';
+      let O;
+      try { O = orderModule(); } catch (e) { return `the order module did not load: ${e.message}`; }
+      const townSlugs = new Set(towns().map((t) => t.slug)), posts = new Set(postSlugs('en'));
+      for (const slug of R9_SERVICES) {
+        const s = svcLite(slug), f = `portland/${slug}.html`, html = read(f);
+        if (!html) return `${f} missing`;
+        if (!s.name) return `${s.file}: no name: field`;
+        const h1 = text((html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i) || [])[1] || '');
+        if (!h1.toLowerCase().includes(s.name.toLowerCase()) || !/Portland/.test(h1)) return `${f}: the H1 "${h1}" does not name ${s.name} and Portland`;
+        const main = mainOf(html);
+        const own = byClass(main, 'svc-own').reduce((n, e) => n + words(e.inner), 0);
+        if (own < 400) return `${f}: ${own} words in main .svc-own, want 400+`;
+        const sizes = s.sizes.map((k) => O.SIZES.find((z) => z.key === k));
+        if (!sizes.length || sizes.some((z) => !z)) return `${s.file}: sizes "${s.sizes.join(', ')}" are not all size keys (${O.SIZES.map((z) => z.key).join(', ')})`;
+        const want = `$${sizes[0].cents / 100}`;
+        const price = byClass(html, 'svc-price')[0];
+        if (!price || !price.text.replace(/,/g, '').includes(want)) return `${f}: .svc-price reads "${price ? price.text.slice(0, 60) : 'nothing'}", want ${want} (${sizes[0].label}, the first listed size)`;
+        if (C.GUESS && C.GUESS.prices && !/\bguess\b/.test(classOf(price.tag)) && !byClass(price.inner, 'guess').some((g) => g.text.replace(/,/g, '').includes(want))) return `${f}: the ${want} price is not red (GUESS.prices)`;
+        // A card is the link itself or holds it; the order page reads ?size= as the row (the key is accepted too).
+        const cards = byClass(html, 'size-card').map((e) => linksOf(/^<a\b/i.test(e.tag) ? `${e.tag}${e.inner}</a>` : e.inner, f)[0]).filter(Boolean);
+        for (const z of sizes) {
+          if (!cards.some((l) => l.path === 'book/quote.html' && [String(z.row), z.key].includes(l.params.get('size')))) return `${f}: no .size-card linking book/quote.html?size=${z.row} for ${z.label}`;
+        }
+        const inMain = linksOf(main, f);
+        const townsLinked = new Set(inMain.map((l) => (l.path || '').match(/^([a-z0-9-]+)\.html$/)).filter((m) => m && townSlugs.has(m[1]) && exists(m[0])).map((m) => m[1]));
+        if (townsLinked.size < 5) return `${f}: ${townsLinked.size} town pages linked in main, want 5+`;
+        if (!inMain.some((l) => { const m = (l.path || '').match(/^blog\/([a-z0-9-]+)\.html$/); return !!m && posts.has(m[1]) && exists(m[0]); })) return `${f}: links no blog post that exists`;
+        const faqs = byClass(main, 'faq-list').reduce((n, e) => n + (e.inner.match(/<details\b/gi) || []).length, 0);
+        if (faqs < 3) return `${f}: ${faqs} questions in .faq-list, want 3+`;
+      }
+      // The cards work: the first size card on the first service page opens the order page with that size picked.
+      if (!CHROME) return 'no Chrome to measure with';
+      const first = O.SIZES.find((z) => z.key === svcLite(R9_SERVICES[0]).sizes[0]);
+      return withPage(360, async (p) => {
+        await p.goto(`${ORIGIN}/portland/${R9_SERVICES[0]}.html`, 1200);
+        const tagged = await p.evaluate(`(function(){var c=[].filter.call(document.querySelectorAll('main .size-card'),function(e){var a=e.tagName==='A'?e:e.querySelector('a');if(!a)return false;
+var s=new URL(a.href).searchParams.get('size');return s===${JSON.stringify(String(first.row))}||s===${JSON.stringify(first.key)};})[0];if(!c)return false;c.setAttribute('data-score-pick','1');return true;})()`);
+        if (!tagged) return `no .size-card in main for ${first.label} on portland/${R9_SERVICES[0]}.html`;
+        await p.click('[data-score-pick]', 1500);
+        await onStep(p, 'where');
+        const got = await p.evaluate(`({path:location.pathname,size:(document.querySelector('#o-sizes [aria-pressed="true"]')||{getAttribute:function(){return null;}}).getAttribute('data-size')})`);
+        if (got.path !== '/book/quote.html') return `the ${first.label} card went to ${got.path}, want /book/quote.html`;
+        return String(got.size) === String(first.row) || `the ${first.label} card opened the order page with ${got.size === null ? 'no size' : `size ${got.size}`} picked`;
+      });
+    } },
+    { id: 'unique', pts: 8, desc: 'no 8+ word sentence of a service page\'s own copy (main .svc-own) on another service page or in a town\'s local copy', run() {
+      const townOf = new Map();
+      for (const t of towns()) for (const x of sentences(t.local)) if (!townOf.has(x)) townOf.set(x, t.slug);
+      const svcOf = new Map();
+      for (const slug of R9_SERVICES) {
+        const f = `portland/${slug}.html`, html = read(f);
+        if (!html) return `${f} missing`;
+        const own = byClass(mainOf(html), 'svc-own').map((e) => e.inner).join(' ');
+        if (!own) return `${f}: no main .svc-own`;
+        // A heading, list item or paragraph ends a sentence even without a period.
+        const plain = unent(own).replace(/<\/(h[1-6]|p|li|div|dt|dd)>/gi, '. ');
+        for (const x of sentences(plain)) {
+          if (townOf.has(x)) return `"${x.slice(0, 50)}..." in ${slug} and the town ${townOf.get(x)}`;
+          if (svcOf.has(x) && svcOf.get(x) !== slug) return `"${x.slice(0, 50)}..." in ${svcOf.get(x)} and ${slug}`;
+          svcOf.set(x, slug);
+        }
+      }
+      return true;
+    } },
+    { id: 'schema', pts: 10, desc: 'check-schema passes; each service page carries Service (a provider, 5+ City in areaServed, an AggregateOffer), BreadcrumbList and FAQPage; every page below the homepage has a BreadcrumbList matching its visible .crumbs trail (the audit\'s breadcrumb rule)', run() {
+      const bad = [];
+      const cs = run('node', ['scripts/check-schema.mjs']);
+      if (cs.code !== 0) bad.push(`check-schema: ${cs.out.split('\n').filter((l) => /FAIL/.test(l)).slice(0, 2).join(' | ')}`);
+      for (const slug of R9_SERVICES) {
+        const f = `portland/${slug}.html`, html = read(f);
+        if (!html) { bad.push(`${f} missing`); break; }
+        const svc = ldOf(html, 'Service');
+        const area = svc ? [].concat(svc.areaServed || []) : [];
+        const why = !svc ? 'no Service'
+          : !svc.provider || typeof svc.provider !== 'object' ? 'the Service has no provider'
+          : area.length < 5 || !area.every((a) => a && a['@type'] === 'City' && a.name) ? 'the Service areaServed is not 5+ City entries'
+          : ![].concat(svc.offers || []).some((o) => o && o['@type'] === 'AggregateOffer') ? 'the Service has no AggregateOffer'
+          : !ldOf(html, 'BreadcrumbList') ? 'no BreadcrumbList'
+          : !ldOf(html, 'FAQPage') ? 'no FAQPage' : null;
+        if (why) { bad.push(`${f}: ${why}`); break; }
+      }
+      const below = indexable().filter((f) => !R9_NO_CRUMBS.includes(f));
+      const crumbs = below.map(crumbProblem).filter(Boolean);
+      if (crumbs.length) bad.push(`${crumbs.length} of ${below.length} pages below the homepage fail the breadcrumb rule, first ${crumbs[0]}`);
+      return bad.length ? bad.join('; ') : true;
+    } },
+    { id: 'before', pts: 8, desc: 'before-we-come.html and es/before-we-come.html with the seven sections; linked from thanks, the booked and reminder emails, the help page, the header and the footer; the old checklist post gone, linked nowhere, both its addresses redirected for good to the page in their language; the piano post in both languages; 12+ posts in each', run() {
+      const pages = [['before-we-come.html', read('before-we-come.html')], ['es/before-we-come.html', read('es/before-we-come.html')]];
+      for (const [f, s] of pages) {
+        if (!s) return `${f} missing`;
+        const miss = R9_BWC_IDS.filter((id) => !new RegExp(`\\sid="${id}"`).test(s));
+        if (miss.length) return `${f}: no section with id ${miss.join(', ')}`;
+      }
+      const links = (html, rel) => linksOf(html, rel).some((l) => l.path === 'before-we-come.html');
+      if (!links(read('book/thanks.html'), 'book/thanks.html')) return 'book/thanks.html does not link before-we-come.html';
+      let tpl;
+      try {
+        delete require.cache[require.resolve(path.join(ROOT, 'api/_lib/email-templates.js'))];
+        tpl = require(path.join(ROOT, 'api/_lib/email-templates.js'));
+      } catch (e) { return `the email templates did not load: ${e.message}`; }
+      const mails = [['bookedConfirmation', { name: 'Jane', load: '1/2 truck', total: fmt(TOTAL), paid: fmt(TOTAL), dayLabel: 'Tue Oct 14', windowLabel: '10 am to 12 pm' }],
+        ['visitReminder', { name: 'Jane', visitDate: 'Tue Oct 14', windowLabel: '10 am to 12 pm' }]];
+      for (const [k, ctx] of mails) {
+        let m;
+        try { m = tpl[k](ctx); } catch (e) { return `the ${k} email did not build: ${e.message}`; }
+        // An email link has to be a full address; the plain text part gives it too.
+        if (!/href="https?:\/\/[^"]+\/before-we-come\.html"/.test(m.html || '')) return `the ${k} email has no link to ${SITE_URL}/before-we-come.html`;
+        if (!/\/before-we-come\.html/.test(m.text || '')) return `the ${k} email's plain text does not give the before-we-come.html address`;
+      }
+      if (!links(mainOf(read('faq.html')), 'faq.html')) return 'the help page (faq.html) does not link before-we-come.html';
+      const home = read('index.html') || '';
+      if (!links((home.match(/<header\b[\s\S]*?<\/header>/i) || [''])[0], 'index.html')) return 'the header does not link before-we-come.html';
+      if (!links((home.match(/<footer\b[\s\S]*?<\/footer>/i) || [''])[0], 'index.html')) return 'the footer does not link before-we-come.html';
+      for (const f of [`content/blog/en/${R9_OLD_POST}.md`, `content/blog/es/${R9_OLD_POST}.md`, `blog/${R9_OLD_POST}.html`, `es/blog/${R9_OLD_POST}.html`]) {
+        if (exists(f)) return `${f} is still there (its words move into the page)`;
+      }
+      const dirFiles = (d, re) => { try { return fs.readdirSync(path.join(ROOT, d)).filter((x) => re.test(x)).map((x) => `${d}/${x}`); } catch { return []; } };
+      const site = [...scanFiles(), ...mdFiles(), ...dirFiles(R9_SVC_DIR, /\.md$/), ...dirFiles('portland', /\.html$/), 'sitemap.xml', 'llms.txt'].filter(exists);
+      for (const f of site) if ((read(f) || '').includes(R9_OLD_POST)) return `${f} still links ${R9_OLD_POST}`;
+      let cfg;
+      try { cfg = JSON.parse(read('vercel.json') || ''); } catch { return 'vercel.json is not JSON'; }
+      // Vercel's permanent: true answers 308, which search engines treat as a 301.
+      for (const [from, to] of [[`/blog/${R9_OLD_POST}`, '/before-we-come.html'], [`/es/blog/${R9_OLD_POST}`, '/es/before-we-come.html']]) {
+        const rd = (cfg.redirects || []).find((r) => r.source === `${from}.html` || r.source === `${from}(.html)?`);
+        if (!rd) return `vercel.json does not redirect ${from}.html`;
+        if (rd.destination !== to) return `vercel.json sends ${rd.source} to ${rd.destination}, want ${to}`;
+        if (!(rd.permanent === true || [301, 308].includes(rd.statusCode))) return `the ${rd.source} redirect is not permanent`;
+      }
+      for (const lang of ['en', 'es']) {
+        if (!exists(`content/blog/${lang}/${R9_PIANO}.md`)) return `content/blog/${lang}/${R9_PIANO}.md missing`;
+        if (postSlugs(lang).length < 12) return `${postSlugs(lang).length} ${lang} posts, want 12`;
+      }
+      return true;
+    } },
+    { id: 'help', pts: 8, desc: 'faq.html is the help center: H1 "How can we help?", six topic links in .help-topics that jump to their group (or open Before we come), 3+ questions per group, call, text, WhatsApp and email in .help-contact; es/faq.html in step; at 360px with the banner up a tap on "Paying and changes" leaves its heading below the sticky header', async run() {
+      const en = read('faq.html') || '', es = read('es/faq.html') || '';
+      const h1 = text((en.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/i) || [])[1] || '');
+      if (h1 !== 'How can we help?') return `faq.html H1 is "${h1}", want "How can we help?"`;
+      /** The topics as keys (a group id, or "before" for the Before we come page) with their question counts. */
+      const topics = (html, rel, bwc) => {
+        const box = byClass(html, 'help-topics')[0];
+        if (!box) return `${rel}: no .help-topics`;
+        const out = [];
+        for (const l of linksOf(box.inner, rel)) {
+          if (l.path === bwc) { out.push(['before', 0]); continue; }
+          if (l.path !== rel || !l.hash) return `${rel}: the topic "${l.text}" goes to ${l.href}, not a group on the page or ${bwc}`;
+          const n = groupCount(html, l.hash);
+          if (n < 0) return `${rel}: the topic "${l.text}" jumps to #${l.hash}, which is not on the page`;
+          if (n < 3) return `${rel}: the topic "${l.text}" has ${n} questions, want 3+`;
+          out.push([l.hash, n]);
+        }
+        if (out.length !== 6) return `${rel}: ${out.length} topic links in .help-topics, want 6`;
+        // Six different places: no group twice, Before we come once.
+        const twice = out.map((x) => x[0]).find((k, i, all) => all.indexOf(k) !== i);
+        return twice === undefined ? out : `${rel}: two topics go to ${twice === 'before' ? bwc : `#${twice}`}, want six different places`;
+      };
+      const contact = (html, rel) => {
+        const box = byClass(html, 'help-contact')[0];
+        if (!box) return `${rel}: no .help-contact`;
+        const miss = ['tel:', 'sms:', 'https://wa.me/', 'mailto:'].filter((h) => !box.inner.includes(`href="${h}`));
+        return miss.length ? `${rel}: .help-contact has no ${miss.join(', ')} link` : null;
+      };
+      const t1 = topics(en, 'faq.html', 'before-we-come.html');
+      if (typeof t1 === 'string') return t1;
+      const c1 = contact(en, 'faq.html');
+      if (c1) return c1;
+      if (!es) return 'es/faq.html missing';
+      const t2 = topics(es, 'es/faq.html', 'es/before-we-come.html');
+      if (typeof t2 === 'string') return t2;
+      if (JSON.stringify(t2) !== JSON.stringify(t1)) return `es/faq.html topics ${t2.map((x) => x.join(' ')).join(', ')} differ from faq.html ${t1.map((x) => x.join(' ')).join(', ')}`;
+      const c2 = contact(es, 'es/faq.html');
+      if (c2) return c2;
+      if (!CHROME) return 'no Chrome to measure with';
+      // The banner is forced up (it goes off at launch); the tap is a real one, the scroll the site's own.
+      return withPage(360, async (p) => {
+        await p.interceptScript(`${ORIGIN}/js/maintenance-banner.js`, (read('js/maintenance-banner.js') || '').replace(/(\bSHOW\s*=\s*)false\b/, '$1true'));
+        await p.goto(`${ORIGIN}/faq.html`, 1500);
+        const tagged = await p.evaluate(`(function(){if(!document.getElementById('maint-banner'))return 'the maintenance banner is not up';
+var a=[].filter.call(document.querySelectorAll('.help-topics a'),function(e){return /paying and changes/i.test(e.textContent);})[0];
+if(!a)return 'no "Paying and changes" link in .help-topics';a.setAttribute('data-score-pick','1');return true;})()`);
+        if (tagged !== true) return tagged;
+        await p.click('[data-score-pick]', 1500);
+        return p.evaluate(`(function(){var id=decodeURIComponent(location.hash.slice(1));var t=id&&document.getElementById(id);if(!t)return 'the tap on "Paying and changes" went to '+(location.hash||'no group');
+var h=/^H[1-6]$/.test(t.tagName)?t:(t.querySelector('h1,h2,h3')||t);var r=h.getBoundingClientRect();
+var hb=0;[].forEach.call(document.querySelectorAll('body *'),function(e){var c=getComputedStyle(e);if(c.position!=='sticky'&&c.position!=='fixed')return;
+var b=e.getBoundingClientRect();if(b.top<=1&&b.bottom>0&&b.width>=innerWidth*0.9&&b.height<innerHeight/2&&c.visibility!=='hidden')hb=Math.max(hb,b.bottom);});
+if(r.top<hb-0.5)return 'after the tap the heading "'+h.textContent.trim()+'" starts at '+Math.round(r.top)+'px, under the sticky header (its bottom at '+Math.round(hb)+'px)';
+if(r.bottom>innerHeight)return 'after the tap the heading ends at '+Math.round(r.bottom)+'px, below the screen';return true;})()`);
+      });
+    } },
+    { id: 'menus', pts: 8, desc: 'the header names tasks (Services, Prices, Where we go, Before we come, Help, in order) beside the Get my price button; the footer\'s four columns Book, Services, Where we go, Help, with the eight services in Services; on every page (build-chrome --check)', run() {
+      const home = read('index.html') || '';
+      const header = (home.match(/<header\b[\s\S]*?<\/header>/i) || [''])[0];
+      const ul = byClass(header, 'nav-links')[0];
+      if (!ul) return 'no .nav-links in the homepage header';
+      // The phone menu's Text us, WhatsApp and Get my price items are not menu items.
+      const items = [...ul.inner.matchAll(/<li\b([^>]*)>([\s\S]*?)<\/li>/gi)].filter((m) => !/\b(chat-item|cta-item)\b/.test(classOf(m[1]))).map((m) => linksOf(m[2], 'index.html')[0]).filter(Boolean);
+      const want = [['Services', ['service-areas.html#services']], ['Prices', ['#pricing', 'index.html#pricing']], ['Where we go', ['service-areas.html']], ['Before we come', ['before-we-come.html']], ['Help', ['faq.html']]];
+      const got = items.map((l) => `${l.text} (${l.href})`).join(', ');
+      if (items.length !== want.length || want.some(([name, hrefs], i) => items[i].text !== name || !hrefs.includes(items[i].href))) return `the header menu is ${got || 'empty'}, want ${want.map(([n, h]) => `${n} (${h[0]})`).join(', ')}`;
+      if (!linksOf(header, 'index.html').some((l) => /(?:^|\s)nav-cta(?:\s|$)/.test(classOf(l.attrs)) && l.href === 'book/quote.html' && l.text === 'Get my price')) return 'no Get my price button (a.nav-cta to book/quote.html) in the header';
+      const footer = (home.match(/<footer\b[\s\S]*?<\/footer>/i) || [''])[0];
+      const cols = byClass(footer, 'foot-col');
+      const heads = cols.map((c) => text((c.inner.match(/<h[2-4]\b[^>]*>([\s\S]*?)<\/h[2-4]>/i) || [])[1] || ''));
+      if (heads.join('|') !== 'Book|Services|Where we go|Help') return `the footer columns are ${heads.join(', ') || 'none'}, want Book, Services, Where we go, Help`;
+      const svc = new Set(linksOf(cols[1].inner, 'index.html').map((l) => l.path));
+      const miss = R9_SERVICES.filter((s) => !svc.has(`portland/${s}.html`));
+      if (miss.length) return `the footer's Services column does not link ${miss.join(', ')}`;
+      return run('node', ['scripts/build-chrome.mjs', '--check']).code === 0 || 'build-chrome --check fails';
+    } },
+    { id: 'audit', pts: 15, desc: 'check-seo-audit passes and npm test runs it; at 360px layout shift under 0.1 and no loading="lazy" on the largest contentful paint on the homepage, a town page, a service page and the help page; no script in a <head> without defer or async', async run() {
+      const bad = [];
+      if (!exists('scripts/check-seo-audit.mjs')) bad.push('scripts/check-seo-audit.mjs missing');
+      else {
+        const r = run('node', ['scripts/check-seo-audit.mjs']);
+        if (r.code !== 0) bad.push(`check-seo-audit: ${r.out.split('\n').filter((l) => /FAIL/.test(l)).slice(0, 2).join(' | ') || r.out.trim().slice(0, 120)}`);
+        let pkg = {}; try { pkg = JSON.parse(read('package.json')); } catch { /* checked by npm test */ }
+        if (!/check-seo-audit\.mjs/.test((pkg.scripts || {}).test || '')) bad.push('npm test does not run check-seo-audit');
+      }
+      for (const f of indexable()) {
+        const head = ((read(f) || '').match(/<head\b[^>]*>([\s\S]*?)<\/head>/i) || [])[1] || '';
+        const blocking = [...head.matchAll(/<script\b([^>]*)>/gi)].map((m) => m[1]).find((a) => /\ssrc=/.test(a) && !/\s(defer|async)\b/.test(a) && !/\stype="module"/.test(a));
+        if (blocking) { bad.push(`${f}: <script${blocking}> in the <head> without defer or async`); break; }
+      }
+      if (!CHROME) bad.push('no Chrome to measure with');
+      else for (const f of R9_VITALS_PAGES) {
+        if (!exists(f)) { bad.push(`${f} missing`); continue; }
+        // The local preview bar (localhost only) is not on the real site: it is not loaded.
+        const v = await withPage(360, async (p) => {
+          await p.interceptScript(`${ORIGIN}/js/preview-nav.js`, '');
+          await p.goto(`${ORIGIN}/${f}`, 2500);
+          return p.evaluate(R9_VITALS);
+        });
+        if (!v || typeof v !== 'object') { bad.push(`${f}: no measurement`); continue; }
+        if (!(v.cls < 0.1)) bad.push(`${f}: layout shift ${Number(v.cls).toFixed(3)} at 360px, want under 0.1`);
+        if (!v.lcp) bad.push(`${f}: no largest contentful paint reported`);
+        else if (v.lcp.lazy) bad.push(`${f}: the largest contentful paint (<${v.lcp.tag}> ${v.lcp.name}) is loading="lazy"`);
+      }
+      return bad.length ? bad.join('; ') : true;
+    } },
+    { id: 'mobile', pts: 8, desc: '360px on a service page, the hub, Before we come, the help page and its Spanish twin, and the post with the longest title: a .crumbs trail, no sideways scroll, text 16px+, taps 48px+; 1280px no sideways scroll', async run() {
+      if (!CHROME) return 'no Chrome to measure with';
+      const longest = postSlugs('en').map((s) => [s, ((read(`content/blog/en/${s}.md`) || '').match(/^title:[ \t]*(.+)$/m) || [])[1] || ''])
+        .sort((a, b) => b[1].trim().length - a[1].trim().length)[0];
+      const pages = ['portland/garage-cleanout.html', 'service-areas.html', 'before-we-come.html', 'faq.html', 'es/faq.html', longest ? `blog/${longest[0]}.html` : 'a blog post'];
+      const bad = [];
+      for (const f of pages) {
+        if (!exists(f)) { bad.push(`${f} missing`); continue; }
+        const dom = await dump(`/${f}?__probe=9`);
+        const p = probeOf(dom);
+        if (!p || p.error) { bad.push(`${f}: ${p ? p.error : 'did not report'}`); continue; }
+        if (p.vw !== 360) { bad.push(`${f}: measured at ${p.vw}px`); continue; }
+        if (!/\sclass="(?:[^"]*\s)?crumbs(?:\s[^"]*)?"/.test(dom)) bad.push(`${f}: no .crumbs trail`);
+        else if (p.sw > p.vw) bad.push(`${f}: ${p.sw}px wide at 360px`);
+        else if (p.small.length) bad.push(`${f}: small text ${p.small.slice(0, 2).join('; ')}`);
+        else if (p.taps.length) bad.push(`${f}: small taps ${p.taps.slice(0, 2).join('; ')}`);
+        else {
+          const wide = probeOf(await dump(`/${f}?__probe=9`, 1280));
+          if (!wide || wide.sw > wide.vw) bad.push(`${f}: ${wide ? wide.sw : '?'}px wide at 1280px`);
+        }
+      }
+      return bad.length ? bad.join('; ') : true;
+    } },
+    { id: 'copy', pts: 7, desc: 'the service files, Before we come, the help pages and the piano posts: no dashes, slang, dog words, TODO or Disney words; no typed price ($ and a digit) in content/services, the piano posts or on Before we come (outside the policy spans build-pricing rewrites there); GUESSES.md current', run() {
+      const md = (f) => mdText(f).replace(/<!--[\s\S]*?-->/g, '');
+      const items = [...R9_SERVICES.map((s) => [`${R9_SVC_DIR}/${s}.md`, md(`${R9_SVC_DIR}/${s}.md`)]),
+        ...['before-we-come.html', 'es/before-we-come.html', 'faq.html', 'es/faq.html'].map((f) => [f, visibleText(read(f))]),
+        ...['en', 'es'].map((l) => [`content/blog/${l}/${R9_PIANO}.md`, md(`content/blog/${l}/${R9_PIANO}.md`)])];
+      for (const [f, s] of items) {
+        if (!s) return `${f} missing`;
+        const bad = copyProblem(f, s);
+        if (bad) return bad;
+        const d = s.match(DISNEY_WORDS);
+        if (d) return `${f} uses "${d[0]}"`;
+      }
+      const walk = (d) => { try { return fs.readdirSync(path.join(ROOT, d), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${d}/${e.name}`) : [`${d}/${e.name}`])); } catch { return []; } };
+      for (const f of walk('content/services')) {
+        const t = typedPrice(read(f));
+        if (t) return `${f} types a price ("${t}"); prices come from the config`;
+      }
+      // The piano posts, whole (title, description, summary and body).
+      for (const l of ['en', 'es']) {
+        const f = `content/blog/${l}/${R9_PIANO}.md`, t = typedPrice(read(f));
+        if (t) return `${f} types a price ("${t}"); a post names no price`;
+      }
+      // Before we come: a fee prints only through the policy spans build-pricing keeps current, so each page
+      // must be one of its policy targets, and only those exact spans are skipped. Scripts, styles and
+      // comments are not copy.
+      for (const f of ['before-we-come.html', 'es/before-we-come.html']) {
+        if (!policyTarget(f)) return `${f} is not a policy target in scripts/build-pricing.mjs (TARGETS, policy: true), so nothing keeps its fees current`;
+        const s = (read(f) || '').replace(/<script\b[\s\S]*?<\/script>/gi, ' ').replace(/<style\b[\s\S]*?<\/style>/gi, ' ').replace(/<!--[\s\S]*?-->/g, ' ')
+          .replace(POLICY_SPAN, ' ');
+        const t = typedPrice(s);
+        if (t) return `${f} types a price ("${t}"); a fee prints through a build-pricing policy span`;
+      }
+      return run('node', ['scripts/list-guesses.mjs', '--check']).code === 0 || 'GUESSES.md is stale (npm run guesses)';
+    } },
+  ],
   8: [
     { id: 'tests', pts: 10, desc: 'npm test passes', run() {
       const r = run('npm', ['test']);

@@ -76,6 +76,9 @@ const page = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\r\
 ok(page('index.html').includes(hreflang('index.html')), 'the English homepage names its Spanish twin');
 ok(page('faq.html').includes(hreflang('faq.html')) && page('faq.html').includes(langSwitch('faq.html')) && /es\/faq\.html/.test(langSwitch('faq.html')), 'the FAQ switches to the Spanish FAQ, not the Spanish homepage');
 ok(page('es/faq.html').includes(langSwitch('es/faq.html')) && /<html lang="es"/.test(page('es/faq.html')), 'the Spanish FAQ switches back');
+// Before we come (round 9), hand written in both languages like the FAQ.
+ok(page('before-we-come.html').includes(hreflang('before-we-come.html')) && /es\/before-we-come\.html/.test(langSwitch('before-we-come.html')) && page('before-we-come.html').includes(langSwitch('before-we-come.html')), 'Before we come does not switch to its Spanish twin');
+ok(page('es/before-we-come.html').includes(hreflang('es/before-we-come.html')) && page('es/before-we-come.html').includes(langSwitch('es/before-we-come.html')) && /<html lang="es"/.test(page('es/before-we-come.html')), 'the Spanish Before we come does not switch back');
 
 console.log('== the Spanish homepage ==');
 const es = toSpanish(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'));

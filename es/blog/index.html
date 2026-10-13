@@ -19,6 +19,26 @@
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#15171A" />
+  <script type="application/ld+json">
+  {
+    "@type": "BreadcrumbList",
+    "@id": "https://www.example.com/es/blog/#breadcrumb",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Inicio",
+        "item": "https://www.example.com/es/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Blog",
+        "item": "https://www.example.com/es/blog/"
+      }
+    ]
+  }
+  </script>
   <style>
     @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(../../fonts/dm-sans.woff2) format('woff2'); }
     @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(../../fonts/bricolage.woff2) format('woff2'); }
@@ -40,11 +60,11 @@
     <svg class="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
   </button>
   <ul class="nav-links" id="navLinks">
-    <li><a href="../index.html#how-it-works">Cómo funciona</a></li>
-    <li><a href="../index.html#what-we-take">Qué llevamos</a></li>
+    <li><a href="../service-areas.html#services">Servicios</a></li>
     <li><a href="../index.html#pricing">Precios</a></li>
-    <li><a href="../service-areas.html">Zonas de servicio</a></li>
-    <li><a href="../faq.html">Preguntas</a></li>
+    <li><a href="../service-areas.html">A dónde vamos</a></li>
+    <li><a href="../before-we-come.html">Antes de que lleguemos</a></li>
+    <li><a href="../faq.html">Ayuda</a></li>
     <li class="chat-item"><a href="sms:+19254086053">Mándanos un mensaje</a></li>
     <li class="chat-item"><a href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener">Escríbenos por WhatsApp</a></li>
     <li class="cta-item"><a class="nav-cta-mobile" href="../../book/quote.html">Ver mi precio</a></li>
@@ -61,16 +81,16 @@
 
 <main id="main">
   <article class="article">
-    <nav class="trail" aria-label="Breadcrumb"><ol><li><a href="../../es/index.html">Inicio</a></li><li><span aria-current="page">Blog</span></li></ol></nav>
+    <nav class="crumbs" aria-label="Ruta"><ol><li><a href="../index.html">Inicio</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li aria-current="page">Blog</li></ol></nav>
     <h1>Guías y respuestas sobre el retiro de basura</h1>
     <p class="a-lede">Respuestas claras para vaciar una casa, un garaje o una vivienda de renta en el área de Portland: cuánto cuesta, qué se puede llevar y a dónde va.</p>
     <ul class="post-list">
+      <li><a href="piano-removal.html"><span class="pl-title">Retiro de pianos en Portland: lo que debes saber</span><span class="pl-sum">El peso, las escaleras, el equipo y primero la donación.</span></a></li>
       <li><a href="what-junk-removal-costs.html"><span class="pl-title">Cuánto cuesta el retiro de basura en Portland</span><span class="pl-sum">Tamaño de carga, viaje por zona y lo que de verdad cambia el precio.</span></a></li>
       <li><a href="what-junk-haulers-cant-take.html"><span class="pl-title">Lo que no nos podemos llevar y a dónde va</span><span class="pl-sum">La lista corta de lo que no va en el camión, y a dónde sí puede ir.</span></a></li>
       <li><a href="mattress-disposal.html"><span class="pl-title">Cómo deshacerte de un colchón en Portland</span><span class="pl-sum">Donación, reciclaje, la banqueta o un retiro: las opciones reales.</span></a></li>
       <li><a href="fridge-and-freezer-disposal.html"><span class="pl-title">Cómo deshacerte de un refrigerador viejo</span><span class="pl-sum">Refrigerante, descongelar, las puertas y la forma fácil de sacarlo.</span></a></li>
       <li><a href="where-hauled-junk-goes.html"><span class="pl-title">A dónde van tus cosas después del retiro</span><span class="pl-sum">Primero donación, después reciclaje, al final la estación de transferencia.</span></a></li>
-      <li><a href="getting-ready-for-a-pickup.html"><span class="pl-title">Cómo prepararte para un retiro de basura</span><span class="pl-sum">Una lista para el día antes, para que la visita tome minutos.</span></a></li>
       <li><a href="garage-cleanout-in-a-weekend.html"><span class="pl-title">Vacía tu garaje en un fin de semana</span><span class="pl-sum">Dos días, cuatro pilas y un piso donde vuelve a caber el auto.</span></a></li>
       <li><a href="estate-cleanout.html"><span class="pl-title">Vaciar una casa heredada, cuarto por cuarto</span><span class="pl-sum">Un orden práctico y con cuidado para vaciar la casa de un ser querido.</span></a></li>
       <li><a href="yard-debris-after-a-storm.html"><span class="pl-title">Desechos de jardín después de una tormenta</span><span class="pl-sum">Ramas, cercas rotas y los límites del bote de desechos de jardín.</span></a></li>
@@ -97,7 +117,21 @@
       <ul class="footer-links">
         <li><a href="../../book/quote.html">Ver mi precio</a></li>
         <li><a href="../../book/quote.html#photos">Manda una foto</a></li>
+        <li><a href="../before-we-come.html">Antes de que lleguemos</a></li>
         <li><a href="../../book/commercial.html">Administradores de propiedades</a></li>
+      </ul>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Servicios</h2>
+      <ul class="footer-links">
+      <li><a href="../../portland/garage-cleanout.html">Limpieza de garaje</a></li>
+      <li><a href="../../portland/furniture-removal.html">Retiro de muebles</a></li>
+      <li><a href="../../portland/estate-cleanout.html">Limpieza de casas heredadas</a></li>
+      <li><a href="../../portland/hot-tub-removal.html">Retiro de jacuzzis</a></li>
+      <li><a href="../../portland/mattress-removal.html">Retiro de colchones</a></li>
+      <li><a href="../../portland/appliance-removal.html">Retiro de electrodomésticos</a></li>
+      <li><a href="../../portland/yard-debris-removal.html">Retiro de desechos de jardín</a></li>
+      <li><a href="../../portland/hoarder-cleanout.html">Limpieza de acumulación</a></li>
       </ul>
     </div>
     <div class="foot-col">
@@ -115,7 +149,7 @@
     <div class="foot-col">
       <h2 class="foot-h">Ayuda</h2>
       <ul class="footer-links">
-        <li><a href="../faq.html">Preguntas</a></li>
+        <li><a href="../faq.html">Ayuda y preguntas</a></li>
         <li><a href="../blog/index.html">Blog</a></li>
         <li><a href="../../terms.html">Términos</a></li>
         <li><a href="../../privacy.html">Privacidad</a></li>

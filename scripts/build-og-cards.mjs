@@ -26,6 +26,7 @@ import { GUESS, fmt } from '../pricing.config.mjs';
 import { pages } from './build-sitemap.mjs';
 import { loadTowns, townTravel } from './build-towns.mjs';
 import { loadPosts, T as BLOG } from './build-blog.mjs';
+import { loadServices, sizesOf } from './build-services.mjs';
 import { openBrowser } from './lib/browser.mjs';
 import { serve } from './lib/serve.mjs';
 
@@ -35,7 +36,7 @@ const MANIFEST = path.join(OUT, 'manifest.json');
 const check = process.argv.includes('--check');
 const VERSION = 1;   // bump when the card design changes, so every card redraws
 
-/** The card's file name for a page: home, faq, portland, es-portland, blog-x, es-blog-x, quote, commercial. */
+/** The card's file name for a page: home, faq, portland, es-portland, blog-x, es-blog-x, portland-x (a service), quote, commercial. */
 export function cardSlug(rel) {
   if (rel === 'index.html') return 'home';
   if (rel === 'es/index.html') return 'es-home';
@@ -46,6 +47,8 @@ const townList = loadTowns();
 // Every town page, English and Spanish: rel → [town, lang].
 const towns = new Map(townList.flatMap((t) => [[`${t.slug}.html`, [t, 'en']], ...(t.es ? [[`es/${t.slug}.html`, [t, 'es']]] : [])]));
 const posts = new Map(['en', 'es'].flatMap((l) => loadPosts(l).map((p) => [`${BLOG[l].dir}/${p.slug}.html`, p])));
+// Every service page (round 9): rel → service.
+const services = new Map(loadServices().map((s) => [`${s.metro}/${s.slug}.html`, s]));
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const zoneEs = (label) => String(label).replace(/^Home zone$/, 'Zona base').replace(/^Zone /, 'Zona ');
 
@@ -62,18 +65,22 @@ function cardFor(rel) {
     const fee = tr.length > 1 ? 'Travel set by your ZIP' : tr[0].cents ? `${tr[0].label}: travel +${fmt(tr[0].cents)}` : 'No travel charge';
     return { kicker: 'Junk removal', title: `${t.name}, ${t.state}`, sub: 'Snap a photo, see your price, we haul it away.', fee, guess: GUESS.zones };
   }
+  const svc = services.get(rel);
+  if (svc) return { kicker: 'Junk removal in Portland', title: svc.name, sub: 'Pick a size or send a photo. We do the lifting.', fee: `From ${fmt(sizesOf(svc)[0].cents)} plus travel`, guess: GUESS.prices };
   const post = posts.get(rel);
   if (post) return { kicker: post.lang === 'es' ? 'Del blog' : 'From the blog', title: post.title, sub: post.summary, fee: null, guess: false, small: true };
   const fixed = {
     'index.html': { kicker: 'Junk removal across the Portland metro', title: 'Pick your size. See your price.', sub: 'Pick a size or send a photo. We do the lifting.' },
     'es/index.html': { kicker: 'Retiro de basura en el área de Portland', title: 'Elige tu tamaño. Ve tu precio.', sub: 'Elige un tamaño o manda una foto. Nosotros cargamos.' },
-    'es/faq.html': { kicker: 'Preguntas', title: 'Retiro de basura, con respuestas claras', sub: 'Precios, fotos, viaje y lo que llevamos.' },
+    'es/faq.html': { kicker: 'Ayuda', title: '¿Cómo te ayudamos?', sub: 'Precios, fotos, viaje, el día y lo que llevamos.' },
     'book/quote.html': { kicker: 'Get a price', title: 'Snap a photo. See your price.', sub: 'Travel for your ZIP included. Book online in a minute.' },
     'service-areas.html': { kicker: 'Where we haul', title: 'Every town we serve', sub: `${townList.length} towns in Oregon and Washington, by travel zone.` },
     'es/service-areas.html': { kicker: 'Dónde trabajamos', title: 'Todas nuestras ciudades', sub: `${townList.length} ciudades en Oregon y Washington, por zona de viaje.` },
     'blog/index.html': { kicker: 'From the blog', title: 'Junk removal, plainly explained', sub: 'Costs, what can go, and where it ends up.' },
     'es/blog/index.html': { kicker: 'Del blog', title: 'Retiro de basura, explicado claro', sub: 'Precios, qué se puede llevar y a dónde va.' },
-    'faq.html': { kicker: 'Questions', title: 'Junk removal, answered plainly', sub: 'Prices, photos, travel, and what we take.' },
+    'faq.html': { kicker: 'Help', title: 'How can we help?', sub: 'Prices, photos, travel, the day, and what we take.' },
+    'before-we-come.html': { kicker: 'Before we come', title: 'Getting ready for your pickup', sub: 'What to set out, the path, parking and pets.' },
+    'es/before-we-come.html': { kicker: 'Antes de que lleguemos', title: 'Cómo prepararte para tu retiro', sub: 'Qué sacar, el camino, dónde estacionarnos y las mascotas.' },
     'privacy.html': { kicker: site.NAME, title: 'Privacy policy', sub: 'What we collect, and what we do with it.' },
     'terms.html': { kicker: site.NAME, title: 'Terms of service', sub: 'Prices, travel, changes on the day, and refunds.' },
   }[rel];

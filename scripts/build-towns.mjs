@@ -37,6 +37,8 @@ import site from '../api/_lib/site.js';
 import { setLangSwitch, hreflang, hasEsTwin } from './lib/twins.mjs';
 import { toSpanish, loadMap } from './build-es.mjs';
 import POINTS from '../data/zip-points.mjs';
+import { loadServices } from './build-services.mjs';
+import { crumbs, HUB } from './lib/crumbs.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const TOWN_DIR = path.join(ROOT, 'content/towns');
@@ -50,8 +52,9 @@ const plain = (s) => String(s).replace(/\[\[|\]\]/g, '');
 /** Visible HTML to the plain text structured data carries. */
 const textOf = (html) => String(html).replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
   .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
-/** FAQPage JSON-LD from the same question list the page shows, so the two cannot disagree. */
-const faqPage = (url, items) => ({
+/** FAQPage JSON-LD from the same question list the page shows, so the two cannot disagree
+ *  (the service pages use it too, scripts/build-services.mjs). */
+export const faqPage = (url, items) => ({
   '@type': 'FAQPage',
   '@id': `${url}#faq`,
   mainEntity: items.map((i) => ({ '@type': 'Question', name: textOf(i.q), acceptedAnswer: { '@type': 'Answer', text: textOf(i.a) } })),
@@ -145,6 +148,7 @@ const W = {
     whereIn: (n) => `Where we haul in ${n}`,
     otherIn: (z) => `Other towns in the ${z.toLowerCase()}`,
     alsoIn: (z) => `Also in the ${z.toLowerCase()}`,
+    jobsIn: (n) => `Jobs we do in ${n}`,
     everyTown: 'Every town we serve',
     travelQ: (w) => `Is there a travel charge to ${w}?`,
     travelOne: (w, z, fee) => `Yes. ${w} is in our ${z.toLowerCase()}, so travel adds ${fee} to the load price. It is shown in your price before you book.`,
@@ -173,6 +177,7 @@ const W = {
     whereIn: (n) => `Dónde trabajamos en ${n}`,
     otherIn: (z) => `Otras ciudades en la ${zoneEs(z).toLowerCase()}`,
     alsoIn: (z) => `También en la ${zoneEs(z).toLowerCase()}`,
+    jobsIn: (n) => `Trabajos que hacemos en ${n}`,
     everyTown: 'Todas las ciudades donde trabajamos',
     travelQ: (w) => `¿Hay cargo de viaje a ${w}?`,
     travelOne: (w, z, fee) => `Sí. ${w} está en nuestra ${zoneEs(z).toLowerCase()}, así que el viaje suma ${fee} al precio de la carga. Lo ves en tu precio antes de reservar.`,
@@ -193,6 +198,23 @@ const pageRel = (slug, lang) => (lang === 'es' ? `es/${slug}` : slug);
 const hrefFor = (lang) => (rel) => (lang === 'es' && !hasEsTwin(rel) ? `../${rel}` : rel);
 /** The town's copy in the page's language. */
 const copyOf = (t, lang) => (lang === 'es' ? t.es : t);
+
+/* The service pages (content/services/, scripts/build-services.mjs), English only for now:
+   a Spanish page links the English page under the service's Spanish name (i18n/es.json). */
+let svcCache = null;
+const services = () => (svcCache ||= loadServices());
+const svcName = (s, lang) => {
+  if (lang !== 'es') return s.name;
+  const es = loadMap()[s.name];
+  if (!es) throw new Error(`i18n/es.json: no Spanish for the service name "${s.name}"`);
+  return es;
+};
+/** The visible trail and its BreadcrumbList (without @context, for a page's @graph). */
+function trailOf(steps, rel, lang) {
+  const c = crumbs(steps, { rel, lang });
+  const { '@context': _ctx, ...ld } = c.ld;
+  return { html: c.html, ld };
+}
 
 /* ── the four regions ──────────────────────────────────────────────────── */
 function head(t, travel, items, lang = 'en') {
@@ -227,6 +249,7 @@ function head(t, travel, items, lang = 'en') {
         },
       },
       faqPage(url, items),
+      trailOf([HUB[lang], { name: t.name }], rel, lang).ld,
     ],
   };
   const hl = hreflang(rel);
@@ -255,6 +278,7 @@ function head(t, travel, items, lang = 'en') {
 function hero(t, lang = 'en') {
   const w = W[lang];
   return [
+    `      ${trailOf([HUB[lang], { name: t.name }], pageRel(`${t.slug}.html`, lang), lang).html}`,
     `      <p class="h-eyebrow">${w.eyebrow(t)}</p>`,
     `      <h1 class="h-title" id="hero-title">${w.h1(t)}</h1>`,
     `      <p class="h-lede">${inline(copyOf(t, lang).lede)}</p>`,
@@ -287,6 +311,17 @@ function local(t, travel, towns, guess, lang = 'en') {
     '        </ul>',
     '      </nav>',
   ] : [];
+  // Every service, those that name this town first: the way from a town to the job.
+  const named = (s) => Number(s.towns.some((x) => x.slug === t.slug));
+  const svc = [...services()].sort((a, b) => named(b) - named(a));
+  const jobs = svc.length ? [
+    `      <nav class="town-nearby town-jobs" aria-label="${esc(w.jobsIn(t.name))}">`,
+    `        <h3 class="town-h3">${esc(w.jobsIn(t.name))}</h3>`,
+    '        <ul>',
+    ...svc.map((s) => `          <li><a href="${href(`${s.metro}/${s.slug}.html`)}">${esc(svcName(s, lang))}</a></li>`),
+    '        </ul>',
+    '      </nav>',
+  ] : [];
   return [
     '<section class="band is-card town-local" aria-labelledby="local-title">',
     '  <div class="wrap">',
@@ -307,6 +342,7 @@ function local(t, travel, towns, guess, lang = 'en') {
     '      </aside>',
     '    </div>',
     ...areas,
+    ...jobs,
     ...nearby,
     '  </div>',
     '</section>',
@@ -421,6 +457,7 @@ const H = {
     count: (n) => `${n} ${n === 1 ? 'town' : 'towns'}`,
     localEyebrow: 'Service areas',
     localTitle: 'Towns by travel zone',
+    servicesTitle: 'Jobs we do across the metro',
     intro: (n) => `We serve ${n} towns in Oregon and Washington. Travel is set by your ZIP code in rings of road miles from our base in Gresham, and it is added to the load price for each visit. A town that spans two zones is listed in both; your ZIP decides which applies to you.`,
     notListed: 'Not on the list? Your ZIP may still be inside a zone. <a href="#area">Type it here</a>, or call or text <a href="tel:+19254086053">(925) 408-6053</a>.',
     faqEyebrow: 'Service area questions',
@@ -443,6 +480,7 @@ const H = {
     count: (n) => `${n} ${n === 1 ? 'ciudad' : 'ciudades'}`,
     localEyebrow: 'Zonas de servicio',
     localTitle: 'Ciudades por zona de viaje',
+    servicesTitle: 'Trabajos que hacemos en toda el área',
     intro: (n) => `Trabajamos en ${n} ciudades de Oregon y Washington. El viaje depende de tu código postal, en anillos de millas por carretera desde nuestra base en Gresham, y se suma al precio de la carga en cada visita. Una ciudad que abarca dos zonas aparece en las dos; tu código postal decide cuál te toca.`,
     notListed: '¿No está en la lista? Tu código postal puede estar dentro de una zona. <a href="#area">Escríbelo aquí</a>, o llama o escribe al <a href="tel:+19254086053">(925) 408-6053</a>.',
     faqEyebrow: 'Preguntas sobre las zonas',
@@ -472,10 +510,11 @@ export function buildHub(index, towns, guess = GUESS.zones, lang = 'en') {
     '  <meta name="twitter:card" content="summary_large_image" />',
     '  <meta name="theme-color" content="#15171A" />',
     '  <script type="application/ld+json">',
-    JSON.stringify({ '@context': 'https://schema.org', '@graph': [faqPage(url, hubItems)] }, null, 2).replace(/^/gm, '  '),
+    JSON.stringify({ '@context': 'https://schema.org', '@graph': [faqPage(url, hubItems), trailOf([{ name: HUB[lang].name }], rel, lang).ld] }, null, 2).replace(/^/gm, '  '),
     '  </script>',
   ].join('\n');
   const heroR = [
+    `      ${trailOf([{ name: HUB[lang].name }], rel, lang).html}`,
     `      <p class="h-eyebrow">${h.eyebrow}</p>`,
     `      <h1 class="h-title" id="hero-title">${h.h1}</h1>`,
     `      <p class="h-lede">${h.lede}</p>`,
@@ -503,6 +542,13 @@ export function buildHub(index, towns, guess = GUESS.zones, lang = 'en') {
     '    <div class="prose">',
     `      <p>${h.intro(towns.length)}</p>`,
     '    </div>',
+    // The services first: the menu's "Services" lands here (service-areas.html#services).
+    '    <section class="hub-zone hub-services" id="services" aria-labelledby="services-title">',
+    `      <h3 class="town-h3" id="services-title">${h.servicesTitle}</h3>`,
+    '      <ul class="hub-towns">',
+    ...services().map((s) => `        <li><a href="${href(`${s.metro}/${s.slug}.html`)}">${esc(svcName(s, lang))}</a></li>`),
+    '      </ul>',
+    '    </section>',
     ...zones,
     `    <p class="hub-not-listed">${h.notListed}</p>`,
     '  </div>',
@@ -605,6 +651,11 @@ export function homeChips(towns) {
   ].join('\n');
 }
 /** The footer's "Where we go" column: the hub and the biggest towns. */
+/** The footer's Services column: every service page, in the order of content/services/portland/ORDER. */
+export function footServices() {
+  return services().map((s) => `      <li><a href="${s.metro}/${s.slug}.html">${esc(s.name)}</a></li>`).join('\n');
+}
+
 export function footTowns(towns) {
   return [
     '      <li><a href="service-areas.html">Service areas</a></li>',
@@ -628,6 +679,7 @@ function withHomeArea(index, towns) {
   s = spliceBlock(s, 'home-map', homeMap(towns));
   s = spliceBlock(s, 'home-chips', homeChips(towns));
   s = spliceBlock(s, 'foot-towns', footTowns(towns));
+  s = spliceBlock(s, 'foot-services', footServices());
   return s;
 }
 

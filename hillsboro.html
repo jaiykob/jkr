@@ -87,6 +87,30 @@
             }
           }
         ]
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": "https://www.example.com/hillsboro.html#breadcrumb",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://www.example.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Portland metro",
+            "item": "https://www.example.com/service-areas.html"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Hillsboro",
+            "item": "https://www.example.com/hillsboro.html"
+          }
+        ]
       }
     ]
   }
@@ -115,11 +139,11 @@
     <svg class="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
   </button>
   <ul class="nav-links" id="navLinks">
-    <li><a href="#how-it-works">How it works</a></li>
-    <li><a href="#what-we-take">What we take</a></li>
-    <li><a href="#pricing">Pricing</a></li>
-    <li><a href="service-areas.html">Service areas</a></li>
-    <li><a href="faq.html">FAQ</a></li>
+    <li><a href="service-areas.html#services">Services</a></li>
+    <li><a href="#pricing">Prices</a></li>
+    <li><a href="service-areas.html">Where we go</a></li>
+    <li><a href="before-we-come.html">Before we come</a></li>
+    <li><a href="faq.html">Help</a></li>
     <li class="chat-item"><a href="sms:+19254086053">Text us</a></li>
     <li class="chat-item"><a href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener">WhatsApp us</a></li>
     <li class="cta-item"><a class="nav-cta-mobile" href="book/quote.html">Get my price</a></li>
@@ -144,6 +168,7 @@
   <div class="h-hero-in">
     <div class="h-hero-copy">
       <!-- CITY:hero -->
+      <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="index.html">Home</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li><a href="service-areas.html">Portland metro</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li aria-current="page">Hillsboro</li></ol></nav>
       <p class="h-eyebrow">Junk removal in Hillsboro, OR</p>
       <h1 class="h-title" id="hero-title">Hillsboro junk removal.<span>See your price.</span></h1>
       <p class="h-lede">Hillsboro is in our Zone 4, one of the farthest towns we price online. Your ZIP adds the travel, and the price stays fixed once you book.</p>
@@ -222,6 +247,19 @@
         <li>Amberglen</li>
         <li>Jackson School area</li>
       </ul>
+      <nav class="town-nearby town-jobs" aria-label="Jobs we do in Hillsboro">
+        <h3 class="town-h3">Jobs we do in Hillsboro</h3>
+        <ul>
+          <li><a href="portland/garage-cleanout.html">Garage cleanout</a></li>
+          <li><a href="portland/furniture-removal.html">Furniture removal</a></li>
+          <li><a href="portland/estate-cleanout.html">Estate cleanout</a></li>
+          <li><a href="portland/hot-tub-removal.html">Hot tub removal</a></li>
+          <li><a href="portland/mattress-removal.html">Mattress removal</a></li>
+          <li><a href="portland/appliance-removal.html">Appliance removal</a></li>
+          <li><a href="portland/yard-debris-removal.html">Yard debris removal</a></li>
+          <li><a href="portland/hoarder-cleanout.html">Hoarding cleanout</a></li>
+        </ul>
+      </nav>
       <nav class="town-nearby" aria-label="Other towns in the zone 4">
         <h3 class="town-h3">Also in the zone 4</h3>
         <ul>
@@ -340,14 +378,14 @@
     </div>
     <div class="take-grid">
       <!-- Each kind as a block in its pile color (the hero's pile) with a line icon in it. -->
-      <article class="take" style="--sw:#E4572E"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/><path d="M5 18v2M19 18v2"/></svg></span><h3>Furniture</h3><p>Couches, chairs, tables, dressers, desks.</p></article>
-      <article class="take" style="--sw:#9AA5B1"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 10h12M9 5v2M9 13v3"/></svg></span><h3>Appliances</h3><p>Fridges, freezers, washers, dryers, stoves.</p></article>
-      <article class="take" style="--sw:#4C8BF5"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 18V6M2 14h20v4M22 14v-2a3 3 0 0 0-3-3h-8v5"/><circle cx="6.5" cy="11" r="2"/></svg></span><h3>Mattresses</h3><p>Any size, with or without the box spring.</p></article>
-      <article class="take" style="--sw:#D9B26F"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg></span><h3>Garage and basement</h3><p>Boxes, shelves, tools and everything in between.</p></article>
-      <article class="take" style="--sw:#3FA34D"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-14 15-15-1 10-7 15-15 15z"/><path d="M5 19l8-8"/></svg></span><h3>Yard debris</h3><p>Branches, clippings, old fencing, sheds taken apart.</p></article>
+      <a href="portland/furniture-removal.html" class="take is-link" style="--sw:#E4572E"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/><path d="M5 18v2M19 18v2"/></svg></span><h3>Furniture</h3><p>Couches, chairs, tables, dressers, desks.</p></a>
+      <a href="portland/appliance-removal.html" class="take is-link" style="--sw:#9AA5B1"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 10h12M9 5v2M9 13v3"/></svg></span><h3>Appliances</h3><p>Fridges, freezers, washers, dryers, stoves.</p></a>
+      <a href="portland/mattress-removal.html" class="take is-link" style="--sw:#4C8BF5"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M2 18V6M2 14h20v4M22 14v-2a3 3 0 0 0-3-3h-8v5"/><circle cx="6.5" cy="11" r="2"/></svg></span><h3>Mattresses</h3><p>Any size, with or without the box spring.</p></a>
+      <a href="portland/garage-cleanout.html" class="take is-link" style="--sw:#D9B26F"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg></span><h3>Garage and basement</h3><p>Boxes, shelves, tools and everything in between.</p></a>
+      <a href="portland/yard-debris-removal.html" class="take is-link" style="--sw:#3FA34D"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 19c0-8 5-14 15-15-1 10-7 15-15 15z"/><path d="M5 19l8-8"/></svg></span><h3>Yard debris</h3><p>Branches, clippings, old fencing, sheds taken apart.</p></a>
       <article class="take" style="--sw:#8E6CCF"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="12" width="8" height="8" rx="1"/><rect x="13" y="12" width="8" height="8" rx="1"/><rect x="8" y="3" width="8" height="8" rx="1"/></svg></span><h3>Move outs</h3><p>What didn't make the moving truck.</p></article>
       <article class="take is-dark" style="--sw:#2E3440"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="13" rx="2"/><path d="M8 21h8M12 18v3"/></svg></span><h3>Electronics</h3><p>TVs, monitors, computers, printers.</p></article>
-      <article class="take" style="--sw:#F2A541"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><h3>Estate cleanouts</h3><p>A whole home, handled with care.</p></article>
+      <a href="portland/estate-cleanout.html" class="take is-link" style="--sw:#F2A541"><span class="take-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><h3>Estate cleanouts</h3><p>A whole home, handled with care.</p></a>
     </div>
     <p class="take-no">We can't take paint, chemicals, fuel, asbestos or medical waste.</p>
   </div>
@@ -511,7 +549,23 @@
       <ul class="footer-links">
         <li><a href="book/quote.html">Get my price</a></li>
         <li><a href="book/quote.html#photos">Send a photo</a></li>
+        <li><a href="before-we-come.html">Before we come</a></li>
         <li><a href="book/commercial.html">Property managers</a></li>
+      </ul>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Services</h2>
+      <ul class="footer-links">
+      <!-- BUILD:foot-services -->
+      <li><a href="portland/garage-cleanout.html">Garage cleanout</a></li>
+      <li><a href="portland/furniture-removal.html">Furniture removal</a></li>
+      <li><a href="portland/estate-cleanout.html">Estate cleanout</a></li>
+      <li><a href="portland/hot-tub-removal.html">Hot tub removal</a></li>
+      <li><a href="portland/mattress-removal.html">Mattress removal</a></li>
+      <li><a href="portland/appliance-removal.html">Appliance removal</a></li>
+      <li><a href="portland/yard-debris-removal.html">Yard debris removal</a></li>
+      <li><a href="portland/hoarder-cleanout.html">Hoarding cleanout</a></li>
+      <!-- /BUILD:foot-services -->
       </ul>
     </div>
     <div class="foot-col">
@@ -531,7 +585,7 @@
     <div class="foot-col">
       <h2 class="foot-h">Help</h2>
       <ul class="footer-links">
-        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="faq.html">Help and FAQ</a></li>
         <li><a href="blog/index.html">Blog</a></li>
         <li><a href="terms.html">Terms</a></li>
         <li><a href="privacy.html">Privacy</a></li>

@@ -34,4 +34,4 @@ In our area the same things turn up again and again: old bikes and toys, exercis
 
 ## How big a load?
 
-Most single car garages fit in half a truck once they are sorted; a packed two car garage is often a full truck. You do not need to guess: snap a couple of photos on the [quote page](/book/quote.html) and we pick the right size for you, with the price for your zone.
+Most single car garages fit in half a truck once they are sorted; a packed two car garage is often a full truck. You do not need to guess: snap a couple of photos on the [quote page](/book/quote.html) and we pick the right size for you, with the price for your zone. Our [garage cleanout page](/portland/garage-cleanout.html) shows the sizes most garages fill and where each pile ends up.

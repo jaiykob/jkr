@@ -21,7 +21,7 @@ If you have a pickup and a free day, a yard debris drop off site will take branc
 
 When the pile is bigger than a few carts, one visit is usually faster and cheaper than weeks of carts. We take branches, brush, broken fencing, wind blown patio furniture and the cracked trampoline in one trip. Each pile about the size of a pickup bed counts as a yard debris pile on our [quote page](/book/quote.html).
 
-Cut branches to a length two people can carry, and stack them in one place near the driveway. Roll loose fencing wire so it does not snag. What we cannot take is soil, sod and rock, which are too heavy for flat pricing.
+Cut branches to a length two people can carry, and stack them in one place near the driveway. Roll loose fencing wire so it does not snag. What we cannot take is soil, sod and rock, which are too heavy for flat pricing. Our [yard debris removal page](/portland/yard-debris-removal.html) has the full list and the sizes most cleanups fill.
 
 ## Where storm debris goes
 

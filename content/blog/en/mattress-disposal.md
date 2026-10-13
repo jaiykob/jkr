@@ -19,7 +19,7 @@ Garbage haulers in the metro [[will take a mattress as a bulky item for an extra
 
 ## A junk removal pickup
 
-This is the easy one: we carry it out of the bedroom, down the stairs and onto the truck, then take it to recycling. A mattress and a box spring together count as a single item on our [quote page](/book/quote.html), so you see the price right away, with travel for your zone already included.
+This is the easy one: we carry it out of the bedroom, down the stairs and onto the truck, then take it to recycling. A mattress and a box spring together count as a single item on our [quote page](/book/quote.html), so you see the price right away, with travel for your zone already included. Our [mattress removal page](/portland/mattress-removal.html) covers the rest, from box springs and bed frames to bedbugs.
 
 If you are replacing the bed, this is also a good moment to clear the frame, the old nightstands, or the futon from the spare room. Each one fills a bit more of the truck, but the price stays flat for the load size.
 
