@@ -29,6 +29,7 @@
 :root {
   --font: 'Google Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --rg:   #0C0B09;
+  --nav-bg: #1E1C19;   /* the top bar, a shade lighter than the near black hero under it (founder 2026-10-13) */
   --fg:   #34322F;
   --tan:  #FBF9F5;
   --ltan: #F1EEE8;
@@ -89,7 +90,7 @@ img { max-width: 100%; }
    the language as a small pill and one white pill button. Phone, text and WhatsApp
    live in the phone menu and the footer. Under 960px the links fold into the menu. */
 .site-nav {
-  position: relative; z-index: 100; background: var(--rg); color: #fff;
+  position: relative; z-index: 100; background: var(--nav-bg); color: #fff; border-bottom: 1px solid rgba(255,255,255,.07);
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
   min-height: var(--nav-h); padding: 12px clamp(16px, 4vw, 48px);
   font-family: var(--font); line-height: 1.4;
