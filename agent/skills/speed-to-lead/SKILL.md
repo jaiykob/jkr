@@ -73,13 +73,13 @@ If there is more on the day than the size you picked, we show you the new
 price before we load anything. Questions? Reply here or call or text
 (925) 408-6053.
 
-Brand Name
+Haulmighty
 ```
 
 SMS draft (phone only leads):
 
 ```
-Hi {first_name}, this is Brand Name. Thanks for getting a price: {load},
+Hi {first_name}, this is Haulmighty. Thanks for getting a price: {load},
 {quoted_price} with travel included. Want to pick a day? {link}
 Reply STOP to opt out.
 ```

@@ -55,7 +55,7 @@ lifting: {link}
 
 Questions? Reply here or call or text (925) 408-6053.
 
-Brand Name
+Haulmighty
 ```
 
 Day 5, the last note. Email subject: `One last note about your haul`
@@ -69,18 +69,18 @@ if you would like a day this week or next, this link brings your price back:
 
 If your plans changed, no reply needed. Thanks for thinking of us.
 
-Brand Name
+Haulmighty
 ```
 
 SMS drafts (phone only leads):
 
 ```
-Hi {first_name}, Brand Name here. Your {load} price ({quoted_price}, travel
+Hi {first_name}, Haulmighty here. Your {load} price ({quoted_price}, travel
 included) is still here: {link} Reply STOP to opt out.
 ```
 
 ```
-{first_name}, last note from Brand Name about your haul. Happy to hold a day
+{first_name}, last note from Haulmighty about your haul. Happy to hold a day
 for you: {link} Reply STOP to opt out.
 ```
 

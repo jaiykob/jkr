@@ -130,10 +130,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const check = process.argv.includes('--check');
   const map = loadMap();
   const r = toSpanish(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), { map });
-  if (r.missing.length) {
-    console.error(`build-es: ${r.missing.length} English phrase(s) on index.html have no Spanish in i18n/es.json:\n  ${r.missing.join('\n  ')}`);
-    process.exit(1);
-  }
+  // Spanish is paused (founder 2026-10-13: "dont work on spanish pages for now save
+  // that for later"): a phrase with no Spanish stays in English on the Spanish pages,
+  // listed here as a reminder instead of stopping the build.
+  if (r.missing.length) console.warn(`build-es: ${r.missing.length} English phrase(s) on index.html have no Spanish yet (left in English):\n  ${r.missing.join('\n  ')}`);
   const out = path.join(ROOT, 'es/index.html');
   const before = fs.existsSync(out) ? eol(fs.readFileSync(out, 'utf8')) : '';
   if (check) {

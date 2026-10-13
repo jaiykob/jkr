@@ -1,5 +1,5 @@
 /**
- * Brand Name — shared Resend email sender.
+ * Haulmighty — shared Resend email sender.
  *
  * One thin wrapper around the Resend HTTP API (plain fetch, no SDK — matches
  * the Discord webhook pattern in stripe-webhook.js). Every email in the system
@@ -10,8 +10,8 @@
  *   RESEND_API_KEY        = re_...   (rotate any key ever pasted in plaintext)
  *
  * Optional env vars:
- *   EMAIL_FROM            = "Brand Name <hello@example.com>"   transactional sender
- *   EMAIL_FROM_MARKETING  = "Brand Name <news@example.com>"    marketing sender (separate
+ *   EMAIL_FROM            = "Haulmighty <hello@example.com>"   transactional sender
+ *   EMAIL_FROM_MARKETING  = "Haulmighty <news@example.com>"    marketing sender (separate
  *                           subdomain so a campaign complaint can't poison booking-
  *                           confirmation deliverability)
  *   EMAIL_REPLY_TO        = hello@example.com
@@ -27,8 +27,8 @@ const site = require('./site');
 
 /**
  * A usable Resend sender is either a bare address (`hello@example.com`) or a
- * display name with one in angle brackets (`Brand Name <hello@example.com>`).
- * A bare display name — `Brand Name` — is neither, and it is the exact thing
+ * display name with one in angle brackets (`Haulmighty <hello@example.com>`).
+ * A bare display name — `Haulmighty` — is neither, and it is the exact thing
  * that has been sitting in the EMAIL_FROM env var: Resend rejects the send,
  * sendEmail swallows the error by design, and a paying customer silently gets
  * no confirmation. `||` doesn't catch it, because a wrong value is still truthy.

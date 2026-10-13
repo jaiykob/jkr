@@ -4,6 +4,9 @@
 // order page since round 6.)
 (function () {
   if (!['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) return;
+  // Off unless asked for (?preview once in a tab): the founder walks the site locally and
+  // it is clutter on every page.
+  try { if (/[?&]preview/.test(location.search)) sessionStorage.setItem('previewNav', '1'); if (!sessionStorage.getItem('previewNav')) return; } catch (e) { return; }
 
   const SAMPLE_CONTACT = { name: 'Sample Customer', email: 'sample@example.com', phone: '(000) 000-0000', addr: '123 Sample St' };
 

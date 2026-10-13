@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to Brand Name | You're Booked</title>
-  <meta name="description" content="Your Brand Name pickup is booked. Your day, your arrival window, and what happens before and after the job." />
+  <title>Welcome to Haulmighty | You're Booked</title>
+  <meta name="description" content="Your Haulmighty pickup is booked. Your day, your arrival window, and what happens before and after the job." />
   <meta name="robots" content="noindex" />
   <!-- Self-hosted fonts (fonts/), declared inline: no render-blocking font CSS. -->
   <style>
@@ -85,7 +85,7 @@
 
 <header class="o-header">
   <div class="o-header-in">
-    <a class="o-brand" href="../index.html"><span class="o-mark" aria-hidden="true"></span><span>Brand Name</span><span class="sr-only">, back to the home page</span></a>
+    <a class="o-brand" href="../index.html"><span class="o-mark" aria-hidden="true"></span><span>Haulmighty</span><span class="sr-only">, back to the home page</span></a>
     <a class="o-head-call" href="tel:+19254086053"><svg aria-hidden="true"><use href="#i-phone"/></svg><span class="o-head-num">(925) 408-6053</span><span class="sr-only o-head-sr">Call us</span></a>
   </div>
 </header>
@@ -150,7 +150,7 @@
 </main>
 
 <footer class="o-foot">
-  <p>© Brand Name</p>
+  <p>© Haulmighty</p>
   <p class="o-foot-links"><a href="tel:+19254086053">(925) 408-6053</a><a href="../privacy.html">Privacy</a><a href="../terms.html">Terms</a></p>
 </footer>
 
@@ -205,6 +205,12 @@
     var load = num(s.loadCents), trip = num(s.travelCents);
     var tot = num(s.totalCents) != null ? num(s.totalCents) : num(s.amountCents);   // amountCents: a summary in the old shape
     var paid = num(s.paidCents) != null ? num(s.paidCents) : tot;                  // pay at booking: what the card paid today
+    // A day reserved while card payments are off: nothing was paid, and the page says so.
+    if (s.reserved) {
+      paid = null;
+      $('t-lede').textContent = 'No card was taken. We text ' + (s.phone || 'you') + ' to confirm your pickup.';
+      $('summary-card').querySelector('.t-rule').textContent = 'Before loading, the crew checks the size. A different size means a different price, shown to you first.';
+    }
     var rows = [];
     var size = s.size || s.plan;
     if (size) rows.push(['Size', [size, load != null ? ', ' : '', load != null ? guessy(fmt(load), priceGuess) : '']]);
@@ -212,9 +218,9 @@
     if (s.dayLabel) rows.push(['Day and time', [s.dayLabel, s.windowLabel ? ', ' : '', s.windowLabel ? guessy(s.windowLabel, !!G.schedule) : '']]);
     else if (s.cadence || s.day) rows.push(['Day', [s.cadence || s.day]]);
     if (s.address) rows.push(['Address', [s.address]]);
-    if (s.wallet || s.last4 || s.dayLabel) rows.push(['Card', [(s.wallet || 'Your card') + ', saved for any difference']]);
+    if (!s.reserved && (s.wallet || s.last4 || s.dayLabel)) rows.push(['Card', [(s.wallet || 'Your card') + ', saved for any difference']]);
     if (s.phone) rows.push(['Texts go to', [s.phone]]);
-    if (tot != null && paid != null && paid !== tot) rows.push(['Total', [guessy(fmt(tot), priceGuess || travelGuess)]]);
+    if (tot != null && (paid == null || paid !== tot)) rows.push(['Total', [guessy(fmt(tot), priceGuess || travelGuess)]]);
     if (paid != null) rows.push(['Paid today', [guessy(fmt(paid), priceGuess || travelGuess)], 't-row-total']);
     if (!rows.length) return;
 
@@ -232,7 +238,7 @@
     if (s.phone) $('t-phone').textContent = s.phone;
     if (s.firstName) {
       var h = $('welcome-heading');
-      fill(h, ["You're booked, ", el('em', null, s.firstName), '.']);
+      fill(h, [s.reserved ? 'Your day is reserved, ' : "You're booked, ", el('em', null, s.firstName), '.']);
     }
   })();
 

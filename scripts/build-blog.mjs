@@ -43,7 +43,7 @@ export const T = {
   en: {
     lang: 'en', dir: 'blog', home: 'Home', blog: 'Blog', blogTitle: 'Junk removal guides and answers',
     blogLede: 'Plain answers about clearing out a home, a garage or a rental in the Portland metro: what things cost, what can go, and where it ends up.',
-    indexTitle: 'Junk Removal Blog: Guides and Answers | Brand Name',
+    indexTitle: 'Junk Removal Blog: Guides and Answers | Haulmighty',
     indexDesc: 'Plain guides to junk removal in the Portland metro: costs, what haulers can and cannot take, mattresses, fridges, garage and estate cleanouts.',
     read: (n) => `${n} minute read`, ctaTitle: 'Ready when your junk is', ctaText: 'Snap a photo. See your price, travel included. We do the lifting.',
     ctaQuote: 'Get my price', ctaAreas: 'Where we haul', back: 'All posts', dateFmt: 'en-US',
@@ -51,7 +51,7 @@ export const T = {
   es: {
     lang: 'es', dir: 'es/blog', home: 'Inicio', blog: 'Blog', blogTitle: 'Guías y respuestas sobre el retiro de basura',
     blogLede: 'Respuestas claras para vaciar una casa, un garaje o una vivienda de renta en el área de Portland: cuánto cuesta, qué se puede llevar y a dónde va.',
-    indexTitle: 'Blog de Retiro de Basura: Guías | Brand Name',
+    indexTitle: 'Blog de Retiro de Basura: Guías | Haulmighty',
     indexDesc: 'Guías claras sobre el retiro de basura en el área de Portland: precios, qué se puede llevar, colchones, refrigeradores y limpieza de garajes y casas.',
     read: (n) => `${n} minutos de lectura`, ctaTitle: 'Listos cuando tú lo estés', ctaText: 'Toma una foto. Ve tu precio con el viaje incluido. Nosotros cargamos.',
     ctaQuote: 'Ver mi precio', ctaAreas: 'Dónde trabajamos', back: 'Todas las publicaciones', dateFmt: 'es-US',
@@ -134,8 +134,7 @@ function head({ title, desc, rel, lang, enRel, esRel, card, ld, crumbLd = null }
     ...(ld ? ['  <script type="application/ld+json">', JSON.stringify(ld, null, 2).replace(/^/gm, '  '), '  </script>'] : []),
     ...(crumbLd ? ['  <script type="application/ld+json">', JSON.stringify(crumbLd, null, 2).replace(/^/gm, '  '), '  </script>'] : []),
     '  <style>',
-    `    @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(${up}fonts/dm-sans.woff2) format('woff2'); }`,
-    `    @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(${up}fonts/bricolage.woff2) format('woff2'); }`,
+    `    @font-face { font-family: 'Google Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(${up}fonts/google-sans.woff2) format('woff2'); }`,
     '  </style>',
     `  <link rel="stylesheet" href="${up}css/site.css">`,
     `  <link rel="stylesheet" href="${up}css/article.css">`,
@@ -205,7 +204,7 @@ export function indexPage(lang, posts, hasTwin) {
   const up = '../'.repeat(rel.split('/').length - 1);
   const card = lang === 'es' ? 'es-blog' : 'blog';
   return [
-    head({ title: t.indexTitle.replace('Brand Name', site.NAME), desc: t.indexDesc, rel, lang, enRel: hasTwin ? 'blog/index.html' : null, esRel: hasTwin ? 'es/blog/index.html' : null, card, ld: null, crumbLd: crumbs([{ name: t.blog }], { rel, lang }).ld }),
+    head({ title: t.indexTitle.replace('Haulmighty', site.NAME), desc: t.indexDesc, rel, lang, enRel: hasTwin ? 'blog/index.html' : null, esRel: hasTwin ? 'es/blog/index.html' : null, card, ld: null, crumbLd: crumbs([{ name: t.blog }], { rel, lang }).ld }),
     '  <article class="article">',
     `    ${crumbs([{ name: t.blog }], { rel, lang }).html}`,
     `    <h1>${t.blogTitle}</h1>`,

@@ -1,5 +1,5 @@
 /**
- * Brand Name — shared Supabase (PostgREST) writer for the booking spine.
+ * Haulmighty — shared Supabase (PostgREST) writer for the booking spine.
  *
  * Thin wrapper over the Supabase REST API using the SERVICE_ROLE key (bypasses
  * RLS). Plain fetch, no SDK — matches the Discord/Resend pattern. Every spine

@@ -19,7 +19,7 @@
 .article .crumbs [aria-current] { font-weight: 600; color: var(--rg); }
 
 .article h1 {
-  font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; font-weight: 800; letter-spacing: -.03em;
+  font-family: var(--font); font-weight: 800; letter-spacing: -.03em;
   font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.1; color: var(--rg); margin-bottom: 16px; text-wrap: balance;
 }
 .article h1 span { display: block; color: var(--dtan); }
@@ -27,7 +27,7 @@
 .updated { font-size: 1rem; font-weight: 700; color: var(--dtan); margin-bottom: 16px; }
 
 .article h2 {
-  font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; font-weight: 800; letter-spacing: -.02em;
+  font-family: var(--font); font-weight: 800; letter-spacing: -.02em;
   font-size: clamp(1.4rem, 3.4vw, 1.7rem); line-height: 1.25; color: var(--rg); margin: 40px 0 12px; text-wrap: balance;
 }
 .article h3 { font-size: 1.125rem; font-weight: 700; color: var(--rg); margin: 26px 0 8px; }
@@ -108,7 +108,7 @@
 .post-list li { margin: 0; }
 .article .post-list a { display: grid; gap: 4px; min-height: 48px; padding: 18px 20px; border-radius: var(--r-md); background: var(--card); border: 1px solid var(--bdr); text-decoration: none; font-weight: 400; }
 .article .post-list a:hover { border-color: var(--rg); box-shadow: 0 6px 0 var(--rg); }
-.pl-title { font: 800 1.2rem/1.3 'Bricolage Grotesque', sans-serif; color: var(--rg); letter-spacing: -.01em; }
+.pl-title { font: 800 1.2rem/1.3 var(--font); color: var(--rg); letter-spacing: -.01em; }
 .pl-sum { font-size: 1rem; line-height: 1.6; color: var(--txm); }
 .post-back { margin-top: 28px; }
 .post-back a { display: inline-flex; align-items: center; min-height: 48px; }

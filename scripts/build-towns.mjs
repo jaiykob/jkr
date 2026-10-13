@@ -136,7 +136,7 @@ const W = {
     list: listIn('and'),
     zone: (label) => label,
     fee: (cents) => (cents ? `${fmt(cents)} per visit` : 'no travel charge'),
-    title: (where) => `Junk Removal in ${where} | Brand Name`,
+    title: (where) => `Junk Removal in ${where} | Haulmighty`,
     desc: (where, one) => `Junk removal in ${where}. Pick a size or send a photo, see your price with ${one ? (one.cents ? `${one.label} travel` : 'no travel charge') : 'travel by ZIP'}, and we haul it away. Based in Gresham.`,
     serviceType: 'Junk removal',
     eyebrow: (t) => `Junk removal in ${esc(t.name)}, ${t.state}`,
@@ -165,7 +165,7 @@ const W = {
     list: listIn('y'),
     zone: zoneEs,
     fee: (cents) => (cents ? `${fmt(cents)} por visita` : 'sin cargo de viaje'),
-    title: (where) => `Retiro de Basura en ${where} | Brand Name`,
+    title: (where) => `Retiro de Basura en ${where} | Haulmighty`,
     desc: (where, one) => `Retiro de basura en ${where}. Elige un tamaño o manda una foto y ve tu precio ${one ? (one.cents ? `con el viaje de la ${zoneEs(one.label).toLowerCase()}` : 'sin cargo de viaje') : 'con el viaje según tu código postal'}. Estamos en Gresham.`,
     serviceType: 'Retiro de basura',
     eyebrow: (t) => `Retiro de basura en ${esc(t.name)}, ${t.state}`,
@@ -440,7 +440,7 @@ export function homeArea(towns, guess = GUESS.zones) {
 /* The hub's own words. */
 const H = {
   en: {
-    title: 'Service Areas: Portland Metro and Vancouver | Brand Name',
+    title: 'Service Areas: Portland Metro and Vancouver | Haulmighty',
     desc: 'Every town we haul from, by travel zone: Gresham and East County, Portland, the west side and Clark County. Type your ZIP to see your zone and travel.',
     items: (guess) => [
       { q: 'My town is not listed. Do you come to me?', a: 'Maybe. Every ZIP inside our travel zones books online, listed town or not. Type yours on this page or in the quote. If it is past our last zone, call or text and we will quote it by hand.' },
@@ -459,11 +459,11 @@ const H = {
     localTitle: 'Towns by travel zone',
     servicesTitle: 'Jobs we do across the metro',
     intro: (n) => `We serve ${n} towns in Oregon and Washington. Travel is set by your ZIP code in rings of road miles from our base in Gresham, and it is added to the load price for each visit. A town that spans two zones is listed in both; your ZIP decides which applies to you.`,
-    notListed: 'Not on the list? Your ZIP may still be inside a zone. <a href="#area">Type it here</a>, or call or text <a href="tel:+19254086053">(925) 408-6053</a>.',
+    notListed: 'Not on the list? Your ZIP may still be inside a zone. <a href="book/quote.html">Type it in the quote</a>, or call or text <a href="tel:+19254086053">(925) 408-6053</a>.',
     faqEyebrow: 'Service area questions',
   },
   es: {
-    title: 'Dónde Trabajamos: Portland y Vancouver | Brand Name',
+    title: 'Dónde Trabajamos: Portland y Vancouver | Haulmighty',
     desc: 'Todas las ciudades donde trabajamos, por zona de viaje: Gresham y el este, Portland, el lado oeste y el condado de Clark. Escribe tu código postal.',
     items: (guess) => [
       { q: 'Mi ciudad no está en la lista. ¿Llegan hasta mí?', a: 'Puede ser. Todo código postal dentro de nuestras zonas de viaje se reserva en línea, esté o no en la lista. Escribe el tuyo en esta página o en la cotización. Si queda después de nuestra última zona, llama o escribe y te damos el precio directamente.' },
@@ -482,7 +482,7 @@ const H = {
     localTitle: 'Ciudades por zona de viaje',
     servicesTitle: 'Trabajos que hacemos en toda el área',
     intro: (n) => `Trabajamos en ${n} ciudades de Oregon y Washington. El viaje depende de tu código postal, en anillos de millas por carretera desde nuestra base en Gresham, y se suma al precio de la carga en cada visita. Una ciudad que abarca dos zonas aparece en las dos; tu código postal decide cuál te toca.`,
-    notListed: '¿No está en la lista? Tu código postal puede estar dentro de una zona. <a href="#area">Escríbelo aquí</a>, o llama o escribe al <a href="tel:+19254086053">(925) 408-6053</a>.',
+    notListed: '¿No está en la lista? Tu código postal puede estar dentro de una zona. <a href="../book/quote.html">Escríbelo en la cotización</a>, o llama o escribe al <a href="tel:+19254086053">(925) 408-6053</a>.',
     faqEyebrow: 'Preguntas sobre las zonas',
   },
 };
@@ -675,9 +675,6 @@ function spliceBlock(s, name, body) {
  *  the town chips and the footer's towns. */
 function withHomeArea(index, towns) {
   let s = eol(index);
-  s = spliceBlock(s, 'home-area', homeArea(towns));
-  s = spliceBlock(s, 'home-map', homeMap(towns));
-  s = spliceBlock(s, 'home-chips', homeChips(towns));
   s = spliceBlock(s, 'foot-towns', footTowns(towns));
   s = spliceBlock(s, 'foot-services', footServices());
   return s;
@@ -705,10 +702,8 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   }
   // The Spanish template: the homepage (with its new zone list) in Spanish.
   const es = towns.some((t) => t.es) ? toSpanish(index, { map: loadMap() }) : null;
-  if (es && es.missing.length) {
-    console.error(`build-towns: index.html has ${es.missing.length} phrase(s) with no Spanish (run node scripts/build-es.mjs for the list)`);
-    process.exit(1);
-  }
+  // Spanish is paused (founder 2026-10-13): a phrase with no Spanish stays in English.
+  if (es && es.missing.length) console.warn(`build-towns: index.html has ${es.missing.length} phrase(s) with no Spanish yet, left in English (node scripts/build-es.mjs lists them)`);
   for (const t of towns) {
     put(`${t.slug}.html`, setLangSwitch(buildPage(index, t, towns, GUESS.zones), `${t.slug}.html`));
     if (t.es) put(`es/${t.slug}.html`, setLangSwitch(buildPage(es.html, t, towns, GUESS.zones, 'es'), `es/${t.slug}.html`));

@@ -1,459 +1,178 @@
-/* Homepage only (round 7, LoadUp's layout in our colors): the hero with the
-   pile and its price ticket, the ticker, how it works, the sizes band, what
-   we take, the promises, the price band, where we go with the map, the FAQ,
-   the closer. Tokens come from css/site.css. */
+/* The homepage and the town pages built from it, in Novah's design language
+   (founder 2026-10-13: "copy the entire design scheme", "especially front page
+   and hero statement"): a near black hero with a small spaced label, a big tight
+   statement, a short line and pill buttons beside it, then one big rounded photo;
+   a numbered "how we work" row; a photo and story split; photo cards for what we
+   take that lift and ease in; the prices as cards; the questions beside their
+   heading; a near black closer. Things fade up as they come into view (js/home.js),
+   never with reduced motion. The tokens and the pill buttons live in css/site.css. */
 
-.logo-mark {
-  width: 30px; height: 30px; border-radius: 8px; flex: none;
-  background:
-    linear-gradient(var(--rg), var(--rg)) 6px 15px / 18px 3px no-repeat,
-    linear-gradient(var(--rg), var(--rg)) 6px 21px / 12px 3px no-repeat,
-    var(--tan);
-  box-shadow: inset 0 0 0 2px var(--tan);
-}
-.nav-logo { gap: 10px; }
+.wrap { max-width: var(--w-wide); margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+.band { padding: clamp(80px, 11vw, 140px) 0; }
 
-/* Eyebrows are pills (round 7, LoadUp's tags): the ticker's diamond, then the
-   words. Yellow on the charcoal bands; charcoal on pale yellow on light ones. */
-.h-eyebrow {
-  display: inline-flex; align-items: center; gap: 10px; max-width: 100%;
-  padding: 8px 16px; margin-bottom: 18px; border-radius: 18px;
-  font-size: 1rem; font-weight: 800; line-height: 1.3; letter-spacing: .08em; text-transform: uppercase;
-  background: rgba(255,210,63,.12); color: var(--tan); border: 1px solid rgba(255,210,63,.4);
-}
-.h-eyebrow::before { content: ''; flex: none; width: 9px; height: 9px; background: currentColor; transform: rotate(45deg); }
-.h-eyebrow.dark, .h-hero .h-eyebrow { background: var(--ltan); color: var(--rg); border-color: rgba(21,23,26,.14); }
+/* ── the small spaced capitals over a heading ── */
+.h-eyebrow, .eyebrow { display: block; margin: 0 0 20px; font: 500 13px/1.4 var(--font); letter-spacing: .22em; text-transform: uppercase; color: var(--txm); }
 
-/* ── HERO ─────────────────────────────────────────────────────────────── */
-/* LoadUp's hero in our colors: cream, the copy and one big button on the
-   left, the pile of junk with its price ticket on the right; stacked on a
-   phone, the copy first. Town pages swap the eyebrow, headline and line. */
-.h-hero {
-  position: relative; overflow: hidden; isolation: isolate;
-  background: var(--page); color: var(--tx);
-  padding: 40px var(--gutter) 56px;
-}
-.h-hero::before {
-  content: ''; position: absolute; z-index: -1; width: 760px; height: 760px; right: -260px; top: -160px;
-  background: radial-gradient(closest-side, rgba(255,210,63,.34), rgba(255,210,63,0));
-}
-.h-hero-in { max-width: var(--w-wide); margin: 0 auto; display: grid; gap: 44px; grid-template-columns: minmax(0, 1fr); align-items: center; }
-.h-hero-in > * { min-width: 0; }
-.h-title {
-  font-family: 'Bricolage Grotesque', 'DM Sans', sans-serif; font-weight: 800;
-  font-size: clamp(2.5rem, 6.4vw, 4.9rem); line-height: 1.02; letter-spacing: -.04em; color: var(--rg);
-}
-/* The second line on a yellow marker: a thick underline drawn behind the
-   lower half of the letters, so it follows the words even when they wrap. */
-.h-title span {
-  display: block; margin-top: .04em;
-  text-decoration: underline; text-decoration-color: var(--tan); text-decoration-thickness: .36em;
-  text-underline-offset: -.22em; text-decoration-skip-ink: none;
-}
-.h-lede { margin-top: 20px; max-width: 540px; font-size: 1.15rem; line-height: 1.6; color: var(--txm); }
-.h-founding { margin: 18px 0 0; font-size: 1rem; font-weight: 700; color: var(--dtan); }
-.h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 30px; }
-.h-cta {
-  display: inline-flex; align-items: center; justify-content: center; gap: 12px;
-  min-height: 60px; padding: 0 30px; border-radius: 14px;
-  background: var(--tan); color: var(--rg); border: 2px solid var(--rg);
-  box-shadow: 6px 6px 0 var(--rg); text-decoration: none;
-  font: 800 1.15rem/1 'DM Sans', system-ui, sans-serif;
-  transition: transform .12s, box-shadow .12s;
-}
-.h-cta::after { content: '\2192'; font-size: 1.2em; transition: transform .2s; }
-.h-cta:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--rg); }
-.h-cta:hover::after { transform: translateX(4px); }
-.h-cta:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0 var(--rg); }
-.h-check { display: inline-flex; align-items: center; gap: 10px; font-size: 1rem; font-weight: 700; color: var(--rg); }
-.h-check svg { width: 26px; height: 26px; flex: none; color: var(--tan); }
-.h-rule { border: 0; border-top: 1px solid var(--bdr); margin: 30px 0 22px; max-width: 540px; }
-.h-pill {
-  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 0 8px; min-height: 48px; padding: 6px 20px;
-  border-radius: 24px; background: var(--card); border: 1px solid var(--bdr); box-shadow: var(--sh-sm);
-  color: var(--rg); font-size: 1rem; font-weight: 700; text-decoration: none;
-}
-/* The number never breaks at its hyphen: on a narrow phone (Spanish runs longer) it moves to its own line whole. */
-.h-pill-num { white-space: nowrap; }
-.h-pill svg { width: 18px; height: 18px; flex: none; margin-right: 2px; }
-.h-pill:hover { border-color: var(--rg); }
+/* ── a heading on the left, a short line on the right (every section) ── */
+.split-head { display: grid; gap: 20px 48px; align-items: end; margin-bottom: clamp(40px, 6vw, 72px); }
+@media (min-width: 900px) { .split-head { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); } }
+.split-side { margin: 0; max-width: 440px; font-size: 18px; line-height: 1.6; color: var(--txm); }
+@media (min-width: 900px) { .split-side { justify-self: end; } }
 
-/* The pile: the "what we take" colors as blocks with the site's offset
-   shadow (a sofa, a fridge, a mattress leaning on it, boxes, a yard bag, a
-   chair, a TV). Drawn, not a photo; screen readers skip it. */
-.h-art { position: relative; width: 100%; max-width: 520px; margin: 0 auto; }
-/* The hero photo (2026-10-13, LoadUp's hero: people hauling furniture out of a home),
-   framed like the site's blocks: a charcoal border and a hard shadow. */
-.h-photo { display: block; aspect-ratio: 5 / 4; border-radius: 22px; overflow: hidden; border: 2px solid var(--rg); box-shadow: 8px 8px 0 var(--rg); background: #D9D4C7; }
-.h-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 45% 50%; }
-/* The price ticket pinned to the photo: the half truck at its config price,
-   a link to the order page with that size picked (BUILD:home-ticket). */
-.h-ticket {
-  position: absolute; right: -2%; bottom: -2%; width: 60%; min-width: 250px;
-  display: grid; gap: 2px; padding: 16px 18px 14px; border-radius: 16px;
-  background: var(--card); color: var(--rg); text-decoration: none;
-  border: 2px solid var(--rg); box-shadow: 8px 8px 0 var(--rg);
-  transform: rotate(-3deg); transition: transform .2s;
-}
-.h-ticket:hover { transform: rotate(-1.5deg) translateY(-3px); }
-.h-ticket-top { font-size: 1rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--dtan); }
-.h-ticket .size-name { font: 800 1.3rem/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em; }
-.h-ticket .size-note { font-size: 1rem; line-height: 1.35; color: var(--txm); }
-.h-ticket .size-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 4px; }
-.h-ticket .size-price { font: 800 1.9rem/1.1 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; }
-.h-ticket .size-travel { font-size: 1rem; color: var(--txm); }
-.h-ticket-go {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  margin-top: 10px; padding-top: 10px; border-top: 2px dashed var(--bdr);
-  font-size: 1rem; font-weight: 800;
-}
-.h-ticket-go::after { content: '\2192'; font-size: 1.2em; }
-
+/* ── HERO ── */
+.h-hero { background: var(--rg); color: #fff; padding: clamp(48px, 7vw, 96px) 0 clamp(24px, 4vw, 48px); }
+.h-hero-in { max-width: 1440px; margin: 0 auto; padding: 0 clamp(16px, 3.4vw, 48px); }
+/* the label over everything, the statement on the left, the line and the buttons on the right */
+.h-hero-top { display: grid; gap: 24px 64px; align-items: end; margin-bottom: clamp(32px, 4vw, 56px); }
+.h-hero .h-eyebrow { color: rgba(255,255,255,.62); margin: 0; }
+.h-title { margin: 0; max-width: 12ch; font: 600 clamp(3rem, 7.4vw, 7rem)/.95 var(--font); letter-spacing: -.055em; color: #FBF9F5; text-wrap: balance; }
+.h-lede { margin: 0; max-width: 470px; font-size: clamp(17px, 1.4vw, 19px); line-height: 1.6; color: rgba(251,249,245,.74); }
+.h-founding { margin: 0; font-weight: 600; color: #fff; }
+.h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
+.h-hero .link-arrow { color: #fff; }
 @media (min-width: 960px) {
-  .h-hero { padding: 72px var(--gutter) 96px; }
-  .h-hero-in { grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 56px; }
+  .h-hero-top { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-areas: "eyebrow eyebrow" "title lede" "title actions" "title founding"; }
+  .h-hero .h-eyebrow { grid-area: eyebrow; margin-bottom: 8px; }
+  .h-title { grid-area: title; align-self: end; }
+  .h-lede { grid-area: lede; align-self: end; }
+  .h-actions { grid-area: actions; }
+  .h-founding { grid-area: founding; }
 }
-@media (max-width: 599px) {
-  .h-hero { padding: 32px 16px 48px; }
-  .h-art { max-width: 420px; }
-  .h-photo { aspect-ratio: 4 / 3; }
-  /* The ticket sits under the photo, overlapping its foot, at full size. */
-  .h-ticket { position: relative; right: auto; bottom: auto; width: auto; min-width: 0; max-width: 320px; margin: -34px 6px 0 auto; transform: rotate(-2deg); }
-}
-@media (max-width: 379px) {
-  .h-actions { flex-direction: column; align-items: stretch; }
-}
+.h-photo { position: relative; margin: 0; border-radius: var(--r-lg); overflow: hidden; background: #1E1C19; }
+.h-photo img { display: block; width: 100%; height: clamp(320px, 52vw, 680px); object-fit: cover; }
+.h-photo figcaption { position: absolute; left: clamp(16px, 3vw, 32px); bottom: clamp(16px, 3vw, 28px); max-width: 280px; font: 500 13px/1.6 var(--font); letter-spacing: .2em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 12px rgba(0,0,0,.45); }
+.h-photo figcaption span { display: block; }
 
-/* ── SIZES AND PRICES ─────────────────────────────────────────────────── */
-/* LoadUp's dark services row: the five size cards on charcoal, one row on a
-   desktop (photo on top), stacked rows on a phone. Same class names as the
-   order page's cards. */
-.sizes-head { display: grid; gap: 12px 48px; margin-bottom: 32px; }
-.sizes-head .section-sub { margin-top: 0; }
-@media (min-width: 860px) { .sizes-head { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: end; } }
-.h-from { display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 1rem; font-weight: 700; font-style: italic; color: var(--on-dark); }
-.h-from::before {
-  content: ''; flex: none; width: 18px; height: 18px; background: var(--tan);
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9zM8 9.5A1.5 1.5 0 1 0 8 6.5a1.5 1.5 0 0 0 0 3z' fill='black'/%3E%3C/svg%3E") center / contain no-repeat;
-          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9zM8 9.5A1.5 1.5 0 1 0 8 6.5a1.5 1.5 0 0 0 0 3z' fill='black'/%3E%3C/svg%3E") center / contain no-repeat;
+/* ── HOW WE WORK: three numbered points under a line ── */
+.nums { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 1px solid var(--bdr); }
+@media (min-width: 760px) { .nums { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.nums li { padding: 28px 0; border-bottom: 1px solid var(--bdr); }
+@media (min-width: 760px) { .nums li { padding: 32px 32px 8px 0; border-bottom: 0; } .nums li + li { padding-left: 32px; border-left: 1px solid var(--bdr); } }
+.num { display: block; margin-bottom: 28px; font: 500 14px/1 var(--font); letter-spacing: .08em; color: var(--txm); }
+.nums h3 { margin: 0 0 10px; font: 600 21px/1.25 var(--font); letter-spacing: -.015em; color: var(--tx); }
+.nums p { margin: 0; color: var(--txm); }
+
+/* ── PRICE FROM PHOTOS: a big rounded photo beside the story ── */
+.split { display: grid; gap: 40px 72px; align-items: center; }
+@media (min-width: 900px) { .split { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.split-photo { margin: 0; border-radius: var(--r-lg); overflow: hidden; background: #E4E0D8; }
+.split-photo img { display: block; width: 100%; height: clamp(360px, 46vw, 620px); object-fit: cover; }
+.split-copy .section-title { margin-bottom: 24px; }
+.split-text { margin: 0 0 20px; max-width: 480px; font-size: 18px; line-height: 1.6; color: var(--txm); }
+.quote-line { margin: 0 0 28px; max-width: 460px; padding-left: 16px; border-left: 2px solid var(--rg); color: var(--tx); }
+
+/* ── WHAT WE TAKE: photo cards that lift and ease in ── */
+.svc-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 600px) { .svc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .svc-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.svc {
+  display: flex; flex-direction: column; padding: 10px 10px 20px; border-radius: var(--r-md); background: var(--card);
+  border: 1px solid var(--bdr); color: var(--tx); text-decoration: none;
+  transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, border-color .35s;
 }
-.h-sizes { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+.svc:hover { transform: translateY(-6px); box-shadow: var(--sh-lg); border-color: transparent; }
+.svc-img { display: block; overflow: hidden; border-radius: 14px; background: #E4E0D8; }
+.svc-img img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; transition: transform .7s cubic-bezier(.2,.8,.2,1); }
+.svc:hover .svc-img img { transform: scale(1.06); }
+.svc-name { display: block; margin: 18px 10px 6px; font: 600 20px/1.25 var(--font); letter-spacing: -.015em; }
+.svc-note { display: block; margin: 0 10px 18px; color: var(--txm); }
+.svc-go { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: auto 10px 0; padding-top: 14px; border-top: 1px solid var(--bdr); font-weight: 600; font-size: 15px; }
+.svc-go svg { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .3s; }
+.svc:hover .svc-go svg { transform: translate(3px, -3px); }
+.take-no { margin: 36px 0 0; color: var(--txm); }
+
+/* ── PRICES: the five sizes as cards ── */
+.h-from { margin: 18px 0 0; font-size: 18px; color: var(--tx); }
+.h-sizes { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 600px) { .h-sizes { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) { .h-sizes { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 .h-sizes .size-card {
-  position: relative; display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: center; gap: 12px;
-  min-height: 84px; padding: 8px 12px 8px 8px; border-radius: 16px;
-  background: var(--card); color: var(--rg); text-decoration: none;
-  border: 2px solid transparent; transition: transform .15s, border-color .15s, box-shadow .15s;
+  display: flex; flex-direction: column; gap: 14px; padding: 10px 10px 20px; border-radius: var(--r-md); background: var(--card);
+  border: 1px solid var(--bdr); color: var(--tx); text-decoration: none;
+  transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s, border-color .35s;
 }
-.h-sizes .size-card:hover { border-color: var(--tan); transform: translateY(-3px); box-shadow: 0 6px 0 var(--tan); }
-.h-sizes .size-card:focus-visible { outline: 3px solid var(--tan); outline-offset: 3px; }
-.h-sizes .size-photo { display: block; width: 68px; height: 68px; object-fit: cover; border-radius: 10px; background: #E4E4E4; }
-.h-sizes .size-body { display: grid; gap: 1px; min-width: 0; }
-.h-sizes .size-name { font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em; }
-.h-sizes .size-note { font-size: 1rem; line-height: 1.35; color: var(--txm); }
-.h-sizes .size-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 2px; }
-.h-sizes .size-price { font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; }
-.h-sizes .size-travel { font-size: 1rem; color: var(--txm); }
-@media (min-width: 960px) {
-  .h-sizes { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
-  .h-sizes .size-card { grid-template-columns: 1fr; align-items: start; align-content: start; gap: 12px; padding: 10px 10px 18px; }
-  .h-sizes .size-photo { width: 100%; height: auto; aspect-ratio: 16 / 10; }
-  .h-sizes .size-body { padding: 0 6px; }
-  .h-sizes .size-price { font-size: 1.5rem; }
-}
-.sizes-after { margin-top: 28px; display: grid; gap: 6px; justify-items: start; }
-@media (min-width: 960px) { .sizes-after { justify-items: center; text-align: center; } }
-.h-order-alt, .tiers-travel, .tiers-more { font-size: 1rem; line-height: 1.5; color: var(--on-dark-m); }
-.h-order-alt a { color: var(--tan); font-weight: 700; text-underline-offset: 3px; display: inline-block; padding: 12px 0; }
-.h-order-alt a:hover, .tiers-travel a:hover, .tiers-more a:hover { color: #fff; }
-.tiers-travel a, .tiers-more a { color: var(--tan); font-weight: 700; }
-.h-contact { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-.h-chip {
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 48px; min-width: 48px; padding: 0 18px; border-radius: 99px;
-  border: 1.5px solid rgba(255,210,63,.55); color: var(--tan); text-decoration: none;
-  font-size: 1rem; font-weight: 700;
-}
-.h-chip svg { width: 20px; height: 20px; flex: none; }
-.h-chip:hover { background: rgba(255,210,63,.14); }
+.h-sizes .size-card:hover { transform: translateY(-6px); box-shadow: var(--sh-lg); border-color: transparent; }
+.h-sizes .size-photo { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 14px; background: #E4E0D8; }
+.h-sizes .size-body { display: grid; gap: 4px; padding: 0 8px; }
+.h-sizes .size-name { font: 600 19px/1.25 var(--font); letter-spacing: -.015em; }
+.h-sizes .size-note { color: var(--txm); line-height: 1.45; }
+.h-sizes .size-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 8px; }
+.h-sizes .size-price { font: 600 26px/1.1 var(--font); letter-spacing: -.03em; }
+.h-sizes .size-travel { color: var(--txm); }
+.sizes-after { margin-top: 32px; display: grid; gap: 6px; color: var(--txm); }
+.sizes-after a { color: var(--tx); font-weight: 600; text-underline-offset: 4px; }
 
-/* ── TICKER ───────────────────────────────────────────────────────────── */
-.ticker { overflow: hidden; background: var(--tan); border-block: 3px solid var(--rg); }
-.ticker-track { display: flex; width: max-content; animation: ticker 40s linear infinite; }
-.ticker span {
-  display: inline-flex; align-items: center; gap: 28px; padding: 14px 0 14px 28px;
-  font: 800 1.25rem/1 'Bricolage Grotesque', sans-serif; color: var(--rg); white-space: nowrap; text-transform: uppercase; letter-spacing: -.01em;
-}
-.ticker span::after { content: ''; width: 10px; height: 10px; background: var(--rg); transform: rotate(45deg); }
-@keyframes ticker { to { transform: translateX(-50%); } }
-
-/* ── HOW IT WORKS ─────────────────────────────────────────────────────── */
-/* LoadUp's steps: three numbered circles joined by a line (yellow, then
-   outlined, then charcoal), across from 760px, down the left on a phone with
-   the words beside each circle. The line is the list's ::before. */
-#how-it-works .steps { position: relative; gap: 30px; }
-#how-it-works .steps::before {
-  content: ''; position: absolute; z-index: 0; left: 31px; top: 32px; bottom: 32px; width: 3px; border-radius: 3px;
-  background: linear-gradient(var(--tan), var(--rg));
-}
-#how-it-works .steps > li {
-  z-index: 1; display: grid; grid-template-columns: 64px minmax(0, 1fr); align-content: start; gap: 2px 18px;
-  padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none;
-}
-#how-it-works .steps > li::before {
-  position: static; grid-row: span 2; width: 64px; height: 64px;
-  font: 800 1.5rem/1 'Bricolage Grotesque', 'DM Sans', sans-serif;
-  box-shadow: 0 0 0 8px var(--card);
-}
-#how-it-works .steps > li:nth-child(1)::before { background: var(--tan); color: var(--rg); }
-#how-it-works .steps > li:nth-child(2)::before { background: var(--card); color: var(--rg); border: 3px solid var(--rg); }
-#how-it-works .steps > li:nth-child(3)::before { background: var(--rg); color: var(--tan); }
-/* On a phone the line runs down the left: the last step hides the part below its circle. */
-#how-it-works .steps > li:last-child::after { content: ''; position: absolute; left: 0; top: 64px; bottom: 0; width: 64px; background: var(--card); }
-#how-it-works .steps h3 { font-weight: 800; font-size: 1.3rem; letter-spacing: -.02em; line-height: 1.25; margin: 6px 0 2px; }
-@media (min-width: 760px) {
-  #how-it-works .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
-  #how-it-works .steps::before {
-    left: 16.67%; right: 16.67%; top: 31px; bottom: auto; width: auto; height: 3px;
-    background: linear-gradient(90deg, var(--tan), var(--rg));
-  }
-  #how-it-works .steps > li { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 4px; }
-  #how-it-works .steps > li::before { grid-row: auto; margin-bottom: 14px; }
-  #how-it-works .steps > li:last-child::after { content: none; }
-  #how-it-works .steps p { max-width: 300px; }
-}
-
-/* ── WHAT WE TAKE ─────────────────────────────────────────────────────── */
-/* Eight cards, each with its block from the hero's pile (its color, the
-   offset shadow) holding a line icon. One column of rows on a phone, two
-   across from 520px, four from 960px. */
-.take-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 520px) { .take-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 960px) { .take-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } }
-.take {
-  display: grid; grid-template-columns: 56px minmax(0, 1fr); align-content: start; gap: 2px 16px;
-  padding: 20px; border-radius: 20px; background: var(--card); border: 1.5px solid var(--bdr);
-  transition: border-color .2s, transform .2s;
-}
-.take:hover { border-color: var(--rg); transform: translateY(-3px); }
-/* Round 9: a block with a service page is a link to it (the whole block is the tap target). */
-a.take { color: inherit; text-decoration: none; }
-a.take h3::after { content: '\00a0\203A'; color: var(--dtan); }
-a.take:focus-visible { outline: 3px solid var(--rg); outline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) { .take:hover { transform: none; } }
-.take-icon {
-  grid-row: span 2; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 12px;
-  background: var(--sw); border: 2px solid var(--rg); box-shadow: 5px 5px 0 var(--rg); color: var(--rg);
-}
-.take.is-dark .take-icon { color: #fff; }
-.take-icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.take h3 { font: 800 1.2rem/1.25 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; margin: 4px 0 4px; }
-.take p { color: var(--txm); font-size: 1rem; line-height: 1.5; }
-@media (min-width: 960px) {
-  .take { grid-template-columns: minmax(0, 1fr); padding: 24px; gap: 0; }
-  .take-icon { grid-row: auto; margin-bottom: 18px; }
-}
-.take-no { margin-top: 24px; text-align: center; color: var(--txm); font-size: 1rem; }
-
-/* ── PROMISES ─────────────────────────────────────────────────────────── */
-/* LoadUp's "why us": the title and a link on the left, four cards with a
-   charcoal icon square on the right (stacked on a phone). */
-.promises-in { display: grid; gap: 32px; }
-@media (min-width: 960px) { .promises-in { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 56px; align-items: start; } }
-.promises-head .section-sub { margin-top: 14px; }
-.promises .section-title em {
-  color: var(--rg); text-decoration: underline; text-decoration-color: var(--tan);
-  text-decoration-thickness: .34em; text-underline-offset: -.2em; text-decoration-skip-ink: none;
-}
-.promise-cta {
-  display: inline-flex; align-items: center; gap: 10px; min-height: 48px; margin-top: 18px;
-  color: var(--rg); font-weight: 800; font-size: 1.05rem; text-decoration: underline;
-  text-decoration-color: var(--tan); text-decoration-thickness: 3px; text-underline-offset: 6px;
-}
-.promise-cta::after { content: '\2192'; display: inline-block; }
-.promise-grid { display: grid; gap: 14px; }
-.promise {
-  display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 18px; align-items: start;
-  padding: 22px; border-radius: 18px; background: var(--page); border: 1.5px solid var(--bdr);
-}
-.promise-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 12px; background: var(--rg); color: var(--tan); }
-.promise-icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.promise h3 { font: 800 1.2rem/1.25 'Bricolage Grotesque', sans-serif; letter-spacing: -.02em; margin: 2px 0 6px; }
-.promise p { color: var(--txm); font-size: 1rem; line-height: 1.6; }
-
-/* ── PRICE BAND ───────────────────────────────────────────────────────── */
-/* LoadUp's colored band in our yellow: one line and one charcoal button. */
-.price-band { background: var(--tan); padding: 80px var(--gutter); text-align: center; border-block: 3px solid var(--rg); }
-.price-band-in { max-width: 640px; margin: 0 auto; }
-.price-band-eyebrow { font-size: 1rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--rg); margin-bottom: 12px; }
-.price-band h2 { font: 800 clamp(2.2rem, 5.6vw, 3.6rem)/1.02 'Bricolage Grotesque', sans-serif; letter-spacing: -.04em; color: var(--rg); }
-.price-band-line { margin: 18px auto 28px; max-width: 480px; font-size: 1.1rem; line-height: 1.55; color: var(--rg); }
-.price-band-alt { margin-top: 18px; font-size: 1rem; color: var(--rg); }
-.price-band-alt a { display: inline-block; padding: 12px 0; color: var(--rg); font-weight: 800; }
-
-/* ── WHERE WE GO ──────────────────────────────────────────────────────── */
-/* LoadUp's coverage section: our map (BUILD:home-map, every ZIP we serve at
-   its real place, colored by zone) beside the ZIP check and the biggest
-   towns; the zone cards (BUILD:home-area) under both. */
-.area-in { display: grid; gap: 36px; align-items: center; grid-template-columns: minmax(0, 1fr); }
-.area-in > * { min-width: 0; }
-/* The heading and ZIP box come first in the page (a phone and a screen reader read top down);
-   on a desktop the map takes the left column, as in LoadUp's layout. */
-@media (min-width: 860px) { .area-in { grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 56px; } .area-map { order: -1; } }
-.area-map { margin: 0; padding: 18px 18px 16px; border-radius: 22px; background: var(--card); border: 2px solid var(--rg); box-shadow: 8px 8px 0 var(--rg); }
-.area-map svg { display: block; width: 100%; height: auto; }
-.map-dots circle { transition: r .2s, stroke-width .2s; }
-.map-dots circle.is-hit { r: 11px; stroke-width: 3px; }
-.map-labels text { font: 800 21px 'DM Sans', sans-serif; fill: var(--rg); text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
-/* The drawing scales with its column: under 1100px its 21px labels would print under 16px,
-   so they hide there (measured by the round 7 map check); the town chips name the towns. */
-@media (max-width: 1099px) { .map-labels { display: none; } }
-.map-key { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 14px 0 0; padding: 0; }
-.map-key li { display: inline-flex; align-items: center; gap: 8px; font-size: 1rem; }
-.key-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--rg); }
-.key-name { font-weight: 700; color: var(--rg); }
-.key-fee { color: var(--txm); }
-.map-note { margin-top: 8px; font-size: 1rem; color: var(--txm); }
-
-.town-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; padding: 0; }
-.town-chips a {
-  display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border-radius: var(--r-pill);
-  background: var(--card); border: 1.5px solid var(--rg); color: var(--rg); font-weight: 700; font-size: 1rem; text-decoration: none;
-}
-.town-chips a:hover { background: var(--tan); }
-.town-chips a.is-all { border-style: dashed; }
-
-.zip { margin-top: 24px; }
-.zip-row {
-  display: flex; max-width: 440px; overflow: hidden;
-  border: 2px solid var(--rg); border-radius: 14px; background: var(--card); box-shadow: 6px 6px 0 var(--rg);
-}
-.zip-row:focus-within { outline: 3px solid #0B6BCB; outline-offset: 3px; }
-.zip input {
-  flex: 1; min-width: 0; height: 60px; padding: 0 18px; border: 0; background: transparent; color: var(--rg);
-  font: 800 1.6rem/1 'Bricolage Grotesque', sans-serif; letter-spacing: .08em;
-}
-.zip input::placeholder { color: rgba(21,23,26,.4); }
-.zip input:focus { outline: none; }
-.zip-go {
-  flex: none; min-width: 104px; min-height: 48px; border: 0; border-left: 2px solid var(--rg);
-  background: var(--tan); color: var(--rg); font: 800 1.1rem/1 'DM Sans', sans-serif; cursor: pointer;
-}
-.zip-go:hover { background: var(--ltan); }
-.zip-out { min-height: 1.6em; margin-top: 14px; font-size: 1.1rem; font-weight: 700; }
-.zip-out.ok { color: #1B6B2A; }
-.zip-out.no { color: #9B1C1C; }
-.zip-out a { color: var(--rg); }
-
-/* Travel zones (generated): one card per ring around the base. The zone the
-   typed ZIP lands in lights up yellow, and so do its dots on the map. */
-.zones { list-style: none; display: grid; gap: 12px; margin: 40px 0 0; padding: 0; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 600px) { .zones { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 960px) { .zones { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.zones li {
-  display: grid; align-content: start; gap: 4px; padding: 18px; border-radius: 16px;
-  background: var(--card); border: 1.5px solid var(--bdr); color: var(--txm);
-  transition: background .3s, border-color .3s, transform .3s cubic-bezier(.34,1.6,.64,1), box-shadow .3s;
-}
-.zone-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
-.zone-name { font: 800 1.2rem/1.2 'Bricolage Grotesque', sans-serif; color: var(--rg); }
-.zone-fee { font-weight: 700; font-size: 1rem; color: var(--rg); }
-.zone-miles, .zone-places { font-size: 1rem; line-height: 1.45; }
-.zones li.is-hit { background: var(--tan); border-color: var(--rg); color: var(--rg); transform: translateY(-4px); box-shadow: 0 6px 0 var(--rg); }
-.zones li.is-hit .guess { color: #9B1C1C; }
-
-/* ── FAQ ──────────────────────────────────────────────────────────────── */
-/* LoadUp's question cards: white on light grey, a round chevron that turns. */
-.faq { display: grid; gap: 12px; }
-.faq details { border-radius: 14px; background: var(--card); border: 1px solid var(--bdr); box-shadow: var(--sh-sm); }
-.faq details[open] { border-color: var(--rg); }
+/* ── QUESTIONS: the heading on the left, lines with a plus on the right ── */
+.faq-split { display: grid; gap: 40px 72px; align-items: start; }
+@media (min-width: 900px) { .faq-split { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); } }
+.faq-head .section-title { margin-bottom: 20px; }
+.faq { display: grid; border-top: 1px solid var(--bdr); }
+.faq details { border-bottom: 1px solid var(--bdr); }
 .faq summary {
-  list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 14px;
-  min-height: 64px; padding: 14px 18px 14px 22px; font-weight: 700; font-size: 1.05rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 64px; padding: 16px 0;
+  cursor: pointer; list-style: none; font: 600 18px/1.4 var(--font); color: var(--tx);
 }
 .faq summary::-webkit-details-marker { display: none; }
-.faq summary::after {
-  content: ''; flex: none; width: 36px; height: 36px; border-radius: 50%;
-  background: var(--surf) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6 6-6' fill='none' stroke='%2315171A' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 18px no-repeat;
-  transition: transform .25s, background-color .25s;
-}
-.faq details[open] summary::after { transform: rotate(180deg); background-color: var(--tan); }
-.faq details p { padding: 0 22px 20px; color: var(--txm); }
+.faq summary::after { content: '+'; flex: none; font: 400 26px/1 var(--font); color: var(--tx); transition: transform .3s; }
+.faq details[open] summary::after { transform: rotate(45deg); }
+.faq details p { margin: 0; padding: 0 40px 24px 0; color: var(--txm); }
+.faq details a { color: var(--tx); font-weight: 600; }
+.faq-more { margin-top: 24px; }
+.faq-more a { display: inline-flex; align-items: center; min-height: 48px; color: var(--tx); font-weight: 600; text-underline-offset: 6px; }
 
-/* ── CLOSER ───────────────────────────────────────────────────────────── */
-/* LoadUp's dark closer: one big line and two buttons. */
-.closer { background: var(--rg); padding: 96px var(--gutter); text-align: center; color: var(--on-dark); }
-.closer h2 { font: 800 clamp(2.4rem, 6.4vw, 4.4rem)/1 'Bricolage Grotesque', sans-serif; letter-spacing: -.04em; color: #fff; }
-.closer-line { margin: 18px auto 32px; max-width: 520px; font-size: 1.15rem; line-height: 1.55; color: var(--on-dark-m); }
-.closer-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
-.cta-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  min-height: 56px; padding: 0 28px; border-radius: 14px; text-decoration: none;
-  background: var(--rg); color: var(--tan); box-shadow: 0 6px 0 rgba(0,0,0,.35);
-  font: 800 1.1rem/1 'DM Sans', system-ui, sans-serif; transition: transform .12s, box-shadow .12s;
-}
-.cta-btn::after { content: '\2192'; font-size: 1.2em; transition: transform .2s; }
-.cta-btn:hover::after { transform: translateX(4px); }
-.cta-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.35); }
-.cta-btn:focus-visible { outline: 3px solid #0B6BCB; outline-offset: 2px; }
-.cta-btn.is-yellow { background: var(--tan); color: var(--rg); }
-.cta-btn.is-yellow:focus-visible { outline-color: var(--ltan); }
-.cta-ghost {
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  min-height: 56px; padding: 0 26px; border-radius: 14px; text-decoration: none;
-  border: 2px solid rgba(245,242,234,.5); color: #fff; font: 800 1.1rem/1 'DM Sans', system-ui, sans-serif;
-}
-.cta-ghost svg { width: 20px; height: 20px; }
-.cta-ghost:hover { border-color: var(--tan); color: var(--tan); }
+/* ── CLOSER: near black, a big two line statement, the buttons ── */
+.closer { background: var(--rg); color: #fff; padding: clamp(96px, 12vw, 160px) 0; }
+.closer-in { max-width: var(--w-wide); margin: 0 auto; padding: 0 clamp(16px, 4vw, 48px); }
+.closer .eyebrow { color: rgba(255,255,255,.55); }
+.closer h2 { margin: 0 0 24px; font: 600 clamp(3rem, 8vw, 7.5rem)/.95 var(--font); letter-spacing: -.055em; color: #FBF9F5; }
+.closer h2 > span { display: block; }
+.closer-line { margin: 0 0 36px; font-size: 18px; color: rgba(251,249,245,.7); }
+.closer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
+.closer .link-arrow { color: #fff; }
+
+/* ── fading up into view (js/home.js adds .is-in) ── */
+.js-reveal .reveal { opacity: 0; transform: translateY(28px); transition: opacity .8s cubic-bezier(.2,.8,.2,1), transform .8s cubic-bezier(.2,.8,.2,1); }
+.js-reveal .reveal.is-in { opacity: 1; transform: none; }
+.svc-grid .reveal:nth-child(4n+2), .nums .reveal:nth-child(2) { transition-delay: .08s; }
+.svc-grid .reveal:nth-child(4n+3), .nums .reveal:nth-child(3) { transition-delay: .16s; }
+.svc-grid .reveal:nth-child(4n+4) { transition-delay: .24s; }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Nothing moves: no lifts, bounces, turning chevrons or sliding arrows. */
   *, *::before, *::after { transition: none !important; animation: none !important; }
-  .ticker-track { animation: none; flex-wrap: wrap; width: auto; justify-content: center; }
-  .ticker span:nth-child(n+13) { display: none; }
+  .js-reveal .reveal { opacity: 1; transform: none; }
 }
 
 /* ── Town pages (scripts/build-towns.mjs) ─────────────────────────────── */
 /* The town's own section: its copy beside its travel zones, then its
    neighborhoods and the other towns in its zone. Empty on the homepage. */
-.town-grid { display: grid; gap: 28px; align-items: start; }
-@media (min-width: 860px) { .town-grid { grid-template-columns: 1.4fr 1fr; gap: 48px; } }
-.town-local .prose p { font-size: 1.0625rem; }
-.town-h3 { font: 800 1.2rem/1.25 'Bricolage Grotesque', sans-serif; letter-spacing: -.01em; color: var(--rg); margin: 0 0 12px; }
-.town-zones { padding: 22px; border-radius: var(--r-md); background: var(--rg); color: var(--on-dark); }
+.section-head { margin-bottom: 40px; }
+.section-head.center { text-align: left; }
+.town-grid { display: grid; gap: 32px; align-items: start; }
+@media (min-width: 860px) { .town-grid { grid-template-columns: 1.4fr 1fr; gap: 56px; } }
+.town-local .prose p { font-size: 17px; color: var(--txm); }
+.town-h3 { margin: 0 0 14px; font: 600 21px/1.25 var(--font); letter-spacing: -.015em; color: var(--tx); }
+.town-zones { padding: 28px; border-radius: var(--r-md); background: var(--rg); color: var(--on-dark); }
 .town-zones .town-h3 { color: #fff; }
 .town-zones ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.town-zones li { display: grid; gap: 2px; padding-left: 14px; border-left: 3px solid var(--tan); }
-.tz-name { font-weight: 800; font-size: 1.0625rem; color: #fff; }
-.tz-zips, .tz-note { font-size: 1rem; line-height: 1.5; color: var(--on-dark-m); }
+.town-zones li { display: grid; gap: 2px; padding-left: 14px; border-left: 2px solid rgba(255,255,255,.3); }
+.tz-name { font-weight: 600; font-size: 17px; color: #fff; }
+.tz-zips, .tz-note { line-height: 1.5; color: var(--on-dark-m); }
 .tz-note { margin-top: 14px; }
 .town-zones .guess { color: #FF8A80; }
-.town-local > .wrap > .town-h3 { margin-top: 36px; }
+.town-local > .wrap > .town-h3 { margin-top: 40px; }
 .town-areas { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
-.town-areas li { font-size: 1rem; padding: 8px 14px; border-radius: var(--r-pill); background: var(--page); border: 1px solid var(--bdr); color: var(--rg); }
+.town-areas li { padding: 8px 16px; border-radius: var(--r-pill); background: var(--page); border: 1px solid var(--bdr); color: var(--tx); }
 .town-nearby { margin-top: 32px; }
 .town-nearby ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
-.town-nearby a {
-  display: inline-flex; align-items: center; min-height: 48px; padding: 0 16px; border-radius: var(--r-pill);
-  border: 1.5px solid var(--rg); color: var(--rg); font-weight: 700; text-decoration: none; font-size: 1rem;
-}
-.town-nearby a:hover { background: var(--tan); }
-.faq-more { margin-top: 18px; text-align: center; }
-.faq-more a { display: inline-flex; align-items: center; min-height: 48px; color: var(--rg); font-weight: 700; text-decoration: underline; text-decoration-color: var(--tan); text-decoration-thickness: 3px; text-underline-offset: 4px; }
+.town-nearby a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border-radius: var(--r-pill); border: 1px solid var(--bdr); background: var(--card); color: var(--tx); font-weight: 600; text-decoration: none; transition: border-color .2s; }
+.town-nearby a:hover { border-color: var(--rg); }
 
 /* The hub (service-areas.html): every town, zone by zone. */
-.hub-zone { margin-top: 32px; }
-.hub-miles { font-size: 1rem; color: var(--txm); margin: -4px 0 12px; }
-.hub-towns { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 0; padding: 0; }
-.hub-towns a {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 0 14px;
-  border-radius: var(--r-sm); background: var(--page); border: 1px solid var(--bdr); color: var(--rg);
-  font-weight: 700; font-size: 1rem; text-decoration: none;
-}
-.hub-towns a:hover { border-color: var(--rg); background: var(--tan); }
-.hub-state { font-size: 1rem; font-weight: 600; color: var(--txm); }
-.hub-not-listed { margin-top: 28px; font-size: 1rem; color: var(--txm); }
-.hub-not-listed a { color: var(--rg); font-weight: 700; text-decoration: underline; text-decoration-color: var(--tan); text-decoration-thickness: 3px; }
-/* Town links inside the zone cards on the homepage (white cards since round 7). */
-.zone-places a { color: var(--rg); text-decoration: underline; text-decoration-color: var(--tan); text-decoration-thickness: 2px; text-underline-offset: 3px; }
-.zone-places a:hover { text-decoration-color: var(--rg); }
-.zones li.is-hit .zone-places a { text-decoration-color: var(--rg); }
+.hub-zone { margin-top: 40px; }
+.hub-miles { color: var(--txm); margin: -4px 0 14px; }
+.hub-towns { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; margin: 0; padding: 0; }
+.hub-towns a { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 52px; padding: 0 16px; border-radius: var(--r-sm); background: var(--card); border: 1px solid var(--bdr); color: var(--tx); font-weight: 600; text-decoration: none; transition: border-color .2s; }
+.hub-towns a:hover { border-color: var(--rg); }
+.hub-state { font-weight: 500; color: var(--txm); }
+.hub-not-listed { margin-top: 28px; color: var(--txm); }
+.hub-not-listed a { color: var(--tx); font-weight: 600; }

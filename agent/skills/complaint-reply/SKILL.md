@@ -75,13 +75,13 @@ We would be frustrated too, and we are sorry for the trouble.
 If anything else is not right, reply here or call or text (925) 408-6053
 and we will sort it out.
 
-Brand Name
+Haulmighty
 ```
 
 SMS draft:
 
 ```
-Hi {first_name}, Brand Name here. Thank you for telling us, and we are sorry
+Hi {first_name}, Haulmighty here. Thank you for telling us, and we are sorry
 about {short_issue}. {one_fix} Reply STOP to opt out.
 ```
 

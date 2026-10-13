@@ -1,6 +1,6 @@
 // The Spanish site: the phrase map translator, the links that stay inside
 // /es/ or step out of it, the language switch, hreflang, and that a new
-// English phrase with no Spanish stops the build. No network.
+// English phrase with no Spanish is listed and left in English (Spanish is paused). No network.
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -36,11 +36,11 @@ const src = [
   '<button aria-label="Open menu"></button><label>Your ZIP code</label>',
   '<script>var s = "Pick your size.";</script><style>.a{}</style><!-- Pick your size. -->',
   '<svg viewBox="0 0 2 2"><text>Pick your size.</text></svg>',
-  '<a href="gresham.html">Gresham</a> <span>Brand Name</span> <span>&copy; 2026 Brand Name &nbsp;·&nbsp;</span>',
+  '<a href="gresham.html">Gresham</a> <span>Haulmighty</span> <span>&copy; 2026 Haulmighty &nbsp;·&nbsp;</span>',
   '<span>1/4 truck</span>',
   '</body></html>',
 ].join('\n');
-const r = translateHtml(src, map, { places: ['Gresham'], brand: 'Brand Name' });
+const r = translateHtml(src, map, { places: ['Gresham'], brand: 'Haulmighty' });
 ok(r.missing.length === 0, `nothing should be missing: ${r.missing.join(' | ')}`);
 ok(r.html.includes('<h1> Elige tu tamaño. </h1>'), 'text is translated and its spacing kept');
 ok(r.html.includes('<p>Hasta 12 millas por carretera desde Gresham</p>'), 'the number goes back into its slot');
@@ -48,7 +48,7 @@ ok(r.html.includes('<p>Llama o escribe <a href="tel:+19254086053">(925) 408-6053
 ok(r.html.includes('aria-label="Abrir menú"') && r.html.includes('<label>Tu código postal</label>'), 'labels for screen readers are translated');
 ok(r.html.includes('<title>Retiro de basura cerca de ti.</title>') && r.html.includes('content="Retiro de basura cerca de ti."'), 'title and description are translated');
 ok(r.html.includes('var s = "Pick your size.";') && r.html.includes('<!-- Pick your size. -->') && r.html.includes('<text>Pick your size.</text>'), 'scripts, comments and drawings are left alone');
-ok(r.html.includes('>Gresham</a>') && r.html.includes('<span>Brand Name</span>'), 'place names and the brand are not phrases');
+ok(r.html.includes('>Gresham</a>') && r.html.includes('<span>Haulmighty</span>'), 'place names and the brand are not phrases');
 ok(r.html.includes('<span>1/4 de camión</span>'), 'fractions keep both numbers');
 const r2 = translateHtml('<p>A brand new sentence.</p><p>Pick your size.</p>', map, {});
 ok(r2.missing.length === 1 && r2.missing[0] === 'A brand new sentence.', `a phrase with no Spanish is listed: ${JSON.stringify(r2.missing)}`);
@@ -82,11 +82,12 @@ ok(page('es/before-we-come.html').includes(hreflang('es/before-we-come.html')) &
 
 console.log('== the Spanish homepage ==');
 const es = toSpanish(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'));
-ok(es.missing.length === 0, `untranslated: ${es.missing.slice(0, 5).join(' | ')}`);
+// Spanish is paused (founder 2026-10-13): untranslated phrases stay in English.
+if (es.missing.length) console.log(`  (${es.missing.length} phrase(s) not yet in Spanish, left in English)`);
 ok(/<html lang="es"/.test(es.html), 'lang="es"');
 ok(es.html.includes('<link rel="canonical" href="https://www.example.com/es/" />'), 'canonical is itself');
 ok(es.html.includes(hreflang('es/index.html')), 'hreflang both ways');
-ok(es.html.includes('href="../css/site.css"') && es.html.includes('src="../js/size-cards.js"') && es.html.includes('url(../fonts/dm-sans.woff2)'), 'styles, scripts and fonts climb out of /es/');
+ok(es.html.includes('href="../css/site.css"') && es.html.includes('src="../js/size-cards.js"') && es.html.includes('url(../fonts/google-sans.woff2)'), 'styles, scripts and fonts climb out of /es/');
 ok(es.html.includes('href="../book/quote.html"'), 'the quote stays English, one level up');
 ok(es.html.includes('href="#pricing"'), 'anchors stay on the page');
 // The size cards (BUILD:home-sizes): Spanish names and travel line, links to the English order page.
@@ -121,7 +122,7 @@ console.log('== Spanish town pages ==');
   const p = buildPage(esIndex, t, towns, true, 'es');
   ok(/<html lang="es"/.test(p), 'the town page is lang="es"');
   ok(p.includes('<link rel="canonical" href="https://www.example.com/es/sample-town.html" />'), 'its canonical is its own Spanish address');
-  ok(p.includes('<title>Retiro de Basura en Sample Town, OR | Brand Name</title>'), 'the title is Spanish');
+  ok(p.includes('<title>Retiro de Basura en Sample Town, OR | Haulmighty</title>'), 'the title is Spanish');
   ok(p.includes('La línea bajo el título.') && p.includes('<span class="guess">una suposición</span>'), 'the Spanish lede and local copy, guesses red');
   ok(p.includes('¿Primera pregunta?') && p.includes('¿Hay cargo de viaje a Sample Town?'), 'its own Spanish questions, then the travel question in Spanish');
   ok(!/First question\?|Is there a travel charge/.test(p), 'no English questions on the Spanish page');
@@ -135,14 +136,15 @@ console.log('== Spanish town pages ==');
   ok(hub.includes('Ciudades por zona de viaje') && !/Towns by travel zone/.test(hub), 'the hub reads in Spanish');
 }
 
-console.log('== the build stops on a phrase with no Spanish ==');
+// Spanish is paused (founder 2026-10-13: "dont work on spanish pages for now"): a phrase
+// with no Spanish is listed and left in English; it no longer stops the build.
+console.log('== a phrase with no Spanish stays in English ==');
 const idx = path.join(ROOT, 'index.html');
 const orig = fs.readFileSync(idx, 'utf8');
-try {
-  fs.writeFileSync(idx, orig.replace('<p class="take-no">', '<p class="take-no">Brand new untranslated words here. '));
-  const run = spawnSync(process.execPath, [path.join(ROOT, 'scripts/build-es.mjs'), '--check'], { encoding: 'utf8' });
-  ok(run.status === 1 && run.stderr.includes('Brand new untranslated words here.'), `build-es --check should list the phrase: ${run.stderr.slice(0, 200)}`);
-} finally { fs.writeFileSync(idx, orig); }
+{
+  const r3 = toSpanish(orig.replace('<p class="take-no">', '<p class="take-no">Brand new untranslated words here. '));
+  ok(r3.missing.some((k) => k.includes('Brand new untranslated words here.')) && r3.html.includes('Brand new untranslated words here.'), 'the phrase is listed and left in English');
+}
 
 // Round 7 review: the ZIP form's action stayed "book/quote.html" on the Spanish pages, which
 // is /es/book/quote.html (a 404) when the script does not run. Every relative link, source and

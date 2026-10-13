@@ -11,8 +11,8 @@ gates are closed.
 
 ## Step 0: decide the open questions (founder)
 
-- [ ] **Name and domain.** Replace "Brand Name" and `example.com` everywhere
-      (`grep -rn "Brand Name\|example.com"`): canonical tags, JSON-LD, the CORS
+- [ ] **Name and domain.** Replace "Haulmighty" and `example.com` everywhere
+      (`grep -rn "Haulmighty\|example.com"`): canonical tags, JSON-LD, the CORS
       list in `api/create-booking.js`, email templates, the town pages (rebuild).
 - [ ] **The base point.** Set `BASE` in `pricing.config.mjs` to the real yard,
       then run `node scripts/measure-zips.mjs` and `npm run build`.

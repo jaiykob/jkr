@@ -196,7 +196,7 @@ function buildDiscordEmbed(ctx, payload) {
   if (payload.receiptUrl) fields.push({ name: 'Receipt', value: payload.receiptUrl, inline: false });
 
   return {
-    username: 'Brand Name',
+    username: 'Haulmighty',
     embeds: [{
       title,
       color,

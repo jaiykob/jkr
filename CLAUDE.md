@@ -1,7 +1,7 @@
 # jkr: junk removal site (working notes for Claude)
 
 Built from the Scoops Co. stack (`C:\Users\chris\scoopco`): static pages,
-Vercel serverless API, Stripe, Supabase. **Not live yet: no name, no domain,
+Vercel serverless API, Stripe, Supabase. The business is **Haulmighty**. **Not live yet: no domain,
 bookings closed.** Phone (925) 408-6053. Service area: the Portland metro,
 Clark County, WA included, priced by travel zone.
 
@@ -30,7 +30,7 @@ The founder's rule: anything not yet known is guessed, shown red with an
 asterisk (`class="guess"`, `css/guess.css`) and listed in `GUESSES.md`
 (`npm run guesses`; `npm test` fails if stale). Whole tables are flagged in
 `GUESS` in `pricing.config.mjs`; anything else gets a `GUESS*` comment.
-Placeholders to replace: "Brand Name", "example.com", `pk_test_REPLACE_ME`,
+Placeholders to replace: "example.com", `pk_test_REPLACE_ME`,
 `G-XXXXXXXXXX`, `YOUR-PROJECT.supabase.co`, every `TODO`.
 
 ## Build and test
@@ -61,10 +61,12 @@ cents. Price = load + the ZIP's travel fee; past the last zone is "call us"
 
 ## The booking (`book/quote.html`, `js/order.js`, `css/order.css`)
 
-Looks and moves like Scoops Co.'s quote: one centered column, a progress bar
-that fills, one entry per page (Size, Where, Day, Time, Name, Phone, Email,
-Address, Pay), Back and Next under each page, the last page reads every
-answer back with Change links. Photo quotes: `api/photo-quote.js` has Claude
+Copied from Scoops Co.'s flow (onboarding/waste.html, schedule-waste.html): one
+centered column, a progress bar that fills and pulses, the size, the day and the
+time a page each, then contact information on one page with the ZIP first
+(View quote), your quote (the price, the contact details with Edit; Continue to
+payment), the payment page, then the booking page (thanks.html). Back and Next
+under each page. Photo quotes: `api/photo-quote.js` has Claude
 count items in up to 4 photos; the page picks the size; prices never come
 from Claude.
 
@@ -107,7 +109,12 @@ after the job, Cancel and refund, Customer said no). Auth is
 
 - Mobile first: text 16px or more, tap targets 48px or more, no sideways scroll.
 - Copy: "we / us / our", plain words, no dashes as punctuation.
-- Colors: charcoal and hi vis yellow; DM Sans, Bricolage Grotesque for display.
+- Look: Novah's design language (novah.fi, founder 2026-10-13): Google Sans
+  (fonts/google-sans.woff2), near black #0C0B09 and warm white #FBF9F5 with warm
+  grey bands, big tight headings, small spaced capitals over them, pill buttons
+  with an arrow, big rounded photos. No yellow in the UI. Tokens in css/site.css.
+- Spanish is paused (founder 2026-10-13: "save that for later"): don't translate;
+  a phrase with no Spanish stays in English and the build only warns.
 
 ## Setup before launch
 

@@ -1,5 +1,5 @@
 -- ============================================================================
--- Brand Name — Operational schema (the booking + fulfillment spine)
+-- Haulmighty — Operational schema (the booking + fulfillment spine)
 -- ----------------------------------------------------------------------------
 -- Canonical, versioned source of truth for the Supabase Postgres schema.
 -- Apply in the Supabase SQL editor (or via the CLI). Idempotent where practical
