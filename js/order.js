@@ -5,14 +5,14 @@
    costs"; 2026-10-13: "one piece of info per page", "split to two pages"):
    Size (#size), Where (#where), Day (#day), Time (#time), Name (#name),
    Phone (#phone), Email (#email), Address (#address), and Book (#book: the
-   answers read back, then pay). A tap page moves on by itself once it is
-   done (a size tap, the fifth digit of a ZIP we serve, a day tap, an
-   arrival time tap, the last digit of a phone number);
-   a typed page moves on with Next or Enter. Steps already done are skipped
+   answers read back, then pay). It moves like Scoops Co.'s quote (founder
+   2026-10-13: "scoops co booking flow is perfect", "needs to be like that"):
+   pick or type, then Next (Enter too); Back under it goes to the page before.
+   Next is dimmed until the page is answered. Steps already done are skipped
    (a homepage size card, a ZIP typed earlier, details kept in this tab).
    Each step has its own hash in the history, so the phone's Back button goes
-   to the step before; the progress bar at the top shows where you are. One
-   state object holds the order; render() redraws the page from it.
+   to the step before; one progress bar at the top fills as the pages go by.
+   One state object holds the order; render() redraws the page from it.
 
    Everything it knows comes from generated modules, so this file types no
    price, window or fee:
@@ -56,7 +56,6 @@
   var OPEN = window.BOOKINGS_OPEN_CLIENT === true;
   var G = ORDER.GUESS || {};
   var PRICE_GUESS = !!G.prices, TRAVEL_GUESS = !!TRAVEL.GUESS;
-  var WIDE = window.matchMedia ? window.matchMedia('(min-width: 900px)') : { matches: false, addListener: function () {} };
   var REDUCE = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function fmt(c) { return '$' + (c / 100).toFixed(2); }
@@ -184,46 +183,65 @@
     if (target !== heading && heading) say('Step ' + (STEPS.indexOf(s) + 1) + ' of ' + STEPS.length + '. ' + heading.textContent.trim());
     track('order_step', { step: s, how: how || 'tap' });
   }
-  /* A page coming on screen slides in a little from the side it is on, so moving
-     on and going back read as such (none with reduced motion: css/order.css). */
+  /* A page coming on screen fades in, as on Scoops Co. (is-fwd or is-back by the way
+     it went; none with reduced motion: css/order.css). */
   function slideIn(sec, cls) {
     sec.classList.remove('is-fwd', 'is-back');
     void sec.offsetWidth;   // restart the animation
     sec.classList.add(cls);
   }
   document.addEventListener('animationend', function (e) { if (e.target.classList && e.target.classList.contains('o-sec')) e.target.classList.remove('is-fwd', 'is-back'); });
-  /* The step on screen: its section, the progress bar, the tab title, Book. */
+  /* The step on screen: its section, the progress bar, the tab title, Back and Next. */
   function showStep() {
     if (!step) return;
     var at = STEPS.indexOf(step);
     STEPS.forEach(function (s) { $(SEC[s]).hidden = s !== step; });
-    document.querySelectorAll('.o-steps-list li').forEach(function (li) {
-      var s = li.getAttribute('data-step'), i = STEPS.indexOf(s), b = li.querySelector('button');
-      li.classList.toggle('is-current', i === at);
-      li.classList.toggle('is-done', i !== at && stepDone(s));
-      if (i === at) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
-      // Any other step that can be shown is a way back (or forward) to it.
-      b.disabled = i !== at && !reachable(s);
-    });
-    // The bar: one segment a page, filled up to the page on screen.
-    document.querySelectorAll('#o-steps-bar span').forEach(function (seg) {
-      var i = STEPS.indexOf(seg.getAttribute('data-step'));
-      seg.classList.toggle('is-on', i <= at);
-    });
-    var name = document.querySelector('.o-steps-list li[data-step="' + step + '"] .o-step-t');
-    $('o-steps-name').textContent = name ? name.textContent : '';
-    $('o-steps-of').textContent = 'Step ' + (at + 1) + ' of ' + STEPS.length;
-    $('o-back').hidden = at === 0;
-    document.querySelector('.o-intro').classList.toggle('is-quiet', at > 0);
+    // The progress bar fills to the page on screen.
+    var bar = $('o-progress');
+    $('o-progress-fill').style.width = ((at + 1) / STEPS.length * 100) + '%';
+    bar.setAttribute('aria-valuenow', String(at + 1));
+    bar.setAttribute('aria-valuetext', 'Step ' + (at + 1) + ' of ' + STEPS.length);
     // The Size page keeps the page's own title (the address search engines list); the
     // later pages name themselves in the tab.
     var h = $(SEC[step] + '-h');
     document.title = step === 'size' || !h ? BASE_TITLE : h.textContent.trim() + ' | ' + BASE_TITLE;
-    // Book shows on the Book page only: on the pages before it, it could only send people back.
+    // Back has nowhere to go on the first page; the last page has Book in Next's place.
+    $('o-prev').disabled = at === 0;
+    $('o-next').hidden = step === 'book';
     $('o-book').hidden = step !== 'book';
+    $('o-next').setAttribute('aria-disabled', String(!stepDone(step)));
   }
-  /* The next page after a step is done: the first one still to do. */
-  function next() { go(firstToDo()); }
+  /* The page after this one: the next one still to do (a ZIP always shows its days,
+     and a day its times, so a change there is never passed over). */
+  function after(s) {
+    var i = STEPS.indexOf(s);
+    if (s === 'where' || s === 'day') return STEPS[i + 1];
+    for (var k = i + 1; k < STEPS.length; k++) if (!stepDone(STEPS[k])) return STEPS[k];
+    return 'book';
+  }
+  /* What a page says when Next is tapped before it is answered. */
+  var UNANSWERED = { size: 'Pick a size to go on.', day: 'Pick a day to go on.', time: 'Pick an arrival time to go on.' };
+  /* Next (or Enter): this page's answer is checked, then on to the page after it. */
+  function nextFrom(s) {
+    if (s !== step) return;
+    var k = fieldFor(s);
+    if (k) {
+      if (fieldError(k, true)) { say(FIELDS[k].err.textContent); FIELDS[k].el.focus({ preventScroll: true }); track('order_missing', { step: s }); return; }
+    } else if (s === 'where') {
+      if (!state.trip) {
+        // A ZIP past the zones has its own panel (email for a price); otherwise ask for one.
+        if (state.zip.length === 5) { say($('o-far').querySelector('p').textContent); $('o-far-email').focus(); return; }
+        zipMsg.textContent = 'Enter the 5 digit ZIP of the job.'; zipMsg.className = 'o-msg is-err'; zipIn.setAttribute('aria-invalid', 'true');
+        say(zipMsg.textContent); zipIn.focus({ preventScroll: true }); return;
+      }
+    } else if (!stepDone(s)) {
+      var m = $({ size: 'o-size-msg', day: 'o-day-msg', time: 'o-when-msg' }[s]);
+      if (m) { m.textContent = UNANSWERED[s]; m.className = 'o-msg is-err'; say(m.textContent); }
+      track('order_missing', { step: s });
+      return;
+    }
+    go(after(s));
+  }
 
   /* ── render: every number on the page comes from here ─────────────────── */
   function render() {
@@ -231,42 +249,17 @@
     cards && cards.pick(state.size);
     cards && cards.setTravel(t, TRAVEL_GUESS);
 
-    // The total and the travel line, in the summary and the bar alike.
-    // The bar is narrow: before the ZIP its total line is the load price and
-    // its travel line says travel comes by ZIP.
-    document.querySelectorAll('.o-total .o-v').forEach(function (v) {
-      var inBar = !!v.closest('.o-bar');
-      v.classList.toggle('is-empty', !s);
-      if (!s) { v.textContent = 'Pick a size'; return; }
-      if (!t) { fill(v, inBar ? [guessy(fmt(s.cents), PRICE_GUESS)] : [guessy(fmt(s.cents), PRICE_GUESS), ' + travel']); return; }
-      fill(v, [guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)]);
-    });
-    document.querySelectorAll('.o-travel .o-v').forEach(function (v) {
-      var inBar = !!v.closest('.o-bar');
-      if (!t) { v.textContent = inBar ? '+ travel by ZIP' : 'Add your ZIP'; return; }
-      if (!t.cents) { v.textContent = inBar ? 'No travel charge' : '$0.00'; return; }
-      fill(v, inBar ? ['With ', guessy(fmt(t.cents), TRAVEL_GUESS), ' travel'] : [guessy(fmt(t.cents), TRAVEL_GUESS)]);
-    });
-    var travelKey = document.querySelector('#o-summary .o-travel .o-k');
-    if (travelKey) travelKey.textContent = t ? 'Travel, ' + t.label + ' (' + t.place + ')' : 'Travel';
-    var sizeRow = document.querySelector('#o-summary .o-size-row');
-    if (sizeRow) {
-      sizeRow.querySelector('.o-k').textContent = s ? s.label : 'Size';
-      fill(sizeRow.querySelector('.o-v'), s ? [guessy(fmt(s.cents), PRICE_GUESS)] : ['Not picked yet']);
-    }
-    var whenRow = document.querySelector('#o-summary .o-when-row .o-v');
+    // What is picked on the Size page (Scoops Co.'s "Selected").
+    fill($('o-size-sel'), s ? [s.label + ', ', guessy(fmt(s.cents), PRICE_GUESS), t ? '' : ' + travel'] : ['None yet']);
     var d = dayOf(state.date), w = winOf(state.date, state.window);
-    if (whenRow) fill(whenRow, d && w && state.window ? [d.label + ', ', guessy(w.label, !!G.schedule)] : ['Not picked yet']);
 
-    // The Book button carries the amount: with bookings open it is paid now.
+    // Book carries what it does: pay the total (bookings open) or reserve the day.
     var book = $('o-book');
-    var verb = OPEN ? 'Book and pay ' : 'Reserve, no card: ';
     book.setAttribute('aria-busy', String(busy));
     if (reserved) book.textContent = 'Reserved';
     else if (busy) book.textContent = 'Booking your pickup…';
-    else if (!s) book.textContent = OPEN ? 'Book' : 'Reserve';
-    else if (!t) fill(book, [verb, guessy(fmt(s.cents), PRICE_GUESS), ' + travel']);
-    else fill(book, [verb, guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)]);
+    else if (OPEN && tot) fill(book, ['Pay ', guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)]);
+    else book.textContent = OPEN ? 'Book' : 'Reserve my day';
     book.classList.toggle('is-done', reserved);
 
     // The rule beside Book names the total: paid now (bookings open) or the total reserved.
@@ -274,18 +267,14 @@
     // The card form shows the amount it pays (Apple Pay and Google Pay sheets read it too).
     if (elements && tot && tot !== payAmount) { payAmount = tot; try { elements.update({ amount: tot }); } catch (e) { /* the next Book still sends the server's total */ } }
 
-    // The bar shows from the first pick.
-    var bar = $('o-bar');
-    bar.hidden = !s;
-    document.body.classList.toggle('o-has-bar', !!s);
-
     // The city line under the street comes from the ZIP.
     $('o-city').textContent = t ? 'City: ' + t.place + ', ' + t.state + ' ' + t.zip + ' (from your ZIP)' : '';
     // The Book page reads every answer back, each one tap from its page.
     syncContact();
     var recap = {
-      size: s ? s.label : '',
-      where: t ? t.place + ', ' + t.state + ' ' + t.zip : '',
+      size: s ? [s.label + ', ', guessy(fmt(s.cents), PRICE_GUESS)] : '',
+      where: t ? [t.place + ', ' + t.state + ' ' + t.zip + ', ', t.cents ? guessy(fmt(t.cents) + ' travel', TRAVEL_GUESS) : guessy('no travel charge', TRAVEL_GUESS)] : '',
+      total: tot ? [guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)] : '',
       when: d && w && state.window ? [d.label + ', ', guessy(w.label, !!G.schedule)] : '',
       name: FIELDS.name.el.value.trim(), phone: FIELDS.phone.el.value.trim(), email: FIELDS.email.el.value.trim(),
       address: t && FIELDS.street.el.value.trim() ? fullAddress() : '',
@@ -294,7 +283,7 @@
       var v = recap[n.getAttribute('data-recap')];
       fill(n, Array.isArray(v) ? v : [v || 'Not given yet']);
     });
-    // The Day page says where the job is and what travel adds (the ZIP page moved on by itself).
+    // The Day page says where the job is and what travel adds.
     if (t) fill($('o-where-text'), [t.place + ' ' + t.zip + ' · ', t.cents ? guessy('+' + fmt(t.cents) + ' travel', TRAVEL_GUESS) : guessy('No travel charge', TRAVEL_GUESS)]);
 
     // WhatsApp opens a chat with the size and ZIP filled in.
@@ -343,9 +332,6 @@
     render();
     if (before !== row) { track('order_size', { size: sizeOf(row).label, how: how }); say(sizeOf(row).label + ' picked.'); }
     var m = $('o-size-msg'); m.textContent = ''; m.className = 'o-msg';
-    // A tap on a card (the same one again too) is the whole Size page: on to the next.
-    // The photo quote picks a card but stays, so its "From your photos" line is read first.
-    if (how === 'tap') next();
   }
 
   /* The photo quote: Claude counts, ORDER.sizeForUnits picks the smallest size that holds it. */
@@ -372,7 +358,7 @@
         var row = ORDER.sizeForUnits(units);
         if (row == null) return { text: 'From your photos: more than a full truck. Call or text us and we price it by hand.', kind: 'err' };
         setSize(row, 'photo');
-        return { text: 'From your photos: ' + sizeOf(row).label + '. Tap it to go on, or pick the size that looks right.', kind: 'done' };
+        return { text: 'From your photos: ' + sizeOf(row).label + '. Tap Next to go on, or pick the size that looks right.', kind: 'done' };
       },
     });
   }
@@ -411,17 +397,14 @@
     // Any edit to the ZIP clears an old failure or price note (like every other field).
     if (edited || (before && before.zip) !== (state.trip && state.trip.zip)) changed();
     render();
-    // The fifth digit of a ZIP we serve is the whole Where page: on to the next.
-    // (The Day page names the place, with a Change link back.)
-    if (how === 'typed' && edited && state.trip && step === 'where') next();
   }
   zipIn.addEventListener('input', function () { setZip(zipIn.value, 'typed'); });
-  // Enter (Go on a phone keyboard) on a ZIP we serve moves on, e.g. back on Where to check it.
-  // The form has more than one box and no submit button, so the browser sends no submit itself.
+  // Enter (Go on a phone keyboard) is Next. The form has more than one box and no
+  // submit button, so the browser sends no submit itself.
   zipIn.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    if (state.trip && step === 'where') next(); else zipIn.blur();
+    nextFrom('where');
   });
   zipIn.addEventListener('blur', function () {
     if (zipIn.value && zipIn.value.length < 5) { zipMsg.textContent = 'Enter a 5 digit ZIP.'; zipMsg.className = 'o-msg is-err'; zipIn.setAttribute('aria-invalid', 'true'); }
@@ -573,9 +556,6 @@
     }
     var m = $('o-day-msg'); m.textContent = ''; m.className = 'o-msg';
     drawWhen(); render();
-    // A day is the whole Day page: on to its times (always, so a changed day
-    // shows its times even when the window picked before is still free).
-    go('time');
   });
   $('o-wins').addEventListener('click', function (e) {
     var b = e.target.closest('[data-window]');
@@ -586,39 +566,17 @@
     var m = $('o-when-msg'); m.textContent = ''; m.className = 'o-msg';
     drawWhen();
     render();
-    // An arrival time is the whole Time page: on to the next.
-    next();
   });
   function whenError(text) { var m = $('o-when-msg'); m.textContent = text; m.className = 'o-msg is-err'; }
   function dayError(text) { var m = $('o-day-msg'); m.textContent = text; m.className = 'o-msg is-err'; say(text); }
 
   /* ── 4. contact: name, phone, email, address, a page each ───────────────── */
-  /* Next on a typed page (or Enter, or Go on a phone keyboard): the answer is
-     checked, then on to the first step still to do. */
-  function nextFrom(s) {
-    var k = fieldFor(s);
-    if (k && fieldError(k, true)) {
-      say(FIELDS[k].err.textContent);
-      FIELDS[k].el.focus({ preventScroll: true });
-      track('order_missing', { step: s });
-      return;
-    }
-    next();
-  }
-  /* A whole US phone number: ten digits with the area code not starting 0 or 1,
-     or eleven with the leading 1 (so a 1 typed first waits for the eleventh).
-     The Phone page moves on at it, and says so first. */
-  function wholePhone(v) { return /^1?[2-9]\d{9}$/.test(v.replace(/\D/g, '')); }
   Object.keys(FIELDS).forEach(function (k) {
     var f = FIELDS[k];
     f.el.addEventListener('blur', function () { if (f.el.value.trim()) fieldError(k, true); });
     f.el.addEventListener('input', function () {
-      var was = f.last || '';
-      f.last = f.el.value;
       if (f.el.getAttribute('aria-invalid') === 'true') { f.err.textContent = ''; f.el.removeAttribute('aria-invalid'); }
       changed(); render();
-      // The last digit of a phone number is the whole Phone page: on to the next.
-      if (k === 'phone' && step === 'phone' && f.el.value !== was && wholePhone(f.el.value)) next();
     });
     f.el.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' || e.isComposing) return;
@@ -632,9 +590,7 @@
     e.preventDefault();
     nextFrom('address');
   });
-  document.querySelectorAll('[data-next]').forEach(function (b) {
-    b.addEventListener('click', function () { nextFrom(b.getAttribute('data-next')); });
-  });
+  $('o-next').addEventListener('click', function () { nextFrom(step); });
   [OPTIONAL.unit, OPTIONAL.notes].forEach(function (n) { n.addEventListener('input', function () { changed(); render(); }); });
   $('o-notes-btn').addEventListener('click', function () {
     var box = $('o-notes-box'), open = box.hidden;
@@ -642,21 +598,6 @@
     this.setAttribute('aria-expanded', String(open));
     if (open) OPTIONAL.notes.focus();
   });
-
-  /* The bar never sits over a field being typed in. */
-  var TYPING = 'input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="file"]), textarea, select';
-  document.addEventListener('focusin', function (e) { if (e.target.matches && e.target.matches(TYPING)) document.body.classList.add('o-typing'); });
-  document.addEventListener('focusout', function () {
-    setTimeout(function () { var a = document.activeElement; if (!a || !a.matches || !a.matches(TYPING)) document.body.classList.remove('o-typing'); }, 0);
-  });
-
-  /* One Book button: in the summary on a desktop, in the bar on a phone. */
-  function placeBook() {
-    var slot = document.querySelector('.o-book-slot[data-slot="' + (WIDE.matches ? 'summary' : 'bar') + '"]');
-    if (slot && $('o-book').parentNode !== slot) slot.appendChild($('o-book'));
-  }
-  if (WIDE.addEventListener) WIDE.addEventListener('change', placeBook); else WIDE.addListener(placeBook);
-  placeBook();
 
   /* ── 5. Book ─────────────────────────────────────────────────────────── */
   /* The first thing still missing, in page order: [section, message, element to focus]. */
@@ -690,10 +631,8 @@
   });
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    // Enter in the ZIP box closes the keyboard; anywhere else it is Book.
-    // On Where with a ZIP we serve it moves on (back on this page to check the ZIP, Enter or Go is the way on).
-    if (document.activeElement === zipIn) { if (state.trip && step === 'where') next(); else zipIn.blur(); return; }
-    $('o-book').click();
+    // Enter is Next, and Book on the last page.
+    if (step === 'book') $('o-book').click(); else nextFrom(step);
   });
 
   /* Bookings closed: the reservation lead, everything that makes the job schedulable. */
@@ -831,9 +770,6 @@
       });
       payment.on('change', function () { cardErr(''); });
       payment.on('loaderror', function () { payBroken = true; cardErr(LOAD_FAIL); });
-      // The bar never sits over the card form while it is being typed in.
-      payment.on('focus', function () { document.body.classList.add('o-typing'); });
-      payment.on('blur', function () { document.body.classList.remove('o-typing'); });
       payment.mount('#o-card');
     }).catch(function () { payBroken = true; $('o-wallet').hidden = true; cardErr(LOAD_FAIL); });
   }
@@ -1024,8 +960,6 @@
   // One story: bookings open shows the pay wording, closed the reserve wording.
   document.querySelectorAll('[data-mode]').forEach(function (n) { n.hidden = n.getAttribute('data-mode') !== (OPEN ? 'pay' : 'reserve'); });
   $('o-pay-h').textContent = OPEN ? 'Pay and book' : 'Reserve your day';
-  // The last page's name in the progress bar says what it does.
-  document.querySelector('.o-steps-list li[data-step="book"] .o-step-t').textContent = OPEN ? 'Pay' : 'Reserve';
   // The refusal fee is printed only while there is one, so a fee is never kept that was not shown.
   document.querySelectorAll('[data-o="refusal"]').forEach(function (n) { n.hidden = !OPEN || !(P.refusalFeeCents > 0); });
   $('o-closed').hidden = OPEN;
@@ -1090,8 +1024,8 @@
     if (target === step) { history.go(dir); return; }
     go(st.orderStep, 'pop');
   });
-  // The progress bar: any step that can be shown is one tap away; Change on the
-  // Day page goes back to the ZIP with the box ready to type over.
+  // Change (on the Day, Time and Book pages) goes back to that page; on the Day page
+  // it goes to the ZIP with the box ready to type over.
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-go]');
     if (!b || b.disabled) return;
@@ -1105,10 +1039,10 @@
     var h = $(SEC[step] + '-h');
     if (h) h.focus();
   });
-  // The Back button at the left of the progress bar: the step before. When the entry
-  // behind this one is that step, it is the browser's Back (so the two never disagree);
-  // otherwise this entry becomes the step before.
-  $('o-back').addEventListener('click', function () {
+  // Back under the page: the step before. When the entry behind this one is that step,
+  // it is the browser's Back (so the two never disagree); otherwise this entry becomes
+  // the step before.
+  $('o-prev').addEventListener('click', function () {
     var prev = STEPS[Math.max(0, STEPS.indexOf(step) - 1)];
     if (hist > 0 && trail[hist - 1] === prev) { history.back(); return; }
     go(prev, 'replace');

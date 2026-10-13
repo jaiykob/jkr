@@ -1,33 +1,29 @@
-/* The order page (book/quote.html). Nine step pages, one entry each (Size,
-   Where, Day, Time, Name, Phone, Email, Address, Pay), one on screen at a time,
-   under a progress bar held at the top.
-   Phones first: one column, the five size cards stacked full width, the
-   total in a bar fixed to the bottom. From 900px: two columns, the step on
-   the left (about 640px) and a summary on the right that stays in view,
-   cards three to a row, no bar.
-
-   The site's palette and type: charcoal, hi vis yellow as the one accent,
-   Bricolage Grotesque for headings and prices, DM Sans for the rest.
-   Every text at least 16px, every tap target at least 48 by 48. */
+/* The order page (book/quote.html), laid out like Scoops Co.'s quote (founder
+   2026-10-13: "scoops co booking flow is perfect", "designed beautifully",
+   "needs to be like that"): a white page, one centered column (588px at
+   most), a progress bar across the top that fills page by page, the question
+   with a "Step N of 9" tag beside it, big tiles, then Back and Next. Nine
+   pages, one entry each: Size, Where, Day, Time, Name, Phone, Email, Address,
+   Pay. Our palette and type: charcoal, hi vis yellow as the one accent, DM
+   Sans. Every text at least 16px, every tap target at least 48 by 48. */
 
 *, *::before, *::after { box-sizing: border-box; }
 :root {
   --ink:    #15171A;
   --ink-2:  #2B2F36;
-  --muted:  #595E66;   /* 5.9:1 on white, 5.3:1 on the cream page */
+  --muted:  #595E66;   /* 7:1 on white */
   --yellow: #FFD23F;   /* fills only, never text on a light ground */
-  --yel-50: #FFF6D6;
-  --page:   #F5F2EA;
+  --yel-50: #FFF8DF;
+  --page:   #FFFFFF;
   --card:   #FFFFFF;
   --soft:   #F7F4EC;
-  --line:   #E2DDD2;
-  --line-2: #CFC8B9;
-  --line-3: #857F72;   /* field and pick ring borders: 4.0:1 on white, 3.6:1 on the cream page (3:1 needed) */
+  --line:   #E6E0D4;
+  --line-2: #D3CCBD;
+  --line-3: #857F72;   /* field borders: 4.0:1 on white (3:1 needed) */
   --focus:  #0B6BCB;
   --err:    #B42318;
   --ok:     #146C43;
   --gutter: 16px;
-  --bar-h:  148px;     /* room kept under the page while the bar shows */
 }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body {
@@ -53,135 +49,82 @@ button { font: inherit; }
 .o-head-num { display: none; }
 @media (min-width: 560px) { .o-head-num { display: inline; } }
 
-/* ── the page ── */
-.o-main { max-width: 1080px; margin: 0 auto; padding: 20px var(--gutter) 32px; }
-/* Past the first page the progress bar says where you are: the page title steps
-   aside for screen readers only, and the step's own heading leads. */
-.o-intro.is-quiet h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.o-intro.is-quiet .o-lede { display: none; }
-.o-steps + .o-intro { margin-top: 12px; }
-.o-intro h1 { margin: 0; font: 800 clamp(30px, 7.5vw, 48px)/1.05 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.03em; color: var(--ink); }
-.o-lede { margin: 6px 0 0; max-width: 60ch; color: var(--muted); font-size: 16px; }
-.o-lede-more { display: none; }
-@media (min-width: 560px) { .o-lede { font-size: 17px; } .o-lede-more { display: inline; } }
-.o-layout { margin-top: 14px; }
-.o-form { display: grid; gap: 12px; min-width: 0; }
+/* ── the column ── */
+.o-main { padding: 20px var(--gutter) 40px; }
+.o-shell { max-width: 588px; margin: 0 auto; }
+@media (min-width: 900px) { .o-main { padding-top: 48px; } }
 
-/* ── the progress bar: nine pages, one entry each, held at the top while the
-   page scrolls. Phones: Back, the page's name and "Step N of 9" over nine
-   segments that fill page by page. From 900px the nine steps by name too:
-   done ones yellow with a tick and back to themselves, the current one
-   charcoal. */
-.o-steps { position: sticky; top: 0; z-index: 40; margin: -20px calc(-1 * var(--gutter)) 0; padding: 4px var(--gutter) 8px; background: var(--page); }
-.o-steps-in { display: flex; align-items: center; gap: 4px; min-height: 48px; }
-.o-back { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 48px; min-height: 48px; margin-left: -8px; padding: 0 6px; border: 0; border-radius: 12px; background: transparent; color: var(--ink); font: 700 16px/1 'DM Sans', sans-serif; cursor: pointer; }
-.o-back svg { width: 24px; height: 24px; flex: none; }
-.o-back span { display: none; }
-.o-steps-now { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0; }
-.o-steps-name { font: 800 20px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em; color: var(--ink); }
-.o-steps-of { flex: none; font-size: 16px; font-weight: 700; color: var(--muted); }
-.o-steps-bar { display: flex; gap: 4px; margin-top: 4px; }
-.o-steps-bar span { flex: 1; height: 6px; border-radius: 3px; background: var(--line-2); transition: background .25s; }
-.o-steps-bar span.is-on { background: var(--ink); }
-.o-steps-list { display: none; flex: 1; min-width: 0; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 2px; margin: 0; padding: 0; list-style: none; }
-.o-steps-list button {
-  width: 100%; min-height: 54px; display: grid; justify-items: center; align-content: center; gap: 3px; padding: 4px 2px;
-  border: 0; border-radius: 12px; background: transparent; color: var(--muted); font: 700 16px/1.1 'DM Sans', sans-serif; cursor: pointer;
-}
-.o-steps-list button:disabled { cursor: default; }
-.o-dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: #E7E2D7; color: var(--muted); font: 800 16px/1 'Bricolage Grotesque', 'DM Sans', sans-serif; }
-.o-dot svg { display: none; width: 16px; height: 16px; }
-.o-steps-list li.is-done button, .o-steps-list li.is-current button { color: var(--ink); }
-.o-steps-list li.is-done .o-dot { background: var(--yellow); color: var(--ink); }
-.o-steps-list li.is-done .o-dot span { display: none; }
-.o-steps-list li.is-done .o-dot svg { display: block; }
-.o-steps-list li.is-current .o-dot { background: var(--ink); color: var(--yellow); }
-@media (min-width: 600px) {
-  .o-back span { display: inline; }
-  .o-back { padding: 0 12px 0 6px; }
-}
-/* From 900px the steps by name: the list names the page, so the name line keeps
-   only "Step N of 9". */
-@media (min-width: 900px) {
-  .o-steps-list { display: grid; order: 1; }
-  .o-steps-now { flex: none; order: 2; padding-left: 8px; }
-  .o-steps-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-}
+/* ── the progress bar: one bar that fills as the pages go by ── */
+.o-progress { height: 8px; margin: 0 0 24px; border-radius: 999px; background: #EEEAE1; overflow: hidden; }
+.o-progress span { display: block; height: 100%; width: 11.1%; border-radius: 999px; background: var(--ink); transition: width .35s ease; }
 
-/* ── sections: a white card each; only the current step's show ── */
-.o-sec { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px 12px 16px; scroll-margin-top: 84px; scroll-margin-bottom: calc(var(--bar-h) + 12px); }
-.o-sec-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
-.o-sec h2 { margin: 0; flex: 1; min-width: 0; font: 800 21px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; color: var(--ink); }
+/* ── a page: the question, its step tag, then the answer ── */
+.o-form { min-width: 0; }
+.o-sec { min-width: 0; }
+.o-sec.is-fwd, .o-sec.is-back { animation: o-fade .25s ease; }
+@keyframes o-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.o-sec-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.o-sec h2 { margin: 0; flex: 1; min-width: 0; font: 700 24px/1.25 'DM Sans', sans-serif; letter-spacing: -.015em; color: var(--ink); }
+.o-sec h2 label { display: block; }
 /* A page's heading takes the focus only so a screen reader starts there; it is not
    something to tap, so it shows no ring. */
 .o-sec h2:focus, .o-sec h2:focus-visible { outline: none; }
-/* A one entry page asks its question in the heading, and the heading is the box's label. */
-.o-sec h2 label { display: block; }
-.o-sec-body { margin-top: 10px; }
-/* A page coming on screen slides in a little from the side it is on. */
-.o-sec.is-fwd { animation: o-in-fwd .22s ease-out; }
-.o-sec.is-back { animation: o-in-back .22s ease-out; }
-@keyframes o-in-fwd { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
-@keyframes o-in-back { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
-/* Next on a typed page: right under the box, so it sits above a phone's keyboard. */
-.o-next {
-  display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; margin-top: 16px; padding: 0 16px;
-  border: 0; border-radius: 14px; cursor: pointer; background: var(--ink); color: #fff;
-  font: 800 19px/1.1 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em;
-}
-.o-next:hover { background: var(--ink-2); }
-@media (min-width: 560px) { .o-next { width: auto; min-width: 200px; } }
-/* The When page says where the job is, one tap from changing it. */
-.o-where-line { display: flex; align-items: center; justify-content: space-between; gap: 0 8px; margin: 0 0 10px; padding: 2px 2px 2px 14px; border-radius: 12px; background: var(--soft); color: var(--ink); font-weight: 700; line-height: 1.3; }
-.o-where-line > span { flex: 1; min-width: 0; }
-.o-change { flex: none; }
-.o-change { min-height: 48px; min-width: 48px; padding: 0 10px; border: 0; background: none; color: var(--ink); font: 700 16px/1 'DM Sans', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.o-help { margin: 0 0 10px; color: var(--muted); }
-.o-label { margin: 14px 0 8px; font-weight: 700; color: var(--ink); }
-.o-label:first-of-type { margin-top: 0; }
-.o-msg { margin: 10px 0 0; font-size: 16px; }
+.o-pill { flex: none; display: inline-flex; align-items: center; min-height: 30px; margin-top: 1px; padding: 0 12px; border-radius: 999px; background: var(--soft); color: var(--ink); font-size: 16px; font-weight: 700; white-space: nowrap; }
+.o-sec-body { margin-top: 8px; }
+.o-help { margin: 0 0 16px; color: var(--muted); }
+.o-selected { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; font-weight: 700; color: var(--ink); }
+.o-selected-v { padding: 4px 12px; border-radius: 10px; background: var(--soft); text-align: right; }
+.o-msg { margin: 12px 0 0; font-size: 16px; }
 .o-msg:empty { display: none; }
 .o-msg.is-ok { color: var(--ok); font-weight: 600; }
 .o-msg.is-err { color: var(--err); font-weight: 600; }
-.o-hint { margin: 6px 0 0; color: var(--muted); font-size: 16px; }
+.o-hint { margin: 8px 0 0; color: var(--muted); font-size: 16px; }
 .o-hint:empty { display: none; }
-.o-more { margin: 14px 0 0; color: var(--muted); }
+.o-more { margin: 16px 0 0; color: var(--muted); }
 /* Links inside running text: a 48px tall target without opening up the line. */
 .o-more a, .o-far p a, .o-msg a { display: inline-block; padding: 13px 2px; margin: -13px 0; font-weight: 700; color: var(--ink); }
+/* The Day page says where the job is, the Time page which day, one tap from changing it. */
+.o-where-line { display: flex; align-items: center; justify-content: space-between; gap: 0 8px; margin: 0 0 16px; padding: 2px 2px 2px 14px; border-radius: 12px; background: var(--soft); color: var(--ink); font-weight: 700; line-height: 1.3; }
+.o-where-line > span { flex: 1; min-width: 0; }
+.o-change { flex: none; min-height: 48px; min-width: 48px; padding: 0 10px; border: 0; background: none; color: var(--ink); font: 700 16px/1 'DM Sans', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
-/* ── 1. the size cards (classes shared with the homepage, ruling R1) ── */
-.size-list { display: grid; gap: 10px; }
+/* ── 1. the size tiles: a photo, the size, what fits, the price (classes shared with
+   the homepage, ruling R1; this page styles its own) ── */
+.size-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 600px) { .size-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .size-card {
-  position: relative; width: 100%; display: grid; grid-template-columns: 68px minmax(0, 1fr); align-items: center; gap: 12px;
-  min-height: 48px; padding: 9px 10px 9px 9px; text-align: left; cursor: pointer;
-  background: var(--card); color: inherit; border: 1.5px solid var(--line-2); border-radius: 16px;
+  position: relative; width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 10px;
+  padding: 8px 8px 14px; text-align: center; cursor: pointer;
+  background: var(--card); color: inherit; border: 1.5px solid var(--line); border-radius: 16px;
   transition: border-color .15s, box-shadow .15s, background .15s;
 }
-.size-card:hover { border-color: #A8A294; }
-.size-photo { display: block; width: 68px; height: 68px; object-fit: cover; border-radius: 10px; background: #E4E4E4; }
-.size-body { display: grid; gap: 1px; min-width: 0; }
-.size-name { padding-right: 28px; font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em; color: var(--ink); }
+.size-card:hover { border-color: var(--line-2); box-shadow: 0 6px 18px rgba(21,23,26,.07); }
+.size-photo { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; background: #E4E4E4; }
+.size-body { display: grid; gap: 2px; min-width: 0; padding: 0 2px; }
+.size-name { font: 700 18px/1.2 'DM Sans', sans-serif; color: var(--ink); }
 .size-note { font-size: 16px; line-height: 1.35; color: var(--muted); }
-.size-cost { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 2px; }
-.size-price { font: 800 19px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; color: var(--ink); }
+.size-cost { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 0 6px; margin-top: 4px; }
+.size-price { font: 700 18px/1.2 'DM Sans', sans-serif; color: var(--ink); }
 .size-travel { font-size: 16px; color: var(--muted); }
-.size-card[aria-pressed="true"] { border-color: var(--ink); background: var(--yel-50); box-shadow: 0 0 0 1.5px var(--ink); }
-.size-card::after { content: ''; position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line-3); background: var(--card); }
+.size-card[aria-pressed="true"] { border-color: var(--ink); background: linear-gradient(180deg, var(--yel-50), #fff); box-shadow: 0 0 0 1px var(--ink), 0 6px 18px rgba(21,23,26,.08); }
+/* The check shows on the picked tile only, as on Scoops Co. */
 .size-card[aria-pressed="true"]::after {
-  border-color: var(--ink);
-  background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23FFD23F' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 14px no-repeat;
+  content: ''; position: absolute; top: 14px; right: 14px; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23FFD23F' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 15px no-repeat;
+  box-shadow: 0 0 0 2px #fff;
 }
 
-/* "Not sure? Send photos" (js/photo-quote.js builds the parts) */
-.o-photos { margin: 0 0 10px; }
+/* "Not sure? Send photos" under the tiles (js/photo-quote.js builds the parts) */
+.o-photos { margin: 16px 0 0; }
 .pq-photo { display: grid; gap: 10px; }
 .pq-file { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
-.pq-snap { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 7px 14px 7px 7px; border-radius: 14px; background: var(--ink); color: #fff; cursor: pointer; }
+.pq-snap { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 7px 14px 7px 7px; border-radius: 14px; background: var(--soft); border: 1.5px dashed var(--line-2); color: var(--ink); cursor: pointer; }
+.pq-snap:hover { border-color: var(--line-3); }
 .pq-snap:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
 .pq-cam { flex: none; width: 40px; height: 40px; padding: 8px; border-radius: 10px; background: var(--yellow); color: var(--ink); }
 .pq-snap-words { display: grid; gap: 1px; line-height: 1.3; }
-.pq-snap-words strong { font: 800 18px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; }
-.pq-snap-words small { font-size: 16px; color: rgba(255,255,255,.78); }
+.pq-snap-words strong { font: 700 17px/1.2 'DM Sans', sans-serif; }
+.pq-snap-words small { font-size: 16px; color: var(--muted); }
 .pq-thumbs { display: flex; flex-wrap: wrap; gap: 8px; }
 .pq-thumbs:empty { display: none; }
 .pq-thumb { position: relative; width: 64px; height: 64px; border-radius: 10px; overflow: hidden; background: #ddd; }
@@ -194,21 +137,25 @@ button { font: inherit; }
 .pq-ai.is-err { padding: 10px 12px; border-radius: 12px; background: var(--soft); border-left: 4px solid #D9822B; }
 .o-sec.is-reading .size-list { opacity: .6; }
 
-/* ── 2. ZIP ── */
+/* ── boxes (ZIP, name, phone, email, address) ── */
 .o-field label { display: block; margin-bottom: 6px; font-weight: 700; color: var(--ink); font-size: 16px; }
 .o-opt { font-weight: 400; color: var(--muted); }
 .o-field input, .o-field textarea, .o-far input {
-  width: 100%; min-height: 52px; padding: 0 14px; font: inherit; font-size: 16px; color: var(--ink-2);
-  background: var(--card); border: 1.5px solid var(--line-3); border-radius: 12px; transition: border-color .15s, box-shadow .15s;
+  width: 100%; min-height: 54px; padding: 0 14px; font: inherit; font-size: 16px; color: var(--ink-2);
+  background: var(--card); border: 1.5px solid var(--line-2); border-radius: 12px; transition: border-color .15s, box-shadow .15s;
 }
 .o-field textarea { padding: 12px 14px; min-height: 96px; resize: vertical; }
 .o-field input::placeholder, .o-field textarea::placeholder, .o-far input::placeholder { color: #6E7278; }
-.o-field input:focus, .o-field textarea:focus, .o-far input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(21,23,26,.16); }
+.o-field input:focus, .o-field textarea:focus, .o-far input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(21,23,26,.14); }
 .o-field input[aria-invalid="true"], .o-far input[aria-invalid="true"] { border-color: var(--err); box-shadow: 0 0 0 3px rgba(180,35,24,.12); }
-.o-field-zip input { max-width: 200px; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+.o-sec-body > .o-field:first-child { margin-top: 16px; }
+.o-field-zip input { max-width: 220px; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
 .o-err { margin: 6px 0 0; color: var(--err); font-weight: 600; font-size: 16px; }
 .o-err:empty { display: none; }
-.o-far { margin-top: 12px; padding: 14px; border-radius: 14px; background: var(--soft); border: 1px dashed var(--line-2); }
+.o-f-unit { margin-top: 16px; }
+.o-link { display: inline-flex; align-items: center; min-height: 48px; min-width: 48px; margin-top: 6px; padding: 0 2px; background: none; border: 0; color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.o-notes { margin-top: 4px; }
+.o-far { margin-top: 16px; padding: 14px; border-radius: 14px; background: var(--soft); border: 1px dashed var(--line-2); }
 .o-far p { margin: 0 0 10px; }
 .o-far a { font-weight: 700; }
 .o-far-row { display: grid; gap: 8px; }
@@ -216,43 +163,34 @@ button { font: inherit; }
 .o-btn-dark[disabled] { opacity: .55; cursor: default; }
 @media (min-width: 480px) { .o-far-row { grid-template-columns: 1fr auto; } }
 
-/* ── 3. day chips and windows: real dates, full ones greyed and labelled ── */
-/* The days have their own page: every open day in a grid, four to a row on a phone. */
-.o-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+/* ── 3 and 4. day and time tiles: real dates, full ones greyed and labelled ── */
+.o-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; }
+.o-wins { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .o-day, .o-win {
-  min-height: 56px; min-width: 48px; padding: 6px 4px; cursor: pointer; text-align: center;
-  background: var(--card); color: var(--ink); border: 1.5px solid var(--line-2); border-radius: 12px; line-height: 1.2;
-  transition: border-color .15s, background .15s;
+  min-height: 64px; min-width: 48px; padding: 8px 4px; cursor: pointer; text-align: center;
+  background: var(--card); color: var(--ink); border: 1.5px solid var(--line); border-radius: 14px; line-height: 1.2;
+  transition: border-color .15s, background .15s, box-shadow .15s;
 }
-.o-day { display: grid; place-content: center; gap: 2px; min-height: 60px; }
-.o-day-wd { font-weight: 800; }
+.o-day { display: grid; place-content: center; gap: 2px; }
+.o-day-wd { font-weight: 700; }
 .o-day-md { color: var(--muted); }
-.o-wins { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-.o-win { display: grid; place-content: center; gap: 2px; font-weight: 700; }
+.o-win { display: grid; place-content: center; gap: 2px; min-height: 72px; font-weight: 700; font-size: 17px; }
 .o-win-full { font-weight: 600; color: var(--muted); }
-.o-day:hover, .o-win:hover { border-color: #A8A294; }
-.o-day[aria-pressed="true"], .o-win[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
-.o-day[aria-pressed="true"] .o-day-md { color: rgba(255,255,255,.82); }
-.o-win[aria-pressed="true"] .guess { color: #FF8A80; }
-.o-day.full, .o-win.full { background: #EFEBE2; border-style: dashed; color: #5F636A; cursor: not-allowed; }
+.o-day:hover, .o-win:hover { border-color: var(--line-2); box-shadow: 0 6px 18px rgba(21,23,26,.07); }
+.o-day[aria-pressed="true"], .o-win[aria-pressed="true"] { border-color: var(--ink); background: linear-gradient(180deg, var(--yel-50), #fff); box-shadow: 0 0 0 1px var(--ink); }
+.o-day.full, .o-win.full { background: #F3F0E9; border-style: dashed; color: #5F636A; cursor: not-allowed; box-shadow: none; }
 .o-day.full .o-day-md { color: #5F636A; font-weight: 700; }
 .o-win.full .guess { color: #8C2A22; }
 
-/* ── 4. contact: name, phone, email, address, a page each ── */
-.o-f-unit { margin-top: 14px; }
-.o-link { display: inline-flex; align-items: center; min-height: 48px; min-width: 48px; margin-top: 6px; padding: 0 2px; background: none; border: 0; color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.o-notes { margin-top: 4px; }
-
-/* ── 5. pay: the answers read back, each one tap from its page ── */
-.o-recap { margin: 0 0 14px; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+/* ── 9. pay: the answers read back, then the rule, the box and the card ── */
+.o-recap { margin: 16px 0 16px; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .o-recap-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 0 10px; min-height: 52px; border-bottom: 1px solid var(--line); }
 .o-recap-k { color: var(--muted); }
 .o-recap-v { min-width: 0; overflow-wrap: anywhere; font-weight: 700; color: var(--ink); line-height: 1.3; padding: 6px 0; }
 .o-recap .o-change { padding: 0 2px 0 10px; }
-/* From 900px the summary beside the page shows the size, the place and the time. */
-@media (min-width: 900px) { .o-recap-row.is-order { display: none; } }
-
-/* ── 5. pay: the rule in plain words ── */
+.o-recap-total { grid-template-columns: 76px minmax(0, 1fr); border-bottom: 0; }
+.o-recap-total .o-recap-k { font-weight: 700; color: var(--ink); }
+.o-recap-total .o-recap-v { font-size: 24px; text-align: right; }
 .o-rule { padding: 14px 16px; border-radius: 14px; background: var(--yel-50); border: 1px solid #EBD98F; }
 .o-rule p { margin: 0; }
 .o-rule p + p { margin-top: 8px; }
@@ -260,10 +198,8 @@ button { font: inherit; }
 .o-reserved { margin-top: 12px; padding: 14px 16px; border-radius: 14px; background: #EAF5EE; border-left: 5px solid var(--ok); }
 .o-reserved:focus { outline: none; }
 .o-reserved p { margin: 0; }
-.o-reserved-h { font: 800 20px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; color: var(--ink); margin-bottom: 4px !important; }
+.o-reserved-h { font: 700 20px/1.2 'DM Sans', sans-serif; color: var(--ink); margin-bottom: 4px !important; }
 .o-msg.is-note { padding: 12px 14px; border-radius: 12px; background: var(--yel-50); border-left: 5px solid var(--ink); color: var(--ink); font-weight: 700; }
-
-/* ── 5. pay, bookings open: one box, the wallets, then the boxed card form ── */
 .o-paybox { margin-top: 14px; }
 .o-consent {
   display: flex; align-items: flex-start; gap: 12px; min-height: 48px; padding: 12px 14px; cursor: pointer;
@@ -286,92 +222,33 @@ button { font: inherit; }
 .o-secure svg { width: 18px; height: 18px; flex: none; }
 .o-card { min-height: 48px; }
 .o-pay-help { margin: 14px 0 0; color: var(--muted); }
+
+/* ── Back and Next under every page; Book in Next's place on the last ── */
+.o-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 32px; }
+.o-btn { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 56px; padding: 0 16px; border-radius: 12px; cursor: pointer; font: 700 17px/1.1 'DM Sans', sans-serif; transition: background .15s, opacity .15s, box-shadow .15s; }
+.o-btn-ghost { background: var(--soft); color: var(--ink); border: 1px solid var(--line); }
+.o-btn-ghost:hover { border-color: var(--line-2); }
+.o-btn-ghost:disabled { background: #FAF8F3; color: #8A877F; cursor: default; }
+.o-btn-primary { background: var(--ink); color: #fff; border: 0; box-shadow: 0 6px 16px rgba(21,23,26,.18); }
+.o-btn-primary:hover { background: var(--ink-2); }
+/* Next stays tappable before the page is answered (it says what is missing), dimmed. */
+.o-btn-primary[aria-disabled="true"] { opacity: .45; box-shadow: none; }
+.o-book { background: var(--yellow); color: var(--ink); }
+.o-book:hover { background: #F5C400; }
+.o-book .guess { color: #A31515; }
+.o-book.is-done { background: #DDEFE3; color: var(--ok); box-shadow: none; }
 #o-book[aria-busy="true"] { cursor: progress; }
 
-/* ── the Book button (in the bar on a phone, the summary on a desktop) ── */
-.o-book {
-  display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 54px; padding: 0 16px;
-  border: 0; border-radius: 14px; cursor: pointer; background: var(--yellow); color: var(--ink);
-  font: 800 19px/1.1 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em;
-}
-.o-book:hover { background: #F5C400; }
-.o-book.is-done { background: #DDEFE3; color: var(--ok); }
-#o-book .guess { color: #A31515; }
-
-/* ── the summary (desktop) ── */
-.o-side { display: none; }
-.o-summary h2 { margin: 0 0 12px; font: 800 22px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; color: var(--ink); }
-.o-sum-rows { display: grid; gap: 8px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
-.o-row, .o-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0; }
-.o-row .o-k { color: var(--muted); }
-.o-row .o-v { font-weight: 700; color: var(--ink); text-align: right; }
-.o-summary .o-total { margin: 14px 0 16px; }
-.o-summary .o-total .o-k { font-weight: 700; color: var(--ink); }
-.o-summary .o-total .o-v { font: 800 30px/1.1 'Bricolage Grotesque', 'DM Sans', sans-serif; color: var(--ink); letter-spacing: -.02em; text-align: right; }
-.o-summary .o-total .o-v.is-empty { font: 700 16px/1.4 'DM Sans', sans-serif; color: var(--muted); letter-spacing: 0; }
-.o-summary .o-book { box-shadow: 0 4px 0 var(--ink); }
-.o-summary .o-book:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
-.o-sum-rule { margin: 14px 0 0; color: var(--muted); }
-.o-sum-contact { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
-.o-sum-contact p { margin: 0 0 8px; color: var(--muted); }
-.o-contact-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.o-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 48px; min-width: 48px; padding: 0 12px; border-radius: 12px; border: 1.5px solid var(--line-2); color: var(--ink); text-decoration: none; font-weight: 700; }
-.o-chip:hover { border-color: var(--ink); }
-.o-chip svg { width: 18px; height: 18px; flex: none; }
-
-/* ── the bar (phones): total, travel, call, text, WhatsApp, Book ── */
-.o-bar {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-  padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom, 0px));
-  background: var(--ink); color: #F5F2EA; box-shadow: 0 -10px 30px rgba(0,0,0,.2);
-  transition: transform .2s ease, visibility 0s linear 0s;
-}
-.o-bar-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-.o-bar-sum { min-width: 0; }
-.o-bar .o-total { display: block; white-space: nowrap; font: 800 24px/1.15 'Bricolage Grotesque', 'DM Sans', sans-serif; color: #fff; letter-spacing: -.01em; }
-.o-bar .o-travel { margin: 2px 0 0; font-size: 16px; line-height: 1.3; color: rgba(245,242,234,.82); }
-.o-bar-contact { display: flex; gap: 4px; flex: none; }
-.o-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; border: 1px solid rgba(245,242,234,.26); color: #fff; }
-.o-icon svg { width: 22px; height: 22px; }
-body.o-has-bar { padding-bottom: var(--bar-h); }
-/* A field reached with Tab scrolls clear of the bar, not under it. */
-html:has(body.o-has-bar) { scroll-padding-bottom: calc(var(--bar-h) + 12px); }
-/* A phone on its side: the bar keeps Book only, so it covers less of a short screen. */
-@media (max-height: 520px) and (max-width: 899px) {
-  :root { --bar-h: 80px; }
-  .o-bar-top { display: none; }
-}
-/* The bar never sits over a field being typed in. */
-body.o-typing .o-bar { transform: translateY(115%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; }
+/* ── what you can count on, under the buttons (as on Scoops Co.) ── */
+.o-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 20px; margin: 28px 0 0; padding: 0; list-style: none; color: var(--muted); }
+.o-trust li { display: inline-flex; align-items: center; gap: 6px; }
+.o-trust svg { width: 16px; height: 16px; flex: none; color: var(--ink); }
 
 /* ── footer ── */
 .o-foot { padding: 18px var(--gutter) 28px; text-align: center; color: var(--muted); font-size: 16px; }
 .o-foot p { margin: 0; }
 .o-foot-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 16px; }
 .o-foot a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px; padding: 0 4px; color: var(--muted); text-underline-offset: 2px; }
-
-/* ── 900px and up: two columns, the summary stays in view ── */
-@media (min-width: 900px) {
-  :root { --gutter: 24px; }
-  .o-main { padding-top: 32px; padding-bottom: 56px; }
-  .o-layout { display: grid; grid-template-columns: minmax(0, 640px) 360px; justify-content: space-between; align-items: start; gap: 32px; margin-top: 24px; }
-  .o-sec { padding: 22px 24px 24px; }
-  .o-sec-body { margin-top: 12px; }
-  .o-sec h2 { font-size: 24px; }
-  .o-steps { margin-top: -32px; padding-top: 10px; }
-  .size-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-  .size-card { grid-template-columns: 1fr; align-items: start; align-content: start; gap: 10px; padding: 10px 10px 14px; }
-  .size-name { padding-right: 0; }
-  .size-photo { width: 100%; height: auto; aspect-ratio: 16 / 10; }
-  .size-body { padding: 0 4px; }
-  .size-card::after { top: 18px; right: 18px; }
-  .o-wins { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .o-side { display: block; }
-  .o-summary { position: sticky; top: 96px; padding: 22px; border-radius: 22px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 16px 40px rgba(21,23,26,.08); }
-  .o-bar { display: none !important; }
-  body.o-has-bar { padding-bottom: 0; }
-  html:has(body.o-has-bar) { scroll-padding-bottom: 0; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
