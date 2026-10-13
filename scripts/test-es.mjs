@@ -139,7 +139,7 @@ console.log('== a phrase with no Spanish stays in English ==');
 const idx = path.join(ROOT, 'index.html');
 const orig = fs.readFileSync(idx, 'utf8');
 {
-  const r3 = toSpanish(orig.replace('<p class="take-no">', '<p class="take-no">Brand new untranslated words here. '));
+  const r3 = toSpanish(orig.replace('<p class="closer-line">', '<p class="closer-line">Brand new untranslated words here. '));
   ok(r3.missing.some((k) => k.includes('Brand new untranslated words here.')) && r3.html.includes('Brand new untranslated words here.'), 'the phrase is listed and left in English');
 }
 

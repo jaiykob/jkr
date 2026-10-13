@@ -19,6 +19,36 @@
     [].forEach.call(document.querySelectorAll('#homeSizes a.size-card'), function (a) { a.setAttribute('href', a.getAttribute('href') + '&zip=' + trip.zip); });
   }
 
+  // What we take (Novah's "what's included" box): a job picked in the list on the
+  // left opens its card, closes the others and brings it into view; the list marks
+  // the card opened last. Each card also opens and closes by itself (<details>).
+  var scope = document.querySelector('.scope');
+  if (scope) {
+    var cards = [].slice.call(scope.querySelectorAll('.scope-card'));
+    var picks = [].slice.call(scope.querySelectorAll('.scope-nav a'));
+    var mark = function (key) {
+      picks.forEach(function (a) {
+        if (a.getAttribute('data-scope') === key) a.setAttribute('aria-current', 'true');
+        else a.removeAttribute('aria-current');
+      });
+    };
+    picks.forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var card = document.getElementById('scope-' + a.getAttribute('data-scope'));
+        if (!card) return;
+        e.preventDefault();
+        cards.forEach(function (c) { c.open = c === card; });
+        mark(a.getAttribute('data-scope'));
+        var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        card.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+        card.querySelector('summary').focus({ preventScroll: true });
+      });
+    });
+    cards.forEach(function (c) {
+      c.addEventListener('toggle', function () { if (c.open) mark(c.id.replace('scope-', '')); });
+    });
+  }
+
   // Fading up into view (Novah's): what is below the first screen starts low and
   // faint, and settles as it scrolls in. Never with reduced motion, and never
   // without IntersectionObserver (then everything simply shows).
