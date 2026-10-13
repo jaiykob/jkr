@@ -1,12 +1,13 @@
 /* The order page (book/quote.html): size, ZIP, day and window, contact, pay.
 
-   Eight step pages, one question each (round 8 made the pages, founder:
-   "each have their own page with progress bar at top", "minimize clicks at
-   all costs"; 2026-10-13: "one piece of info per page"): Size (#size), Where
-   (#where), When (#when), Name (#name), Phone (#phone), Email (#email),
-   Address (#address), and Book (#book: the answers read back, then pay). A
-   tap page moves on by itself once it is done (a size tap, the fifth digit
-   of a ZIP we serve, an arrival time tap, the last digit of a phone number);
+   Nine step pages, one entry each (round 8 made the pages, founder: "each
+   have their own page with progress bar at top", "minimize clicks at all
+   costs"; 2026-10-13: "one piece of info per page", "split to two pages"):
+   Size (#size), Where (#where), Day (#day), Time (#time), Name (#name),
+   Phone (#phone), Email (#email), Address (#address), and Book (#book: the
+   answers read back, then pay). A tap page moves on by itself once it is
+   done (a size tap, the fifth digit of a ZIP we serve, a day tap, an
+   arrival time tap, the last digit of a phone number);
    a typed page moves on with Next or Enter. Steps already done are skipped
    (a homepage size card, a ZIP typed earlier, details kept in this tab).
    Each step has its own hash in the history, so the phone's Back button goes
@@ -126,8 +127,8 @@
 
   /* ── the steps: one page each ────────────────────────────────────────── */
   // Each step's page (its section).
-  var SEC = { size: 'o-size', where: 'o-zip', when: 'o-when', name: 'o-you-name', phone: 'o-you-phone', email: 'o-you-email', address: 'o-you-addr', book: 'o-pay' };
-  var STEPS = ['size', 'where', 'when', 'name', 'phone', 'email', 'address', 'book'];
+  var SEC = { size: 'o-size', where: 'o-zip', day: 'o-day', time: 'o-time', name: 'o-you-name', phone: 'o-you-phone', email: 'o-you-email', address: 'o-you-addr', book: 'o-pay' };
+  var STEPS = ['size', 'where', 'day', 'time', 'name', 'phone', 'email', 'address', 'book'];
   var STEP_OF = {};
   STEPS.forEach(function (s) { STEP_OF[SEC[s]] = s; });
   var step = null;          // the step on screen
@@ -138,7 +139,8 @@
   function stepDone(s) {
     if (s === 'size') return state.size != null;
     if (s === 'where') return !!state.trip;
-    if (s === 'when') return !!(state.date && state.window && windowFree(state.date, state.window));
+    if (s === 'day') { var d = dayOf(state.date); return !!(d && !d.full); }
+    if (s === 'time') return !!(state.date && state.window && windowFree(state.date, state.window));
     var k = fieldFor(s);
     if (k) return !FIELDS[k].check(FIELDS[k].el.value);
     return false;   // the Pay page is never "done" on its own: Book finishes it
@@ -292,7 +294,7 @@
       var v = recap[n.getAttribute('data-recap')];
       fill(n, Array.isArray(v) ? v : [v || 'Not given yet']);
     });
-    // The When page says where the job is and what travel adds (the ZIP page moved on by itself).
+    // The Day page says where the job is and what travel adds (the ZIP page moved on by itself).
     if (t) fill($('o-where-text'), [t.place + ' ' + t.zip + ' · ', t.cents ? guessy('+' + fmt(t.cents) + ' travel', TRAVEL_GUESS) : guessy('No travel charge', TRAVEL_GUESS)]);
 
     // WhatsApp opens a chat with the size and ZIP filled in.
@@ -410,7 +412,7 @@
     if (edited || (before && before.zip) !== (state.trip && state.trip.zip)) changed();
     render();
     // The fifth digit of a ZIP we serve is the whole Where page: on to the next.
-    // (The When page names the place, with a Change link back.)
+    // (The Day page names the place, with a Change link back.)
     if (how === 'typed' && edited && state.trip && step === 'where') next();
   }
   zipIn.addEventListener('input', function () { setZip(zipIn.value, 'typed'); });
@@ -503,17 +505,13 @@
       render();
     });
   }
-  /* Keep the picked day and window while they are still free; otherwise the
-     soonest day with room is picked for them (the window stays theirs to pick,
-     so a window never moves to another day on its own). */
+  /* Keep the picked day and window while they are still free; a day that is
+     gone or full is dropped with its window, for the customer to pick again
+     (the Day page is theirs: nothing is picked for them). */
   function settleDay() {
     if (!days) return;
     var d = dayOf(state.date);
-    if (!d || d.full) {
-      var first = days.filter(function (x) { return !x.full; })[0];
-      if (state.date && (!first || first.date !== state.date)) state.window = null;
-      state.date = first ? first.date : null;
-    }
+    if (state.date && (!d || d.full)) { state.date = null; state.window = null; }
     if (state.window && !windowFree(state.date, state.window)) state.window = null;
   }
   /* The day and window buttons are drawn afresh on every change: the one that
@@ -541,9 +539,13 @@
       b.setAttribute('aria-pressed', String(d.date === state.date));
       dayBox.appendChild(b);
     });
+    var dayMsg = $('o-day-msg');
+    if (days.every(function (d) { return d.full; })) { dayMsg.textContent = 'Every day we show is full. Call or text us and we will find a time.'; dayMsg.className = 'o-msg is-err'; }
+    else if (dayMsg.classList.contains('is-err') && dayOf(state.date)) { dayMsg.textContent = ''; dayMsg.className = 'o-msg'; }
     var day = dayOf(state.date);
-    $('o-wins-day').textContent = day ? ', ' + day.label : '';
-    if (!day) { winBox.appendChild(el('p', 'o-hint', 'Every day we show is full. Call or text us and we will find a time.')); return; }
+    // The Time page names the day it is for, one tap from changing it.
+    $('o-time-day').textContent = day ? day.label : '';
+    if (!day) return;
     day.windows.forEach(function (w) {
       var full = day.full || w.full;
       var b = el('button', 'o-win' + (full ? ' full' : ''));
@@ -561,7 +563,7 @@
     if (!b) return;
     var d = dayOf(b.getAttribute('data-date'));
     if (!d) return;
-    if (d.full) { whenError('That day is full. Pick another day.'); return; }
+    if (d.full) { dayError('That day is full. Pick another day.'); return; }
     if (state.date !== d.date) {
       state.date = d.date;
       if (state.window && !windowFree(state.date, state.window)) state.window = null;
@@ -569,7 +571,11 @@
       track('order_day', { date: d.date });
       say(d.label + ' picked.');
     }
+    var m = $('o-day-msg'); m.textContent = ''; m.className = 'o-msg';
     drawWhen(); render();
+    // A day is the whole Day page: on to its times (always, so a changed day
+    // shows its times even when the window picked before is still free).
+    go('time');
   });
   $('o-wins').addEventListener('click', function (e) {
     var b = e.target.closest('[data-window]');
@@ -580,10 +586,11 @@
     var m = $('o-when-msg'); m.textContent = ''; m.className = 'o-msg';
     drawWhen();
     render();
-    // An arrival time is the whole When page (the soonest day is picked already): on to the next.
+    // An arrival time is the whole Time page: on to the next.
     next();
   });
   function whenError(text) { var m = $('o-when-msg'); m.textContent = text; m.className = 'o-msg is-err'; }
+  function dayError(text) { var m = $('o-day-msg'); m.textContent = text; m.className = 'o-msg is-err'; say(text); }
 
   /* ── 4. contact: name, phone, email, address, a page each ───────────────── */
   /* Next on a typed page (or Enter, or Go on a phone keyboard): the answer is
@@ -656,14 +663,14 @@
   function missing() {
     if (state.size == null) return ['o-size', 'Pick a size first.', document.querySelector('#o-sizes .size-card')];
     if (!state.trip) return ['o-zip', state.zip.length === 5 ? 'We do not price that ZIP online. Call or text us for a price.' : 'Enter the ZIP code of the job.', state.zip.length === 5 ? null : zipIn];
-    if (!state.date || !dayOf(state.date)) return ['o-when', 'Pick a day.', document.querySelector('#o-days [data-date]')];
-    if (!state.window || !windowFree(state.date, state.window)) return ['o-when', 'Pick an arrival window.', document.querySelector('#o-wins [data-window]:not([aria-disabled="true"])')];
+    if (!state.date || !dayOf(state.date)) return ['o-day', 'Pick a day.', document.querySelector('#o-days [data-date]:not([aria-disabled="true"])')];
+    if (!state.window || !windowFree(state.date, state.window)) return ['o-time', 'Pick an arrival window.', document.querySelector('#o-wins [data-window]:not([aria-disabled="true"])')];
     var keys = Object.keys(FIELDS);
     for (var i = 0; i < keys.length; i++) if (fieldError(keys[i], true)) return [SEC[FIELDS[keys[i]].step], FIELDS[keys[i]].err.textContent, FIELDS[keys[i]].el];
     return null;
   }
   function guide(m) {
-    var sec = $(m[0]), msgEl = { 'o-size': $('o-size-msg'), 'o-zip': zipMsg, 'o-when': $('o-when-msg') }[m[0]];
+    var sec = $(m[0]), msgEl = { 'o-size': $('o-size-msg'), 'o-zip': zipMsg, 'o-day': $('o-day-msg'), 'o-time': $('o-when-msg') }[m[0]];
     // The page with the missing piece comes back on screen first.
     if (STEP_OF[m[0]] !== step) go(STEP_OF[m[0]]);
     if (msgEl) { msgEl.textContent = m[1]; msgEl.className = 'o-msg is-err'; }
@@ -970,14 +977,14 @@
       markRefused(days);
       state.window = null;
       refreshDays();
-      return { where: 'o-when', text: 'That arrival window just filled up. Pick another one.' };
+      return { where: 'o-time', text: 'That arrival window just filled up. Pick another one.' };
     }
     if (code === 'closed_day') {
       days = (days || []).filter(function (d) { return d.date !== state.date; });
       settleDay();
       state.window = null;
       refreshDays();
-      return { where: 'o-when', text: 'We are not booking that day any more. Pick another day and window.' };
+      return { where: 'o-day', text: 'We are not booking that day any more. Pick another day.' };
     }
     if (code === 'outside_area') return { where: 'o-zip', text: 'We do not book that address online. Please ' + CALL_US + ' for a price.' };
     if (code === 'consent_required') return consentBox.checked ? { where: 'pay', text: 'This page is out of date. Reload it, then book again.' } : { where: 'consent' };
@@ -987,15 +994,17 @@
   function showFailure(f) {
     drawWhen(); render();   // a refused window or day, or a new price, shows at once
     if (f.where === 'consent') { needConsent(); return; }
-    // A refused window or day goes back to the When page, an address outside the area to Where.
-    if (f.where === 'o-when' || f.where === 'o-zip') go(STEP_OF[f.where]);
-    var at = f.where === 'card' ? $('o-card-err') : f.where === 'o-when' ? $('o-when-msg') : f.where === 'o-zip' ? zipMsg : $('o-pay-msg');
+    // A refused window goes back to the Time page, a refused day to Day, an address
+    // outside the area to Where.
+    var page = STEP_OF[f.where];
+    if (page) go(page);
+    var at = f.where === 'card' ? $('o-card-err') : ({ 'o-time': $('o-when-msg'), 'o-day': $('o-day-msg'), 'o-zip': zipMsg })[f.where] || $('o-pay-msg');
     if (f.where === 'card') cardErr(f.text);
     else if (at === $('o-pay-msg')) payMsg(f.text, f.kind || 'err');
     else { at.textContent = f.text; at.className = 'o-msg is-err'; }
     say(f.text);
-    var target = f.where === 'o-when' || f.where === 'o-zip' ? $(f.where) : at;
-    target.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: f.where === 'o-when' || f.where === 'o-zip' ? 'start' : 'center' });
+    var target = page ? $(f.where) : at;
+    target.scrollIntoView({ behavior: REDUCE ? 'auto' : 'smooth', block: page ? 'start' : 'center' });
     track('booking_refused', { reason: f.kind === 'note' ? 'stale_quote' : f.where });
   }
   function booked(data, source) {
@@ -1039,6 +1048,7 @@
   state.window = saved.window || null;
   state.size = startSize;
   var arrived = location.hash.slice(1);
+  if (arrived === 'when') arrived = 'day';   // the one When page before the day and time split
   if (startZip) setZip(startZip, 'start');
   render();
   // The page lands at the top of the step, never where the browser last scrolled.
@@ -1081,7 +1091,7 @@
     go(st.orderStep, 'pop');
   });
   // The progress bar: any step that can be shown is one tap away; Change on the
-  // When page goes back to the ZIP with the box ready to type over.
+  // Day page goes back to the ZIP with the box ready to type over.
   document.addEventListener('click', function (e) {
     var b = e.target.closest && e.target.closest('[data-go]');
     if (!b || b.disabled) return;

@@ -8,8 +8,8 @@ pictures only; the founder will write the copy.
 Redesigned 2026-09-28: charcoal and hi-vis yellow, Bricolage Grotesque for
 display type. Since round 6 (2026-10-11) there is no truck and no game, and
 booking is one order page, paid when the customer books; since 2026-10-13 it
-shows one entry per page (Size, Where, When, Name, Phone, Email, Address,
-Pay) under a progress bar, the tap and number pages moving on by themselves,
+shows one entry per page (Size, Where, Day, Time, Name, Phone, Email,
+Address, Pay) under a progress bar, the tap and number pages moving on by themselves,
 the typed ones with Next. Since round 7
 (2026-10-11, founder: "use loadup as inspo") the homepage follows LoadUp's
 landing page layout in our colors: a cream hero with one big button and a
@@ -77,7 +77,8 @@ per page** (2026-10-13, `feat/one-question`; founder: "make sure the booking
 flow takes one piece of info per page and have progress bar on top", "each
 data entry needs to be spread out between pages to reduce cognitive fatigue",
 "i just want minimal clicks", Scoops Co. "in the loosest way"): Book split
-into Name, Phone, Email, Address and Pay, 8 pages in all; the Pay page reads
+into Name, Phone, Email, Address and Pay, and When into Day and Time
+("split to two pages"; `feat/day-time`), 9 pages in all; the Pay page reads
 every answer back with a Change link each.
 
 **Round 9 is done** (2026-10-13, `feat/seo-pass`; spec
@@ -123,8 +124,8 @@ i18n/es.json           every phrase of index.html in Spanish (build-es stops on 
 blog/                  GENERATED from content/blog/en/*.md (es/blog/ from content/blog/es/)
 content/blog/en|es/    one plain text post per file, same slug in both languages
 book/
-  quote.html             THE order page, eight step pages, one entry each (#size #where
-                         #when #name #phone #email #address #book): the last reads it back, then pays
+  quote.html             THE order page, nine step pages, one entry each (#size #where #day
+                         #time #name #phone #email #address #book): the last reads it back, then pays
   checkout.html          a redirect to quote.html (vercel.json answers first)
   thanks.html            confirmation (bookingSummary from sessionStorage)
   commercial.html        property managers, realtors, contractors (api/commercial-lead.js)
@@ -188,21 +189,22 @@ After the job: /jkr/ Finish → charge (kind 'difference') or refund the differe
 
 The order page (English only) shows one entry per page (round 8, founder:
 "minimize clicks at all costs"; 2026-10-13: "each data entry needs to be
-spread out between pages"): Size, Where, When (day and arrival window: the
-soonest day is picked already, so it is one tap), Name, Phone, Email,
+spread out between pages", "split to two pages"): Size, Where, Day (nothing
+picked for them; an old `#when` link opens it), Time (the 2 hour arrival
+window for that day), Name, Phone, Email,
 Address (street, an optional unit and notes) and Book (the answers read back,
 each with Change, then the agree box and pay), each with its hash, under a
-sticky progress bar (phones: Back, the page's name, "Step N of 8" and eight
-segments; from 900px the eight steps by name, done ones tappable), with a bar
+sticky progress bar (phones: Back, the page's name, "Step N of 9" and nine
+segments; from 900px the nine steps by name, done ones tappable), with a bar
 fixed to the bottom on phones and a summary card on desktop. A page moves on
-by itself where it can (a size tap, the fifth digit of a ZIP we serve, an
-arrival time, the last digit of a phone number, each said first where it is
+by itself where it can (a size tap, the fifth digit of a ZIP we serve, a day
+(always to its times), an arrival time, the last digit of a phone number, each said first where it is
 typed); Name, Email and Address have Next (Enter or Go too). Steps already
 done are skipped (`?size=`, a ZIP kept in `quoteZip`, details kept in this
 tab); the cursor waits in each page's box. A page slides in from the side it
 is on (none with reduced motion). `#photos` opens the photo picker on Size.
-Taps from a homepage card, typing everything, gates closed: card, time, three
-Nexts, Reserve (6); open: plus the agree box and Book. With the gates closed, Book saves a
+Taps from a homepage card, typing everything, gates closed: card, day, time,
+three Nexts, Reserve (7); open: plus the agree box and Book. With the gates closed, Book saves a
 reservation lead (size, ZIP, day, window, contact) and no card form shows.
 The server reprices (size plus travel) and refuses a stale quote, a closed
 day, a full window, a ZIP outside the zones, or no consent (`consent.agreed`

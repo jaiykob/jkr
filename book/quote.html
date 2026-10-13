@@ -342,27 +342,29 @@
   <!-- THE PROGRESS BAR (round 8, founder 2026-10-12: "each have their own page with
        progress bar at top"; 2026-10-13: "one piece of info per page and have
        progress bar on top", "each data entry needs to be spread out between pages
-       to reduce cognitive fatigue"): eight pages, one entry each (#size, #where,
-       #when, #name, #phone, #email, #address, #book), held at the top while the
-       page scrolls. Phones: Back, the page's name, "Step N of 8" and eight
-       segments. From 900px the steps by name too, done ones buttons back to
-       themselves, the current one aria-current="step". js/order.js draws it. -->
+       to reduce cognitive fatigue", "split to two pages"): nine pages, one entry
+       each (#size, #where, #day, #time, #name, #phone, #email, #address, #book),
+       held at the top while the page scrolls. Phones: Back, the page's name,
+       "Step N of 9" and nine segments. From 900px the steps by name too, done
+       ones buttons back to themselves, the current one aria-current="step".
+       js/order.js draws it. -->
   <nav class="o-steps" id="o-steps" aria-label="Booking steps">
     <div class="o-steps-in">
       <button type="button" class="o-back" id="o-back" aria-label="Back" hidden><svg aria-hidden="true"><use href="#i-back"/></svg><span>Back</span></button>
-      <p class="o-steps-now"><span class="o-steps-name" id="o-steps-name">Size</span> <span class="o-steps-of" id="o-steps-of">Step 1 of 8</span></p>
+      <p class="o-steps-now"><span class="o-steps-name" id="o-steps-name">Size</span> <span class="o-steps-of" id="o-steps-of">Step 1 of 9</span></p>
       <ol class="o-steps-list">
         <li data-step="size"><button type="button" data-go="size"><span class="o-dot" aria-hidden="true"><span>1</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Size</span></button></li>
         <li data-step="where"><button type="button" data-go="where"><span class="o-dot" aria-hidden="true"><span>2</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Where</span></button></li>
-        <li data-step="when"><button type="button" data-go="when"><span class="o-dot" aria-hidden="true"><span>3</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">When</span></button></li>
-        <li data-step="name"><button type="button" data-go="name"><span class="o-dot" aria-hidden="true"><span>4</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Name</span></button></li>
-        <li data-step="phone"><button type="button" data-go="phone"><span class="o-dot" aria-hidden="true"><span>5</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Phone</span></button></li>
-        <li data-step="email"><button type="button" data-go="email"><span class="o-dot" aria-hidden="true"><span>6</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Email</span></button></li>
-        <li data-step="address"><button type="button" data-go="address"><span class="o-dot" aria-hidden="true"><span>7</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Address</span></button></li>
-        <li data-step="book"><button type="button" data-go="book"><span class="o-dot" aria-hidden="true"><span>8</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Pay</span></button></li>
+        <li data-step="day"><button type="button" data-go="day"><span class="o-dot" aria-hidden="true"><span>3</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Day</span></button></li>
+        <li data-step="time"><button type="button" data-go="time"><span class="o-dot" aria-hidden="true"><span>4</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Time</span></button></li>
+        <li data-step="name"><button type="button" data-go="name"><span class="o-dot" aria-hidden="true"><span>5</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Name</span></button></li>
+        <li data-step="phone"><button type="button" data-go="phone"><span class="o-dot" aria-hidden="true"><span>6</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Phone</span></button></li>
+        <li data-step="email"><button type="button" data-go="email"><span class="o-dot" aria-hidden="true"><span>7</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Email</span></button></li>
+        <li data-step="address"><button type="button" data-go="address"><span class="o-dot" aria-hidden="true"><span>8</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Address</span></button></li>
+        <li data-step="book"><button type="button" data-go="book"><span class="o-dot" aria-hidden="true"><span>9</span><svg><use href="#i-check"/></svg></span><span class="o-step-t">Pay</span></button></li>
       </ol>
     </div>
-    <div class="o-steps-bar" id="o-steps-bar" aria-hidden="true"><span data-step="size"></span><span data-step="where"></span><span data-step="when"></span><span data-step="name"></span><span data-step="phone"></span><span data-step="email"></span><span data-step="address"></span><span data-step="book"></span></div>
+    <div class="o-steps-bar" id="o-steps-bar" aria-hidden="true"><span data-step="size"></span><span data-step="where"></span><span data-step="day"></span><span data-step="time"></span><span data-step="name"></span><span data-step="phone"></span><span data-step="email"></span><span data-step="address"></span><span data-step="book"></span></div>
   </nav>
   <div class="o-intro">
     <h1>Book a junk pickup</h1>
@@ -371,9 +373,9 @@
   <p class="sr-only" aria-live="polite" id="o-live"></p>
 
   <div class="o-layout">
-    <!-- Eight step pages (data-step), one question each: only the current one
-         shows. A tap page moves on by itself (a size, the fifth ZIP digit, an
-         arrival time, the last phone digit); a typed one has Next. The last
+    <!-- Nine step pages (data-step), one entry each: only the current one
+         shows. A tap page moves on by itself (a size, the fifth ZIP digit, a
+         day, an arrival time, the last phone digit); a typed one has Next. The last
          page reads the answers back, then pays. js/order.js keeps one state
          object; js/size-cards.js runs the cards. -->
     <form id="order" class="o-form" novalidate>
@@ -443,7 +445,7 @@
             <label for="o-zip-in">ZIP code</label>
             <input id="o-zip-in" name="zip" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="97030" aria-describedby="o-zip-hint o-zip-msg">
             <!-- The page moves on by itself at the fifth digit: said before it happens (WCAG 3.2.2). -->
-            <p class="o-hint" id="o-zip-hint">Once your ZIP is in, we go on to the times.</p>
+            <p class="o-hint" id="o-zip-hint">Once your ZIP is in, we go on to the days.</p>
             <p class="o-msg" id="o-zip-msg" aria-live="polite"></p>
           </div>
           <!-- Past the last travel zone is a real job: we may still go, so the
@@ -463,15 +465,24 @@
         </div>
       </section>
 
-      <section id="o-when" class="o-sec" data-step="when" hidden aria-labelledby="o-when-h">
-        <div class="o-sec-head"><h2 id="o-when-h" tabindex="-1">When should we come?</h2></div>
+      <!-- The day, then the arrival window, a page each (founder 2026-10-13: "split
+           to two pages"). A tap on either moves on. The Day page says where the
+           job is (the ZIP page moved on by itself); the Time page says which day. -->
+      <section id="o-day" class="o-sec" data-step="day" hidden aria-labelledby="o-day-h">
+        <div class="o-sec-head"><h2 id="o-day-h" tabindex="-1">What day works for you?</h2></div>
         <div class="o-sec-body">
-          <p class="o-help">Pick a day, then a 2 hour arrival window. We text you when the crew is on the way.</p>
           <p class="o-where-line" id="o-where-line"><span id="o-where-text"></span><button type="button" class="o-change" data-go="where" data-focus="o-zip-in" aria-label="Change ZIP">Change</button></p>
-          <p class="o-label" id="o-days-h">Day</p>
-          <div class="o-days" id="o-days" role="group" aria-labelledby="o-days-h"></div>
-          <p class="o-label" id="o-wins-h">Arrival window<span id="o-wins-day"></span></p>
-          <div class="o-wins" id="o-wins" role="group" aria-labelledby="o-wins-h"></div>
+          <div class="o-days" id="o-days" role="group" aria-labelledby="o-day-h"></div>
+          <p class="o-msg" id="o-day-msg" aria-live="polite"></p>
+        </div>
+      </section>
+
+      <section id="o-time" class="o-sec" data-step="time" hidden aria-labelledby="o-time-h">
+        <div class="o-sec-head"><h2 id="o-time-h" tabindex="-1">What time should we arrive?</h2></div>
+        <div class="o-sec-body">
+          <p class="o-where-line"><span id="o-time-day"></span><button type="button" class="o-change" data-go="day" aria-label="Change day">Change</button></p>
+          <p class="o-help">We arrive within the 2 hour window you pick, and text you when the crew is on the way.</p>
+          <div class="o-wins" id="o-wins" role="group" aria-labelledby="o-time-h"></div>
           <p class="o-msg" id="o-when-msg" aria-live="polite"></p>
         </div>
       </section>
@@ -549,7 +560,7 @@
           <ul class="o-recap" id="o-recap" aria-label="Your booking">
             <li class="o-recap-row is-order"><span class="o-recap-k">Size</span><span class="o-recap-v" data-recap="size"></span><button type="button" class="o-change" data-go="size" aria-label="Change size">Change</button></li>
             <li class="o-recap-row is-order"><span class="o-recap-k">Where</span><span class="o-recap-v" data-recap="where"></span><button type="button" class="o-change" data-go="where" data-focus="o-zip-in" aria-label="Change ZIP">Change</button></li>
-            <li class="o-recap-row is-order"><span class="o-recap-k">When</span><span class="o-recap-v" data-recap="when"></span><button type="button" class="o-change" data-go="when" aria-label="Change day and time">Change</button></li>
+            <li class="o-recap-row is-order"><span class="o-recap-k">When</span><span class="o-recap-v" data-recap="when"></span><button type="button" class="o-change" data-go="day" aria-label="Change day and time">Change</button></li>
             <li class="o-recap-row"><span class="o-recap-k">Name</span><span class="o-recap-v" data-recap="name"></span><button type="button" class="o-change" data-go="name" aria-label="Change name">Change</button></li>
             <li class="o-recap-row"><span class="o-recap-k">Phone</span><span class="o-recap-v" data-recap="phone"></span><button type="button" class="o-change" data-go="phone" aria-label="Change phone">Change</button></li>
             <li class="o-recap-row"><span class="o-recap-k">Email</span><span class="o-recap-v" data-recap="email"></span><button type="button" class="o-change" data-go="email" aria-label="Change email">Change</button></li>

@@ -1,5 +1,5 @@
-/* The order page (book/quote.html). Eight step pages, one entry each (Size,
-   Where, When, Name, Phone, Email, Address, Pay), one on screen at a time,
+/* The order page (book/quote.html). Nine step pages, one entry each (Size,
+   Where, Day, Time, Name, Phone, Email, Address, Pay), one on screen at a time,
    under a progress bar held at the top.
    Phones first: one column, the five size cards stacked full width, the
    total in a bar fixed to the bottom. From 900px: two columns, the step on
@@ -67,9 +67,9 @@ button { font: inherit; }
 .o-layout { margin-top: 14px; }
 .o-form { display: grid; gap: 12px; min-width: 0; }
 
-/* ── the progress bar: eight pages, one entry each, held at the top while the
-   page scrolls. Phones: Back, the page's name and "Step N of 8" over eight
-   segments that fill page by page. From 900px the eight steps by name too:
+/* ── the progress bar: nine pages, one entry each, held at the top while the
+   page scrolls. Phones: Back, the page's name and "Step N of 9" over nine
+   segments that fill page by page. From 900px the nine steps by name too:
    done ones yellow with a tick and back to themselves, the current one
    charcoal. */
 .o-steps { position: sticky; top: 0; z-index: 40; margin: -20px calc(-1 * var(--gutter)) 0; padding: 4px var(--gutter) 8px; background: var(--page); }
@@ -83,7 +83,7 @@ button { font: inherit; }
 .o-steps-bar { display: flex; gap: 4px; margin-top: 4px; }
 .o-steps-bar span { flex: 1; height: 6px; border-radius: 3px; background: var(--line-2); transition: background .25s; }
 .o-steps-bar span.is-on { background: var(--ink); }
-.o-steps-list { display: none; flex: 1; min-width: 0; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 2px; margin: 0; padding: 0; list-style: none; }
+.o-steps-list { display: none; flex: 1; min-width: 0; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 2px; margin: 0; padding: 0; list-style: none; }
 .o-steps-list button {
   width: 100%; min-height: 54px; display: grid; justify-items: center; align-content: center; gap: 3px; padding: 4px 2px;
   border: 0; border-radius: 12px; background: transparent; color: var(--muted); font: 700 16px/1.1 'DM Sans', sans-serif; cursor: pointer;
@@ -101,7 +101,7 @@ button { font: inherit; }
   .o-back { padding: 0 12px 0 6px; }
 }
 /* From 900px the steps by name: the list names the page, so the name line keeps
-   only "Step N of 8". */
+   only "Step N of 9". */
 @media (min-width: 900px) {
   .o-steps-list { display: grid; order: 1; }
   .o-steps-now { flex: none; order: 2; padding-left: 8px; }
@@ -112,8 +112,9 @@ button { font: inherit; }
 .o-sec { min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px 12px 16px; scroll-margin-top: 84px; scroll-margin-bottom: calc(var(--bar-h) + 12px); }
 .o-sec-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .o-sec h2 { margin: 0; flex: 1; min-width: 0; font: 800 21px/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; color: var(--ink); }
-.o-sec h2:focus { outline: none; }
-.o-sec h2:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; border-radius: 6px; }
+/* A page's heading takes the focus only so a screen reader starts there; it is not
+   something to tap, so it shows no ring. */
+.o-sec h2:focus, .o-sec h2:focus-visible { outline: none; }
 /* A one entry page asks its question in the heading, and the heading is the box's label. */
 .o-sec h2 label { display: block; }
 .o-sec-body { margin-top: 10px; }
@@ -216,20 +217,8 @@ button { font: inherit; }
 @media (min-width: 480px) { .o-far-row { grid-template-columns: 1fr auto; } }
 
 /* ── 3. day chips and windows: real dates, full ones greyed and labelled ── */
+/* The days have their own page: every open day in a grid, four to a row on a phone. */
 .o-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
-/* Phones: the days in one row you swipe (the soonest is picked already), so the
-   arrival times, the one tap this page needs, sit on the first screen. */
-@media (max-width: 599px) {
-  /* A 640px tall phone with the bookings banner up still shows an arrival time above the
-     bar: the help line and the Day label give way (the times say what they are; the Book
-     page says we text on the way), and the focus ring of a day keeps room in the row. */
-  #o-when .o-help { display: none; }
-  #o-days-h { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; margin: 0; }
-  #o-when .o-label { margin: 8px 0 6px; }
-  .o-days { display: flex; overflow-x: auto; scroll-snap-type: x proximity; margin: 0 -12px; padding: 6px 12px; scrollbar-width: none; }
-  .o-days::-webkit-scrollbar { display: none; }
-  .o-day { flex: 0 0 68px; scroll-snap-align: start; }
-}
 .o-day, .o-win {
   min-height: 56px; min-width: 48px; padding: 6px 4px; cursor: pointer; text-align: center;
   background: var(--card); color: var(--ink); border: 1.5px solid var(--line-2); border-radius: 12px; line-height: 1.2;
