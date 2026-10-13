@@ -1,5 +1,5 @@
 /**
- * Brand Name — visit scheduling math (pure functions, no I/O).
+ * Haulmighty — visit scheduling math (pure functions, no I/O).
  *
  * Turns a booking's cadence (freq_idx + chosen weekday) into concrete visit
  * dates. Every recurring plan is anchored on the customer's pickup weekday,

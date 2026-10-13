@@ -20,35 +20,41 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Novah's design language (founder 2026-10-13: "copy the entire design scheme"):
+   Google Sans, a near black and a warm white with warm grey bands, big tight
+   headings, small spaced capitals over them, pill buttons with an arrow, big
+   rounded photos. The old names stay so every page follows: --rg is the near
+   black, --tan the warm white used on dark, --page the warm white page. */
+@font-face { font-family: 'Google Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(../fonts/google-sans.woff2) format('woff2'); }
 :root {
-  --rg:   #15171A;
-  --fg:   #2B2F36;
-  --tan:  #FFD23F;
-  --ltan: #FFE58A;
-  --dtan: #7A5A00;
-  --page: #F5F2EA;
+  --font: 'Google Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --rg:   #0C0B09;
+  --fg:   #34322F;
+  --tan:  #FBF9F5;
+  --ltan: #F1EEE8;
+  --dtan: #4E4C49;
+  --page: #FBF9F5;
   --card: #FFFFFF;
-  --surf: #ECE7DC;
-  --tx:   #15171A;
-  --txm:  rgba(21,23,26,.8);
-  --txd:  rgba(21,23,26,.74);
-  --bdr:  rgba(21,23,26,.12);
-  --bdrt: rgba(255,210,63,.42);
-  --on-dark:   rgba(245,242,234,.94);
-  --on-dark-m: rgba(245,242,234,.8);
-
-  --w-wide: 1120px;
+  --surf: #F1EEE8;
+  --tx:   #0C0B09;
+  --txm:  rgba(12,11,9,.66);
+  --txd:  rgba(12,11,9,.6);
+  --bdr:  rgba(12,11,9,.1);
+  --bdrt: rgba(251,249,245,.18);
+  --on-dark:   rgba(251,249,245,.94);
+  --on-dark-m: rgba(251,249,245,.68);
+  --w-wide: 1180px;
   --w-text: 760px;
   --w-sub:  560px;
   --gutter: 24px;
-  --pad-y:  112px;
-  --r-sm:   10px;
-  --r-md:   16px;
-  --r-lg:   22px;
+  --pad-y:  120px;
+  --r-sm:   12px;
+  --r-md:   20px;
+  --r-lg:   28px;
   --r-pill: 999px;
-  --sh-sm:  0 2px 10px rgba(21,23,26,.06);
-  --sh-md:  0 12px 32px rgba(21,23,26,.08);
-  --sh-lg:  0 24px 56px rgba(21,23,26,.12);
+  --sh-sm:  0 1px 2px rgba(12,11,9,.04);
+  --sh-md:  0 10px 30px -12px rgba(12,11,9,.18);
+  --sh-lg:  0 24px 60px -20px rgba(12,11,9,.25);
   --nav-h:  72px;
   --tap:    48px;     /* minimum size of anything you tap */
 }
@@ -59,12 +65,12 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 /* Anchor jumps land below the sticky header instead of under it. */
 [id] { scroll-margin-top: calc(var(--nav-h) + 12px); }
 body {
-  font-family: 'DM Sans', sans-serif; font-size: 16px; line-height: 1.65;
+  font-family: var(--font); font-size: 16px; line-height: 1.65;
   background: var(--page); color: var(--tx);
   text-rendering: optimizeLegibility;
 }
 img { max-width: 100%; }
-:focus-visible { outline: 2px solid var(--dtan); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--rg); outline-offset: 3px; }
 /* On the charcoal parts the dark ring is too faint (2.8:1): yellow there (12.4:1). */
 .site-nav :focus-visible, .band.is-dark :focus-visible, .price-card :focus-visible,
 .town-zones :focus-visible, footer :focus-visible, .legal-footer :focus-visible, .sticky-cta:focus-visible, .closer :focus-visible { outline: 3px solid var(--tan); outline-offset: 2px; }
@@ -79,293 +85,79 @@ img { max-width: 100%; }
    home of the contact buttons; there the header is what sticks to the top. */
 .site-header { position: sticky; top: 0; z-index: 100; }
 /* BUILD:chrome-css */
-/* ── NAV ── (css/site.css copies every BUILD:chrome-css region, in order,
-   via scripts/build-chrome.mjs: this homepage is the one source for the
-   header and footer on every page) */
+/* ── HEADER (Novah's): a near black bar, the name in spaced capitals, quiet links,
+   the language as a small pill and one white pill button. Phone, text and WhatsApp
+   live in the phone menu and the footer. Under 960px the links fold into the menu. */
 .site-nav {
-  line-height: 1.6; text-rendering: auto;
-  position: sticky; top: 0; z-index: 100;
-  background: var(--rg);
-  border-bottom: 1px solid rgba(255,210,63,.18);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 48px;
+  position: relative; z-index: 100; background: var(--rg); color: #fff;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  min-height: var(--nav-h); padding: 12px clamp(16px, 4vw, 48px);
+  font-family: var(--font); line-height: 1.4;
 }
-.nav-logo {
-  display: inline-flex; align-items: center;
-  color: var(--tan); text-decoration: none;
-}
-.nav-logo, .site-nav > a { display: inline-flex !important; align-items: center; gap: 12px; }
-.nav-wordmark { font-family: 'Bricolage Grotesque', serif; font-weight: 800; font-size: clamp(20px, 2vw, 24px); letter-spacing: -.01em; color: var(--tan); line-height: 1; white-space: nowrap; }
-.nav-logo img { display: block; height: 44px; width: auto; }
-.nav-page {
-  font-size: .68rem; font-weight: 700; letter-spacing: .18em;
-  color: rgba(255,210,63,.5);
-}
-.nav-links { display: flex; gap: 2rem; list-style: none; }
-.nav-links a {
-  color: rgba(245,242,234,.8); text-decoration: none;
-  font-size: .82rem; letter-spacing: .08em; text-transform: uppercase;
-  transition: color .2s;
-}
-.nav-links a:hover { color: var(--tan); }
-/* The menu's own quote link is for the phone menu only; on desktop the gold
-   .nav-cta button already says it, and the duplicate crowded the bar. */
-.nav-links li.cta-item { display: none; }
-.nav-links a, .nav-cta, .nav-phone { white-space: nowrap; }
-/* Small laptops: five links, the language switch, phone and quote button
-   wrapped onto three lines. Tighter gaps and an icon-only phone link
-   (it keeps its aria-label) hold the bar to one line.
-   Breakpoints measured 2026-09-27 in Chrome, English and Spanish: the full
-   labels need about 1260px (Spanish), the compact bar about 945px; below
-   that the page scrolled sideways, so the burger took over at 959.
-   Round 6 (2026-10-11) added the text and WhatsApp buttons beside the phone:
-   the compact bar now needs about 1060px (English) and 1095px (Spanish), so
-   the burger takes over at 1099 and the bar starts at 1100. */
-@media (min-width: 1100px) and (max-width: 1279px) {
-  .site-nav { padding: 18px 28px; gap: 16px; }
-  .nav-links { gap: 1.1rem; }
-  .nav-phone-num { display: none; }
-  body .lang-switch .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  body .lang-switch .lang-short { display: inline; }
-}
-/* Spanish menu words run longer (measured 2026-10-07: the full Spanish bar
-   needs about 1290px; with the text and WhatsApp buttons, 2026-10-11, about
-   1480px), so on es/ pages the compact bar holds up to 1519px. */
-@media (min-width: 1280px) and (max-width: 1519px) {
-  html[lang="es"] .site-nav { padding: 18px 28px; gap: 16px; }
-  html[lang="es"] .nav-links { gap: 1.1rem; }
-  html[lang="es"] .nav-phone-num { display: none; }
-  html[lang="es"] body .lang-switch .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  html[lang="es"] body .lang-switch .lang-short { display: inline; }
-}
-/* English with the full labels and the text and WhatsApp buttons needs about
-   1330px (measured 2026-10-11), so from 1280 to 1439 the gaps close up and
-   the language switch reads ES; the phone number stays. */
-@media (min-width: 1280px) and (max-width: 1439px) {
-  .site-nav { padding: 18px 32px; gap: 16px; }
-  .nav-links { gap: 1.5rem; }
-  body .lang-switch .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  body .lang-switch .lang-short { display: inline; }
-}
-@media (min-width: 1100px) and (max-width: 1219px) {
-  html[lang="es"] .site-nav { padding: 18px 16px; gap: 12px; }
-  html[lang="es"] .nav-links { gap: .55rem; }
-  html[lang="es"] .nav-links a { letter-spacing: 0; }
-  html[lang="es"] .nav-right { gap: 8px; }
-  html[lang="es"] .nav-chat { margin-left: -2px; }
-}
-@media (min-width: 1100px) and (max-width: 1160px) {
-  .site-nav { padding: 18px 20px; }
-  .nav-links { gap: .8rem; }
-  .nav-links a { letter-spacing: .04em; }
-}
+.nav-logo, .site-nav > a { display: inline-flex !important; align-items: center; gap: 10px; min-height: 48px; color: #fff; text-decoration: none; }
+.logo-mark { display: none; }
+.nav-wordmark { font: 600 20px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; color: #fff; white-space: nowrap; }
+.nav-logo img { display: block; height: 40px; width: auto; }
+.nav-page { display: none; }
+.nav-links { display: flex; align-items: center; gap: 30px; list-style: none; margin: 0 auto 0 40px; padding: 0; }
+.nav-links a { display: inline-flex; align-items: center; min-height: 48px; color: rgba(255,255,255,.7); font-size: 15px; font-weight: 500; text-decoration: none; white-space: nowrap; transition: color .2s; }
+.nav-links a:hover { color: #fff; }
+.nav-links li.cta-item, .nav-links li.chat-item { display: none; }
+.nav-right { display: inline-flex; align-items: center; gap: 12px; }
+.lang-switch { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; min-width: 48px; padding: 0 14px; border-radius: var(--r-pill); border: 1px solid rgba(255,255,255,.2); color: #fff !important; font-size: 14px; font-weight: 600; letter-spacing: .04em; text-decoration: none; white-space: nowrap; transition: border-color .2s; }
+.lang-switch:hover { border-color: rgba(255,255,255,.5); }
+body .lang-switch .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+body .lang-switch .lang-short { display: inline; }
+.nav-phone, .nav-chat { display: none; }
 .nav-cta {
-  display: inline-block; padding: .5rem 1.2rem;
-  background: var(--tan); color: var(--rg);
-  border-radius: 8px; font-size: .8rem; font-weight: 700;
-  letter-spacing: .06em; text-decoration: none;
-  transition: background .2s, transform .15s;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px 0 20px;
+  border-radius: var(--r-pill); background: #fff; color: var(--rg); font-size: 15px; font-weight: 600;
+  text-decoration: none; white-space: nowrap; transition: transform .2s, background .2s;
 }
-.nav-cta:hover { background: #F5C400; transform: translateY(-1px); }
-.nav-right { display: inline-flex; align-items: center; gap: 14px; }
-.nav-phone {
-  display: inline-flex; align-items: center; gap: 6px;
-  color: rgba(245,242,234,.92); text-decoration: none;
-  font-size: .82rem; font-weight: 600; letter-spacing: .02em;
-  padding: .4rem .7rem; border-radius: 8px;
-  border: 1px solid rgba(255,210,63,.32);
-  transition: border-color .2s, color .2s, background .2s;
-}
-.nav-phone:hover { border-color: var(--tan); color: var(--tan); background: rgba(255,210,63,.06); }
-.nav-phone svg { width: 14px; height: 14px; }
-/* Text and WhatsApp: icon buttons sitting close beside the phone (one group of
-   three ways to reach us) from 1100px up; under that they are rows in the burger
-   menu (.chat-item), so the bar keeps its one row. */
-.nav-chat {
-  display: none; align-items: center; justify-content: center; margin-left: -6px;
-  width: 38px; height: 38px; border-radius: 8px; color: rgba(245,242,234,.92);
-  border: 1px solid rgba(255,210,63,.32); transition: border-color .2s, color .2s, background .2s;
-}
-.nav-chat:hover { border-color: var(--tan); color: var(--tan); background: rgba(255,210,63,.06); }
-.nav-chat svg { width: 18px; height: 18px; }
-@media (min-width: 1100px) { .nav-chat { display: inline-flex; } }
-.nav-links li.chat-item { display: none; }
-@media (max-width: 1099px) { .nav-links li.chat-item { display: block; } }
-
-
-.nav-burger {
-  display: none; cursor: pointer;
-  width: 36px; height: 36px; border-radius: 8px;
-  background: none; border: 1px solid rgba(255,210,63,.3);
-  align-items: center; justify-content: center;
-  color: var(--tan); padding: 0;
-}
-.nav-burger svg { width: 18px; height: 18px; }
+.nav-cta::after { content: ''; width: 14px; height: 14px; background: currentColor; -webkit-mask: var(--arrow) center / contain no-repeat; mask: var(--arrow) center / contain no-repeat; transition: transform .2s; }
+.nav-cta:hover { background: #F1EEE8; }
+.nav-cta:hover::after { transform: translate(2px, -2px); }
+.nav-burger { display: none; align-items: center; justify-content: center; width: 48px; height: 48px; padding: 0; border-radius: var(--r-pill); background: none; border: 1px solid rgba(255,255,255,.2); color: #fff; cursor: pointer; }
+.nav-burger svg { width: 20px; height: 20px; }
 .nav-burger.open svg.menu { display: none; }
 .nav-burger:not(.open) svg.close { display: none; }
-
-/* ── FOOTER ── */
-footer {
-  line-height: 1.6; text-rendering: auto;
-  background: var(--rg); color: rgba(245,242,234,.82);
-  text-align: center; padding: 36px 24px;
-  border-top: 1px solid rgba(255,210,63,.18);
-}
-.footer-logo { display: flex; justify-content: center; align-items: center; gap: 14px; margin-bottom: 14px; }
-.footer-logo img { display: block; height: 56px; width: auto; }
-.footer-logo .nav-wordmark { font-size: 28px; }
-footer p { font-size: 1rem; margin-top: 5px; }
-footer a { color: var(--tan); text-decoration: none; }
-.footer-copy { margin-top: 24px; font-size: .72rem; opacity: .8; }
-/* Every city page, one tap from every page (internal links to the local
-   pages, and "do you come to me?" answered in the footer). */
-.footer-cities { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 4px; max-width: 860px; margin: 0 auto 10px; }
-.footer-cities a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 10px; font-size: .9rem; color: rgba(245,242,234,.9); text-decoration: underline; text-decoration-color: rgba(255,210,63,.4); text-underline-offset: 4px; }
-.footer-cities a:hover { color: var(--tan); }
-/* Service areas, FAQ, privacy, terms: one row of 48px taps under the line. */
-.footer-links { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 6px; margin: 8px auto 4px; padding: 0; }
-.footer-links a { display: inline-flex; align-items: center; min-height: 48px; min-width: 48px; padding: 0 10px; font-size: 1rem; color: rgba(245,242,234,.92); text-decoration: underline; text-decoration-color: rgba(255,210,63,.45); text-underline-offset: 4px; }
-.footer-links a:hover { color: var(--tan); }
-/* Round 7: LoadUp's column footer. The name, one line and call and text first,
-   then Book, Where we go and Help, each a column of 48px links: one column on
-   a phone, two from 600px, four from 960px. */
-footer { padding: 56px var(--gutter) 24px; }
-.foot-cols { display: grid; gap: 28px 32px; max-width: var(--w-wide); margin: 0 auto 32px; text-align: left; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 600px) { .foot-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 960px) { .foot-cols { grid-template-columns: minmax(0, 1.4fr) repeat(4, minmax(0, 1fr)); } }
-.foot-brand .footer-logo { justify-content: flex-start; }
-.foot-brand p { max-width: 320px; }
-.foot-h { font: 800 1rem/1.3 'DM Sans', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--tan); margin-bottom: 4px; }
-.foot-col .footer-links { display: grid; justify-content: start; gap: 0; margin: 0; }
-.foot-col .footer-links a { padding: 0; text-decoration: none; }
-.foot-col .footer-links a:hover { text-decoration: underline; }
-.foot-contact { display: flex; flex-wrap: wrap; gap: 0 20px; }
-.foot-contact a { display: inline-flex; align-items: center; min-height: 48px; min-width: 48px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
-
-/* NAV collapses at 1099 (959 until round 6 added the text and WhatsApp
-   buttons, 900 until 2026-09-27; see the laptop note), not 760, and gets its own query for it.
-   Laid out in full the desktop nav measures ~860px — logo, six links, the
-   phone pill and the CTA. It used to hold that layout all the way down to
-   760px, so from 761–860 it pushed the document wider than the viewport and
-   the entire page scrolled sideways; squeezing type and gaps instead just
-   made every link wrap to two rows. A tablet gets the burger. */
-@media (max-width: 1099px) {
-  .site-nav { padding: 16px 20px; flex-wrap: wrap; }
-  .nav-page { display: none; }
-  /* Touch targets hit the 44px HIG minimum: the burger is the only nav on
-     a phone, and the phone link is a conversion path — both were under it.
-     order puts the burger last: it sits before .nav-right in the DOM, which
-     would otherwise park it between the logo and the phone. */
-  .nav-burger { display: inline-flex; min-width: 44px; min-height: 44px; order: 3; }
+@media (max-width: 959px) {
+  .site-nav { flex-wrap: wrap; gap: 8px 12px; }
+  .nav-burger { display: inline-flex; order: 3; }
+  .nav-right { order: 2; margin-left: auto; }
   .nav-cta { display: none; }
-  .nav-right { gap: 8px; order: 2; }
-  .nav-phone { padding: .5rem .7rem; font-size: .78rem; min-height: 44px; }
-  .nav-phone svg { width: 13px; height: 13px; }
-  /* Every row is a 48px tap target (site rule); the rows space themselves,
-     so the list needs no gap. */
-  .nav-links {
-    display: none; order: 3;
-    flex-basis: 100%; flex-direction: column; gap: 0;
-    padding: 8px 0 8px; margin-top: 12px;
-    border-top: 1px solid rgba(255,210,63,.18);
-  }
+  .nav-links { display: none; order: 4; flex-basis: 100%; flex-direction: column; align-items: stretch; gap: 0; margin: 4px 0 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.12); }
   .nav-links.open { display: flex; }
-  .nav-links a { display: flex; align-items: center; min-height: 48px; padding: 0; }
-  .nav-links li.cta-item { display: block; padding-top: 10px; }
-  .nav-links .nav-cta-mobile {
-    display: inline-flex; min-height: 48px; padding: 0 22px;
-    background: var(--tan); color: var(--rg);
-    border-radius: 8px; font-weight: 700; font-size: .8rem;
-  }
+  .nav-links a { font-size: 17px; color: #fff; }
+  .nav-links li.chat-item { display: block; }
+  .nav-links li.cta-item { display: block; padding-top: 8px; }
+  .nav-links .nav-cta-mobile { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: var(--r-pill); background: #fff; color: var(--rg); font-weight: 600; }
 }
-
-@media (max-width: 760px) { .legal-footer > a { display: inline-block; padding: 13px 6px; } }
-/* ── STICKY MOBILE CTA ── */
-.sticky-cta {
-  line-height: 1.6; text-rendering: auto;
-  display: none;
-  position: fixed; left: 12px; right: 12px; bottom: 12px;
-  z-index: 90;
-  padding: 12px 22px; border-radius: 100px;
-  background: var(--rg); color: var(--tan);
-  box-shadow: 0 14px 36px rgba(21,23,26,.32);
-  text-align: center; text-decoration: none;
-  font-size: 16px; font-weight: 700; letter-spacing: .04em;
-  border: 1px solid rgba(255,210,63,.32);
-  transform: translateY(120%);
-  transition: transform .35s cubic-bezier(.34,1.56,.64,1);
-}
-.sticky-cta.show { transform: translateY(0); }
-/* Second line carries the risk reversal. Normal-case and lighter so the
-   button still reads as one tap target, not two lines of shouting. */
-.sticky-cta-sub {
-  display: block; margin-top: 2px;
-  font-size: 11px; font-weight: 500; letter-spacing: .02em;
-  text-transform: none; opacity: .72;
-}
-.sticky-cta:active { transform: translateY(2px); }
-/* Matches the nav breakpoint, not the layout one: .nav-cta is hidden from
-   1099px down, so the sticky bar has to take over from the same width or
-   761–1099 has no visible CTA outside the burger menu. */
-@media (max-width: 1099px) { .sticky-cta { display: block; } }
-
-/* ── PHONE NAV: one row ──
-   Measured: logo(185) + phone(145) + burger(44) = 374 in 350 of usable
-   width, so nav-right wrapped to a second row and sat flush under the logo.
-   At 480+ it all fits, so the number stays visible there — this only kicks
-   in where the arithmetic actually fails. The link keeps its aria-label,
-   so hiding the number is visual only; tapping still dials. */
-@media (max-width: 479px) {
-  .nav-phone-num { display: none; }
-  .nav-phone {
-    width: 44px; min-width: 44px; padding: 0;
-    justify-content: center; border-radius: 50%;
-  }
-  .nav-phone svg { width: 17px; height: 17px; }
-  /* The Español pill (added after the measurement above) pushed the
-     burger onto a second row. Re-measured 2026-09-23 at 360px:
-     logo(34+10+~104) + lang(~64) + phone(44) + burger(44) + 3 gaps(18)
-     = ~318 in 328 usable. */
-  .site-nav { padding: 14px 16px; }
-  .nav-logo { gap: 10px !important; }
-  .nav-logo img { height: 34px; }
-  .nav-wordmark { font-size: 19px !important; letter-spacing: .02em !important; }
-  .nav-right { gap: 6px; }
-  .lang-switch { padding: 0 10px !important; }
-}
-
-/* ── FOOTER LINKS ── */
-.legal-footer {
-  background: var(--rg); color: rgba(245,242,234,.82);
-  padding: 20px 0 0; text-align: center;
-  border-top: 1px solid rgba(255,210,63,.18);
-  font-size: 1rem;
-}
-.legal-footer a { color: var(--tan); text-decoration: underline; text-underline-offset: 3px; margin: 0 8px; }
-.legal-footer a:hover { text-decoration: underline; }
-
-.lang-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 1rem; font-weight: 700; letter-spacing: .04em; min-height: 48px; min-width: 48px; justify-content: center; text-transform: uppercase; color: var(--tan) !important; border: 1px solid rgba(255,210,63,.45); border-radius: 100px; padding: 0 14px; text-decoration: none; white-space: nowrap; }
-.lang-switch:hover { background: rgba(255,210,63,.14); }
-
-body .nav-logo { min-height: 48px; }
-body .legal-footer > a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px; padding: 0 6px; }
-@media (max-width: 1099px) {
-  body .nav-burger { min-width: 48px; min-height: 48px; }
-  body .nav-phone { min-height: 48px; }
-}
-
-body .lang-short { display: none; }
-@media (max-width: 479px) {
-  body .lang-switch { min-width: 48px; justify-content: center; padding: 0 8px !important; }
-  body .lang-switch .lang-full { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  body .lang-switch .lang-short { display: inline; }
-}
-@media (max-width: 479px) {
-  body .nav-phone { width: 48px; min-width: 48px; }
-  body .lang-switch { min-height: 48px; }
-  body .nav-logo img { height: 32px; }
-  body .nav-wordmark { font-size: 18px !important; }
-}
+/* ── FOOTER (Novah's): near black, the name, a short line, columns of quiet links,
+   then a thin line and the small print. */
+footer { background: var(--rg); color: rgba(255,255,255,.66); padding: 80px clamp(16px, 4vw, 48px) 28px; font-family: var(--font); line-height: 1.6; text-align: left; border: 0; }
+.foot-cols { display: grid; gap: 32px; max-width: var(--w-wide); margin: 0 auto 48px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 600px) { .foot-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 960px) { .foot-cols { grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, 1fr)); } }
+.footer-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.footer-logo .nav-wordmark { font-size: 24px; }
+.footer-logo img { display: block; height: 48px; width: auto; }
+.foot-brand p { max-width: 300px; margin: 0 0 6px; font-size: 15px; }
+.foot-h { margin: 0 0 8px; font: 500 13px/1.4 var(--font); letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,.45); }
+footer p { font-size: 15px; }
+footer a { color: rgba(255,255,255,.82); text-decoration: none; }
+footer a:hover { color: #fff; }
+.footer-links { list-style: none; display: grid; gap: 0; margin: 0; padding: 0; }
+.footer-links a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; }
+.footer-cities { display: flex; flex-wrap: wrap; gap: 0 14px; }
+.footer-cities a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; }
+.foot-contact { display: flex; flex-wrap: wrap; gap: 0 20px; }
+.foot-contact a { display: inline-flex; align-items: center; min-height: 48px; font-weight: 600; color: #fff; }
+.legal-footer { max-width: var(--w-wide); margin: 0 auto; padding-top: 24px; border-top: 1px solid rgba(255,255,255,.1); font-size: 14px; color: rgba(255,255,255,.45); }
+body .legal-footer > a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 6px; color: rgba(255,255,255,.6); }
+.footer-copy { margin-top: 20px; font-size: 14px; opacity: .7; }
+/* Novah has no floating button: the header and every section carry their own. */
+.sticky-cta { display: none !important; }
 /* /BUILD:chrome-css */
 
 /* ── BUTTONS ─────────────────────────────────────────────────────────────── */
@@ -422,7 +214,7 @@ body .lang-short { display: none; }
 .section-head.center { text-align: center; }
 .section-head.center .section-sub { margin-left: auto; margin-right: auto; }
 .section-title {
-  font-family: 'Bricolage Grotesque', serif; font-weight: 750; letter-spacing: -.02em;
+  font-family: var(--font); font-weight: 750; letter-spacing: -.02em;
   font-size: clamp(1.85rem, 4vw, 2.75rem); line-height: 1.14;
   color: var(--rg); text-wrap: balance;
 }
@@ -449,7 +241,7 @@ body .lang-short { display: none; }
   background-size: 56px 56px;
 }
 .display {
-  font-family: 'Bricolage Grotesque', serif; font-weight: 800; letter-spacing: -.03em;
+  font-family: var(--font); font-weight: 800; letter-spacing: -.03em;
   font-size: clamp(2.2rem, 3.6vw, 3.25rem); line-height: 1.1;
   color: var(--rg); text-wrap: balance;
 }
@@ -482,7 +274,7 @@ body .lang-short { display: none; }
 }
 .band.is-card .card { background: var(--page); box-shadow: none; }
 .card h3, .card-title {
-  font-family: 'Bricolage Grotesque', serif; font-weight: 700;
+  font-family: var(--font); font-weight: 700;
   font-size: 1.2rem; line-height: 1.25; color: var(--rg); margin-bottom: 8px;
 }
 .card p { font-size: 1rem; color: var(--txm); line-height: 1.65; }
@@ -507,12 +299,12 @@ body .lang-short { display: none; }
 .photo-card .shot { aspect-ratio: 4 / 3; background: var(--surf); overflow: hidden; }
 .photo-card .shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .photo-card .body { padding: 20px 22px 24px; }
-.photo-card h3 { font-family: 'Bricolage Grotesque', serif; font-weight: 500; font-size: 1.2rem; color: var(--rg); margin-bottom: 6px; line-height: 1.25; }
+.photo-card h3 { font-family: var(--font); font-weight: 500; font-size: 1.2rem; color: var(--rg); margin-bottom: 6px; line-height: 1.25; }
 .photo-card p { font-size: 1rem; color: var(--txm); line-height: 1.65; }
 .photo-card .step-n {
   display: inline-flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 50%; margin-bottom: 12px;
-  background: var(--rg); color: var(--tan); font-family: 'Bricolage Grotesque', serif; font-size: 15px;
+  background: var(--rg); color: var(--tan); font-family: var(--font); font-size: 15px;
 }
 
 /* Figure: one rounded photo with an optional caption. */
@@ -531,11 +323,11 @@ body .lang-short { display: none; }
   content: counter(step); position: absolute; left: 22px; top: 20px;
   width: 40px; height: 40px; border-radius: 50%;
   background: var(--rg); color: var(--tan);
-  font-family: 'Bricolage Grotesque', serif; font-size: 17px;
+  font-family: var(--font); font-size: 17px;
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 6px 18px rgba(21,23,26,.18);
 }
-.steps h3 { font-family: 'Bricolage Grotesque', serif; font-weight: 500; font-size: 1.15rem; color: var(--rg); margin-bottom: 4px; line-height: 1.3; }
+.steps h3 { font-family: var(--font); font-weight: 500; font-size: 1.15rem; color: var(--rg); margin-bottom: 4px; line-height: 1.3; }
 .steps p { font-size: 1rem; color: var(--txm); line-height: 1.65; }
 
 /* ── ANSWER CARD ─────────────────────────────────────────────────────────────
@@ -616,8 +408,8 @@ a.chip:hover { background: var(--tan); }
 }
 .price-card > * { position: relative; }
 .pc-label { font-size: .7rem; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: #D9BC85; }
-.pc-price { font-family: 'Bricolage Grotesque', serif; font-weight: 400; font-size: clamp(3rem, 12vw, 4.4rem); line-height: 1; color: #fff; margin-top: 10px; font-variant-numeric: tabular-nums; }
-.pc-price small { font-family: 'DM Sans', sans-serif; font-size: .28em; font-weight: 600; color: rgba(245,242,234,.74); letter-spacing: .02em; margin-left: 4px; }
+.pc-price { font-family: var(--font); font-weight: 400; font-size: clamp(3rem, 12vw, 4.4rem); line-height: 1; color: #fff; margin-top: 10px; font-variant-numeric: tabular-nums; }
+.pc-price small { font-family: var(--font); font-size: .28em; font-weight: 600; color: rgba(245,242,234,.74); letter-spacing: .02em; margin-left: 4px; }
 .pc-sub { margin-top: 10px; font-size: 1rem; color: var(--on-dark-m); line-height: 1.6; }
 .pc-rows { list-style: none; margin: 22px 0 24px; border-top: 1px solid rgba(255,210,63,.24); }
 .pc-rows li { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,210,63,.16); font-size: 1rem; color: var(--on-dark-m); }
@@ -632,7 +424,7 @@ a.chip:hover { background: var(--tan); }
 .pc-seg-num { grid-template-columns: repeat(5, 1fr); gap: 4px; }  /* 5 × 48px fits a 360px phone */
 .pc-seg button {
   min-height: var(--tap); padding: 6px 8px; border-radius: 10px; cursor: pointer;
-  font: 600 1rem/1.2 'DM Sans', sans-serif; color: #F5F2EA;
+  font: 600 1rem/1.2 var(--font); color: #F5F2EA;
   background: transparent; border: 1.5px solid rgba(255,210,63,.5);
   transition: background .15s, color .15s, border-color .15s;
 }
@@ -679,7 +471,7 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 .faq-list summary, details.faq-item summary {
   list-style: none; cursor: pointer; position: relative;
   padding: 18px 64px 18px 22px; min-height: 60px; display: flex; align-items: center;
-  font-family: 'Bricolage Grotesque', serif; font-size: 1.12rem; font-weight: 500; line-height: 1.35; color: var(--rg);
+  font-family: var(--font); font-size: 1.12rem; font-weight: 500; line-height: 1.35; color: var(--rg);
 }
 .faq-list summary::-webkit-details-marker, details.faq-item summary::-webkit-details-marker { display: none; }
 .faq-list summary::after {
@@ -687,7 +479,7 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
   width: 30px; height: 30px; border-radius: 50%;
   background: var(--card); border: 1px solid var(--bdr);
   display: flex; align-items: center; justify-content: center;
-  font-family: 'DM Sans', sans-serif; font-size: 16px; color: var(--rg);
+  font-family: var(--font); font-size: 16px; color: var(--rg);
   transition: transform .3s, background .25s, border-color .25s;
 }
 .faq-list details[open] summary::after { transform: rotate(45deg); background: var(--tan); border-color: var(--tan); }
@@ -696,7 +488,7 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 /* ── CALLOUT ─────────────────────────────────────────────────────────────── */
 .callout { background: var(--card); border: 1px solid var(--bdrt); border-radius: var(--r-md); padding: 26px 24px; box-shadow: var(--sh-sm); }
 .band.is-card .callout { background: var(--page); box-shadow: none; }
-.callout h3 { font-family: 'Bricolage Grotesque', serif; font-weight: 500; font-size: 1.3rem; color: var(--rg); margin-bottom: 10px; }
+.callout h3 { font-family: var(--font); font-weight: 500; font-size: 1.3rem; color: var(--rg); margin-bottom: 10px; }
 .callout p { font-size: 1rem; line-height: 1.75; color: var(--txm); }
 .callout p + p { margin-top: 12px; }
 .callout cite { display: block; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--bdr); font-style: normal; font-size: .82rem; color: var(--txd); }
@@ -704,8 +496,8 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 /* ── OWNER NOTE (homepage "about" signature) ─────────────────────────────── */
 .owner { text-align: center; max-width: 640px; margin: 0 auto; }
 .owner p { font-size: 1.02rem; line-height: 1.8; color: var(--txm); }
-.owner .sign { margin-top: 18px; font-family: 'Bricolage Grotesque', serif; font-style: italic; font-size: 1.2rem; color: var(--dtan); }
-.owner .sign span { display: block; margin-top: 4px; font-family: 'DM Sans', sans-serif; font-style: normal; font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--txm); }
+.owner .sign { margin-top: 18px; font-family: var(--font); font-style: italic; font-size: 1.2rem; color: var(--dtan); }
+.owner .sign span { display: block; margin-top: 4px; font-family: var(--font); font-style: normal; font-size: .7rem; letter-spacing: .2em; text-transform: uppercase; color: var(--txm); }
 
 /* ── CTA BANNER (homepage quarterly banner) ──────────────────────────────── */
 .cta-banner {
@@ -715,7 +507,7 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
   color: var(--page); box-shadow: 0 14px 36px rgba(21,23,26,.16);
   display: flex; align-items: center; justify-content: space-between; gap: 24px 32px; flex-wrap: wrap;
 }
-.cta-banner h2 { font-family: 'Bricolage Grotesque', serif; font-weight: 400; font-size: clamp(1.6rem, 3vw, 2.1rem); line-height: 1.2; color: #fff; text-wrap: balance; }
+.cta-banner h2 { font-family: var(--font); font-weight: 400; font-size: clamp(1.6rem, 3vw, 2.1rem); line-height: 1.2; color: #fff; text-wrap: balance; }
 .cta-banner h2 em { font-style: normal; color: var(--tan); }
 .cta-banner p { margin-top: 8px; color: var(--on-dark-m); font-size: 1rem; }
 @media (max-width: 640px) { .cta-banner { padding: 30px 24px; } .cta-banner .btn-tan { width: 100%; } }
@@ -796,7 +588,7 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 .toc ol { list-style: none; counter-reset: toc; padding: 0 20px 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
 .toc li { counter-increment: toc; border-top: 1px solid var(--bdr); }
 .toc a { display: flex; align-items: center; gap: 10px; min-height: var(--tap); color: var(--rg); font-size: 1rem; font-weight: 500; text-decoration: none; }
-.toc a::before { content: counter(toc, decimal-leading-zero); font-family: 'Bricolage Grotesque', serif; font-size: .9rem; color: var(--dtan); min-width: 22px; }
+.toc a::before { content: counter(toc, decimal-leading-zero); font-family: var(--font); font-size: .9rem; color: var(--dtan); min-width: 22px; }
 .toc a:hover { color: var(--dtan); }
 @media (max-width: 640px) { .toc ol { grid-template-columns: 1fr; } }
 
@@ -813,7 +605,7 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 
 /* Plan cards: what it fits, what to expect. */
 .plan { display: flex; flex-direction: column; }
-.plan .plan-name { font-family: 'Bricolage Grotesque', serif; font-weight: 500; font-size: 1.3rem; color: var(--rg); margin-bottom: 12px; }
+.plan .plan-name { font-family: var(--font); font-weight: 500; font-size: 1.3rem; color: var(--rg); margin-bottom: 12px; }
 .plan dl { display: grid; gap: 12px; }
 .plan dt { font-size: .66rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--dtan); margin-bottom: 2px; }
 .plan dd { font-size: 1rem; color: var(--txm); line-height: 1.6; }
@@ -839,14 +631,14 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 .band.rain .more > summary { color: var(--ltan); }
 .rainfall { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 24px; list-style: none; }
 .rainfall li { border: 1px solid rgba(255,210,63,.3); border-radius: var(--r-md); padding: 16px 12px; text-align: center; background: rgba(245,242,234,.05); }
-.rainfall .v { display: block; font-family: 'Bricolage Grotesque', serif; font-size: 1.7rem; color: #fff; line-height: 1.1; }
-.rainfall .v small { font-family: 'DM Sans', sans-serif; font-size: .5em; color: var(--on-dark-m); margin-left: 2px; }
+.rainfall .v { display: block; font-family: var(--font); font-size: 1.7rem; color: #fff; line-height: 1.1; }
+.rainfall .v small { font-family: var(--font); font-size: .5em; color: var(--on-dark-m); margin-left: 2px; }
 .rainfall .m { display: block; margin-top: 4px; font-size: .68rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--tan); }
 .rainfall li.dry { background: rgba(255,210,63,.14); }
 @media (max-width: 420px) { .rainfall { gap: 8px; } .rainfall li { padding: 14px 6px; } .rainfall .v { font-size: 1.45rem; } }
 
 /* Checklist ("what to look for"): question on its own line, answer under it. */
-.q-compact > li h3 { font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700; color: var(--rg); margin-bottom: 2px; }
+.q-compact > li h3 { font-family: var(--font); font-size: 1rem; font-weight: 700; color: var(--rg); margin-bottom: 2px; }
 .q-compact > li p { font-size: 1rem; line-height: 1.65; color: var(--txm); }
 .q-compact > li a { color: var(--dtan); font-weight: 600; text-decoration: underline; text-decoration-color: var(--bdrt); text-underline-offset: 3px; }
 
@@ -885,8 +677,8 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 .band.is-card .city-card { background: var(--page); box-shadow: none; }
 .city-card:hover { border-color: var(--bdrt); box-shadow: var(--sh-md); transform: translateY(-2px); }
 .city-card img { width: 104px; height: 104px; object-fit: cover; border-radius: 12px; display: block; background: var(--surf); }
-.city-card .cc-name { font-family: 'Bricolage Grotesque', serif; font-weight: 500; font-size: 1.25rem; color: var(--rg); line-height: 1.2; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.city-card .cc-name::after { content: '→'; font-family: 'DM Sans', sans-serif; font-size: 1rem; color: var(--dtan); }
+.city-card .cc-name { font-family: var(--font); font-weight: 500; font-size: 1.25rem; color: var(--rg); line-height: 1.2; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.city-card .cc-name::after { content: '→'; font-family: var(--font); font-size: 1rem; color: var(--dtan); }
 .city-card .cc-meta { display: block; margin-top: 2px; font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--dtan); }
 .city-card .cc-desc { display: block; margin-top: 6px; font-size: 1rem; line-height: 1.5; color: var(--txm); }
 @media (max-width: 379px) { .city-card { grid-template-columns: 84px 1fr; gap: 12px; } .city-card img { width: 84px; height: 84px; } }
@@ -899,7 +691,7 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 
 /* Brand tagline under a keyword H1 (homepages): styled like the H1's second
    line, but outside the heading so the H1 stays the search phrase. */
-.kicker { font-family: 'Bricolage Grotesque', serif; font-weight: 400; font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.2; color: var(--dtan); margin: -8px 0 20px; text-wrap: balance; }
+.kicker { font-family: var(--font); font-weight: 400; font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.2; color: var(--dtan); margin: -8px 0 20px; text-wrap: balance; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ARTICLES — blog posts, the blog index, the FAQ and the legal pages.
@@ -910,10 +702,10 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 .article { max-width: var(--w-text); margin: 0 auto; padding: 28px var(--gutter) 72px; }
 .article .trail { margin-bottom: 18px; }
 .a-meta { font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--dtan); margin-bottom: 14px; }
-.article h1 { font-family: 'Bricolage Grotesque', serif; font-weight: 400; font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.12; color: var(--rg); margin-bottom: 18px; text-wrap: balance; }
+.article h1 { font-family: var(--font); font-weight: 400; font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.12; color: var(--rg); margin-bottom: 18px; text-wrap: balance; }
 .article h1 em { font-style: normal; color: var(--dtan); }
 .a-lede { font-size: 1.15rem; line-height: 1.7; color: var(--txm); padding-bottom: 26px; margin-bottom: 8px; border-bottom: 1px solid var(--bdr); }
-.article h2 { font-family: 'Bricolage Grotesque', serif; font-weight: 500; font-size: clamp(1.45rem, 3.4vw, 1.75rem); line-height: 1.25; color: var(--rg); margin: 40px 0 12px; text-wrap: balance; }
+.article h2 { font-family: var(--font); font-weight: 500; font-size: clamp(1.45rem, 3.4vw, 1.75rem); line-height: 1.25; color: var(--rg); margin: 40px 0 12px; text-wrap: balance; }
 .article h3 { font-size: 1.1rem; font-weight: 700; color: var(--rg); margin: 26px 0 8px; }
 .article p, .article li { font-size: 1.0625rem; line-height: 1.8; color: var(--txm); }
 .article p { margin-bottom: 16px; }
@@ -939,12 +731,12 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 .post-card { display: block; background: var(--card); border: 1px solid var(--bdr); border-radius: var(--r-md); padding: 26px 24px; text-decoration: none; box-shadow: var(--sh-sm); transition: border-color .25s, box-shadow .25s, transform .2s; }
 .post-card:hover { border-color: var(--bdrt); box-shadow: var(--sh-md); transform: translateY(-2px); }
 .post-meta { font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--dtan); margin-bottom: 10px; }
-.post-title { font-family: 'Bricolage Grotesque', serif; font-weight: 500; font-size: 1.45rem; color: var(--rg); margin-bottom: 8px; line-height: 1.25; }
+.post-title { font-family: var(--font); font-weight: 500; font-size: 1.45rem; color: var(--rg); margin-bottom: 8px; line-height: 1.25; }
 .post-excerpt { font-size: 1rem; line-height: 1.7; color: var(--txm); margin-bottom: 12px; }
 .post-more { font-size: .92rem; font-weight: 700; letter-spacing: .02em; color: var(--dtan); }
 
 /* FAQ page: grouped accordions under plain section headings. */
-.faq-page h2 { font-family: 'Bricolage Grotesque', serif; font-weight: 500; font-size: clamp(1.45rem, 3.4vw, 1.75rem); color: var(--rg); margin: 44px 0 14px; }
+.faq-page h2 { font-family: var(--font); font-weight: 500; font-size: clamp(1.45rem, 3.4vw, 1.75rem); color: var(--rg); margin: 44px 0 14px; }
 .faq-page h2:first-child { margin-top: 0; }
 .faq-list details > p { padding: 0 22px 22px; font-size: 1rem; line-height: 1.75; color: var(--txm); }
 .faq-list details > p a { color: var(--dtan); font-weight: 600; text-decoration: underline; text-decoration-color: var(--bdrt); text-underline-offset: 3px; }
@@ -963,3 +755,45 @@ table.pr .u { color: var(--txd); font-size: .76rem; font-weight: 400; margin-lef
 .crumbs a:hover { color: var(--rg); }
 .crumbs-sep { flex: none; margin: 0 10px; color: var(--txd); }
 .crumbs [aria-current] { font-weight: 600; color: var(--rg); }
+
+
+/* ── NOVAH'S TYPE AND PIECES, every page (2026-10-13) ───────────────────── */
+:root { --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17L17 7M9 7h8v8'/%3E%3C/svg%3E"); }
+body { font-family: var(--font); font-size: 16px; line-height: 1.6; background: var(--page); color: var(--tx); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, h4, .display, .section-title, .card h3, .card-title, .steps h3, .photo-card h3 { font-family: var(--font); }
+/* the small spaced capitals over a heading */
+.eyebrow, .section-eyebrow { display: block; margin: 0 0 18px; padding: 0; background: none; border: 0; font: 500 13px/1.4 var(--font); letter-spacing: .22em; text-transform: uppercase; color: var(--txm); }
+.band.is-dark .eyebrow { color: var(--on-dark-m); }
+/* big, tight headings */
+.display, h1.display { font: 600 clamp(2.6rem, 6.4vw, 6rem)/.98 var(--font); letter-spacing: -.05em; color: var(--tx); text-wrap: balance; }
+.display em { font-style: normal; color: var(--txm); }
+.section-title { font: 600 clamp(2.1rem, 4.8vw, 4.25rem)/1.02 var(--font); letter-spacing: -.045em; color: var(--tx); text-wrap: balance; margin: 0; }
+.section-title em { font-style: normal; color: var(--txm); }
+.section-title > span { display: block; }
+.band.is-dark .section-title { color: #fff; }
+.section-sub, .lede { font-size: 18px; line-height: 1.6; color: var(--txm); }
+.card h3, .card-title, .steps h3, .photo-card h3 { font-weight: 600; letter-spacing: -.01em; }
+/* sections: warm white, warm grey or near black */
+.band { background: var(--page); }
+.band.is-card { background: var(--card); }
+.band.is-surf, .band.is-soft { background: var(--surf); }
+.band.is-dark { background: var(--rg); color: var(--on-dark); }
+/* pill buttons with an arrow */
+.btn-primary, .btn-tan, .cta-btn, .btn-pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 14px; min-height: 52px; padding: 0 22px 0 26px;
+  border-radius: var(--r-pill); border: 0; background: var(--rg); color: #fff; font: 600 16px/1 var(--font); letter-spacing: 0;
+  text-decoration: none; text-transform: none; box-shadow: none; transition: background .2s, transform .2s;
+}
+.btn-primary:hover, .btn-tan:hover, .cta-btn:hover, .btn-pill:hover { background: #2A2825; transform: none; }
+.btn-pill svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; }
+.btn-pill:hover svg, .link-arrow:hover svg { transform: translate(2px, -2px); }
+.btn-pill.is-light, .band.is-dark .btn-tan, .band.is-dark .btn-primary { background: #fff; color: var(--rg); }
+.btn-pill.is-light:hover { background: #F1EEE8; }
+.btn-ghost { border-radius: var(--r-pill); font-family: var(--font); }
+.link-arrow { display: inline-flex; align-items: center; gap: 8px; min-height: 48px; color: inherit; font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 6px; }
+.link-arrow svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform .2s; }
+/* cards: white, soft line, rounded */
+.card, .photo-card, .fact, .answer { border-radius: var(--r-md); border: 1px solid var(--bdr); box-shadow: none; }
+/* questions: lines and a plus */
+.faq-list details, details.faq-item { border-radius: 0; border: 0; border-bottom: 1px solid var(--bdr); background: none; box-shadow: none; }
+.faq-list summary, details.faq-item summary { font-family: var(--font); font-weight: 600; }

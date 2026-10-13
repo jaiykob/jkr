@@ -23,14 +23,14 @@
 .svc-photo {
   display: inline-flex; align-items: center; justify-content: center; min-height: 60px; padding: 0 26px;
   border-radius: 14px; border: 2px solid var(--rg); background: var(--card); color: var(--rg);
-  font: 800 1.1rem/1 'DM Sans', system-ui, sans-serif; text-decoration: none;
+  font: 800 1.1rem/1 var(--font); text-decoration: none;
 }
 .svc-photo:hover { background: var(--ltan); }
 @media (min-width: 960px) { .svc-hero { padding-top: 24px; padding-bottom: 72px; } }
 
 /* ── Prices: the homepage's dark size band, only the sizes this job fills ── */
 .svc-price { margin-top: 14px; font-size: 1.15rem; font-weight: 700; line-height: 1.3; color: var(--on-dark); }
-.svc-price strong { font: 800 2rem/1.1 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em; color: #fff; }
+.svc-price strong { font: 800 2rem/1.1 var(--font); letter-spacing: -.02em; color: #fff; }
 @media (min-width: 960px) {
   .svc-sizes { grid-template-columns: repeat(auto-fit, minmax(200px, 250px)); }
 }
@@ -41,7 +41,7 @@
 /* ── The service's own copy: four sections in a reading column ────────── */
 .svc-copy .wrap-text { display: grid; gap: 48px; }
 .svc-sec h2 {
-  font: 800 clamp(1.6rem, 3.6vw, 2.1rem)/1.15 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.02em;
+  font: 800 clamp(1.6rem, 3.6vw, 2.1rem)/1.15 var(--font); letter-spacing: -.02em;
   color: var(--rg); padding-bottom: 12px; margin-bottom: 16px; border-bottom: 3px solid var(--tan); text-wrap: balance;
 }
 .svc-sec .prose p, .svc-sec .prose li { font-size: 1.0625rem; }
@@ -54,7 +54,7 @@
 .svc-towns li { padding: 6px 18px 18px; border-radius: var(--r-md); background: var(--page); border: 1px solid var(--bdr); }
 .svc-towns a {
   display: inline-flex; align-items: center; min-height: 48px; min-width: 48px;
-  font: 800 1.2rem/1.2 'Bricolage Grotesque', 'DM Sans', sans-serif; color: var(--rg);
+  font: 800 1.2rem/1.2 var(--font); color: var(--rg);
   text-decoration: underline; text-decoration-color: var(--tan); text-decoration-thickness: 3px; text-underline-offset: 4px;
 }
 .svc-towns a:hover { text-decoration-color: var(--rg); }
@@ -73,10 +73,10 @@
   background: var(--card); border: 1px solid var(--bdr); text-decoration: none; transition: border-color .15s, box-shadow .15s;
 }
 .svc-posts a:hover { border-color: var(--rg); box-shadow: 0 6px 0 var(--rg); }
-.svc-post-title { font: 800 1.2rem/1.3 'Bricolage Grotesque', 'DM Sans', sans-serif; letter-spacing: -.01em; color: var(--rg); }
+.svc-post-title { font: 800 1.2rem/1.3 var(--font); letter-spacing: -.01em; color: var(--rg); }
 .svc-post-sum { font-size: 1rem; line-height: 1.6; color: var(--txm); }
 .svc-before { margin-top: 18px; }
-.svc-others-title { margin: 36px 0 12px; font: 800 1.25rem/1.3 'Bricolage Grotesque', 'DM Sans', sans-serif; color: var(--rg); }
+.svc-others-title { margin: 36px 0 12px; font: 800 1.25rem/1.3 var(--font); color: var(--rg); }
 .svc-others { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
 .svc-others a {
   display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border-radius: var(--r-pill);

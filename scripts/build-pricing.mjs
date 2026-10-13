@@ -7,7 +7,7 @@
  *
  *   (api/create-booking.js reads api/_lib/order-config.js, written whole below)
  *   book/quote.html           quote-jsonld, order-sizes (the five size cards)
- *   index.html                     home-ticket, home-from, home-sizes
+ *   index.html                     home-from, home-sizes, home-travel-note
  *   terms.html, faq.html, es/faq.html   the data-policy spans (cancel hours, late fee, refusal fee)
  *   before-we-come.html, es/before-we-come.html   the same spans (the cancel and late fee rule)
  *   index.html, book/quote.html    every https://wa.me/<number> (WHATSAPP in api/_lib/site.js)
@@ -94,22 +94,6 @@ const jsonld = {
 const quoteJsonld = `<script type="application/ld+json">\n${JSON.stringify(jsonld, null, 2)}\n</script>`;
 
 /* ── homepage ─────────────────────────────────────────────────────────── */
-/* The hero's price ticket (round 7): the half truck as the example, a link to the
-   order page with that size picked. The name, note, price and travel line use the
-   size cards' class names (js/size-cards.js writes its travel line), but it is not
-   a .size-card: the five cards in the sizes band are the size list. */
-const half = LOAD_OPTIONS.findIndex((o) => o.label.startsWith('1/2'));
-const TICKET_ROW = half >= 0 ? half : Math.floor(LOAD_OPTIONS.length / 2);
-const homeTicket = [
-  `<a class="h-ticket" data-size="${TICKET_ROW}" href="book/quote.html?size=${TICKET_ROW}">`,
-  '  <span class="h-ticket-top">Your price</span>',
-  `  <span class="size-name">${LOAD_OPTIONS[TICKET_ROW].label}</span>`,
-  `  <span class="size-note">${LOAD_OPTIONS[TICKET_ROW].note}</span>`,
-  `  <span class="size-cost"><span class="size-price${GUESS.prices ? ' guess' : ''}">${fmt(PRICES[TICKET_ROW][ONE_TIME_COL])}</span> <span class="size-travel">+ travel</span></span>`,
-  '  <span class="h-ticket-go">Book this size</span>',
-  '</a>',
-].map((l) => `      ${l}`).join('\n');
-
 /* Over the sizes band's cards: the lowest one time price and the size it buys. */
 const lowRow = PRICES.reduce((m, r, i) => (r[ONE_TIME_COL] < PRICES[m][ONE_TIME_COL] ? i : m), 0);
 const homeFrom = `        <p class="h-from">Starting at ${guessed(fmt(PRICES[lowRow][ONE_TIME_COL]), GUESS.prices)} for a ${LOAD_OPTIONS[lowRow].label.toLowerCase()}</p>`;
@@ -131,7 +115,7 @@ const homeJsonld = [
 
 /* Under the size cards: what travel adds, from the zone table. */
 const first = ZONE_LIST[0], last = ZONE_LIST[ZONE_LIST.length - 1];
-const homeTravelNote = `      <p class="tiers-travel">Travel is added by zone: ${guessed(first.cents ? `+${fmt(first.cents)}` : 'no charge', GUESS.zones)} within ${guessed(`${first.upToMiles} road miles`, GUESS.zones)} of ${BASE.label}, up to ${guessed(`+${fmt(last.cents)}`, GUESS.zones)} at ${guessed(`${last.upToMiles} miles`, GUESS.zones)}. <a href="#area">Find your zone</a></p>`;
+const homeTravelNote = `      <p class="tiers-travel">Travel is added by zone: ${guessed(first.cents ? `+${fmt(first.cents)}` : 'no charge', GUESS.zones)} within ${guessed(`${first.upToMiles} road miles`, GUESS.zones)} of ${BASE.label}, up to ${guessed(`+${fmt(last.cents)}`, GUESS.zones)} at ${guessed(`${last.upToMiles} miles`, GUESS.zones)}. <a href="service-areas.html">See where we go</a></p>`;
 
 /* The photo reader's item list (api/photo-quote.js): keys and labels only. */
 const serverItems = [
@@ -315,7 +299,6 @@ const TARGETS = [
   ] },
   { file: 'index.html', wa: true, blocks: [
     { name: 'home-jsonld', body: homeJsonld, comment: false },
-    { name: 'home-ticket', body: homeTicket, comment: false },
     { name: 'home-from', body: homeFrom, comment: false },
     { name: 'home-travel-note', body: homeTravelNote, comment: false },
     { name: 'home-sizes', body: homeSizes, comment: false },

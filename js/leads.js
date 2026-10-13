@@ -1,5 +1,5 @@
 /**
- * Brand Name — shared lead capture client.
+ * Haulmighty — shared lead capture client.
  * Lazy-loads Supabase JS from CDN, inserts into public.leads.
  * Always writes a localStorage failsafe copy so leads are never lost.
  *

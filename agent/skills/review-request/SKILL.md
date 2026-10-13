@@ -59,7 +59,7 @@ us more than anything else we could do: {review_link}
 
 And if anything was less than right, reply here first. We would rather fix it.
 
-Brand Name
+Haulmighty
 ```
 
 ## Output

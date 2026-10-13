@@ -51,7 +51,7 @@ ok(tr[1].zips.includes(z2) && tr[1].cents === ZIP_ZONES[z2].cents, 'zone 2 lost 
 console.log('== a page ==');
 const index = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const page = buildPage(index, t, [t]);
-ok(page.includes('<title>Junk Removal in Sample Town, OR | Brand Name</title>'), 'title does not name the town');
+ok(page.includes('<title>Junk Removal in Sample Town, OR | Haulmighty</title>'), 'title does not name the town');
 ok(/<h1[^>]*>[^<]*Sample Town/.test(page), 'H1 does not name the town');
 ok(page.includes('href="https://www.example.com/sample-town.html"'), 'canonical missing');
 ok(page.includes(ZONES[0].label) && page.includes(ZONES[1].label), 'a two zone town does not show both zones');

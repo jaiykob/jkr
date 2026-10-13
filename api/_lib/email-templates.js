@@ -1,5 +1,5 @@
 /**
- * Brand Name: email templates.
+ * Haulmighty: email templates.
  *
  * Each template is a pure function: ctx in, { subject, html, text } out. No
  * sending here (that's email.js), no data fetching — callers pass a plain ctx
@@ -23,14 +23,14 @@
 /**
  * SUBJECT LINES — house rules, because these are the only part of an email most
  * people ever read:
- *   1. Never repeat the brand. The From name is already "Brand Name"; spending
+ *   1. Never repeat the brand. The From name is already "Haulmighty"; spending
  *      the ~35 characters a phone shows on saying it twice buys nothing.
  *   2. No emoji. Every subject here used to carry a 🐾 or 🌿, which reads as
  *      marketing on a booking confirmation and costs inbox placement on the
  *      transactional ones that must arrive.
  *   3. Lead with the specific fact — the day, the amount, the thing that
  *      happened — not a category label. "We're hauling Tuesday" beats
- *      "Reminder: Brand Name visits".
+ *      "Reminder: Haulmighty visits".
  * Keep them under ~45 characters so nothing truncates on a phone.
  */
 
@@ -38,7 +38,7 @@ const site = require('./site');
 const ORDER = require('./order-config');
 
 const BRAND = {
-  name:    'Brand Name',
+  name:    'Haulmighty',
   green:   '#15171A',
   deep:    '#15171A',
   tan:     '#FFD23F',
@@ -117,7 +117,7 @@ function layout({ preheader = '', heading, bodyHtml, marketing = false, unsubscr
              first run on the white card, where a cream silhouette on #FFFFFF was
              invisible in every client.
              The wordmark beside it is live text, not part of the image, so the
-             header still reads as Brand Name when a client blocks images (Outlook
+             header still reads as Haulmighty when a client blocks images (Outlook
              blocks by default) instead of rendering an empty white box. -->
         <tr><td style="background:${BRAND.deep};padding:20px 32px;">
           <table role="presentation" cellspacing="0" cellpadding="0"><tr>

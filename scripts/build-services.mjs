@@ -289,8 +289,7 @@ export function buildService(s, all = [s]) {
     JSON.stringify(ld, null, 2).replace(/^/gm, '  '),
     '  </script>',
     '  <style>',
-    `    @font-face { font-family: 'DM Sans'; font-style: normal; font-weight: 300 700; font-display: swap; src: url(${up}fonts/dm-sans.woff2) format('woff2'); }`,
-    `    @font-face { font-family: 'Bricolage Grotesque'; font-style: normal; font-weight: 500 800; font-display: swap; src: url(${up}fonts/bricolage.woff2) format('woff2'); }`,
+    `    @font-face { font-family: 'Google Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(${up}fonts/google-sans.woff2) format('woff2'); }`,
     '  </style>',
     `  <link rel="stylesheet" href="${up}css/site.css">`,
     // The homepage's own look: the hero, the eyebrows, the size cards, the closer.

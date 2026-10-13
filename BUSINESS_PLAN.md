@@ -1,4 +1,4 @@
-# Brand Name: business plan
+# Haulmighty: business plan
 
 Junk removal for the Portland metro, based in Gresham. Written 2026-10-07 as
 a starting point; the founder will change it. Prices, zones and the service

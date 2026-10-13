@@ -8,7 +8,7 @@ blocks are written by `npm run build` from `pricing.config.mjs` and
 
 ## Business
 
-- **Name:** Brand Name (GUESS* the business has no name yet; "Brand Name" everywhere until it does)
+- **Name:** Haulmighty (GUESS* the business has no name yet; "Haulmighty" everywhere until it does)
 - **What we do:** junk removal and hauling: furniture, appliances, mattresses, yard debris, cleanouts. We do all the lifting.
 - **Phone:** (925) 408-6053 (call or text)
 - **Email:** GUESS* hello@example.com (no business email yet)

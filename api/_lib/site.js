@@ -26,7 +26,7 @@ module.exports = {
   PLACEHOLDER,
   HAS_DOMAIN: DOMAIN !== PLACEHOLDER,
   SITE_URL: `https://www.${DOMAIN}`,
-  NAME: 'Brand Name',             // TODO: the real name
+  NAME: 'Haulmighty',             // the founder's name for the business (2026-10-13)
   PHONE: '(925) 408-6053',
   PHONE_TEL: '+19254086053',
   WHATSAPP,

@@ -29,7 +29,7 @@ async function alertPaymentNeeded(visit, { cents, kind, invoiceUrl, reason, send
     try {
       const r = await fetch(url, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: 'Brand Name', embeds: [{ title: '⚠️ Payment needed', color: 0xC0392B, fields, timestamp: new Date().toISOString() }] }),
+        body: JSON.stringify({ username: 'Haulmighty', embeds: [{ title: '⚠️ Payment needed', color: 0xC0392B, fields, timestamp: new Date().toISOString() }] }),
       });
       if (!r.ok) console.error('[charge-alerts] ops notify non-2xx:', r.status);
     } catch (e) { console.error('[charge-alerts] ops notify failed:', e.message); }
