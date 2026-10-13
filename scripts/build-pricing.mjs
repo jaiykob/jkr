@@ -8,6 +8,7 @@
  *   (api/create-booking.js reads api/_lib/order-config.js, written whole below)
  *   book/quote.html           quote-jsonld, order-sizes (the five size cards)
  *   index.html                     home-from, home-sizes, home-travel-note
+ *   prices.html                    prices-from, -zones, -rates, -note, -faq-sizes, -faq-zones, the data-policy spans
  *   terms.html, faq.html, es/faq.html   the data-policy spans (cancel hours, late fee, refusal fee)
  *   before-we-come.html, es/before-we-come.html   the same spans (the cancel and late fee rule)
  *   index.html, book/quote.html    every https://wa.me/<number> (WHATSAPP in api/_lib/site.js)
@@ -116,6 +117,63 @@ const homeJsonld = [
 /* Under the size cards: what travel adds, from the zone table. */
 const first = ZONE_LIST[0], last = ZONE_LIST[ZONE_LIST.length - 1];
 const homeTravelNote = `      <p class="tiers-travel">Travel is added by zone: ${guessed(first.cents ? `+${fmt(first.cents)}` : 'no charge', GUESS.zones)} within ${guessed(`${first.upToMiles} road miles`, GUESS.zones)} of ${BASE.label}, up to ${guessed(`+${fmt(last.cents)}`, GUESS.zones)} at ${guessed(`${last.upToMiles} miles`, GUESS.zones)}. <a href="book/quote.html">Check your ZIP</a></p>`;
+
+/* ── the prices page (prices.html), laid out like Novah's ─────────────── */
+/* "$349.00" as "$349<small>.00</small>": the cents small, as Novah sets its prices. */
+const bigMoney = (cents) => fmt(cents).replace(/\.(\d\d)$/, '<small>.$1</small>');
+const zoneMiles = (z, i) => (i === 0 ? `Up to ${z.upToMiles} miles` : `${ZONE_LIST[i - 1].upToMiles} to ${z.upToMiles} miles`);
+const zoneFee = (z) => (z.cents ? `+${fmt(z.cents)}` : 'No charge');
+/* The hero card: the lowest load price and the size it buys. */
+const pricesFrom = [
+  '      <p class="p-from-k">Junk removal from</p>',
+  `      <p class="p-from-price">${guessed(bigMoney(PRICES[lowRow][ONE_TIME_COL]), GUESS.prices)}<span class="p-from-unit">/${LOAD_OPTIONS[lowRow].label.toLowerCase()}</span></p>`,
+].join('\n');
+/* The calculator's travel zones, one card each; js/prices.js picks one from the ZIP. */
+const pricesZones = ZONE_LIST.map((z, i) => [
+  `              <button type="button" class="p-zone" role="radio" aria-checked="${i === 0}" data-zone="${z.key}">`,
+  `                <span class="p-zone-name">${z.label}</span>`,
+  `                <span class="p-zone-miles">${guessed(zoneMiles(z, i), GUESS.zones)}</span>`,
+  `                <span class="p-zone-fee">${guessed(zoneFee(z), GUESS.zones)}</span>`,
+  '              </button>',
+].join('\n')).join('\n');
+/* One card per load size, each opening the order page with that size picked; as on
+   Novah's page, the last one wide and dark under the others. */
+const ratePrice = (r) => `<span class="p-rate-price">${guessed(bigMoney(PRICES[r][ONE_TIME_COL]), GUESS.prices)}<span class="p-rate-unit">/load</span></span>`;
+const lastRow = LOAD_OPTIONS.length - 1;
+const pricesRates = [
+  '    <div class="p-rates">',
+  ...LOAD_OPTIONS.slice(0, lastRow).map((o, r) => [
+    `      <a class="p-rate" href="book/quote.html?size=${r}">`,
+    `        <span class="p-rate-name">${o.label}</span>`,
+    `        ${ratePrice(r)}`,
+    '        <span class="p-rate-plus">+ travel for your ZIP</span>',
+    `        <span class="p-rate-about">${o.about}</span>`,
+    '      </a>',
+  ].join('\n')),
+  '    </div>',
+  `    <a class="p-wide" href="book/quote.html?size=${lastRow}">`,
+  '      <span class="p-wide-copy">',
+  `        <span class="p-rate-name">${LOAD_OPTIONS[lastRow].label}</span>`,
+  `        <span class="p-rate-about">${LOAD_OPTIONS[lastRow].about}</span>`,
+  '      </span>',
+  '      <span class="p-wide-price">',
+  `        ${ratePrice(lastRow)}`,
+  '        <span class="p-rate-plus">+ travel for your ZIP</span>',
+  '      </span>',
+  '    </a>',
+].join('\n');
+const pricesNote = `    <p class="p-note">Prices are per load and include the labor, the loading and the haul. Travel is added by ZIP: ${guessed(first.cents ? `+${fmt(first.cents)}` : 'no charge', GUESS.zones)} within ${guessed(`${first.upToMiles} road miles`, GUESS.zones)} of ${BASE.label}, up to ${guessed(`+${fmt(last.cents)}`, GUESS.zones)} at ${guessed(`${last.upToMiles} miles`, GUESS.zones)}.</p>`;
+const pricesFaqSizes = [
+  '          <ul>',
+  ...LOAD_OPTIONS.map((o, r) => `            <li>${o.label}: ${guessed(fmt(PRICES[r][ONE_TIME_COL]), GUESS.prices)}</li>`),
+  '          </ul>',
+].join('\n');
+const pricesFaqZones = [
+  '          <ul>',
+  ...ZONE_LIST.map((z, i) => `            <li>${z.label}, ${guessed(zoneMiles(z, i).toLowerCase().replace('miles', 'road miles'), GUESS.zones)}: ${guessed(zoneFee(z).toLowerCase(), GUESS.zones)}</li>`),
+  `            <li>Past ${guessed(`${last.upToMiles} road miles`, GUESS.zones)}: call or text and we price it for you</li>`,
+  '          </ul>',
+].join('\n');
 
 /* The photo reader's item list (api/photo-quote.js): keys and labels only. */
 const serverItems = [
@@ -296,6 +354,14 @@ const TARGETS = [
   { file: 'book/quote.html', wa: true, blocks: [
     { name: 'quote-jsonld', body: quoteJsonld, comment: false },
     { name: 'order-sizes', body: orderSizes, comment: false },
+  ] },
+  { file: 'prices.html', policy: true, blocks: [
+    { name: 'prices-from', body: pricesFrom, comment: false },
+    { name: 'prices-zones', body: pricesZones, comment: false },
+    { name: 'prices-rates', body: pricesRates, comment: false },
+    { name: 'prices-note', body: pricesNote, comment: false },
+    { name: 'prices-faq-sizes', body: pricesFaqSizes, comment: false },
+    { name: 'prices-faq-zones', body: pricesFaqZones, comment: false },
   ] },
   { file: 'index.html', wa: true, blocks: [
     { name: 'home-jsonld', body: homeJsonld, comment: false },

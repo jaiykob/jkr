@@ -95,6 +95,7 @@ function splice(text, name, body, file) {
  *  <nav class="trail|crumbs">, and its BreadcrumbList goes between BUILD:crumbs-ld markers in
  *  the head (added before </head> the first time). Generated pages get theirs from their builder. */
 const CRUMBS = {
+  'prices.html': [{ name: 'Prices' }],
   'faq.html': [{ name: 'Help' }],
   'es/faq.html': [{ name: 'Ayuda' }],
   'before-we-come.html': [{ name: 'Help', href: 'faq.html' }, { name: 'Before we come' }],

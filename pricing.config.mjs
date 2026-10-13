@@ -54,14 +54,19 @@ export const PRICE_TABLE = [
 /**
  * Row labels, in PRICE_TABLE order. The estimator shows one tile per row, and
  * a last "More than a truck" tile that is quoted by hand (like Scoops Co.'s
- * "6+ dogs").
+ * "6+ dogs"). `about` is the line under the price on the prices page.
  */
 export const LOADS = {
-  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance', fits: 15, photo: '/images/photos/size-single-480.jpg' },
-  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner',     fits: 25, photo: '/images/photos/size-quarter-480.jpg' },
-  half:    { label: '1/2 truck',    note: 'A small room or a garage corner',   fits: 50, photo: '/images/photos/size-half-480.jpg' },
-  three:   { label: '3/4 truck',    note: 'A full room or a small garage',     fits: 75, photo: '/images/photos/size-three-480.jpg' },
-  full:    { label: 'Full truck',   note: 'A garage, basement or estate',      fits: 100, photo: '/images/photos/size-full-480.jpg' },
+  single:  { label: 'Single item',  note: 'A couch, a mattress, an appliance', fits: 15, photo: '/images/photos/size-single-480.jpg',
+    about: 'One big thing, like a couch, a mattress or a fridge, carried out from wherever it sits.' },
+  quarter: { label: '1/4 truck',    note: 'A few pieces or a room corner',     fits: 25, photo: '/images/photos/size-quarter-480.jpg',
+    about: 'A few pieces of furniture, a stack of boxes or the corner of a room.' },
+  half:    { label: '1/2 truck',    note: 'A small room or a garage corner',   fits: 50, photo: '/images/photos/size-half-480.jpg',
+    about: 'A small room cleared out, or the corner of a garage, like a bedroom set and boxes.' },
+  three:   { label: '3/4 truck',    note: 'A full room or a small garage',     fits: 75, photo: '/images/photos/size-three-480.jpg',
+    about: 'A full room or a small garage, like a living room of furniture and the odds and ends.' },
+  full:    { label: 'Full truck',   note: 'A garage, basement or estate',      fits: 100, photo: '/images/photos/size-full-480.jpg',
+    about: 'A whole garage, a basement or an estate. Everything the truck holds, in one trip.' },
 };
 
 /**

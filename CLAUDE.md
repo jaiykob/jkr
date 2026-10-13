@@ -44,6 +44,9 @@ Placeholders to replace: "example.com", `pk_test_REPLACE_ME`,
   `content/services/portland/*.md`), `es/` except `es/faq.html`, `blog/`,
   `api/_lib/order-config.js` + `js/order-config.js`, `api/_lib/travel.js` +
   `js/travel.js`, `BUILD:` blocks in pages, `sitemap.xml`, `images/og/`.
+- The Prices page (`prices.html`, menu "Prices") copies Novah's prices page:
+  its prices are `BUILD:prices-*` blocks, its calculator (`js/prices.js`)
+  reads the same order and travel modules as the booking.
 - Homepage text changes: edit `index.html`, `npm run build`; new phrases need
   their Spanish in `i18n/es.json` (the build lists them).
 - The header and footer come from `index.html` (build-chrome copies them).
