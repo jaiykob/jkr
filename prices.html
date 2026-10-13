@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Junk Removal Prices in Portland | Haulmighty</title>
+  <meta name="description" content="Junk removal prices in Portland: one flat price per load, from a single item to a full truck, plus travel by ZIP. See your price in 30 seconds." />
+  <link rel="canonical" href="https://www.example.com/prices.html" />
+  <meta property="og:title" content="Junk Removal Prices in Portland | Haulmighty" />
+  <meta property="og:description" content="Junk removal prices in Portland: one flat price per load, from a single item to a full truck, plus travel by ZIP. See your price in 30 seconds." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.example.com/prices.html" />
+  <meta property="og:image" content="https://www.example.com/images/og/prices.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#0C0B09" />
+  <!-- The prices page, laid out like Novah's prices page (founder 2026-10-13: "build
+       pricing matrix just like novah cleaning"): a dark hero with the lowest price
+       beside it, a live price calculator (size and travel zone on the left, the
+       total on the right), one card per load size, what sets the price, and the
+       price questions. Every price and fee is written by `npm run build:pricing`
+       (BUILD:prices-* blocks) or read from js/order-config.js and js/travel.js,
+       never typed here. -->
+  <style>
+    @font-face { font-family: 'Google Sans'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/google-sans.woff2) format('woff2'); }
+  </style>
+  <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/prices.css">
+  <link rel="stylesheet" href="css/guess.css">
+  <script src="js/site.js" defer></script>
+  <script src="js/analytics.js" defer></script>
+  <script src="js/order-config.js" defer></script>
+  <script src="js/travel.js" defer></script>
+  <script src="js/prices.js" defer></script>
+  <!-- BUILD:crumbs-ld -->
+  <script type="application/ld+json">
+  {
+    "@type": "BreadcrumbList",
+    "@id": "https://www.example.com/prices.html#breadcrumb",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.example.com/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Prices",
+        "item": "https://www.example.com/prices.html"
+      }
+    ]
+  }
+  </script>
+  <!-- /BUILD:crumbs-ld -->
+</head>
+<body>
+<!-- BUILD:site-header -->
+<a class="skip-link" href="#main">Skip to content</a>
+<nav class="site-nav">
+  <a class="nav-logo" href="index.html" aria-label="Haulmighty, home"><span class="logo-mark" aria-hidden="true"></span><span class="nav-wordmark">Haul<span class="wm-strong">mighty</span></span></a>
+  <button class="nav-burger" id="navBurger" aria-label="Open menu" aria-expanded="false">
+    <svg class="menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    <svg class="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="index.html#what-we-take-band">Services</a></li>
+    <li><a href="prices.html">Prices</a></li>
+    <li><a href="before-we-come.html">Before we come</a></li>
+    <li><a href="faq.html">Help</a></li>
+    <li class="chat-item"><a href="sms:+19254086053">Text us</a></li>
+    <li class="chat-item"><a href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener">WhatsApp us</a></li>
+    <li class="cta-item"><a class="nav-cta-mobile" href="book/quote.html">Get my price</a></li>
+  </ul>
+  <div class="nav-right">
+    <a class="lang-switch" href="es/index.html" hreflang="es" lang="es"><span class="lang-full">Español</span><span class="lang-short" aria-hidden="true">ES</span></a>
+    <a class="nav-phone" href="tel:+19254086053" aria-label="Call or text (925) 408-6053"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span class="nav-phone-num">(925) 408-6053</span></a>
+    <a class="nav-chat" href="sms:+19254086053" aria-label="Text us"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9.5L5 19.5V16H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></a>
+    <a class="nav-chat" href="https://wa.me/19254086053" data-wa="https://wa.me/19254086053" target="_blank" rel="noopener" aria-label="WhatsApp us"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.1 7.9h.9l1 2.3-.8 1a6 6 0 0 0 2.6 2.6l1-.8 2.3 1v.9c0 .7-.6 1.3-1.3 1.3A6.8 6.8 0 0 1 7.8 9.2c0-.7.6-1.3 1.3-1.3z" fill="currentColor"/></svg></a>
+    <a class="nav-cta" href="book/quote.html">Get my price</a>
+  </div>
+</nav>
+<!-- /BUILD:site-header -->
+
+<main id="main">
+
+<!-- HERO: Novah's dark prices hero. The statement on the left, the lowest price in a
+     card on the right. -->
+<section class="p-hero" aria-labelledby="prices-title">
+  <div class="p-hero-in">
+    <div class="p-hero-copy">
+      <p class="p-tag"><span aria-hidden="true">✦</span> Haulmighty <span class="p-tag-sep" aria-hidden="true">/</span> Portland</p>
+      <h1 class="p-title" id="prices-title">Junk removal prices in Portland</h1>
+      <p class="p-sub">Clear prices. No hidden fees.</p>
+      <p class="p-lede">See your price in 30 seconds, with travel for your ZIP. One flat price per load covers the labor, the loading and the haul, across the Portland metro and Vancouver.</p>
+      <div class="p-actions">
+        <a class="btn-pill is-light" href="#calculator">Calculate your price<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+        <a class="btn-pill is-outline" href="#rates">See the prices</a>
+      </div>
+    </div>
+    <div class="p-from">
+      <!-- BUILD:prices-from -->
+      <p class="p-from-k">Junk removal from</p>
+      <p class="p-from-price"><span class="guess">$99<small>.00</small></span><span class="p-from-unit">/single item</span></p>
+      <!-- /BUILD:prices-from -->
+      <p class="p-from-good">Labor, loading and the haul included</p>
+      <p class="p-from-note">The same load price in every town we serve. Travel for your ZIP is the only thing added, and you see it before you book.</p>
+    </div>
+  </div>
+</section>
+
+<div class="p-crumbs">
+  <div class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="index.html">Home</a><span class="crumbs-sep" aria-hidden="true">›</span></li><li aria-current="page">Prices</li></ol></nav>
+  </div>
+</div>
+
+<!-- CALCULATOR: Novah's calculator. Two tabs (pick a size, or send photos); on the
+     left, 01 the load size on a slider and 02 the travel zone, picked from the ZIP or
+     by hand; on the right, the total, live. js/prices.js runs it from window.ORDER
+     (the sizes) and window.TRAVEL (the zones), the same modules the order page uses. -->
+<section class="band p-calc-band" id="calculator" aria-labelledby="calc-title">
+  <div class="wrap">
+    <div class="p-calc-head">
+      <div>
+        <p class="eyebrow">Price calculator</p>
+        <h2 class="section-title" id="calc-title">Junk removal price calculator</h2>
+      </div>
+      <p class="p-live-note"><span class="p-dot" aria-hidden="true"></span> Updates as you choose</p>
+    </div>
+
+    <div class="p-tabs" role="tablist" aria-label="How to price it">
+      <button type="button" class="p-tab" role="tab" id="tab-size" aria-controls="panel-size" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h11v9H2zM13 10h4.5L21 13v3h-8z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Pick a size</button>
+      <button type="button" class="p-tab" role="tab" id="tab-photos" aria-controls="panel-photos" aria-selected="false" tabindex="-1"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>From photos</button>
+    </div>
+
+    <div class="p-calc">
+      <div class="p-calc-left">
+        <div class="p-panel" role="tabpanel" id="panel-size" aria-labelledby="tab-size">
+          <div class="p-step">
+            <p class="p-step-k"><span>01</span> Load size</p>
+            <div class="p-size-row">
+              <p class="p-size-big"><span id="sizeMain">1/2</span> <span class="p-size-unit" id="sizeUnit">truck</span></p>
+              <p class="p-chip" id="sizeNote">A small room or a garage corner</p>
+            </div>
+            <label class="visually-hidden" for="sizeRange">Load size</label>
+            <input class="p-range" type="range" id="sizeRange" min="0" max="4" step="1" value="2">
+            <ol class="p-ticks" id="sizeTicks" aria-hidden="true"><li>Single</li><li>1/4</li><li>1/2</li><li>3/4</li><li>Full</li></ol>
+          </div>
+          <div class="p-step">
+            <div class="p-zip-row">
+              <p class="p-step-k"><span>02</span> Travel zone</p>
+              <label class="p-zip">
+                <span class="visually-hidden">Your ZIP code</span>
+                <input id="zipIn" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="Your ZIP">
+              </label>
+            </div>
+            <p class="p-zip-out" id="zipOut" aria-live="polite">Type your ZIP, or pick your zone.</p>
+            <div class="p-zones" id="zones" role="radiogroup" aria-label="Travel zone">
+              <!-- BUILD:prices-zones -->
+              <button type="button" class="p-zone" role="radio" aria-checked="true" data-zone="home">
+                <span class="p-zone-name">Home zone</span>
+                <span class="p-zone-miles"><span class="guess">Up to 10 miles</span></span>
+                <span class="p-zone-fee"><span class="guess">No charge</span></span>
+              </button>
+              <button type="button" class="p-zone" role="radio" aria-checked="false" data-zone="z2">
+                <span class="p-zone-name">Zone 2</span>
+                <span class="p-zone-miles"><span class="guess">10 to 20 miles</span></span>
+                <span class="p-zone-fee"><span class="guess">+$25.00</span></span>
+              </button>
+              <button type="button" class="p-zone" role="radio" aria-checked="false" data-zone="z3">
+                <span class="p-zone-name">Zone 3</span>
+                <span class="p-zone-miles"><span class="guess">20 to 30 miles</span></span>
+                <span class="p-zone-fee"><span class="guess">+$50.00</span></span>
+              </button>
+              <button type="button" class="p-zone" role="radio" aria-checked="false" data-zone="z4">
+                <span class="p-zone-name">Zone 4</span>
+                <span class="p-zone-miles"><span class="guess">30 to 40 miles</span></span>
+                <span class="p-zone-fee"><span class="guess">+$75.00</span></span>
+              </button>
+              <!-- /BUILD:prices-zones -->
+            </div>
+          </div>
+        </div>
+        <div class="p-panel" role="tabpanel" id="panel-photos" aria-labelledby="tab-photos" hidden>
+          <div class="p-step">
+            <p class="p-step-k"><span>01</span> Your photos</p>
+            <p class="p-size-big">Up to 4 <span class="p-size-unit">photos</span></p>
+            <ol class="p-photo-steps">
+              <li><span>1</span>Take up to four photos of what is going, from a few steps back.</li>
+              <li><span>2</span>We count the items, pick the size and show your price with travel.</li>
+              <li><span>3</span>Pick a day. The crew checks the size with you before loading.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-total on-dark" id="total">
+        <div class="p-total-top">
+          <p class="p-total-k" id="totalK">Total</p>
+          <p class="p-total-live"><span class="p-dot" aria-hidden="true"></span> Live</p>
+        </div>
+        <p class="p-total-num"><span id="totalNum">&nbsp;</span></p>
+        <p class="p-total-sum" id="totalSum">&nbsp;</p>
+        <p class="visually-hidden" id="totalSay" aria-live="polite"></p>
+        <div class="p-meter">
+          <div class="p-bar"><span id="fillBar"></span></div>
+          <div class="p-meter-row"><span>Truck space</span><strong id="fillText">&nbsp;</strong></div>
+        </div>
+        <dl class="p-lines">
+          <div><dt id="lineLoadK">Load</dt><dd id="lineLoad"></dd></div>
+          <div><dt id="lineTravelK">Travel</dt><dd id="lineTravel"></dd></div>
+        </dl>
+        <a class="p-book" id="bookBtn" href="book/quote.html?size=2"><span id="bookLabel">Book this load</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+        <p class="p-quick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/></svg> Book in 4 short steps</p>
+        <ul class="p-trust">
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Labor and loading included</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>Size checked before we lift</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>No estimate visit</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THE PRICES: Novah's rate cards, one per load size, then a wide dark card. -->
+<section class="band p-rates-band" id="rates" aria-labelledby="rates-title">
+  <div class="wrap">
+    <p class="eyebrow"><span class="p-bullet" aria-hidden="true"></span>Prices</p>
+    <h2 class="section-title p-h2" id="rates-title">One clear price per load</h2>
+    <p class="p-intro">The same load price in every town we serve. Travel for your ZIP is added on top, and the crew checks the size with you before loading.</p>
+    <!-- BUILD:prices-rates -->
+    <div class="p-rates">
+      <a class="p-rate" href="book/quote.html?size=0">
+        <span class="p-rate-name">Single item</span>
+        <span class="p-rate-price"><span class="guess">$99<small>.00</small></span><span class="p-rate-unit">/load</span></span>
+        <span class="p-rate-plus">+ travel for your ZIP</span>
+        <span class="p-rate-about">One big thing, like a couch, a mattress or a fridge, carried out from wherever it sits.</span>
+      </a>
+      <a class="p-rate" href="book/quote.html?size=1">
+        <span class="p-rate-name">1/4 truck</span>
+        <span class="p-rate-price"><span class="guess">$199<small>.00</small></span><span class="p-rate-unit">/load</span></span>
+        <span class="p-rate-plus">+ travel for your ZIP</span>
+        <span class="p-rate-about">A few pieces of furniture, a stack of boxes or the corner of a room.</span>
+      </a>
+      <a class="p-rate" href="book/quote.html?size=2">
+        <span class="p-rate-name">1/2 truck</span>
+        <span class="p-rate-price"><span class="guess">$349<small>.00</small></span><span class="p-rate-unit">/load</span></span>
+        <span class="p-rate-plus">+ travel for your ZIP</span>
+        <span class="p-rate-about">A small room cleared out, or the corner of a garage, like a bedroom set and boxes.</span>
+      </a>
+      <a class="p-rate" href="book/quote.html?size=3">
+        <span class="p-rate-name">3/4 truck</span>
+        <span class="p-rate-price"><span class="guess">$479<small>.00</small></span><span class="p-rate-unit">/load</span></span>
+        <span class="p-rate-plus">+ travel for your ZIP</span>
+        <span class="p-rate-about">A full room or a small garage, like a living room of furniture and the odds and ends.</span>
+      </a>
+    </div>
+    <a class="p-wide" href="book/quote.html?size=4">
+      <span class="p-wide-copy">
+        <span class="p-rate-name">Full truck</span>
+        <span class="p-rate-about">A whole garage, a basement or an estate. Everything the truck holds, in one trip.</span>
+      </span>
+      <span class="p-wide-price">
+        <span class="p-rate-price"><span class="guess">$599<small>.00</small></span><span class="p-rate-unit">/load</span></span>
+        <span class="p-rate-plus">+ travel for your ZIP</span>
+      </span>
+    </a>
+    <!-- /BUILD:prices-rates -->
+    <!-- BUILD:prices-note -->
+    <p class="p-note">Prices are per load and include the labor, the loading and the haul. Travel is added by ZIP: <span class="guess">no charge</span> within <span class="guess">10 road miles</span> of Gresham, up to <span class="guess">+$75.00</span> at <span class="guess">40 miles</span>.</p>
+    <!-- /BUILD:prices-note -->
+    <p class="p-note">More than a full truck? Whole houses and estates take more than one load. Call or text <a href="tel:+19254086053">(925) 408-6053</a>, or <a href="book/quote.html#photos">send photos</a>, and we price it for you.</p>
+  </div>
+</section>
+
+<!-- BEHIND THE PRICE: Novah's three cards, each a drawing over a short story;
+     the middle one dark. -->
+<section class="band p-why-band" aria-labelledby="why-title">
+  <div class="wrap">
+    <div class="p-why-head">
+      <div>
+        <p class="eyebrow"><span class="p-bullet" aria-hidden="true"></span>Behind the price</p>
+        <h2 class="section-title p-h2" id="why-title">What sets your junk removal price?</h2>
+        <p class="p-intro">How much, how far, and a check before we lift. The calculator shows all three before you book.</p>
+      </div>
+      <a class="btn-pill" href="#calculator">Find your price<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+    </div>
+    <div class="p-why">
+      <article class="p-card">
+        <div class="p-card-art">
+          <span class="p-card-n">01</span>
+          <svg class="p-art" viewBox="0 0 200 120" aria-hidden="true">
+            <rect x="20" y="30" width="112" height="62" rx="4" class="a-line"/>
+            <rect x="26" y="62" width="30" height="24" rx="2" class="a-fill"/>
+            <rect x="60" y="54" width="34" height="32" rx="2" class="a-fill"/>
+            <rect x="98" y="70" width="28" height="16" rx="2" class="a-fill"/>
+            <path d="M132 50h28l16 20v22h-44z" class="a-line"/>
+            <path d="M140 56h17l10 13h-27z" class="a-soft"/>
+            <circle cx="50" cy="96" r="9" class="a-wheel"/>
+            <circle cx="156" cy="96" r="9" class="a-wheel"/>
+            <path d="M20 22h112" class="a-dash"/>
+            <path d="M20 18v8M132 18v8" class="a-tick"/>
+          </svg>
+        </div>
+        <div class="p-card-body">
+          <p class="p-card-k">Load size</p>
+          <h3>Room in the truck.</h3>
+          <p>Your price is set by how much of the truck your stuff fills, from a single item to a full truck. Labor, loading and the haul are in it.</p>
+        </div>
+      </article>
+      <article class="p-card is-dark">
+        <div class="p-card-art">
+          <span class="p-card-n">02</span>
+          <svg class="p-art" viewBox="0 0 200 120" aria-hidden="true">
+            <circle cx="100" cy="62" r="52" class="r4"/>
+            <circle cx="100" cy="62" r="38" class="r3"/>
+            <circle cx="100" cy="62" r="24" class="r2"/>
+            <circle cx="100" cy="62" r="10" class="r1"/>
+            <circle cx="100" cy="62" r="3.5" class="rc"/>
+            <path d="M141 20c-7 0-12 5-12 11.5 0 8.5 12 19.5 12 19.5s12-11 12-19.5C153 25 148 20 141 20z" class="pin"/>
+            <circle cx="141" cy="31.5" r="4" class="pin-dot"/>
+          </svg>
+        </div>
+        <div class="p-card-body">
+          <p class="p-card-k">Travel</p>
+          <h3>Miles from Gresham.</h3>
+          <p>Travel is added by your ZIP, in rings of road miles from our base in Gresham. The closer you are, the less it adds.</p>
+        </div>
+      </article>
+      <article class="p-card">
+        <div class="p-card-art">
+          <span class="p-card-n">03</span>
+          <svg class="p-art" viewBox="0 0 200 120" aria-hidden="true">
+            <rect x="50" y="10" width="100" height="28" rx="6" class="a-box"/>
+            <rect x="50" y="46" width="100" height="28" rx="6" class="a-box"/>
+            <rect x="50" y="82" width="100" height="28" rx="6" class="a-box"/>
+            <circle cx="66" cy="24" r="7" class="a-chk"/><path d="M62.5 24l2.5 2.5 4.5-4.5" class="a-tickw"/>
+            <circle cx="66" cy="60" r="7" class="a-chk"/><path d="M62.5 60l2.5 2.5 4.5-4.5" class="a-tickw"/>
+            <circle cx="66" cy="96" r="7" class="a-chk"/><path d="M62.5 96l2.5 2.5 4.5-4.5" class="a-tickw"/>
+            <path d="M80 24h46M80 60h32M80 96h40" class="a-bar"/>
+          </svg>
+        </div>
+        <div class="p-card-body">
+          <p class="p-card-k">The walk through</p>
+          <h3>Checked before we lift.</h3>
+          <p>The crew checks the size with you before loading. A bigger load is charged only if you agree, and a smaller one gets the difference back.</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- PRICE QUESTIONS: the heading on the left, numbered questions on the right. -->
+<section class="band faq-band p-faq-band" aria-labelledby="pq-title">
+  <div class="wrap faq-split">
+    <div class="faq-head">
+      <p class="eyebrow">Price questions</p>
+      <h2 class="section-title" id="pq-title">Pricing questions and answers</h2>
+      <p class="p-intro">Clear prices for junk removal across Portland and Vancouver.</p>
+    </div>
+    <div class="faq p-faq">
+      <details><summary><span class="p-q-n">001</span>How much does junk removal cost in Portland?</summary>
+        <div class="p-a">
+          <p>One flat price per load, by how much of the truck your stuff fills:</p>
+          <!-- BUILD:prices-faq-sizes -->
+          <ul>
+            <li>Single item: <span class="guess">$99.00</span></li>
+            <li>1/4 truck: <span class="guess">$199.00</span></li>
+            <li>1/2 truck: <span class="guess">$349.00</span></li>
+            <li>3/4 truck: <span class="guess">$479.00</span></li>
+            <li>Full truck: <span class="guess">$599.00</span></li>
+          </ul>
+          <!-- /BUILD:prices-faq-sizes -->
+          <p>Travel for your ZIP is added on top. More than a full truck? Call or text and we price it for you.</p>
+        </div>
+      </details>
+      <details><summary><span class="p-q-n">002</span>Are there any hidden fees?</summary>
+        <div class="p-a">
+          <p>No. Your total is the load price plus travel for your ZIP, and you see both before you book. The load price covers the labor, the loading and the haul.</p>
+          <p>The one other charge is for a late cancel: until <span class="guess" data-policy="cancel">24 hours</span> before your arrival window you can move your day for free, or cancel and get a full refund. After that, a cancel keeps a fee of <span class="guess" data-policy="late">$50.00</span>.</p>
+        </div>
+      </details>
+      <details><summary><span class="p-q-n">003</span>How does the travel fee work?</summary>
+        <div class="p-a">
+          <p>Travel is set by your ZIP, in rings of road miles from our base in Gresham:</p>
+          <!-- BUILD:prices-faq-zones -->
+          <ul>
+            <li>Home zone, <span class="guess">up to 10 road miles</span>: <span class="guess">no charge</span></li>
+            <li>Zone 2, <span class="guess">10 to 20 road miles</span>: <span class="guess">+$25.00</span></li>
+            <li>Zone 3, <span class="guess">20 to 30 road miles</span>: <span class="guess">+$50.00</span></li>
+            <li>Zone 4, <span class="guess">30 to 40 road miles</span>: <span class="guess">+$75.00</span></li>
+            <li>Past <span class="guess">40 road miles</span>: call or text and we price it for you</li>
+          </ul>
+          <!-- /BUILD:prices-faq-zones -->
+          <p>Type your ZIP in the calculator above to see your zone.</p>
+        </div>
+      </details>
+      <details><summary><span class="p-q-n">004</span>What if my pile is bigger or smaller than I booked?</summary>
+        <div class="p-a"><p>The crew checks the size with you before loading. If it is bigger, we show you the new price first and charge the difference only if you agree. If it is smaller, we refund the difference.</p></div>
+      </details>
+      <details><summary><span class="p-q-n">005</span>When do I pay?</summary>
+        <div class="p-a"><p>Online when you book, so your day is held for you. After the job, any change in size is settled as above, and we email your receipt.</p></div>
+      </details>
+      <details><summary><span class="p-q-n">006</span>Can I get a price from photos?</summary>
+        <div class="p-a"><p>Yes. <a href="book/quote.html#photos">Send up to four photos</a> of what is going. We count the items, pick the size and show your price with travel. No estimate visit.</p></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="closer" aria-label="Get a price">
+  <div class="closer-in">
+    <p class="eyebrow">Ready when you are</p>
+    <h2><span>Junk gone.</span> <span>Space back.</span></h2>
+    <p class="closer-line">Send a photo or pick a size. We handle the rest.</p>
+    <div class="closer-actions">
+      <a class="btn-pill is-light" href="book/quote.html#photos">Get a price from photos<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+      <a class="link-arrow" href="tel:+19254086053">Call (925) 408-6053<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- BUILD:site-sticky -->
+<a class="sticky-cta" id="stickyCta" href="book/quote.html">Get my price</a>
+<!-- /BUILD:site-sticky -->
+<!-- BUILD:site-footer -->
+<footer>
+  <div class="foot-cols">
+    <div class="foot-brand">
+      <div class="footer-logo"><span class="logo-mark" aria-hidden="true"></span><span class="nav-wordmark">Haul<span class="wm-strong">mighty</span></span></div>
+      <p>Based in Gresham. Junk removal across the Portland metro and Vancouver.</p>
+      <p class="foot-contact"><a href="tel:+19254086053">Call (925) 408-6053</a><a href="sms:+19254086053">Text us</a></p>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Book</h2>
+      <ul class="footer-links">
+        <li><a href="book/quote.html">Get my price</a></li>
+        <li><a href="book/quote.html#photos">Send a photo</a></li>
+        <li><a href="prices.html">Prices</a></li>
+        <li><a href="before-we-come.html">Before we come</a></li>
+        <li><a href="book/commercial.html">Property managers</a></li>
+      </ul>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Services</h2>
+      <ul class="footer-links">
+      <li><a href="portland/garage-cleanout.html">Garage cleanout</a></li>
+      <li><a href="portland/furniture-removal.html">Furniture removal</a></li>
+      <li><a href="portland/estate-cleanout.html">Estate cleanout</a></li>
+      <li><a href="portland/hot-tub-removal.html">Hot tub removal</a></li>
+      <li><a href="portland/mattress-removal.html">Mattress removal</a></li>
+      <li><a href="portland/appliance-removal.html">Appliance removal</a></li>
+      <li><a href="portland/yard-debris-removal.html">Yard debris removal</a></li>
+      <li><a href="portland/hoarder-cleanout.html">Hoarding cleanout</a></li>
+      </ul>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Where we go</h2>
+      <ul class="footer-links">
+      <li><a href="portland.html">Portland</a></li>
+      <li><a href="vancouver.html">Vancouver</a></li>
+      <li><a href="beaverton.html">Beaverton</a></li>
+      <li><a href="gresham.html">Gresham</a></li>
+      <li><a href="milwaukie.html">Milwaukie</a></li>
+      <li><a href="lake-oswego.html">Lake Oswego</a></li>
+      </ul>
+    </div>
+    <div class="foot-col">
+      <h2 class="foot-h">Help</h2>
+      <ul class="footer-links">
+        <li><a href="faq.html">Help and FAQ</a></li>
+        <li><a href="blog/index.html">Blog</a></li>
+        <li><a href="terms.html">Terms</a></li>
+        <li><a href="privacy.html">Privacy</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="legal-footer">
+    &copy; 2026 Haulmighty &nbsp;·&nbsp;
+    <a href="tel:+19254086053">(925) 408-6053</a>
+  </div>
+</footer>
+<!-- /BUILD:site-footer -->
+</body>
+</html>

@@ -89,7 +89,7 @@ ok(es.html.includes('<link rel="canonical" href="https://www.example.com/es/" />
 ok(es.html.includes(hreflang('es/index.html')), 'hreflang both ways');
 ok(es.html.includes('href="../css/site.css"') && es.html.includes('src="../js/size-cards.js"') && es.html.includes('url(../fonts/google-sans.woff2)'), 'styles, scripts and fonts climb out of /es/');
 ok(es.html.includes('href="../book/quote.html"'), 'the quote stays English, one level up');
-ok(es.html.includes('href="#pricing"'), 'anchors stay on the page');
+ok(es.html.includes('href="#what-we-take-band"'), 'anchors stay on the page');
 // The size cards (BUILD:home-sizes): Spanish names and travel line, links to the English order page.
 const esCards = es.html.match(/<a class="size-card"[\s\S]*?<\/a>/g) || [];
 const enCards = (page('index.html').match(/<a class="size-card"/g) || []).length;
