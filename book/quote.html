@@ -333,7 +333,7 @@
      (scripts/build-chrome.mjs leaves this page alone). -->
 <header class="o-header">
   <div class="o-header-in">
-    <a class="o-brand" href="../index.html"><span class="o-mark" aria-hidden="true"></span><span>Haulmighty</span><span class="sr-only">, back to the home page</span></a>
+    <a class="o-brand" href="../index.html"><span class="o-mark" aria-hidden="true"></span><span>Haul<span class="wm-strong">mighty</span></span><span class="sr-only">, back to the home page</span></a>
     <a class="o-head-call" href="tel:+19254086053"><svg aria-hidden="true"><use href="#i-phone"/></svg><span class="o-head-num">(925) 408-6053</span><span class="sr-only o-head-sr">Call us</span></a>
   </div>
 </header>
@@ -357,8 +357,9 @@
       <section id="o-size" class="o-sec" data-step="size" aria-labelledby="o-size-h">
         <div class="o-sec-head"><p class="o-pill">Step 1 of 4</p><h2 id="o-size-h" tabindex="-1">How much is going?</h2></div>
         <div class="o-sec-body">
-          <p class="o-help">Pick the closest size. The crew confirms the price before loading.</p>
-          <p class="o-selected"><span>Selected</span><span class="o-selected-v" id="o-size-sel">None yet</span></p>
+          <!-- One clean list (founder 2026-10-13: "way too visually ugly too much going on"):
+               each size with what fits and its price; travel is said once, here. -->
+          <p class="o-help">Pick the closest size. Travel is added by ZIP, and the crew checks the size before loading.</p>
           <div class="size-list" id="o-sizes" role="group" aria-labelledby="o-size-h">
           <!-- BUILD:order-sizes -->
           <button type="button" class="size-card" data-size="0" aria-pressed="false">
@@ -409,7 +410,6 @@
             <div id="o-photo-panel"></div>
           </div>
           <p class="o-msg" id="o-size-msg" aria-live="polite"></p>
-          <p class="o-more">More than a full truck? Call or text <a href="tel:+19254086053">(925) 408-6053</a> and we price it by hand.</p>
         </div>
       </section>
 

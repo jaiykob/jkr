@@ -257,8 +257,6 @@
     cards && cards.pick(state.size);
     cards && cards.setTravel(t, TRAVEL_GUESS);
 
-    // What is picked on the Size page (Scoops Co.'s "Selected").
-    fill($('o-size-sel'), s ? [s.label + ', ', guessy(fmt(s.cents), PRICE_GUESS), t ? '' : ' + travel'] : ['None yet']);
     var d = dayOf(state.date), w = winOf(state.date, state.window);
 
     // Book carries what it does: pay the total (bookings open) or reserve the day.
