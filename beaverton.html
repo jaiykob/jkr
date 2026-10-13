@@ -162,8 +162,8 @@
 <main id="main">
 
 <!-- HERO (round 7, LoadUp's layout in our colors): the copy and one big button on
-     the left; on the right a pile of junk drawn in the "what we take" colors, with a
-     price ticket on it that is a real link (BUILD:home-ticket, from the config). -->
+     the left; on the right a photo of people carrying furniture out (as LoadUp does,
+     2026-10-13), with a price ticket on it that is a real link (BUILD:home-ticket). -->
 <section class="h-hero" aria-labelledby="hero-title">
   <div class="h-hero-in">
     <div class="h-hero-copy">
@@ -183,16 +183,12 @@
       <a class="h-pill" href="tel:+19254086053"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span>Call or text</span> <span class="h-pill-num">(925) 408-6053</span></a>
     </div>
     <div class="h-art">
-      <div class="h-pile" aria-hidden="true">
-        <span class="h-block b-sofa" style="--sw:#E4572E"></span>
-        <span class="h-block b-fridge" style="--sw:#9AA5B1"></span>
-        <span class="h-block b-mattress" style="--sw:#4C8BF5"></span>
-        <span class="h-block b-box" style="--sw:#D9B26F"></span>
-        <span class="h-block b-crate" style="--sw:#F2A541"></span>
-        <span class="h-block b-bag" style="--sw:#3FA34D"></span>
-        <span class="h-block b-chair" style="--sw:#8E6CCF"></span>
-        <span class="h-block b-tv" style="--sw:#2E3440"></span>
-      </div>
+      <!-- A stock photo until we have our own (images/src/CREDITS.md); the first screen's
+           largest picture, so it loads first and is never lazy. -->
+      <picture class="h-photo">
+        <source type="image/webp" srcset="/images/photos/hero-movers-carrying-sofa-480.webp 480w, /images/photos/hero-movers-carrying-sofa-960.webp 960w, /images/photos/hero-movers-carrying-sofa-1440.webp 1440w" sizes="(min-width: 960px) 520px, calc(100vw - 32px)">
+        <img src="/images/photos/hero-movers-carrying-sofa-960.jpg" srcset="/images/photos/hero-movers-carrying-sofa-480.jpg 480w, /images/photos/hero-movers-carrying-sofa-960.jpg 960w, /images/photos/hero-movers-carrying-sofa-1440.jpg 1440w" sizes="(min-width: 960px) 520px, calc(100vw - 32px)" alt="Two movers carrying a sofa along a sidewalk" width="960" height="640" fetchpriority="high" decoding="async">
+      </picture>
       <!-- GENERATED from pricing.config.mjs by `npm run build:pricing`. Never type prices here. -->
       <!-- BUILD:home-ticket -->
       <a class="h-ticket" data-size="2" href="book/quote.html?size=2">
@@ -317,7 +313,7 @@
       <!-- GENERATED from pricing.config.mjs by `npm run build:pricing`. Never type prices here. -->
       <!-- BUILD:home-sizes -->
         <a class="size-card" data-size="0" href="book/quote.html?size=0">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <img class="size-photo" src="/images/photos/size-single-480.jpg" srcset="/images/photos/size-single-480.webp 480w, /images/photos/size-single-960.webp 960w" sizes="(min-width: 900px) 240px, 68px" alt="" width="800" height="500" loading="lazy" decoding="async">
           <span class="size-body">
             <span class="size-name">Single item</span>
             <span class="size-note">A couch, a mattress, an appliance</span>
@@ -325,7 +321,7 @@
           </span>
         </a>
         <a class="size-card" data-size="1" href="book/quote.html?size=1">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <img class="size-photo" src="/images/photos/size-quarter-480.jpg" srcset="/images/photos/size-quarter-480.webp 480w, /images/photos/size-quarter-960.webp 960w" sizes="(min-width: 900px) 240px, 68px" alt="" width="800" height="500" loading="lazy" decoding="async">
           <span class="size-body">
             <span class="size-name">1/4 truck</span>
             <span class="size-note">A few pieces or a room corner</span>
@@ -333,7 +329,7 @@
           </span>
         </a>
         <a class="size-card" data-size="2" href="book/quote.html?size=2">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <img class="size-photo" src="/images/photos/size-half-480.jpg" srcset="/images/photos/size-half-480.webp 480w, /images/photos/size-half-960.webp 960w" sizes="(min-width: 900px) 240px, 68px" alt="" width="800" height="500" loading="lazy" decoding="async">
           <span class="size-body">
             <span class="size-name">1/2 truck</span>
             <span class="size-note">A small room or a garage corner</span>
@@ -341,7 +337,7 @@
           </span>
         </a>
         <a class="size-card" data-size="3" href="book/quote.html?size=3">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <img class="size-photo" src="/images/photos/size-three-480.jpg" srcset="/images/photos/size-three-480.webp 480w, /images/photos/size-three-960.webp 960w" sizes="(min-width: 900px) 240px, 68px" alt="" width="800" height="500" loading="lazy" decoding="async">
           <span class="size-body">
             <span class="size-name">3/4 truck</span>
             <span class="size-note">A full room or a small garage</span>
@@ -349,7 +345,7 @@
           </span>
         </a>
         <a class="size-card" data-size="4" href="book/quote.html?size=4">
-          <img class="size-photo" src="/images/placeholder.svg" alt="" width="800" height="500" loading="lazy" decoding="async">
+          <img class="size-photo" src="/images/photos/size-full-480.jpg" srcset="/images/photos/size-full-480.webp 480w, /images/photos/size-full-960.webp 960w" sizes="(min-width: 900px) 240px, 68px" alt="" width="800" height="500" loading="lazy" decoding="async">
           <span class="size-body">
             <span class="size-name">Full truck</span>
             <span class="size-note">A garage, basement or estate</span>

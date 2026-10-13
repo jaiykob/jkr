@@ -11,6 +11,7 @@ towns:
 - damascus: Sheds and barns that have stayed shut since the last owner, cleared along with the house.
 - clackamas: Rented storage units near the freeway that slowly filled up over the years.
 posts: where-hauled-junk-goes, what-junk-haulers-cant-take, choosing-a-junk-removal-company
+photo: A mover loading a large piece into a van
 
 ## What we take
 Whatever you decide can go. That decision is always yours, and nothing leaves without it.

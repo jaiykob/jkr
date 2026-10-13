@@ -13,6 +13,7 @@ towns:
 - sherwood: Newer houses with few basements, so the garage ends up holding everything.
 - vancouver: Roomy Clark County garages, where clearing out the whole space is a common call.
 posts: garage-cleanout-in-a-weekend, where-hauled-junk-goes, what-junk-haulers-cant-take
+photo: Two movers carrying boxes past a stack of more
 
 ## What we take
 Almost anything that ends up in a garage can ride in our truck. Most garage loads are a mix of furniture that moved out of the house, boxes from the last two moves, and the tools, toys and sports gear nobody reaches for anymore.

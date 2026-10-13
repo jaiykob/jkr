@@ -12,6 +12,7 @@ towns:
 - camas: Rooms redone on Prune Hill and in Grass Valley, with the old pieces swapped out for new ones.
 - sherwood: Newer floor plans that the old sectional never quite fit after the move.
 posts: where-hauled-junk-goes, clearing-a-rental-between-tenants, what-junk-removal-costs
+photo: Two movers carrying a sofa out through a brick doorway
 
 ## What we take
 If you sit on it, sleep on it or keep things in it, it can almost certainly ride in our truck. One piece or a whole room, it is the same job for us.

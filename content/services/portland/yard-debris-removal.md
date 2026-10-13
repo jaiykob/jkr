@@ -12,6 +12,7 @@ towns:
 - boring: Big lots and acreage along Highway 26, all of it inside the home zone.
 - brush-prairie: Pastures and big lots, with old hay, rusted gates and broken feeders to clear.
 posts: yard-debris-after-a-storm, where-hauled-junk-goes, junk-removal-or-dumpster
+photo: A wheelbarrow full of fallen leaves
 
 ## What we take
 If it grew in the yard or blew into it, we can most likely haul it.

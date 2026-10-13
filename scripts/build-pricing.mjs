@@ -41,11 +41,18 @@ const AREA_SERVED = [...new Set(ALL_ZIPS.map((z) => `${ZIP_ZONES[z].place}, ${ZI
    while GUESS.prices) and "+ travel" until the page knows the ZIP. The class
    names are shared with the homepage cards (round 6 ruling R1); js/size-cards.js
    makes them pickable and writes the travel line. */
+/* The card's photo: a pipeline photo (images/src → images/photos, -480.jpg in the config)
+   also offers its WebP sizes; anything else is used as is. Decorative: the card's name says it. */
+const sizePhoto = (src) => {
+  const m = String(src).match(/^(.*)-480\.jpg$/);
+  const set = m ? ` srcset="${m[1]}-480.webp 480w, ${m[1]}-960.webp 960w" sizes="(min-width: 900px) 240px, 68px"` : '';
+  return `<img class="size-photo" src="${src}"${set} alt="" width="800" height="500" loading="lazy" decoding="async">`;
+};
 const sizeCard = (r, o, tag, indent) => [
   tag === 'a'
     ? `<a class="size-card" data-size="${r}" href="book/quote.html?size=${r}">`
     : `<button type="button" class="size-card" data-size="${r}" aria-pressed="false">`,
-  `  <img class="size-photo" src="${o.photo}" alt="" width="800" height="500" loading="lazy" decoding="async">`,
+  `  ${sizePhoto(o.photo)}`,
   '  <span class="size-body">',
   `    <span class="size-name">${o.label}</span>`,
   `    <span class="size-note">${o.note}</span>`,

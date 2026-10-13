@@ -14,6 +14,12 @@
 .svc-hero-in { max-width: var(--w-wide); margin: 0 auto; }
 .svc-hero .h-title { font-size: clamp(2.25rem, 5.4vw, 3.9rem); max-width: 18ch; text-wrap: balance; }
 .svc-hero .h-lede { max-width: 620px; }
+/* The header photo (images/src/svc-<slug>.jpg, framed like the homepage hero's):
+   under the buttons on a phone, beside the copy from 960px. */
+.svc-hero-grid { display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); align-items: center; }
+.svc-hero-grid > * { min-width: 0; }
+.svc-hero-photo { aspect-ratio: 4 / 3; max-width: 520px; }
+@media (min-width: 960px) { .svc-hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 48px; } }
 .svc-photo {
   display: inline-flex; align-items: center; justify-content: center; min-height: 60px; padding: 0 26px;
   border-radius: 14px; border: 2px solid var(--rg); background: var(--card); color: var(--rg);

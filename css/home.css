@@ -82,26 +82,11 @@
    shadow (a sofa, a fridge, a mattress leaning on it, boxes, a yard bag, a
    chair, a TV). Drawn, not a photo; screen readers skip it. */
 .h-art { position: relative; width: 100%; max-width: 520px; margin: 0 auto; }
-.h-pile { position: relative; aspect-ratio: 10 / 8; }
-.h-pile::before { content: ''; position: absolute; left: 2%; right: 6%; bottom: 7%; height: 7%; border-radius: 50%; background: rgba(21,23,26,.13); }
-.h-block {
-  position: absolute; left: var(--x); top: var(--y); width: var(--w); height: var(--h); transform: rotate(var(--r, 0deg));
-  border-radius: 10px; background: var(--sw); border: 2px solid var(--rg); box-shadow: 7px 7px 0 var(--rg);
-}
-.b-sofa     { --x: 4%;  --y: 61%; --w: 50%; --h: 22%; --r: -1deg; }
-.b-sofa::before { content: ''; position: absolute; left: 6%; right: 6%; top: -42%; height: 46%; border-radius: 10px 10px 0 0; background: inherit; border: 2px solid var(--rg); border-bottom: 0; }
-.b-fridge   { --x: 54%; --y: 21%; --w: 20%; --h: 62%; --r: 1.5deg; }
-.b-fridge::after { content: ''; position: absolute; left: 10%; right: 10%; top: 34%; height: 2px; background: var(--rg); }
-.b-mattress { --x: 75%; --y: 11%; --w: 11%; --h: 70%; --r: 9deg; border-radius: 14px; }
-.b-box      { --x: 8%;  --y: 40%; --w: 22%; --h: 19%; --r: -5deg; border-radius: 6px; }
-.b-box::after { content: ''; position: absolute; left: 0; right: 0; top: 30%; height: 2px; background: var(--rg); }
-.b-crate    { --x: 31%; --y: 45%; --w: 18%; --h: 15%; --r: 4deg; border-radius: 6px; }
-.b-bag      { --x: 27%; --y: 22%; --w: 17%; --h: 21%; --r: -9deg; border-radius: 42% 42% 30% 30%; }
-.b-chair    { --x: 12%; --y: 19%; --w: 12%; --h: 19%; --r: 10deg; }
-.b-tv       { --x: 36%; --y: 4%;  --w: 21%; --h: 16%; --r: -4deg; }
-.b-tv::after { content: ''; position: absolute; inset: 14%; border-radius: 4px; background: rgba(255,255,255,.16); }
-
-/* The price ticket pinned to the pile: the half truck at its config price,
+/* The hero photo (2026-10-13, LoadUp's hero: people hauling furniture out of a home),
+   framed like the site's blocks: a charcoal border and a hard shadow. */
+.h-photo { display: block; aspect-ratio: 5 / 4; border-radius: 22px; overflow: hidden; border: 2px solid var(--rg); box-shadow: 8px 8px 0 var(--rg); background: #D9D4C7; }
+.h-photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 45% 50%; }
+/* The price ticket pinned to the photo: the half truck at its config price,
    a link to the order page with that size picked (BUILD:home-ticket). */
 .h-ticket {
   position: absolute; right: -2%; bottom: -2%; width: 60%; min-width: 250px;
@@ -131,8 +116,8 @@
 @media (max-width: 599px) {
   .h-hero { padding: 32px 16px 48px; }
   .h-art { max-width: 420px; }
-  .h-pile { aspect-ratio: 10 / 7; }
-  /* The ticket sits under the pile, overlapping its foot, at full size. */
+  .h-photo { aspect-ratio: 4 / 3; }
+  /* The ticket sits under the photo, overlapping its foot, at full size. */
   .h-ticket { position: relative; right: auto; bottom: auto; width: auto; min-width: 0; max-width: 320px; margin: -34px 6px 0 auto; transform: rotate(-2deg); }
 }
 @media (max-width: 379px) {

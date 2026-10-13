@@ -52,7 +52,7 @@ const idOf = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g
 // The pages live one folder down (portland/<slug>.html), so a link written from the site root
 // (/book/quote.html) is rewritten to ../book/quote.html, the way the blog rewrites its own.
 const UP = '../'.repeat(`${METRO}/x.html`.split('/').length - 1);
-const HEAD_FIELDS = ['name', 'h1', 'description', 'lede', 'sizes', 'towns', 'posts'];
+const HEAD_FIELDS = ['name', 'h1', 'description', 'lede', 'sizes', 'towns', 'posts', 'photo'];   // photo is optional
 
 /** Paragraphs and "- " lists to HTML blocks, written like a post (build-blog's renderMd): escaped,
  *  [[guesses]] red, **bold**, and [links](/from/the/site/root.html). A "- " line right under a
@@ -164,7 +164,12 @@ export function parseService(text, file) {
   }
   if (faqs.length < 3 || faqs.length > 5) fail(`${faqs.length} questions under "## FAQ" (want 3 to 5, as Q: and A: lines)`);
 
-  return { slug, metro: METRO, name, h1, description, lede: field('lede'), sizes, towns, posts, ...own, faqs };
+  // The header photo: images/src/svc-<slug>.jpg through the image pipeline, its alt text in "photo:".
+  const photo = field('photo');
+  if (photo && !fs.existsSync(path.join(ROOT, 'images/photos', `svc-${slug}-960.jpg`))) {
+    fail(`"photo:" is set but images/photos/svc-${slug}-960.jpg does not exist (put svc-${slug}.jpg in images/src/ and run npm run build)`);
+  }
+  return { slug, metro: METRO, name, h1, description, lede: field('lede'), sizes, towns, posts, photo, ...own, faqs };
 }
 
 /** Every service, in the order content/services/portland/ORDER gives (priority first). */
@@ -193,6 +198,14 @@ export function serviceLinks(lang = 'en') {
 const money = (cents) => (ORDER.GUESS.prices ? `<span class="guess">${fmt(cents)}</span>` : fmt(cents));
 const PHONE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
 const indent = (html, pad) => html.split('\n').map((l) => (l ? pad + l : l)).join('\n');
+
+/** A pipeline photo (images/photos/<name>-480|960 .webp|.jpg) as a framed hero picture. */
+const heroPhoto = (name, alt, pad) => [
+  '<picture class="h-photo svc-hero-photo">',
+  `  <source type="image/webp" srcset="/images/photos/${name}-480.webp 480w, /images/photos/${name}-960.webp 960w" sizes="(min-width: 960px) 480px, calc(100vw - 32px)">`,
+  `  <img src="/images/photos/${name}-960.jpg" srcset="/images/photos/${name}-480.jpg 480w, /images/photos/${name}-960.jpg 960w" sizes="(min-width: 960px) 480px, calc(100vw - 32px)" alt="${esc(alt)}" width="960" height="640" fetchpriority="high" decoding="async">`,
+  '</picture>',
+].map((l) => pad + l).join('\n');
 
 /** The page for one service. `all` is every service, for the "Other jobs we do" links. */
 export function buildService(s, all = [s]) {
@@ -236,7 +249,7 @@ export function buildService(s, all = [s]) {
   };
   const sizeCard = (z) => [
     `<a class="size-card" data-size="${z.row}" href="${up}book/quote.html?size=${z.row}">`,
-    `  <img class="size-photo" src="${z.photo}" alt="" width="800" height="500" loading="lazy" decoding="async">`,
+    `  <img class="size-photo" src="${z.photo}"${/-480\.jpg$/.test(z.photo) ? ` srcset="${z.photo.replace(/-480\.jpg$/, '-480.webp')} 480w, ${z.photo.replace(/-480\.jpg$/, '-960.webp')} 960w" sizes="(min-width: 900px) 240px, 68px"` : ''} alt="" width="800" height="500" loading="lazy" decoding="async">`,
     '  <span class="size-body">',
     `    <span class="size-name">${esc(z.label)}</span>`,
     `    <span class="size-note">${esc(z.note)}</span>`,
@@ -297,12 +310,17 @@ export function buildService(s, all = [s]) {
     '<section class="h-hero svc-hero" aria-labelledby="hero-title">',
     '  <div class="svc-hero-in">',
     `    ${trail.html}`,
-    '    <p class="h-eyebrow">Portland junk removal</p>',
-    `    <h1 class="h-title" id="hero-title">${esc(s.h1)}</h1>`,
-    `    <p class="h-lede">${inline(s.lede)}</p>`,
-    '    <div class="h-actions" data-hides-sticky>',
-    `      <a class="h-cta" href="${up}book/quote.html">Get my price</a>`,
-    `      <a class="svc-photo" href="${up}book/quote.html#photos">Send a photo</a>`,
+    '    <div class="svc-hero-grid">',
+    '      <div class="svc-hero-copy">',
+    '        <p class="h-eyebrow">Portland junk removal</p>',
+    `        <h1 class="h-title" id="hero-title">${esc(s.h1)}</h1>`,
+    `        <p class="h-lede">${inline(s.lede)}</p>`,
+    '        <div class="h-actions" data-hides-sticky>',
+    `          <a class="h-cta" href="${up}book/quote.html">Get my price</a>`,
+    `          <a class="svc-photo" href="${up}book/quote.html#photos">Send a photo</a>`,
+    '        </div>',
+    '      </div>',
+    ...(s.photo ? [heroPhoto(`svc-${s.slug}`, s.photo, '      ')] : []),
     '    </div>',
     '  </div>',
     '</section>',
