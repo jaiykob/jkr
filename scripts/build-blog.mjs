@@ -188,7 +188,6 @@ export function postPage(p, twin) {
     `      <p>${t.ctaText}</p>`,
     '      <div class="actions">',
     `        <a class="btn-primary" href="${up}book/quote.html">${t.ctaQuote}</a>`,
-    `        <a class="btn-ghost" href="${p.lang === 'es' ? `${up}es/service-areas.html` : `${up}service-areas.html`}">${t.ctaAreas}</a>`,
     '      </div>',
     '    </section>',
     `    <p class="post-back"><a href="index.html">${t.back}</a></p>`,

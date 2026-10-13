@@ -62,11 +62,11 @@ cents. Price = load + the ZIP's travel fee; past the last zone is "call us"
 ## The booking (`book/quote.html`, `js/order.js`, `css/order.css`)
 
 Copied from Scoops Co.'s flow (onboarding/waste.html, schedule-waste.html): one
-centered column, a progress bar that fills and pulses, the size, the day and the
-time a page each, then contact information on one page with the ZIP first
-(View quote), your quote (the price, the contact details with Edit; Continue to
-payment), the payment page, then the booking page (thanks.html). Back and Next
-under each page. Photo quotes: `api/photo-quote.js` has Claude
+centered column, a progress bar that fills and pulses, and at most 4 pages that
+ask for something (founder 2026-10-13): Size, When (the day, then its times),
+Contact information with the ZIP first (View quote), then Checkout (your price
+and contact details with Edit, then the payment), then the booking page
+(thanks.html). Back and Next under each page. Photo quotes: `api/photo-quote.js` has Claude
 count items in up to 4 photos; the page picks the size; prices never come
 from Claude.
 

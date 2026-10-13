@@ -3,7 +3,7 @@
  * the same list so the two cannot disagree (round 9; the scorecard and the
  * SEO audit compare them name by name and address by address).
  *
- *   crumbs([HUB.en, { name: 'Garage cleanout' }], { rel: 'portland/garage-cleanout.html' })
+ *   crumbs([{ name: 'Garage cleanout' }], { rel: 'portland/garage-cleanout.html' })
  *   → { html: '<nav class="crumbs" aria-label="Breadcrumb"><ol>…</ol></nav>', ld: { '@type': 'BreadcrumbList', … } }
  *
  * `trail` runs from the top down, each step `{ name, href }` with href a path
@@ -27,11 +27,6 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const HOME = { en: { name: 'Home', href: 'index.html' }, es: { name: 'Inicio', href: 'es/index.html' } };
 const LABEL = { en: 'Breadcrumb', es: 'Ruta' };
 
-/** The metro hub, the middle step of a service page's trail. */
-export const HUB = {
-  en: { name: 'Portland metro', href: 'service-areas.html' },
-  es: { name: 'Área de Portland', href: 'es/service-areas.html' },
-};
 
 export function crumbs(trail, { rel, lang = 'en' }) {
   if (!rel) throw new Error('crumbs: rel (the page\'s path from the root) is required');

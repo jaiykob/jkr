@@ -36,7 +36,7 @@ import site from '../api/_lib/site.js';
 import { fmt } from '../pricing.config.mjs';
 import { parseTown, townTravel, inline, faqPage } from './build-towns.mjs';
 import { parsePost, renderMd } from './build-blog.mjs';
-import { crumbs, HUB } from './lib/crumbs.mjs';
+import { crumbs } from './lib/crumbs.mjs';
 
 const require = createRequire(import.meta.url);
 const ORDER = require('../api/_lib/order-config.js');
@@ -217,7 +217,7 @@ export function buildService(s, all = [s]) {
   // The highest price is the largest listed size plus the largest fee of any zone those towns reach.
   const maxFee = Math.max(...towns.map((t) => Math.max(...townTravel(t.town).map((z) => z.cents))));
   const items = s.faqs.map((f) => ({ q: inline(f.q), a: inline(f.a) }));
-  const trail = crumbs([HUB.en, { name: s.name }], { rel });
+  const trail = crumbs([{ name: s.name }], { rel });
   const posts = s.posts.map(postOf);
   const others = all.filter((x) => x.slug !== s.slug);
   const before = fs.existsSync(path.join(ROOT, 'before-we-come.html'));   // the link appears once the page exists

@@ -96,7 +96,9 @@ img { max-width: 100%; }
 }
 .nav-logo, .site-nav > a { display: inline-flex !important; align-items: center; gap: 10px; min-height: 48px; color: #fff; text-decoration: none; }
 .logo-mark { display: none; }
-.nav-wordmark { font: 600 20px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; color: #fff; white-space: nowrap; }
+.nav-wordmark { font: 400 20px/1 var(--font); letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.72); white-space: nowrap; }
+/* HAUL light, MIGHTY bold and white (founder 2026-10-13: "make the mighty part a little bit more bolded white for emphasis"). */
+.nav-wordmark .wm-strong { font-weight: 700; color: #fff; }
 .nav-logo img { display: block; height: 40px; width: auto; }
 .nav-page { display: none; }
 .nav-links { display: flex; align-items: center; gap: 30px; list-style: none; margin: 0 auto 0 40px; padding: 0; }

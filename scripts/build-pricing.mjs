@@ -115,7 +115,7 @@ const homeJsonld = [
 
 /* Under the size cards: what travel adds, from the zone table. */
 const first = ZONE_LIST[0], last = ZONE_LIST[ZONE_LIST.length - 1];
-const homeTravelNote = `      <p class="tiers-travel">Travel is added by zone: ${guessed(first.cents ? `+${fmt(first.cents)}` : 'no charge', GUESS.zones)} within ${guessed(`${first.upToMiles} road miles`, GUESS.zones)} of ${BASE.label}, up to ${guessed(`+${fmt(last.cents)}`, GUESS.zones)} at ${guessed(`${last.upToMiles} miles`, GUESS.zones)}. <a href="service-areas.html">See where we go</a></p>`;
+const homeTravelNote = `      <p class="tiers-travel">Travel is added by zone: ${guessed(first.cents ? `+${fmt(first.cents)}` : 'no charge', GUESS.zones)} within ${guessed(`${first.upToMiles} road miles`, GUESS.zones)} of ${BASE.label}, up to ${guessed(`+${fmt(last.cents)}`, GUESS.zones)} at ${guessed(`${last.upToMiles} miles`, GUESS.zones)}. <a href="book/quote.html">Check your ZIP</a></p>`;
 
 /* The photo reader's item list (api/photo-quote.js): keys and labels only. */
 const serverItems = [

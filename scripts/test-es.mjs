@@ -102,7 +102,7 @@ ok(es.html.includes(langSwitch('es/index.html')), 'the switch goes back to Engli
 
 console.log('== Spanish town pages ==');
 {
-  const { parseTown, loadTowns, buildPage, buildHub } = await import('./build-towns.mjs');
+  const { parseTown, loadTowns, buildPage } = await import('./build-towns.mjs');
   const { ZIP_ZONES, ZONES } = await import('../pricing.config.mjs');
   const z2 = Object.keys(ZIP_ZONES).find((z) => ZIP_ZONES[z].zone === ZONES[1].key);
   const base = `name: Sample Town\nstate: OR\nzips: ${z2}\nlede: The line under the headline.\nlede_es: La línea bajo el título.\nareas: North End\n\n## Local\nFirst paragraph.\n\n## FAQ\nQ: First question?\nA: First answer.\n\nQ: Second question?\nA: Second answer.\n`;
@@ -131,9 +131,6 @@ console.log('== Spanish town pages ==');
   const en = buildPage(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), t, towns, true);
   ok(/<html lang="en"/.test(en) && en.includes('Is there a travel charge to Sample Town?'), 'the English page is unchanged by the Spanish sections');
 
-  const hub = buildHub(esIndex, towns, true, 'es');
-  ok(/<html lang="es"/.test(hub) && hub.includes('<link rel="canonical" href="https://www.example.com/es/service-areas.html" />'), 'the Spanish hub is at its own address');
-  ok(hub.includes('Ciudades por zona de viaje') && !/Towns by travel zone/.test(hub), 'the hub reads in Spanish');
 }
 
 // Spanish is paused (founder 2026-10-13: "dont work on spanish pages for now"): a phrase

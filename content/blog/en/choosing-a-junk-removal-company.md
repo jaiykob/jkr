@@ -15,7 +15,7 @@ Things get missed; a basement corner or a second shed turns up on the day. A goo
 
 ## 3. Is travel extra?
 
-If you live outside the company's home area, ask how travel is charged. A flat fee by zone is fair and easy to check. We list ours by ZIP code on the [service areas page](/service-areas.html), and it is already in the price on our [quote page](/book/quote.html).
+If you live outside the company's home area, ask how travel is charged. A flat fee by zone is fair and easy to check. Ours is set by ZIP code and is already in the price on our [quote page](/book/quote.html).
 
 ## 4. Where do my things go?
 

@@ -75,6 +75,6 @@ Oregon City]]`. It prints red with an asterisk on the page and shows up in
 
 ## Adding or removing a town
 
-Add a file, run `npm run build`, and the page, the hub (`service-areas.html`)
+Add a file, run `npm run build`, and the page
 and the homepage zone list all pick it up. Delete a file and the build
 removes its page.

@@ -15,7 +15,7 @@ A veces se nos olvidan cosas; el día del retiro aparece una esquina del sótano
 
 ## 3. ¿El viaje es aparte?
 
-Si vives fuera del área cercana de la empresa, pregunta cómo cobran el viaje. Un cargo fijo por zona es justo y fácil de revisar. Nosotros publicamos el nuestro por código postal en la página de [zonas de servicio](/es/service-areas.html), y ya va incluido en el precio de nuestra [página de cotización](/book/quote.html).
+Si vives fuera del área cercana de la empresa, pregunta cómo cobran el viaje. Un cargo fijo por zona es justo y fácil de revisar. El nuestro depende del código postal y ya va incluido en el precio de nuestra [página de cotización](/book/quote.html).
 
 ## 4. ¿A dónde van mis cosas?
 
