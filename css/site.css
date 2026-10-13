@@ -29,7 +29,6 @@
 :root {
   --font: 'Google Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   --rg:   #0C0B09;
-  --nav-bg: #1E1C19;   /* the top bar, a shade lighter than the near black hero under it (founder 2026-10-13) */
   --fg:   #34322F;
   --tan:  #FBF9F5;
   --ltan: #F1EEE8;
@@ -85,12 +84,25 @@ img { max-width: 100%; }
 /* The homepage (and every page built from it) wraps its nav in a <header>, the
    home of the contact buttons; there the header is what sticks to the top. */
 .site-header { position: sticky; top: 0; z-index: 100; }
+/* Novah's top bar: the hero's own color at the top of the page (founder 2026-10-13: "make
+   the colors the same"); once you scroll it slides away going down and comes back going up,
+   frosted, with a faint line under it (js/site.js). Pages without the <header> wrapper
+   stick their nav the same way. */
+body > .site-nav { position: sticky; top: 0; }
+.site-header, body > .site-nav { transition: transform .5s cubic-bezier(.4,0,.2,1), background-color .5s, border-color .5s, box-shadow .5s; }
+.site-header.is-hidden, body > .site-nav.is-hidden { transform: translateY(-100%); }
+.site-header.is-scrolled .site-nav, body > .site-nav.is-scrolled {
+  background: rgba(12,11,9,.85); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  border-bottom-color: rgba(255,255,255,.06); box-shadow: 0 4px 30px rgba(0,0,0,.5);
+}
+@media (prefers-reduced-motion: reduce) { .site-header, body > .site-nav, .site-nav { transition: none; } }
 /* BUILD:chrome-css */
 /* ── HEADER (Novah's): a near black bar, the name in spaced capitals, quiet links,
    the language as a small pill and one white pill button. Phone, text and WhatsApp
    live in the phone menu and the footer. Under 960px the links fold into the menu. */
 .site-nav {
-  position: relative; z-index: 100; background: var(--nav-bg); color: #fff; border-bottom: 1px solid rgba(255,255,255,.07);
+  position: relative; z-index: 100; background: var(--rg); color: #fff; border-bottom: 1px solid transparent;
+  transition: background-color .5s, border-color .5s, box-shadow .5s;
   display: flex; align-items: center; justify-content: space-between; gap: 24px;
   min-height: var(--nav-h); padding: 12px clamp(16px, 4vw, 48px);
   font-family: var(--font); line-height: 1.4;
@@ -138,7 +150,23 @@ body .lang-switch .lang-short { display: inline; }
 }
 /* ── FOOTER (Novah's): near black, the name, a short line, columns of quiet links,
    then a thin line and the small print. */
-footer { background: var(--rg); color: rgba(255,255,255,.66); padding: 80px clamp(16px, 4vw, 48px) 28px; font-family: var(--font); line-height: 1.6; text-align: left; border: 0; }
+footer { position: relative; isolation: isolate; overflow: hidden; background: var(--rg); color: rgba(255,255,255,.66); padding: 80px clamp(16px, 4vw, 48px) 28px; font-family: var(--font); line-height: 1.6; text-align: left; border: 0; }
+/* Novah's night sky in the footer: a thin shine along the top edge, a soft blue glow
+   under it, and small white and pale blue stars (images/footer-stars*.svg, tiled); the
+   blue ones twinkle slowly. */
+footer:not(.o-foot) {
+  background:
+    linear-gradient(90deg, transparent, rgba(255,255,255,.18) 30%, rgba(255,255,255,.28) 50%, rgba(255,255,255,.18) 70%, transparent) top / 100% 1px no-repeat,
+    radial-gradient(ellipse 600px 80px at 50% 0, rgba(120,140,220,.18), transparent 70%) no-repeat,
+    var(--rg);
+}
+footer:not(.o-foot)::before, footer:not(.o-foot)::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: url(../images/footer-stars.svg) 50% 0 / 1280px 400px repeat;
+}
+footer:not(.o-foot)::after { background-image: url(../images/footer-stars-blue.svg); animation: foot-twinkle 5s ease-in-out infinite; }
+@keyframes foot-twinkle { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { footer:not(.o-foot)::after { animation: none; } }
 .foot-cols { display: grid; gap: 32px; max-width: var(--w-wide); margin: 0 auto 48px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 600px) { .foot-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 960px) { .foot-cols { grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, 1fr)); } }
