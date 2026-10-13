@@ -7,7 +7,7 @@ An old piano is often the heaviest thing in a house, and it was built to stay wh
 
 ## Why a piano is different
 
-An upright piano weighs [[300 to 800 pounds]], and a grand [[can weigh well over that]]. Most of that weight sits in a cast iron plate inside the case, high up and off to one side, so a piano tips more easily than its size suggests. Its small legs and casters were never meant to roll across a lawn or bump over a threshold.
+An upright piano weighs [[300 to 800 pounds]], and a grand [[can weigh well over that]]. Most of that weight sits in a cast iron plate inside the case, so a piano is top heavy and tips more easily than its size suggests. Its small legs and casters were never meant to roll across a lawn or bump over a threshold.
 
 That is why we never move a piano like a dresser. It rides on [[a padded piano board with straps]], we cover the floors and door frames on the way out, and we walk the route before anyone lifts. [[We move uprights and spinets ourselves; for a grand piano we may send you to a piano mover.]]
 

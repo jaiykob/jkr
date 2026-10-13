@@ -7,7 +7,7 @@ Un piano viejo muchas veces es lo más pesado de una casa, y se hizo para quedar
 
 ## Por qué un piano es distinto
 
-Un piano vertical pesa [[entre 300 y 800 libras]], y uno de cola [[puede pesar mucho más]]. Casi todo ese peso está en una placa de hierro fundido dentro de la caja, arriba y hacia un lado, así que un piano se voltea más fácil de lo que parece por su tamaño. Sus patas cortas y sus rueditas nunca se hicieron para rodar por el pasto ni para pasar por el marco de una puerta.
+Un piano vertical pesa [[entre 300 y 800 libras]], y uno de cola [[puede pesar mucho más]]. Casi todo ese peso está en una placa de hierro fundido dentro de la caja, así que un piano pesa más arriba y se voltea más fácil de lo que parece por su tamaño. Sus patas cortas y sus rueditas nunca se hicieron para rodar por el pasto ni para pasar por el umbral de una puerta.
 
 Por eso nunca movemos un piano como si fuera una cómoda. Va sobre [[una tabla acolchada para pianos, con correas]], cubrimos los pisos y los marcos de las puertas al salir, y revisamos el camino antes de levantarlo. [[Nosotros movemos pianos verticales y espinetas; para un piano de cola tal vez te mandemos con una empresa de mudanza de pianos.]]
 
@@ -34,4 +34,4 @@ Nuestra página [Antes de que lleguemos](/es/before-we-come.html) tiene el resto
 
 ## Cómo reservar un piano
 
-Llámanos o escríbenos primero con una foto, y confirmamos el equipo y el día. Todo lo demás que se va, como el banco, un sofá viejo o una pila del garaje, va por la [página de cotización](/book/quote.html) como siempre, y tu precio aparece con el viaje de tu código postal. Sacamos pianos de casas en toda el área, desde casas antiguas en [Portland](/es/portland.html) hasta casas de dos niveles en [Beaverton](/es/beaverton.html).
+Llámanos o escríbenos primero con una foto, y confirmamos el equipo y el día. Todo lo demás que se va, como el banco, un sofá viejo o una pila del garaje, va por la [página de cotización](/book/quote.html) como siempre, y tu precio aparece con el viaje de tu código postal. Sacamos pianos de casas en toda el área, desde casas antiguas en [Portland](/es/portland.html) hasta casas de dos niveles en [Beaverton](/es/beaverton.html). Para el resto de los muebles, mira nuestra [página de retiro de muebles](/portland/furniture-removal.html) (en inglés).

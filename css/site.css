@@ -373,7 +373,7 @@ body .lang-short { display: none; }
 .btn-primary, .btn-ghost, .btn-tan {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   min-height: var(--tap); padding: 0 30px;
-  border-radius: var(--r-sm); font-size: .9rem; font-weight: 700;
+  border-radius: var(--r-sm); font-size: 1rem; font-weight: 700;
   letter-spacing: .05em; text-decoration: none; text-align: center; line-height: 1.25;
   transition: background .2s, transform .15s, box-shadow .2s, border-color .2s, color .2s;
 }
