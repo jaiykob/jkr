@@ -115,8 +115,8 @@
     email:  { step: 'email',   el: $('o-email'),  err: $('o-email-err'),  check: function (v) { return EMAIL_RE.test(v.trim()) ? '' : 'Enter an email like you@example.com.'; } },
     street: { step: 'address', el: $('o-street'), err: $('o-street-err'), check: function (v) { return v.trim().length >= 4 ? '' : 'Enter the street address for the job.'; } },
   };
-  /* The box a typed page asks for (null on a page without one). */
-  var fieldFor = function (s) { return Object.keys(FIELDS).filter(function (k) { return FIELDS[k].step === s; })[0] || null; };
+  /* The first contact box still empty or wrong (null when every one is right). */
+  var firstBadField = function () { return Object.keys(FIELDS).filter(function (k) { return FIELDS[k].check(FIELDS[k].el.value); })[0] || null; };
   var OPTIONAL = { unit: $('o-unit'), notes: $('o-notes') };
   function fieldError(key, show) {
     var f = FIELDS[key], msg = f.check(f.el.value);
@@ -126,8 +126,12 @@
 
   /* ── the steps: one page each ────────────────────────────────────────── */
   // Each step's page (its section).
-  var SEC = { size: 'o-size', where: 'o-zip', day: 'o-day', time: 'o-time', name: 'o-you-name', phone: 'o-you-phone', email: 'o-you-email', address: 'o-you-addr', book: 'o-pay' };
-  var STEPS = ['size', 'where', 'day', 'time', 'name', 'phone', 'email', 'address', 'book'];
+  // Copied from Scoops Co.'s flow: the questions, View quote, your quote, Continue to
+  // payment, the payment, then the booking page (thanks.html).
+  var SEC = { size: 'o-size', day: 'o-day', time: 'o-time', contact: 'o-you', quote: 'o-quote', book: 'o-pay' };
+  var STEPS = ['size', 'day', 'time', 'contact', 'quote', 'book'];
+  // What Next says on each page (Scoops Co.: View quote, then Continue to payment).
+  var NEXT_LABEL = { contact: 'View quote', quote: 'Continue to payment' };
   var STEP_OF = {};
   STEPS.forEach(function (s) { STEP_OF[SEC[s]] = s; });
   var step = null;          // the step on screen
@@ -137,15 +141,17 @@
   var BASE_TITLE = document.title;
   function stepDone(s) {
     if (s === 'size') return state.size != null;
-    if (s === 'where') return !!state.trip;
     if (s === 'day') { var d = dayOf(state.date); return !!(d && !d.full); }
     if (s === 'time') return !!(state.date && state.window && windowFree(state.date, state.window));
-    var k = fieldFor(s);
-    if (k) return !FIELDS[k].check(FIELDS[k].el.value);
-    return false;   // the Pay page is never "done" on its own: Book finishes it
+    if (s === 'contact') return !!state.trip && !firstBadField();
+    if (s === 'quote') return stepDone('contact');   // a page to read: done once there is a quote
+    return false;   // the payment page is never "done" on its own: Book finishes it
   }
   /* The first step still to do (Book once the rest are done). */
-  function firstToDo() { for (var i = 0; i < STEPS.length; i++) if (!stepDone(STEPS[i])) return STEPS[i]; return 'book'; }
+  function firstToDo() {
+    for (var i = 0; i < STEPS.length; i++) if (STEPS[i] === 'quote' || !stepDone(STEPS[i])) return STEPS[i];
+    return 'quote';
+  }
   /* A step can be shown once every step before it is done. */
   function reachable(s) {
     var i = STEPS.indexOf(s);
@@ -173,7 +179,8 @@
     // box on Where (its ZIP selected, to type over), the box on a typed page; else the
     // page's heading. The step is said aloud, since the focus may skip the heading.
     var heading = $(SEC[s] + '-h');
-    var typeHere = s === 'where' ? zipIn : fieldFor(s) ? FIELDS[fieldFor(s)].el : null;
+    // Contact information: the first empty box, the ZIP first.
+    var typeHere = s === 'contact' ? [zipIn].concat(Object.keys(FIELDS).map(function (k) { return FIELDS[k].el; })).filter(function (f) { return !f.value.trim(); })[0] || null : null;
     var put = function (el) { el.focus({ preventScroll: true }); if (el === zipIn && zipIn.value) try { zipIn.select(); } catch (e) { /* not selectable */ } };
     if (how === 'start') { if (typeHere) put(typeHere); return; }
     if (!moved && !focusId) return;
@@ -210,13 +217,14 @@
     $('o-next').hidden = step === 'book';
     $('o-book').hidden = step !== 'book';
     $('o-next').setAttribute('aria-disabled', String(!stepDone(step)));
+    $('o-next').textContent = NEXT_LABEL[step] || 'Next';
   }
   /* The page after this one: the next one still to do (a ZIP always shows its days,
      and a day its times, so a change there is never passed over). */
   function after(s) {
     var i = STEPS.indexOf(s);
-    if (s === 'where' || s === 'day') return STEPS[i + 1];
-    for (var k = i + 1; k < STEPS.length; k++) if (!stepDone(STEPS[k])) return STEPS[k];
+    if (s === 'day') return 'time';
+    for (var k = i + 1; k < STEPS.length; k++) if (STEPS[k] === 'quote' || STEPS[k] === 'book' || !stepDone(STEPS[k])) return STEPS[k];
     return 'book';
   }
   /* What a page says when Next is tapped before it is answered. */
@@ -224,16 +232,16 @@
   /* Next (or Enter): this page's answer is checked, then on to the page after it. */
   function nextFrom(s) {
     if (s !== step) return;
-    var k = fieldFor(s);
-    if (k) {
-      if (fieldError(k, true)) { say(FIELDS[k].err.textContent); FIELDS[k].el.focus({ preventScroll: true }); track('order_missing', { step: s }); return; }
-    } else if (s === 'where') {
+    if (s === 'contact') {
       if (!state.trip) {
         // A ZIP past the zones has its own panel (email for a price); otherwise ask for one.
         if (state.zip.length === 5) { say($('o-far').querySelector('p').textContent); $('o-far-email').focus(); return; }
         zipMsg.textContent = 'Enter the 5 digit ZIP of the job.'; zipMsg.className = 'o-msg is-err'; zipIn.setAttribute('aria-invalid', 'true');
         say(zipMsg.textContent); zipIn.focus({ preventScroll: true }); return;
       }
+      var bad = null;
+      Object.keys(FIELDS).forEach(function (k) { if (fieldError(k, true) && !bad) bad = k; });
+      if (bad) { say(FIELDS[bad].err.textContent); FIELDS[bad].el.focus({ preventScroll: true }); track('order_missing', { step: s }); return; }
     } else if (!stepDone(s)) {
       var m = $({ size: 'o-size-msg', day: 'o-day-msg', time: 'o-when-msg' }[s]);
       if (m) { m.textContent = UNANSWERED[s]; m.className = 'o-msg is-err'; say(m.textContent); }
@@ -258,7 +266,7 @@
     book.setAttribute('aria-busy', String(busy));
     if (reserved) book.textContent = 'Reserved';
     else if (busy) book.textContent = 'Booking your pickup…';
-    else if (OPEN && tot) fill(book, ['Pay ', guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)]);
+    else if (OPEN && tot) fill(book, ['Confirm and pay ', guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)]);
     else book.textContent = OPEN ? 'Book' : 'Reserve my day';
     book.classList.toggle('is-done', reserved);
 
@@ -269,22 +277,18 @@
 
     // The city line under the street comes from the ZIP.
     $('o-city').textContent = t ? 'City: ' + t.place + ', ' + t.state + ' ' + t.zip + ' (from your ZIP)' : '';
-    // The Book page reads every answer back, each one tap from its page.
+    // Your quote (Scoops Co.'s quote page): the price, what it covers, the contact details.
     syncContact();
-    var recap = {
-      size: s ? [s.label + ', ', guessy(fmt(s.cents), PRICE_GUESS)] : '',
-      where: t ? [t.place + ', ' + t.state + ' ' + t.zip + ', ', t.cents ? guessy(fmt(t.cents) + ' travel', TRAVEL_GUESS) : guessy('no travel charge', TRAVEL_GUESS)] : '',
-      total: tot ? [guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)] : '',
-      when: d && w && state.window ? [d.label + ', ', guessy(w.label, !!G.schedule)] : '',
-      name: FIELDS.name.el.value.trim(), phone: FIELDS.phone.el.value.trim(), email: FIELDS.email.el.value.trim(),
-      address: t && FIELDS.street.el.value.trim() ? fullAddress() : '',
-    };
-    document.querySelectorAll('[data-recap]').forEach(function (n) {
-      var v = recap[n.getAttribute('data-recap')];
-      fill(n, Array.isArray(v) ? v : [v || 'Not given yet']);
-    });
-    // The Day page says where the job is and what travel adds.
-    if (t) fill($('o-where-text'), [t.place + ' ' + t.zip + ' · ', t.cents ? guessy('+' + fmt(t.cents) + ' travel', TRAVEL_GUESS) : guessy('No travel charge', TRAVEL_GUESS)]);
+    var c = state.contact, first = c.name.trim().split(/\s+/)[0];
+    $('o-q-first').textContent = first || 'there';
+    fill($('o-q-total'), tot ? [guessy(fmt(tot), PRICE_GUESS || TRAVEL_GUESS)] : ['']);
+    fill($('o-q-size'), s ? [s.label + ', ', guessy(fmt(s.cents), PRICE_GUESS)] : ['']);
+    fill($('o-q-when'), d && w && state.window ? [d.label + ', ', guessy(w.label, !!G.schedule)] : ['']);
+    fill($('o-q-travel'), t ? [t.place + ', ' + t.state + ' ' + t.zip + ': ', t.cents ? guessy(fmt(t.cents), TRAVEL_GUESS) : guessy('no travel charge', TRAVEL_GUESS)] : ['']);
+    $('o-q-name').textContent = c.name.trim();
+    $('o-q-email').textContent = c.email.trim();
+    $('o-q-phone').textContent = c.phone.trim();
+    $('o-q-address').textContent = t && c.street.trim() ? fullAddress() : '';
 
     // WhatsApp opens a chat with the size and ZIP filled in.
     var msg = 'Hello, I would like to book a junk pickup' + (s ? ': ' + s.label : '') + (state.zip.length === 5 ? ' in ' + state.zip : '') + '.';
@@ -404,7 +408,7 @@
   zipIn.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    nextFrom('where');
+    enterOn(zipIn);
   });
   zipIn.addEventListener('blur', function () {
     if (zipIn.value && zipIn.value.length < 5) { zipMsg.textContent = 'Enter a 5 digit ZIP.'; zipMsg.className = 'o-msg is-err'; zipIn.setAttribute('aria-invalid', 'true'); }
@@ -511,12 +515,14 @@
     var dayBox = $('o-days'), winBox = $('o-wins'), msg = $('o-when-msg');
     dayBox.textContent = ''; winBox.textContent = '';
     if (!days) { dayBox.appendChild(el('p', 'o-hint', 'Loading the open days…')); return; }
-    days.forEach(function (d) {
+    // The next nine days, three by three, each with its whole weekday name.
+    var WEEKDAY = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday' };
+    days.slice(0, 9).forEach(function (d) {
       var b = el('button', 'o-day' + (d.full ? ' full' : ''));
       b.type = 'button';
       b.setAttribute('data-date', d.date);
       var i = d.label.indexOf(' ');
-      b.appendChild(el('span', 'o-day-wd', d.label.slice(0, i)));
+      b.appendChild(el('span', 'o-day-wd', WEEKDAY[d.label.slice(0, i)] || d.label.slice(0, i)));
       b.appendChild(el('span', 'o-day-md', d.full ? 'Full' : d.label.slice(i + 1)));
       if (d.full) { b.setAttribute('aria-disabled', 'true'); b.setAttribute('aria-label', d.label + ', full'); }
       b.setAttribute('aria-pressed', String(d.date === state.date));
@@ -526,8 +532,8 @@
     if (days.every(function (d) { return d.full; })) { dayMsg.textContent = 'Every day we show is full. Call or text us and we will find a time.'; dayMsg.className = 'o-msg is-err'; }
     else if (dayMsg.classList.contains('is-err') && dayOf(state.date)) { dayMsg.textContent = ''; dayMsg.className = 'o-msg'; }
     var day = dayOf(state.date);
-    // The Time page names the day it is for, one tap from changing it.
-    $('o-time-day').textContent = day ? day.label : '';
+    // The Time page names its day in the question.
+    $('o-time-h').textContent = day ? 'What time on ' + day.label + '?' : 'What time should we arrive?';
     if (!day) return;
     day.windows.forEach(function (w) {
       var full = day.full || w.full;
@@ -570,7 +576,14 @@
   function whenError(text) { var m = $('o-when-msg'); m.textContent = text; m.className = 'o-msg is-err'; }
   function dayError(text) { var m = $('o-day-msg'); m.textContent = text; m.className = 'o-msg is-err'; say(text); }
 
-  /* ── 4. contact: name, phone, email, address, a page each ───────────────── */
+  /* ── 4. contact information: the ZIP, then name, email, phone, address on one page ── */
+  /* Enter (Go on a phone keyboard) in a box goes to the next empty one, then View quote.
+     The notes box keeps Enter for a new line. */
+  var CONTACT_ORDER = [zipIn, FIELDS.name.el, FIELDS.email.el, FIELDS.phone.el, FIELDS.street.el, OPTIONAL.unit];
+  function enterOn(box) {
+    var later = CONTACT_ORDER.slice(CONTACT_ORDER.indexOf(box) + 1).filter(function (b) { return b !== OPTIONAL.unit && !b.value.trim(); })[0];
+    if (later) later.focus(); else nextFrom('contact');
+  }
   Object.keys(FIELDS).forEach(function (k) {
     var f = FIELDS[k];
     f.el.addEventListener('blur', function () { if (f.el.value.trim()) fieldError(k, true); });
@@ -581,14 +594,13 @@
     f.el.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' || e.isComposing) return;
       e.preventDefault();
-      nextFrom(f.step);
+      enterOn(f.el);
     });
   });
-  // Enter in the unit box moves on too (the notes box keeps Enter for a new line).
   OPTIONAL.unit.addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' || e.isComposing) return;
     e.preventDefault();
-    nextFrom('address');
+    enterOn(OPTIONAL.unit);
   });
   $('o-next').addEventListener('click', function () { nextFrom(step); });
   [OPTIONAL.unit, OPTIONAL.notes].forEach(function (n) { n.addEventListener('input', function () { changed(); render(); }); });
@@ -603,15 +615,15 @@
   /* The first thing still missing, in page order: [section, message, element to focus]. */
   function missing() {
     if (state.size == null) return ['o-size', 'Pick a size first.', document.querySelector('#o-sizes .size-card')];
-    if (!state.trip) return ['o-zip', state.zip.length === 5 ? 'We do not price that ZIP online. Call or text us for a price.' : 'Enter the ZIP code of the job.', state.zip.length === 5 ? null : zipIn];
     if (!state.date || !dayOf(state.date)) return ['o-day', 'Pick a day.', document.querySelector('#o-days [data-date]:not([aria-disabled="true"])')];
     if (!state.window || !windowFree(state.date, state.window)) return ['o-time', 'Pick an arrival window.', document.querySelector('#o-wins [data-window]:not([aria-disabled="true"])')];
+    if (!state.trip) return ['o-you', state.zip.length === 5 ? 'We do not price that ZIP online. Call or text us for a price.' : 'Enter the ZIP code of the job.', zipIn];
     var keys = Object.keys(FIELDS);
-    for (var i = 0; i < keys.length; i++) if (fieldError(keys[i], true)) return [SEC[FIELDS[keys[i]].step], FIELDS[keys[i]].err.textContent, FIELDS[keys[i]].el];
+    for (var i = 0; i < keys.length; i++) if (fieldError(keys[i], true)) return ['o-you', FIELDS[keys[i]].err.textContent, FIELDS[keys[i]].el];
     return null;
   }
   function guide(m) {
-    var sec = $(m[0]), msgEl = { 'o-size': $('o-size-msg'), 'o-zip': zipMsg, 'o-day': $('o-day-msg'), 'o-time': $('o-when-msg') }[m[0]];
+    var sec = $(m[0]), msgEl = m[2] === zipIn ? zipMsg : { 'o-size': $('o-size-msg'), 'o-day': $('o-day-msg'), 'o-time': $('o-when-msg') }[m[0]];
     // The page with the missing piece comes back on screen first.
     if (STEP_OF[m[0]] !== step) go(STEP_OF[m[0]]);
     if (msgEl) { msgEl.textContent = m[1]; msgEl.className = 'o-msg is-err'; }
@@ -668,8 +680,14 @@
     }
     track('order_reserve', { size: s.label, value: tot / 100, currency: 'USD', zone: t.zone });
     reserved = true;
-    render();
-    showReserved();
+    // On to the booking page (founder: "once you have booked it needs to go to a
+    // booking page"), which says no card was taken.
+    writeSummary({}, null);
+    var sum = read('bookingSummary') || {};
+    sum.reserved = true; sum.paidCents = null;
+    write('bookingSummary', sum);
+    write(STORE, { size: state.size, zip: state.zip, date: null, window: null, contact: c });
+    location.href = 'thanks.html';
   }
   /* The job address: street, unit, then the city and ZIP the ZIP step found
      (the ZIP last, where the booking API reads it). */
@@ -922,7 +940,7 @@
       refreshDays();
       return { where: 'o-day', text: 'We are not booking that day any more. Pick another day.' };
     }
-    if (code === 'outside_area') return { where: 'o-zip', text: 'We do not book that address online. Please ' + CALL_US + ' for a price.' };
+    if (code === 'outside_area') return { where: 'o-you', text: 'We do not book that address online. Please ' + CALL_US + ' for a price.' };
     if (code === 'consent_required') return consentBox.checked ? { where: 'pay', text: 'This page is out of date. Reload it, then book again.' } : { where: 'consent' };
     if (status === 503) return { where: 'pay', text: 'We are not taking online bookings just yet. Please ' + CALL_US + ' and we will get you on the schedule.' };
     return { where: 'pay', text: 'We could not book that just now. Please try again, or ' + CALL_US + '.' };
@@ -934,7 +952,7 @@
     // outside the area to Where.
     var page = STEP_OF[f.where];
     if (page) go(page);
-    var at = f.where === 'card' ? $('o-card-err') : ({ 'o-time': $('o-when-msg'), 'o-day': $('o-day-msg'), 'o-zip': zipMsg })[f.where] || $('o-pay-msg');
+    var at = f.where === 'card' ? $('o-card-err') : ({ 'o-time': $('o-when-msg'), 'o-day': $('o-day-msg'), 'o-you': zipMsg })[f.where] || $('o-pay-msg');
     if (f.where === 'card') cardErr(f.text);
     else if (at === $('o-pay-msg')) payMsg(f.text, f.kind || 'err');
     else { at.textContent = f.text; at.className = 'o-msg is-err'; }
@@ -982,7 +1000,11 @@
   state.window = saved.window || null;
   state.size = startSize;
   var arrived = location.hash.slice(1);
-  if (arrived === 'when') arrived = 'day';   // the one When page before the day and time split
+  // Old links: the one When page, the ZIP page and the one entry pages before contact was one page.
+  arrived = { when: 'day', where: 'contact', name: 'contact', phone: 'contact', email: 'contact', address: 'contact' }[arrived] || arrived;
+  // The days come before the ZIP now (as Scoops Co. asks the ZIP on the contact page):
+  // read them for our one market; a ZIP in another market reads its own.
+  loadDays('portland');
   if (startZip) setZip(startZip, 'start');
   render();
   // The page lands at the top of the step, never where the browser last scrolled.

@@ -55,8 +55,13 @@ button { font: inherit; }
 @media (min-width: 900px) { .o-main { padding-top: 48px; } }
 
 /* ── the progress bar: one bar that fills as the pages go by ── */
-.o-progress { height: 8px; margin: 0 0 24px; border-radius: 999px; background: #EEEAE1; overflow: hidden; }
-.o-progress span { display: block; height: 100%; width: 11.1%; border-radius: 999px; background: var(--ink); transition: width .35s ease; }
+/* It slides to the page on screen and pulses gently (founder: "dynamic and pulsing"):
+   a glow that breathes and a light that sweeps along it. None with reduced motion. */
+.o-progress { height: 10px; margin: 0 0 28px; border-radius: 999px; background: #EEEAE1; }
+.o-progress span { position: relative; display: block; height: 100%; width: 16.7%; border-radius: 999px; overflow: hidden; background: var(--ink); transition: width .5s cubic-bezier(.2,.8,.2,1); animation: o-pulse 1.8s ease-in-out infinite; }
+.o-progress span::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,210,63,.55), transparent); transform: translateX(-100%); animation: o-sweep 2.2s ease-in-out infinite; }
+@keyframes o-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,210,63,0); } 50% { box-shadow: 0 0 12px 2px rgba(255,210,63,.65); } }
+@keyframes o-sweep { to { transform: translateX(100%); } }
 
 /* ── a page: the question, its step tag, then the answer ── */
 .o-form { min-width: 0; }
@@ -64,12 +69,13 @@ button { font: inherit; }
 .o-sec.is-fwd, .o-sec.is-back { animation: o-fade .25s ease; }
 @keyframes o-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .o-sec-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.o-sec-head .o-pill { order: 2; }
 .o-sec h2 { margin: 0; flex: 1; min-width: 0; font: 700 24px/1.25 'DM Sans', sans-serif; letter-spacing: -.015em; color: var(--ink); }
 .o-sec h2 label { display: block; }
 /* A page's heading takes the focus only so a screen reader starts there; it is not
    something to tap, so it shows no ring. */
 .o-sec h2:focus, .o-sec h2:focus-visible { outline: none; }
-.o-pill { flex: none; display: inline-flex; align-items: center; min-height: 30px; margin-top: 1px; padding: 0 12px; border-radius: 999px; background: var(--soft); color: var(--ink); font-size: 16px; font-weight: 700; white-space: nowrap; }
+.o-pill { flex: none; display: inline-flex; align-items: center; height: 28px; margin: 2px 0 0; padding: 0 12px; border-radius: 999px; background: #F1EDE3; color: var(--ink); font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
 .o-sec-body { margin-top: 8px; }
 .o-help { margin: 0 0 16px; color: var(--muted); }
 .o-selected { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; font-weight: 700; color: var(--ink); }
@@ -83,9 +89,6 @@ button { font: inherit; }
 .o-more { margin: 16px 0 0; color: var(--muted); }
 /* Links inside running text: a 48px tall target without opening up the line. */
 .o-more a, .o-far p a, .o-msg a { display: inline-block; padding: 13px 2px; margin: -13px 0; font-weight: 700; color: var(--ink); }
-/* The Day page says where the job is, the Time page which day, one tap from changing it. */
-.o-where-line { display: flex; align-items: center; justify-content: space-between; gap: 0 8px; margin: 0 0 16px; padding: 2px 2px 2px 14px; border-radius: 12px; background: var(--soft); color: var(--ink); font-weight: 700; line-height: 1.3; }
-.o-where-line > span { flex: 1; min-width: 0; }
 .o-change { flex: none; min-height: 48px; min-width: 48px; padding: 0 10px; border: 0; background: none; color: var(--ink); font: 700 16px/1 'DM Sans', sans-serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
 /* ── 1. the size tiles: a photo, the size, what fits, the price (classes shared with
@@ -148,7 +151,7 @@ button { font: inherit; }
 .o-field input::placeholder, .o-field textarea::placeholder, .o-far input::placeholder { color: #6E7278; }
 .o-field input:focus, .o-field textarea:focus, .o-far input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(21,23,26,.14); }
 .o-field input[aria-invalid="true"], .o-far input[aria-invalid="true"] { border-color: var(--err); box-shadow: 0 0 0 3px rgba(180,35,24,.12); }
-.o-sec-body > .o-field:first-child { margin-top: 16px; }
+.o-fields { display: grid; gap: 16px; }
 .o-field-zip input { max-width: 220px; letter-spacing: .06em; font-variant-numeric: tabular-nums; }
 .o-err { margin: 6px 0 0; color: var(--err); font-weight: 600; font-size: 16px; }
 .o-err:empty { display: none; }
@@ -164,14 +167,16 @@ button { font: inherit; }
 @media (min-width: 480px) { .o-far-row { grid-template-columns: 1fr auto; } }
 
 /* ── 3 and 4. day and time tiles: real dates, full ones greyed and labelled ── */
-.o-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; }
+/* The next nine open days, three to a row. */
+.o-days { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .o-wins { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .o-day, .o-win {
   min-height: 64px; min-width: 48px; padding: 8px 4px; cursor: pointer; text-align: center;
   background: var(--card); color: var(--ink); border: 1.5px solid var(--line); border-radius: 14px; line-height: 1.2;
   transition: border-color .15s, background .15s, box-shadow .15s;
 }
-.o-day { display: grid; place-content: center; gap: 2px; }
+.o-day { display: grid; place-content: center; gap: 2px; min-height: 72px; }
+.o-day-wd { font-size: 17px; }
 .o-day-wd { font-weight: 700; }
 .o-day-md { color: var(--muted); }
 .o-win { display: grid; place-content: center; gap: 2px; min-height: 72px; font-weight: 700; font-size: 17px; }
@@ -182,15 +187,22 @@ button { font: inherit; }
 .o-day.full .o-day-md { color: #5F636A; font-weight: 700; }
 .o-win.full .guess { color: #8C2A22; }
 
-/* ── 9. pay: the answers read back, then the rule, the box and the card ── */
-.o-recap { margin: 16px 0 16px; padding: 0; list-style: none; border-top: 1px solid var(--line); }
-.o-recap-row { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; align-items: center; gap: 0 10px; min-height: 52px; border-bottom: 1px solid var(--line); }
-.o-recap-k { color: var(--muted); }
-.o-recap-v { min-width: 0; overflow-wrap: anywhere; font-weight: 700; color: var(--ink); line-height: 1.3; padding: 6px 0; }
-.o-recap .o-change { padding: 0 2px 0 10px; }
-.o-recap-total { grid-template-columns: 76px minmax(0, 1fr); border-bottom: 0; }
-.o-recap-total .o-recap-k { font-weight: 700; color: var(--ink); }
-.o-recap-total .o-recap-v { font-size: 24px; text-align: right; }
+/* ── your quote: Scoops Co.'s summary cards ── */
+.o-qcard { margin-top: 16px; padding: 20px 20px 6px; border-radius: 16px; border: 1px solid var(--line); background: linear-gradient(180deg, #F7F4EC, #fff 70%); box-shadow: 0 10px 30px -18px rgba(21,23,26,.35); }
+.o-qcard + .o-qcard { margin-top: 14px; }
+.o-qcard-k { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.o-qcard-sub { margin: 2px 0 0; color: var(--muted); }
+.o-qprice { margin: 6px 0 0; padding-bottom: 16px; border-bottom: 1px solid var(--line); font: 700 40px/1.1 'DM Sans', sans-serif; letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.o-qrows { margin: 0; }
+.o-qrows > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.o-qrows > div:last-child { border-bottom: 0; }
+.o-qrows dt { color: var(--muted); }
+.o-qrows dd { margin: 0; color: var(--ink); font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.o-qcard-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -10px 0 0; font-weight: 600; color: var(--muted); }
+.o-secure-note { display: flex; align-items: flex-start; gap: 8px; margin: 16px 0 0; color: var(--muted); }
+.o-secure-note svg { width: 16px; height: 16px; flex: none; margin-top: 4px; }
+
+/* ── payment: the rule, the box and the card ── */
 .o-rule { padding: 14px 16px; border-radius: 14px; background: var(--yel-50); border: 1px solid #EBD98F; }
 .o-rule p { margin: 0; }
 .o-rule p + p { margin-top: 8px; }
@@ -238,11 +250,6 @@ button { font: inherit; }
 .o-book .guess { color: #A31515; }
 .o-book.is-done { background: #DDEFE3; color: var(--ok); box-shadow: none; }
 #o-book[aria-busy="true"] { cursor: progress; }
-
-/* ── what you can count on, under the buttons (as on Scoops Co.) ── */
-.o-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 20px; margin: 28px 0 0; padding: 0; list-style: none; color: var(--muted); }
-.o-trust li { display: inline-flex; align-items: center; gap: 6px; }
-.o-trust svg { width: 16px; height: 16px; flex: none; color: var(--ink); }
 
 /* ── footer ── */
 .o-foot { padding: 18px var(--gutter) 28px; text-align: center; color: var(--muted); font-size: 16px; }

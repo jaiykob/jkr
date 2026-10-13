@@ -15,7 +15,7 @@
  * lives here and nowhere else. If you set one, move it the day it slips.
  */
 (function () {
-  var SHOW = true;          // bookings are closed until launch
+  var SHOW = false;         // off (founder 2026-10-13: "remove banner at top"); the order page says what it needs to
   var REOPEN_TEXT = null;   // null = no date named anywhere on the site
 
   // Published so the order page's closed note shows the same date.

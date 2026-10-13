@@ -205,6 +205,12 @@
     var load = num(s.loadCents), trip = num(s.travelCents);
     var tot = num(s.totalCents) != null ? num(s.totalCents) : num(s.amountCents);   // amountCents: a summary in the old shape
     var paid = num(s.paidCents) != null ? num(s.paidCents) : tot;                  // pay at booking: what the card paid today
+    // A day reserved while card payments are off: nothing was paid, and the page says so.
+    if (s.reserved) {
+      paid = null;
+      $('t-lede').textContent = 'No card was taken. We text ' + (s.phone || 'you') + ' to confirm your pickup.';
+      $('summary-card').querySelector('.t-rule').textContent = 'Before loading, the crew checks the size. A different size means a different price, shown to you first.';
+    }
     var rows = [];
     var size = s.size || s.plan;
     if (size) rows.push(['Size', [size, load != null ? ', ' : '', load != null ? guessy(fmt(load), priceGuess) : '']]);
@@ -212,9 +218,9 @@
     if (s.dayLabel) rows.push(['Day and time', [s.dayLabel, s.windowLabel ? ', ' : '', s.windowLabel ? guessy(s.windowLabel, !!G.schedule) : '']]);
     else if (s.cadence || s.day) rows.push(['Day', [s.cadence || s.day]]);
     if (s.address) rows.push(['Address', [s.address]]);
-    if (s.wallet || s.last4 || s.dayLabel) rows.push(['Card', [(s.wallet || 'Your card') + ', saved for any difference']]);
+    if (!s.reserved && (s.wallet || s.last4 || s.dayLabel)) rows.push(['Card', [(s.wallet || 'Your card') + ', saved for any difference']]);
     if (s.phone) rows.push(['Texts go to', [s.phone]]);
-    if (tot != null && paid != null && paid !== tot) rows.push(['Total', [guessy(fmt(tot), priceGuess || travelGuess)]]);
+    if (tot != null && (paid == null || paid !== tot)) rows.push(['Total', [guessy(fmt(tot), priceGuess || travelGuess)]]);
     if (paid != null) rows.push(['Paid today', [guessy(fmt(paid), priceGuess || travelGuess)], 't-row-total']);
     if (!rows.length) return;
 
@@ -232,7 +238,7 @@
     if (s.phone) $('t-phone').textContent = s.phone;
     if (s.firstName) {
       var h = $('welcome-heading');
-      fill(h, ["You're booked, ", el('em', null, s.firstName), '.']);
+      fill(h, [s.reserved ? 'Your day is reserved, ' : "You're booked, ", el('em', null, s.firstName), '.']);
     }
   })();
 
