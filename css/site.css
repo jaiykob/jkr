@@ -162,6 +162,56 @@ body .legal-footer > a { display: inline-flex; align-items: center; min-height: 
 .sticky-cta { display: none !important; }
 /* /BUILD:chrome-css */
 
+/* ── HEADER DROPDOWNS (Novah's): Services and What we take. On a wide screen, a
+   white card under the word with a little point, each line an icon in a grey tile,
+   a thin line, then a link to all of them; it opens under the pointer, on a tap or
+   from the keyboard (js/site.js). In the phone menu the groups sit open under
+   their names, the lines indented behind a thin rule. */
+.nav-drop { position: relative; }
+.nav-drop-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0; border: 0; background: none; cursor: pointer;
+  font: 500 15px/1.4 var(--font); color: rgba(255,255,255,.7); white-space: nowrap; transition: color .2s;
+}
+.nav-drop-btn:hover, .nav-drop.is-open .nav-drop-btn { color: #fff; }
+.nav-chev { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
+.nav-drop.is-open .nav-chev { transform: rotate(180deg); }
+.nav-ico { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 10px; background: #F1EEE8; border: 1px solid rgba(12,11,9,.06); }
+.nav-ico svg, .nav-panel-all svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.nav-panel-list { list-style: none; margin: 0; padding: 0; }
+.nav-links .nav-panel-list a { display: flex; align-items: center; gap: 14px; }
+.nav-links .nav-panel-all { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+@media (min-width: 960px) {
+  .nav-links { gap: 28px; }
+  .nav-panel {
+    position: absolute; top: calc(100% + 12px); left: -20px; z-index: 110; width: 290px; padding: 8px;
+    border-radius: 16px; background: #fff; color: var(--rg); box-shadow: 0 24px 50px -16px rgba(0,0,0,.45), 0 0 0 1px rgba(12,11,9,.06);
+    opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity .2s, transform .25s cubic-bezier(.2,.8,.2,1), visibility 0s .25s;
+  }
+  /* the little point under the word, and a bridge over the gap so the pointer can cross it */
+  .nav-panel::before { content: ''; position: absolute; left: 0; right: 0; top: -14px; height: 14px; }
+  .nav-panel::after { content: ''; position: absolute; top: -6px; left: 44px; width: 12px; height: 12px; background: #fff; transform: rotate(45deg); border-radius: 2px; }
+  .nav-drop.is-open .nav-panel { opacity: 1; visibility: visible; transform: none; transition: opacity .2s, transform .25s cubic-bezier(.2,.8,.2,1), visibility 0s; }
+  .nav-links .nav-panel-list a { min-height: 54px; padding: 8px 10px; border-radius: 10px; color: var(--rg); font-size: 15px; font-weight: 500; transition: background .2s; }
+  .nav-links .nav-panel-list a:hover, .nav-links .nav-panel-list a:focus-visible { background: #F6F4EF; color: var(--rg); }
+  .nav-links .nav-panel-list a:hover .nav-ico { background: #fff; }
+  .nav-links .nav-panel-all { min-height: 48px; margin: 6px 0 0; padding: 0 10px 0 12px; border-top: 1px solid rgba(12,11,9,.08); color: var(--rg); font-size: 14px; font-weight: 600; }
+  .nav-links .nav-panel-all:hover { color: var(--rg); }
+  .nav-panel-all svg { width: 16px; height: 16px; transition: transform .2s; }
+  .nav-panel-all:hover svg { transform: translateX(3px); }
+  .site-nav .nav-panel :focus-visible { outline: 2px solid var(--rg); outline-offset: -2px; }
+}
+@media (max-width: 959px) {
+  /* a long menu scrolls inside the bar instead of running off the screen */
+  .nav-links.open { max-height: calc(100vh - var(--nav-h) - 8px); max-height: calc(100dvh - var(--nav-h) - 8px); overflow-y: auto; overscroll-behavior: contain; }
+  .nav-drop-btn { width: 100%; font-size: 17px; color: #fff; cursor: default; }
+  .nav-chev { display: none; }
+  .nav-panel { margin: 0 0 8px 6px; padding-left: 14px; border-left: 1px solid rgba(255,255,255,.14); }
+  .nav-links .nav-panel-list a { min-height: 52px; font-size: 16px; color: rgba(255,255,255,.82); }
+  .nav-ico { width: 34px; height: 34px; background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.1); color: #fff; }
+  .nav-links .nav-panel-all { justify-content: flex-start; min-height: 48px; font-size: 15px; color: rgba(255,255,255,.6); }
+  .nav-panel-all svg { width: 16px; height: 16px; }
+}
+
 /* ── BUTTONS ─────────────────────────────────────────────────────────────── */
 /* Every button is 48px tall, 10px radius. Green on cream, tan on green. */
 .btn-primary, .btn-ghost, .btn-tan {

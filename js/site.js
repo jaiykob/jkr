@@ -19,6 +19,55 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && links.classList.contains('open')) { set(false); burger.focus(); } });
   }
 
+  // Novah's dropdowns in the header (Services, What we take). On a wide screen one
+  // opens under a mouse pointer, or on a tap or Enter, and closes when the pointer
+  // leaves, on Escape, or on a tap anywhere else. A touch only taps (no hover), so
+  // a tap never opens and closes it at once. In the phone menu the groups are open.
+  var drops = [].slice.call(document.querySelectorAll('.nav-drop'));
+  if (drops.length && window.matchMedia) {
+    var wide = window.matchMedia('(min-width: 960px)');
+    var setDrop = function (d, open) {
+      d.classList.toggle('is-open', open);
+      d.querySelector('.nav-drop-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    var closeAll = function (except) { drops.forEach(function (o) { if (o !== except) setDrop(o, false); }); };
+    var syncDrops = function () { drops.forEach(function (d) { setDrop(d, !wide.matches); }); };
+    drops.forEach(function (d) {
+      var btn = d.querySelector('.nav-drop-btn'), timer = 0, by = '';
+      // A mouse has already opened it by hovering, so its click keeps it open; a tap or a key toggles.
+      btn.addEventListener('pointerdown', function (e) { by = e.pointerType; });
+      btn.addEventListener('click', function () {
+        if (!wide.matches) return;
+        var open = by === 'mouse' || !d.classList.contains('is-open');
+        by = '';
+        closeAll(d);
+        setDrop(d, open);
+      });
+      d.addEventListener('pointerenter', function (e) {
+        if (!wide.matches || e.pointerType !== 'mouse') return;
+        clearTimeout(timer);
+        closeAll(d);
+        setDrop(d, true);
+      });
+      d.addEventListener('pointerleave', function (e) {
+        if (!wide.matches || e.pointerType !== 'mouse') return;
+        timer = setTimeout(function () { setDrop(d, false); }, 180);
+      });
+      d.addEventListener('focusout', function (e) { if (wide.matches && !d.contains(e.relatedTarget)) setDrop(d, false); });
+    });
+    document.addEventListener('click', function (e) { if (wide.matches && !e.target.closest('.nav-drop')) closeAll(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape' || !wide.matches) return;
+      drops.forEach(function (d) {
+        if (!d.classList.contains('is-open')) return;
+        setDrop(d, false);
+        d.querySelector('.nav-drop-btn').focus();
+      });
+    });
+    if (wide.addEventListener) wide.addEventListener('change', syncDrops); else if (wide.addListener) wide.addListener(syncDrops);
+    syncDrops();
+  }
+
   // WhatsApp buttons (a[data-wa] holds the chat address): the message says hello and,
   // once the visitor has given a ZIP anywhere on the site, the ZIP. The order page
   // (js/order.js) writes its own message with the size.
