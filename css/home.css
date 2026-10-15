@@ -30,8 +30,16 @@
 .h-founding { margin: 0; font-weight: 600; color: #fff; }
 .h-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
 .h-hero .link-arrow { color: #fff; }
+/* the trail on a town or service page (Home › the page), quiet over the label */
+.h-hero .crumbs { margin: -24px 0 0; font-size: 15px; }
+.h-hero .crumbs a { min-width: 0; font-weight: 500; color: rgba(255,255,255,.6); text-decoration: none; }
+.h-hero .crumbs a:hover { color: #fff; }
+.h-hero .crumbs-sep { margin: 0 8px; color: rgba(255,255,255,.35); }
+.h-hero .crumbs [aria-current] { font-weight: 500; color: #fff; }
 @media (min-width: 960px) {
   .h-hero-top { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-areas: "eyebrow eyebrow" "title lede" "title actions" "title founding"; }
+  .h-hero-top:has(> .crumbs) { grid-template-areas: "crumbs crumbs" "eyebrow eyebrow" "title lede" "title actions" "title founding"; }
+  .h-hero .crumbs { grid-area: crumbs; }
   .h-hero .h-eyebrow { grid-area: eyebrow; margin-bottom: 8px; }
   .h-title { grid-area: title; align-self: end; }
   .h-lede { grid-area: lede; align-self: end; }
