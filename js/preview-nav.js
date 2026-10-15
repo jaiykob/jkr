@@ -4,69 +4,6 @@
 // order page since round 6.)
 (function () {
   if (!['localhost', '127.0.0.1', '[::1]'].includes(location.hostname)) return;
-
-  // Page numbers, so the founder and I can name a page in a message ("page 12, the
-  // button"; founder 2026-10-15: "number pages at the top for now for better
-  // communications"). A blue strip over the header, local only. The booking adds its
-  // step: 3.1 Size to 3.4 Checkout. Towns come last, as they are the list most likely to change.
-  (function pageNumber() {
-    const human = (s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/-/g, ' ');
-    const town = (s) => s.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    const PAGES = [
-      ['index.html', 'Home'], ['prices.html', 'Prices'], ['book/quote.html', 'Booking'],
-      ['book/thanks.html', 'Booking done'], ['book/commercial.html', 'Property managers'],
-      ['before-we-come.html', 'Before we come'], ['faq.html', 'Help and FAQ'],
-      ['terms.html', 'Terms'], ['privacy.html', 'Privacy'], ['404.html', 'Page not found'],
-      ...['garage-cleanout', 'furniture-removal', 'estate-cleanout', 'hot-tub-removal', 'mattress-removal',
-        'appliance-removal', 'yard-debris-removal', 'hoarder-cleanout'].map((s) => [`portland/${s}.html`, human(s)]),
-      ['blog/index.html', 'Blog'],
-      ...['choosing-a-junk-removal-company', 'clearing-a-rental-between-tenants', 'estate-cleanout',
-        'fridge-and-freezer-disposal', 'garage-cleanout-in-a-weekend', 'junk-removal-or-dumpster', 'mattress-disposal',
-        'piano-removal', 'what-junk-haulers-cant-take', 'what-junk-removal-costs', 'where-hauled-junk-goes',
-        'yard-debris-after-a-storm'].map((s) => [`blog/${s}.html`, 'Blog: ' + human(s)]),
-      ...['aloha', 'aurora', 'battle-ground', 'beaverton', 'boring', 'brush-prairie', 'camas', 'canby', 'clackamas',
-        'corbett', 'damascus', 'estacada', 'fairview', 'gladstone', 'gresham', 'happy-valley', 'hillsboro', 'king-city',
-        'la-center', 'lake-oswego', 'milwaukie', 'molalla', 'newberg', 'oregon-city', 'portland', 'ridgefield', 'sandy',
-        'scappoose', 'sherwood', 'tigard', 'troutdale', 'tualatin', 'vancouver', 'washougal', 'welches', 'west-linn',
-        'wilsonville', 'wood-village', 'woodland', 'yacolt'].map((s) => [`${s}.html`, 'Town: ' + town(s)]),
-    ];
-    const STEPS = { size: 'Size', when: 'When', contact: 'Contact', book: 'Checkout' };
-
-    let p = location.pathname.replace(/^\/+/, '');
-    if (p === '' || p.endsWith('/')) p += 'index.html';
-    else if (!/\.[a-z]+$/i.test(p)) p += '.html';
-    const spanish = p.startsWith('es/');
-    if (spanish) p = p.slice(3);
-    if (/^Page not found/.test(document.title)) p = '404.html';
-    const i = PAGES.findIndex(([path]) => path === p);
-
-    const strip = document.createElement('div');
-    strip.setAttribute('aria-hidden', 'true');
-    strip.style.cssText = 'display:flex;align-items:center;gap:10px;min-height:36px;padding:4px 16px;background:#1D4ED8;'
-      + 'color:#fff;font:600 16px/1.3 system-ui,sans-serif;position:relative;z-index:10000';
-    const num = document.createElement('span');
-    num.style.cssText = 'padding:2px 10px;border-radius:999px;background:#fff;color:#1D4ED8;font-weight:800;white-space:nowrap';
-    const name = document.createElement('span');
-    strip.append(num, name);
-
-    function paint() {
-      if (i < 0) { num.textContent = 'No number'; name.textContent = '/' + p; return; }
-      let n = String(i + 1), label = PAGES[i][1];
-      if (p === 'book/quote.html') {
-        const open = [...document.querySelectorAll('.o-sec[data-step]')].find((s) => !s.hidden);
-        const k = open && open.getAttribute('data-step');
-        if (k && STEPS[k]) { n += '.' + (Object.keys(STEPS).indexOf(k) + 1); label += ': ' + STEPS[k]; }
-      }
-      num.textContent = 'Page ' + n;
-      name.textContent = label + (spanish ? ' (Spanish)' : '');
-    }
-    paint();
-    document.body.prepend(strip);
-    if (p === 'book/quote.html') {
-      new MutationObserver(paint).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden'] });
-    }
-  })();
-
   // Off unless asked for (?preview once in a tab): the founder walks the site locally and
   // it is clutter on every page.
   try { if (/[?&]preview/.test(location.search)) sessionStorage.setItem('previewNav', '1'); if (!sessionStorage.getItem('previewNav')) return; } catch (e) { return; }
